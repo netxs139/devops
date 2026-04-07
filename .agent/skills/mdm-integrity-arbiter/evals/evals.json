@@ -1,0 +1,23 @@
+{
+  "skill_name": "mdm-integrity-arbiter",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我们要对现有的主数据系统做一次架构变更。我刚才新增了一个 `Department` 实体，里面配了个 `leader` 关系连回 `User`。然后在现有的 `User` 类上也绑了个 `department` 外键回拉。帮我快速过一遍我写的这几行代码，有没有暗坑。",
+      "expected_output": "识别出这就是经典的互锁型循环，禁止对方采用简单双向映射，并立刻搬出两阶段对齐协议（Two-Phase Protocol）以及 `use_alter=True` 来规劝。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "我们在这次企微数据字典变更里，打算把监听器的钩子挂到所有的关联关系（比如：员工下属列表）上。以后只要他下属一有变动，审计表里就存一次它底下所有人的 JSON array 以备稽查溯源。能帮我审一下这么写合适吗？",
+      "expected_output": "极其敏锐地发现这是把 RelationshipProperty 挂入审计的巨大死穴，警告这将引发毁灭级的 N+1 或者死循环跨表查询查询，强令改成只写标量变更。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "为了更方便跟 ZenTao 同步项目的建模，我这次新建的 DevOpsProject 表主键，我就直接用他们那边推过来的 ID Integer （比如直接存下304）来做主键了哈，省去关联查询，可行吧。",
+      "expected_output": "明确警告该建模破坏了系统 Surrogate PK 不带任何业务含义的基本法则，外部 ID 只能作为字段映射，绝不允许越位做物理外建。",
+      "files": []
+    }
+  ]
+}
