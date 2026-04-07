@@ -1,0 +1,23 @@
+[
+  {"query": "老兄，帮我看看最新写的 GitLab 同步插件里，负责人外键有没有埋坑？", "should_trigger": true},
+  {"query": "帮我看看这段 models.py，看看是不是存在物理强锁循环的隐患。", "should_trigger": true},
+  {"query": "我们要把部门下的员工列表直接挂在审计的后执行器里做JSON，会不会炸啊？", "should_trigger": true},
+  {"query": "我想引入人员组织架构图，设计了这两张互相关联的核心表，你能帮忙找下这里面的死锁风暴节点在哪里？", "should_trigger": true},
+  {"query": "我在开发一个跟企微通讯录同步相关的表架构变更，遇到双向依赖了，能利用之前的什么两阶段对齐协议帮我修补一下么？", "should_trigger": true},
+  {"query": "今天我们改了下数据字典库，在业务表里增加了一些冗余记录字段存放第三方系统的外部原主键，这不会越过红线吧？", "should_trigger": true},
+  {"query": "我们要在数据库里加个字段，并且把人员和地址做一个循环的关联，帮我检查下ORM代码", "should_trigger": true},
+  {"query": "在写这块数据表增加字段逻辑的时候，发现如果不加 use_alter 测试环境跑不过去，你能帮我看一眼是不是循环引用引起的吗", "should_trigger": true},
+  {"query": "帮忙审阅一下我这块数据字典变更产生的 RelationshipProperty 调用是否会在大规模调用时触发性能瓶颈风暴？", "should_trigger": true},
+  {"query": "准备上线重构好的考勤模块了，但我总觉这几张表通过外键绕成了一个环，你看看能用那个 raw_id 法消除死循环吗。", "should_trigger": true},
+
+  {"query": "给我写一个批量同步GitLab信息的 shell 脚本。", "should_trigger": false},
+  {"query": "前端看板上怎么写一个递归组件来渲染部门层级结构？", "should_trigger": false},
+  {"query": "帮忙查阅一下 Docker 容器里边连接数据库总是 Connection Refused 的原因。", "should_trigger": false},
+  {"query": "我们的页面怎么越滑越卡，是 N+1 请求导致的吗？帮忙看下前端网络图。 ", "should_trigger": false},
+  {"query": "使用 pydantic 模型来校验一下外部表单发送过来的 json 数据是否合法", "should_trigger": false},
+  {"query": "如果我要给现在的系统外挂一个 SSO 登录入口，有啥推荐的现成代码可以贴给我看", "should_trigger": false},
+  {"query": "你能帮我把刚才的 pytest 的这几个 test cases 全量跑到后台吗，我想看看死锁在哪里", "should_trigger": false},
+  {"query": "我在使用 RabbitMQ 做这个消息队列的分发，如何防止消息被重复消费？写个例子", "should_trigger": false},
+  {"query": "帮忙把这段 SQL 原文重构成 SQLAlchemy 的 query() 格式，就只做基础查询", "should_trigger": false},
+  {"query": "我忘了之前你在 contexts.md 里规定的那个防呆准则长什么样子了，能给我罗列一下前五条吗", "should_trigger": false}
+]
