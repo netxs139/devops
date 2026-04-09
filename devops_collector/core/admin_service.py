@@ -26,6 +26,7 @@ from devops_collector.models.base_models import (
     Team,
     TeamMember,
     User,
+    AuditLog,
 )
 from devops_collector.plugins.gitlab.models import GitLabProject
 from devops_portal import schemas
@@ -730,3 +731,24 @@ class AdminService:
         query = filter_obj.apply(self.session, query, User, current_user, dept_field="department_id")
         users = query.all()
         return [{"user_id": str(u.global_user_id), "full_name": u.full_name, "email": u.primary_email} for u in users]
+
+    def search_audit_logs(self, query: schemas.AuditLogQuery) -> list[AuditLog]:
+        """高级审计日志搜索业务逻辑。 (P1 High Priority)"""
+        q = self.session.query(AuditLog)
+
+        if query.actor_id:
+            q = q.filter(AuditLog.actor_id == query.actor_id)
+        if query.action:
+            q = q.filter(AuditLog.action == query.action)
+        if query.resource_type:
+            q = q.filter(AuditLog.resource_type == query.resource_type)
+        if query.resource_id:
+            q = q.filter(AuditLog.resource_id == query.resource_id)
+        if query.start_time:
+            q = q.filter(AuditLog.timestamp >= query.start_time)
+        if query.end_time:
+            q = q.filter(AuditLog.timestamp <= query.end_time)
+
+        # 排序与分页
+        offset = (query.page - 1) * query.page_size
+        return q.order_by(AuditLog.timestamp.desc()).offset(offset).limit(query.page_size).all()

@@ -10,6 +10,8 @@ SQLAlchemy 全量审计监听引擎 (Change Tracking Engine).
 
 import logging
 import os
+import uuid
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import event, inspect
@@ -25,6 +27,19 @@ SKIP_AUDIT = os.getenv("DEVOPS_SKIP_AUDIT", "false").lower() == "true"
 
 # 对敏感字段执行固定掩码脱敏 (L3 合规要求)
 SENSITIVE_FIELDS_SET = {"password", "secret", "token", "access_key", "checksum", "credential_key"}
+
+
+def safe_serialize(val: Any) -> Any:
+    """递归确保值可以被 JSON 序列化 (处理 UUID 和 datetime)。 (LL #106, #48)"""
+    if isinstance(val, uuid.UUID):
+        return str(val)
+    if isinstance(val, datetime):
+        return val.isoformat()
+    if isinstance(val, dict):
+        return {k: safe_serialize(v) for k, v in val.items()}
+    if isinstance(val, list | tuple):
+        return [safe_serialize(i) for i in val]
+    return val
 
 
 def resolve_diffs(target) -> dict[str, Any]:
@@ -55,6 +70,10 @@ def resolve_diffs(target) -> dict[str, Any]:
         if attr_key in SENSITIVE_FIELDS_SET:
             old_val = "********" if old_val else None
             new_val = "********" if new_val else None
+        else:
+            # 2. 对非敏感字段执行强制序列化对齐 (防止 UUID/DateTime 报错)
+            old_val = safe_serialize(old_val)
+            new_val = safe_serialize(new_val)
 
         diffs[attr_key] = {"old": old_val, "new": new_val}
     return diffs
