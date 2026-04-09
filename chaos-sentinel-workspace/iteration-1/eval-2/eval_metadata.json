@@ -1,0 +1,22 @@
+{
+  "eval_id": 2,
+  "eval_name": "auth-expiry-storm",
+  "prompt": "模拟一个生产级的突发故障：GitLab 同步脚本在执行到一半时发生 Token 过规失效（401 错误），验证系统是否能自愈重连，并利用 Chaos Sentinel 确认这个防御逻辑是否真正生效。",
+  "assertions": [
+    {
+      "name": "auth-fault-injection",
+      "text": "使用了 ChaosEngine.auth_token_poisoning 注入故障",
+      "expected": true
+    },
+    {
+      "name": "retry-logic-verified",
+      "text": "明确验证并确认了代码中包含 _refresh_token 或类似的 401 处理逻辑",
+      "expected": true
+    },
+    {
+      "name": "safety-cleanup",
+      "text": "测试完成后恢复了代码环境（去除了注入的混沌代码或 Mock）",
+      "expected": true
+    }
+  ]
+}

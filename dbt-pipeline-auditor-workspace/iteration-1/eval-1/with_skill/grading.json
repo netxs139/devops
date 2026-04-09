@@ -1,0 +1,19 @@
+{
+  "expectations": [
+    {
+      "text": "成功指出 ->> 提取出的值可能带有双引号并要求使用 trim 清理",
+      "passed": true,
+      "evidence": "报告中明确提到了 Postgres 提取 JSONB 字符串可能带双引号的问题"
+    },
+    {
+      "text": "成功指出空字符串无法直接转型为 numeric 并要求使用 nullif 处理",
+      "passed": true,
+      "evidence": "报告特别标注了空字符串会引发语法错误"
+    },
+    {
+      "text": "提供的修复 SQL 使用了 cast(nullif(trim(both '\"' from ...), '') as numeric) 格式",
+      "passed": true,
+      "evidence": "SQL 建议完全符合防线 1 的规范写法"
+    }
+  ]
+}

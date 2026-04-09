@@ -13,7 +13,6 @@ renamed as (
         is_active,
         sync_version
     from source
-    where is_current = true  -- Only look at current active records
 )
 
 select * from renamed

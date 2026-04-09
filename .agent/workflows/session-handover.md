@@ -97,6 +97,16 @@ Get-Content docs/lessons-learned.log | Select-Object -Last 15
 make clean
 ```
 
+### 5. 交接完工标准 (Handover DoD) [MANDATORY]
+在宣告会话交接完成前，Agent 必须确信以下五项已 100% 达成：
+- [ ] **物理事实对齐**：通过 `git status` 和 `docker ps` 确认环境处于预期状态。
+- [ ] **进度状态更新**：`progress.txt` 已准确反映本次会话的所有完成项与待办项。
+- [ ] **知识资产沉淀**：本次会话发现的所有坑点已在 `docs/lessons-learned.log` 完成倒序落盘。
+- [ ] **工程轨迹溯源**：已将本次会话的关键操作、物理证据（日志碎片）及决策点记录至 `docs/session-history.log`。
+- [ ] **交接备忘交底**：已向用户清晰呈现“当前阻断点”与“下一步行动（Next Step）”。
+
+**【核心原则】**：严禁在未更新 `lessons-learned.log` 和 `session-history.log` 的情况下使用“任务已圆满完成”或“会话已就绪”等描述。
+
 ---
 
 ## Part C: 中断恢复 (Crash Recovery)

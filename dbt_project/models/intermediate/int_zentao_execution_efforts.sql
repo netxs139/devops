@@ -43,8 +43,13 @@ executions_with_mdm AS (
         -- 计算偏差率 (预计 vs 实际)
         CASE 
             WHEN a.total_estimated_hours = 0 THEN 0
-            ELSE ROUND((a.total_consumed_hours - a.total_estimated_hours) / a.total_estimated_hours, 2)
-        END AS effort_variance
+            ELSE ROUND(
+                CAST(
+                    (a.total_consumed_hours - a.total_estimated_hours) * 1.0 / NULLIF(a.total_estimated_hours, 0) 
+                AS NUMERIC), 
+                4
+            )
+        END AS effort_variance_rate
     FROM {{ ref('stg_zentao_executions') }} e
     LEFT JOIN execution_aggregation a ON e.execution_id = a.execution_id
 )

@@ -1,0 +1,19 @@
+{
+  "expectations": [
+    {
+      "text": "使用了 ChaosEngine.db_pool_starvation 注入故障",
+      "passed": true,
+      "evidence": "报告中明确记录了使用了 ChaosEngine.db_pool_starvation(count=5)"
+    },
+    {
+      "text": "报告中捕获并展示了 Timeout 或 Pool limit 相关的日志碎片",
+      "passed": true,
+      "evidence": "捕获并记录了 sqlite3.OperationalError: database is locked"
+    },
+    {
+      "text": "输出了符合 SKILL.md 规范的《生存报告》",
+      "passed": true,
+      "evidence": "输出了包含破坏点、生存状态、取证和建议的标准报告"
+    }
+  ]
+}

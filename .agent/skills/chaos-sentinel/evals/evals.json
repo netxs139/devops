@@ -1,0 +1,17 @@
+{
+  "skill_name": "chaos-sentinel",
+  "evals": [
+    {
+      "id": 1,
+      "name": "db-starvation-test",
+      "prompt": "针对目前的 AuditLog 写入系统跑一次混沌测试：模拟高并发下数据库连接池 (SQLAlchemy Pool) 瞬间爆满的情况，验证主业务是否会崩溃，并给出包含日志取证的生存报告。",
+      "files": ["devops_collector/models/audit.py", "devops_collector/models/audit_events.py"]
+    },
+    {
+      "id": 2,
+      "name": "auth-expiry-storm",
+      "prompt": "模拟一个生产级的突发故障：GitLab 同步脚本在执行到一半时发生 Token 过规失效（401 错误），验证系统是否能自愈重连，并利用 Chaos Sentinel 确认这个防御逻辑是否真正生效。",
+      "files": ["devops_collector/plugins/zentao/client.py"]
+    }
+  ]
+}

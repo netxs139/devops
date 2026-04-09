@@ -9,9 +9,9 @@ renamed as (
         name as project_name,
         path_with_namespace,
         description,
-        created_at,
-        last_activity_at,
-        coalesce((raw_data->>'archived')::boolean, false) as is_archived
+        cast(created_at as timestamp with time zone) at time zone 'UTC' as created_at,
+        cast(last_activity_at as timestamp with time zone) at time zone 'UTC' as last_activity_at,
+        coalesce(cast(nullif(trim(both '"' from (raw_data->>'archived')), '') as boolean), false) as is_archived
     from source
 )
 

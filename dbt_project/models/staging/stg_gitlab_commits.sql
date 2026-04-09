@@ -10,10 +10,10 @@ renamed as (
         short_id,
         title,
         author_email,
-        committed_date,
+        cast(committed_date as timestamp with time zone) at time zone 'UTC' as committed_at,
         message,
         -- 使用正则提取 #123 格式的禅道 ID
-        substring(message from '#([0-9]+)') as zentao_id,
+        cast(substring(message from '#([0-9]+)') as integer) as zentao_id,
         eloc_score,
         impact_score,
         churn_lines,
