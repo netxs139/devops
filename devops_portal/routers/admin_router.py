@@ -11,6 +11,7 @@ from devops_collector.auth.auth_database import get_auth_db
 from devops_collector.core.admin_service import AdminService
 from devops_collector.models.base_models import (
     User,
+    AuditLog,
 )
 from devops_portal.dependencies import (
     DataScopeFilter,
@@ -144,6 +145,16 @@ async def create_identity_mapping(
     # 已通过 RoleRequired 校验权限
     mapping_id = service.create_identity_mapping(payload)
     return {"status": "success", "id": mapping_id}
+
+
+@router.get("/audit-logs", response_model=list[schemas.AuditLogView])
+async def list_audit_logs(
+    query: schemas.AuditLogQuery = Depends(),
+    service: AdminService = Depends(get_admin_service),
+    admin_user: User = Depends(RoleRequired(["SYSTEM_ADMIN"])),
+):
+    """获取系统审计日志（仅系统管理员可见）。 (P1 High Priority)"""
+    return service.search_audit_logs(query)
 
 
 @router.delete("/identity-mappings/{mapping_id}")

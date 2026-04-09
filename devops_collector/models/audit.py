@@ -8,6 +8,7 @@
 from datetime import UTC, datetime
 
 from sqlalchemy import JSON, Column, DateTime, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import UUID as UUID_TYPE
 
 from devops_collector.models.base_models import Base
@@ -36,7 +37,8 @@ class AuditLog(Base):
 
     # 4. 变更细节 (Context)
     # 存储格式: {"field_name": {"old": "value1", "new": "value2"}}
-    changes = Column(JSON, nullable=True, comment="字段级变更增量 Diff (JSON)")
+    # 使用 JSONB 以支持 GIN 索引，优化 Portal 端的复杂查询性能 (LL #23)
+    changes = Column(JSONB().with_variant(JSON, "sqlite"), nullable=True, comment="字段级变更增量 Diff (JSON)")
 
     # 5. 追踪维度 (Traceability)
     request_id = Column(String(100), index=True, nullable=True, comment="关联请求追踪 ID (全链路对齐)")
