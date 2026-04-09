@@ -54,6 +54,16 @@ make security-audit
     - [ ] **Trivy (镜像扫描)**：Exit Code = 0 (无 HIGH/CRITICAL 漏洞)。
 - **操作要求**：必须在交付报告中包含安全审计摘要。
 
+## Step 2.2: 专家技能终审 (Expert Skill Final Approval) 🔴 BLOCK [NEW]
+
+针对 L2 及以上级别的任务，必须提供对应专家技能（Skill）的终审通过证明：
+
+- [ ] **dbt 模型变更**：`dbt-pipeline-auditor` 已验证 JSONB 提取与 SCD2 完整性。
+- [ ] **MDM Schema 变更**：`mdm-integrity-arbiter` 已验证 ORM 关联与回滚脚本生成。
+- [ ] **高危功能重构**：`chaos-sentinel` 已通过故障注入仿真验证，确认防御逻辑生效。
+
+**通过要求**：Agent 必须在合并请求中粘贴相关 Skill 的 `Audit Passed` 日志碎片。
+
 ## Step 5: 容器部署验证 🔴 BLOCK (可降级)
 
 ```bash
