@@ -157,7 +157,7 @@
 - **分层逻辑**: 
     | 层级 | 前缀 | 说明 |
     | :--- | :--- | :--- |
-    | **Staging** | `stg_` | 原始数据清洗，1:1 映射源表，仅字段重命名与类型强制。 |
+    | **Staging** | `stg_` | 原始数据清洗，1:1 映射源表。**强制性规则**：严禁在 Staging 层执行业务过滤（如 `where is_current=true`），必须完整保留源表历史快照以支撑 SCD Type 2。 |
     | **Intermediate** | `int_` | 中间转换，跨源关联与过滤。 |
     | **Marts (维度)** | `dim_` | 业务维度表，描述性属性。 |
 - **ID 归一化与自愈协议 (Normalization & Self-Healing) [MANDATORY]**:
@@ -171,7 +171,10 @@
 - **质量哨兵**: 所有模型在 `schema.yml` 必须定义 `unique` 和 `not_null` 测试，关键指标使用 Singular SQL Tests 校验。
 
 ### 7.3 dbt 性能与类型守卫 (Performance & Type Safety) [NEW]
-- **JSONB 强类型转换**: 从 `JSONB` 提取数值字段进行 `numeric` 转换时，必须执行 `trim(both '"' from field)` 以清除潜在的字面量双引号。结合 `nullif(..., '')` 过滤空字符串，并确保 `coalesce` 兜底。
+- **JSONB 强类型转换 (Defensive JSONB)** [MANDATORY]: 
+    - 从 `JSONB` 提取字段进行转型时，必须执行 `nullif(trim(both '"' from field), '')`。
+    - **逻辑原因**: 防止 Postgres 解析带物理引号的 JSON 字符串（如 `"true"`, `"123"`) 时触发语法错误导致流水线熔断 (LL #69)。
+- **时区归一化 (UTC Sync)**: 所有 Staging 层的时间戳必须显式执行 `at time zone 'UTC'`，并统一使用 `_at` 后缀（如 `committed_at`, `closed_at`）。
 - **ID 语义一致性 (String IDs)**: 所有跨源关联的业务主键（Master IDs/Entity IDs）在 dbt 语义层强制统一为 `String (character varying)` 类型。严禁在中间层混用 `Integer` 与 `String` 导致关联报错。
 - **Staging 透明度**: Staging 模型必须完成所有字段语义对齐（如 `ncloc` -> `lines_of_code`）。严禁在 `int_` 或 `fct_` 层继续直接使用源系统的非标缩写。
 - **并发控制**: 在资源受限环境执行 `dbt build` 时，必须通过 `--threads 1` 或环境变量限制并发，防止数据库锁冲突 (Deadlock) 或内存溢出导致的挂起。
@@ -399,6 +402,7 @@
     - **触发条件**: 任何改变消息拓扑、数据库 Schema 策略、服务边界、新增基础设施组件或引入新的集成模式的决策，必须产出 ADR。
     - **内容结构**: 标题、状态 (Proposed/Accepted/Deprecated)、上下文 (Context)、决策 (Decision)、后果 (Consequences)。
     - **目的**: 为未来的开发者（包括 AI Agent）提供「为什么这样设计」的可追溯记录，避免架构知识断层。
+    - **ADR 0004: GitLab 数据流水线韧性加固方案** (Accepted 2026-04-09)。
 
 ### 14.3 安全架构与权限 (Security Architecture)
 - **RBAC 模型**: 严格遵循基于角色的访问控制。默认策略为 `Deny All`，仅按需授予最小权限。

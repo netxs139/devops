@@ -1,0 +1,22 @@
+{
+  "eval_id": 1,
+  "eval_name": "db-starvation-test",
+  "prompt": "针对目前的 AuditLog 写入系统跑一次混沌测试：模拟高并发下数据库连接池 (SQLAlchemy Pool) 瞬间爆满的情况，验证主业务是否会崩溃，并给出包含日志取证的生存报告。",
+  "assertions": [
+    {
+      "name": "injected-fault",
+      "text": "使用了 ChaosEngine.db_pool_starvation 注入故障",
+      "expected": true
+    },
+    {
+      "name": "captured-logs",
+      "text": "报告中捕获并展示了 Timeout 或 Pool limit 相关的日志碎片",
+      "expected": true
+    },
+    {
+      "name": "resilience-report-format",
+      "text": "输出了符合 SKILL.md 规范的《生存报告》",
+      "expected": true
+    }
+  ]
+}

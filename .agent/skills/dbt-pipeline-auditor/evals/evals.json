@@ -1,117 +1,17 @@
 {
   "skill_name": "dbt-pipeline-auditor",
-  "version": "1.0",
   "evals": [
     {
       "id": 1,
-      "name": "jsonb-cast-and-id-type-mismatch",
-      "domain": "Defense-1 (JSONB) + Defense-2 (Cross-Source ID)",
-      "prompt": "帮我 review 这段 intermediate 层的 SQL，我需要知道有没有问题：\n\nselect \n  z.id,\n  cast(z.raw_data->>'cost' as numeric) as total_cost,\n  m.project_name\nfrom {{ ref('stg_zentao_executions') }} z\njoin {{ ref('stg_mdm_projects') }} m on z.project_id = m.id",
-      "expected_output": "必须找到 2 个 Blocker：1) JSONB 裸转没有 trim + nullif 保护；2) 禅道 project_id 直连 MDM id 绕过了桥接表 int_project_resource_map，类型和语义双重断裂。应提供修正 SQL，包含 nullif(trim(...)) 以及经由桥接表关联的完整写法。",
-      "assertions": [
-        {
-          "id": "a1-1",
-          "name": "识别 JSONB 裸转 Blocker",
-          "check": "输出中必须明确点名第 3 行 cast(raw_data->>'cost' as numeric) 缺少 trim 和 nullif 保护"
-        },
-        {
-          "id": "a1-2",
-          "name": "识别跨源 ID 桥接缺失 Blocker",
-          "check": "输出中必须提到 z.project_id = m.id 绕过了 int_project_resource_map 桥接表，且有类型断裂风险"
-        },
-        {
-          "id": "a1-3",
-          "name": "提供可用的修正 SQL",
-          "check": "输出中包含 nullif(trim(both '\"' from ...), '') 的写法，以及使用 int_project_resource_map 桥接 external_resource_id 的修正 SQL"
-        },
-        {
-          "id": "a1-4",
-          "name": "SCD2 is_current 守卫提示",
-          "check": "输出中提及关联 stg_mdm_projects 时缺少 is_current = true 过滤，作为 Warning 或 Blocker 抛出"
-        }
-      ]
+      "name": "jsonb-dirty-cast",
+      "prompt": "请 Review 下面这段 int_zentao_story_costs.sql 的代码。这段代码负责从禅道的原始 JSONB 数据中提取工时和金额。SQL如下：\n\n```sql\nwith raw as (\n    select * from {{ source('zentao', 'raw_stories') }}\n),\nfinal as (\n    select\n        id,\n        cast(data->>'cost' as numeric) as accrued_cost,\n        cast(data->>'hours' as numeric) as estimated_hours\n    from raw\n)\nselect * from final\n```",
+      "expected_output": "应识别出铸造 numeric 时的 JSONB 双引号风险和空字符串风险，要求增加 trim(both '\"' from ...) 和 nullif 处理。"
     },
     {
       "id": 2,
-      "name": "staging-purity-hardcoded-schema-scd2",
-      "domain": "Defense-3 (Staging Purity) + Defense-4 (SCD2) + Defense-5 (Ref Abstraction)",
-      "prompt": "这段代码是 stg_gitlab_issues.sql 里的，帮我看看有没有架构违规：\n\nselect \n  g.id as issue_id,\n  g.title,\n  u.full_name as assignee_name\nfrom {{ source('gitlab', 'issues') }} g\nleft join devops_db.public.mdm_users u \n  on g.assignee_id = u.id",
-      "expected_output": "必须找到 3 个 Blocker：1) stg_ 层禁止 JOIN 其他域表；2) 硬编码了 devops_db.public.mdm_users 而非 {{ source() }} 或 {{ ref() }}；3) 关联 mdm_users 没有 is_current = true，会导致笛卡尔积。应建议将 JOIN 下沉到 Intermediate 层，并提供拆分后的 stg 纯洁版和 int 关联版 SQL。",
-      "assertions": [
-        {
-          "id": "a2-1",
-          "name": "识别 Staging 层 JOIN 违规",
-          "check": "输出指出 stg_ 层不允许 JOIN，需将跨域关联下移到 Intermediate 层"
-        },
-        {
-          "id": "a2-2",
-          "name": "识别硬编码 Schema 违规",
-          "check": "输出明确批评 devops_db.public.mdm_users 硬编码，要求替换为 {{ ref() }} 或 {{ source() }}"
-        },
-        {
-          "id": "a2-3",
-          "name": "识别 SCD2 笛卡尔积风险",
-          "check": "输出提到缺少 is_current = true 会导致历史快照笛卡尔积膨胀"
-        },
-        {
-          "id": "a2-4",
-          "name": "提供拆分修正方案",
-          "check": "输出包含纯洁版 stg 和跨域关联版 int 两段修正 SQL"
-        }
-      ]
-    },
-    {
-      "id": 3,
-      "name": "postgres-numeric-dialect-and-union-all-width",
-      "domain": "Defense-6 (Postgres Dialect Traps)",
-      "prompt": "我在写一个 fct_ 层的交付成本模型，review 下面这段 SQL：\n\nselect\n    project_id,\n    sum(total_mrs) as total_mrs,\n    sum(total_cost) as total_cost,\n    sum(total_cost) / sum(total_mrs) as cost_per_mr,\n    round(sum(total_cost) / sum(total_mrs), 2) as cost_per_mr_rounded,\n    case\n        when sum(total_mrs) / sum(total_deploys) > 3 then 'High'\n        else 'Normal'\n    end as delivery_density\nfrom (\n    select project_id, count(*) as total_mrs, 0 as total_deploys, sum(cost) as total_cost\n    from {{ ref('int_commits_with_authors') }}\n    group by 1\n    union all\n    select project_id, 0 as total_mrs, count(*) as total_deploys, sum(cost)::numeric as total_cost\n    from {{ ref('stg_gitlab_deployments') }}\n    group by 1\n) sub\ngroup by 1",
-      "expected_output": "必须找到 3 个 Postgres 方言 Blocker：1) round(sum/sum, 2) 的除法结果若为 double precision 则 round 重载不存在，需加 ::numeric；2) sum(total_mrs) / sum(total_deploys) 整数除法会静默截断，如 5/2=2；3) UNION ALL 两分支 total_cost 类型不一致（第一个未加 ::numeric，第二个加了），导致隐式转型。",
-      "assertions": [
-        {
-          "id": "a3-1",
-          "name": "识别 round() 方言陷阱",
-          "check": "输出指出 round(sum(total_cost)/sum(total_mrs), 2) 若被除数非 numeric 类型会报错，要求加 ::numeric"
-        },
-        {
-          "id": "a3-2",
-          "name": "识别整数除法截断",
-          "check": "输出指出 sum(total_mrs) / sum(total_deploys) 是整数除法会截断，需强转 ::numeric 或 ::float"
-        },
-        {
-          "id": "a3-3",
-          "name": "识别 UNION ALL 类型宽度不一致",
-          "check": "输出指出两个分支的 total_cost 字段类型不统一（一个是原生类型，一个是 numeric），建议统一"
-        },
-        {
-          "id": "a3-4",
-          "name": "提供防御性修正 SQL",
-          "check": "输出包含含有 ::numeric 转换和 nullif(..., 0) 防零崩溃的修正 SQL"
-        }
-      ]
-    },
-    {
-      "id": 4,
-      "name": "metadata-isolation-and-timing-resilience",
-      "domain": "Defense-7 (Metadata & Timing) + Defense-2 (ID over URL)",
-      "prompt": "Review 这段 DORA 指标计算 SQL：\n\nwith pulls as (\n    select * from {{ ref('stg_gitlab_merge_requests') }}\n)\nselect \n    p.web_url, \n    avg(p.closed_at - p.created_at) as lead_time\nfrom pulls p\njoin {{ ref('ldap_accounts') }} l on p.author_id = l.id\ngroup by 1",
-      "expected_output": "必须找到 3 个 Blocker：1) 使用 web_url 进行 group/关联是极度由于重命名导致不稳定的，应改为 gitlab_project_id；2) lead_time 计算仅依赖 closed_at，若 MR 未关闭则该行丢失，应使用 coalesce 级联 resolved_at/updated_at；3) 引用 {{ ref('ldap_accounts') }} 存在命名冲突风险，检查该模型是否应为 seed 且未加 seed_ 前缀。",
-      "assertions": [
-        {
-          "id": "a4-1",
-          "name": "识别 URL 关联风险",
-          "check": "输出明确要求将 p.web_url 替换为原生数字 ID 关联"
-        },
-        {
-          "id": "a4-2",
-          "name": "识别时序计算逃逸",
-          "check": "输出指出平均耗时计算缺少对 closed_at 的 coalesce 兜底"
-        },
-        {
-          "id": "a4-3",
-          "name": "识别 Seed 命名冲突",
-          "check": "输出提醒 ldap_accounts 若为种子表则必须加 seed_ 前缀以防 full-refresh 冲突"
-        }
-      ]
+      "name": "staging-purity-scd2-leak",
+      "prompt": "Review 这段 stg_gitlab_projects.sql 代码。它尝试在 Staging 层直接关联组织架构以获取名称。SQL如下：\n\n```sql\nselect \n    p.id as project_id,\n    p.name as project_name,\n    o.full_name as org_name\nfrom {{ source('gitlab', 'projects') }} p\nleft join {{ source('mdm', 'mdm_organizations') }} o on p.org_id = o.id\n```",
+      "expected_output": "应拦截在 Staging 层使用 JOIN 的违规行为，并指出关联 mdm_organizations 时缺少 is_current=true 过滤导致的历史快照泄露风险。"
     }
   ]
 }

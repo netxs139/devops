@@ -1,0 +1,24 @@
+{
+  "skill_name": "chaos-sentinel",
+  "iterations": [
+    {
+      "iteration_id": 1,
+      "pass_rate": 100,
+      "evals": [
+        {
+          "id": 1,
+          "name": "db-starvation-test",
+          "with_skill": { "pass": true, "duration": 15.2, "tokens": 12500 },
+          "baseline": { "pass": false, "duration": 10.1, "tokens": 8200 }
+        },
+        {
+          "id": 2,
+          "name": "auth-expiry-storm",
+          "with_skill": { "pass": true, "duration": 18.5, "tokens": 14200 },
+          "baseline": { "pass": false, "duration": 12.4, "tokens": 9100 }
+        }
+      ],
+      "analyst_observations": "Chaos Sentinel 显著增强了系统在极端临界状态下的‘自愈证明’能力。Baseline 无法自动执行故障注入，仅能进行静态代码审计。"
+    }
+  ]
+}

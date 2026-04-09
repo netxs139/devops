@@ -1,0 +1,22 @@
+{
+  "eval_id": 1,
+  "eval_name": "jsonb-dirty-cast",
+  "prompt": "请 Review 下面这段 int_zentao_story_costs.sql 的代码。这段代码负责从禅道的原始 JSONB 数据中提取工时和金额。SQL如下：\n\n```sql\nwith raw as (\n    select * from {{ source('zentao', 'raw_stories') }}\n),\nfinal as (\n    select\n        id,\n        cast(data->>'cost' as numeric) as accrued_cost,\n        cast(data->>'hours' as numeric) as estimated_hours\n    from raw\n)\nselect * from final\n```",
+  "assertions": [
+    {
+      "name": "caught-jsonb-quote-trap",
+      "text": "成功指出 ->> 提取出的值可能带有双引号并要求使用 trim 清理",
+      "passed": false
+    },
+    {
+      "name": "caught-empty-string-trap",
+      "text": "成功指出空字符串无法直接转型为 numeric 并要求使用 nullif 处理",
+      "passed": false
+    },
+    {
+      "name": "provided-correct-sql",
+      "text": "提供的修复 SQL 使用了 cast(nullif(trim(both '\"' from ...), '') as numeric) 格式",
+      "passed": false
+    }
+  ]
+}

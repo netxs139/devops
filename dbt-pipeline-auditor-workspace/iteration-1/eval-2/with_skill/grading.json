@@ -1,0 +1,19 @@
+{
+  "expectations": [
+    {
+      "text": "成功指出了 Staging (stg_) 层禁止使用 JOIN 的规范违规",
+      "passed": true,
+      "evidence": "报告第一项即指出 stg_ 模型严禁跨表关联"
+    },
+    {
+      "text": "成功指出关联 mdm_organizations 时缺少 is_current = true 过滤会导致数据倍增",
+      "passed": true,
+      "evidence": "报告准确提到了 SCD2 快照表泄露导致的翻倍风险"
+    },
+    {
+      "text": "建议将 JOIN 逻辑移动到 Intermediate (int_) 层",
+      "passed": true,
+      "evidence": "给出了将逻辑重构到 int_ 层的具体示例"
+    }
+  ]
+}

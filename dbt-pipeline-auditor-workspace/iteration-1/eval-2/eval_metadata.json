@@ -1,0 +1,22 @@
+{
+  "eval_id": 2,
+  "eval_name": "staging-purity-scd2-leak",
+  "prompt": "Review 这段 stg_gitlab_projects.sql 代码。它尝试在 Staging 层直接关联组织架构以获取名称。SQL如下：\n\n```sql\nselect \n    p.id as project_id,\n    p.name as project_name,\n    o.full_name as org_name\nfrom {{ source('gitlab', 'projects') }} p\nleft join {{ source('mdm', 'mdm_organizations') }} o on p.org_id = o.id\n```",
+  "assertions": [
+    {
+      "name": "caught-staging-join",
+      "text": "成功指出了 Staging (stg_) 层禁止使用 JOIN 的规范违规",
+      "passed": false
+    },
+    {
+      "name": "caught-scd2-leak",
+      "text": "成功指出关联 mdm_organizations 时缺少 is_current = true 过滤会导致数据倍增",
+      "passed": false
+    },
+    {
+      "name": "architecture-guidance",
+      "text": "建议将 JOIN 逻辑移动到 Intermediate (int_) 层",
+      "passed": false
+    }
+  ]
+}

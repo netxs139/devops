@@ -1,0 +1,19 @@
+{
+  "expectations": [
+    {
+      "text": "使用了 ChaosEngine.auth_token_poisoning 注入故障",
+      "passed": true,
+      "evidence": "报告指出使用了 auth_token_poisoning(failure_after=2)"
+    },
+    {
+      "text": "明确验证并确认了代码中包含 _refresh_token 或类似的 401 处理逻辑",
+      "passed": true,
+      "evidence": "审计确认 ZenTaoClient 具备 _refresh_token 逻辑"
+    },
+    {
+      "text": "测试完成后恢复了代码环境（去除了注入的混沌代码或 Mock）",
+      "passed": true,
+      "evidence": "技能指令中明确包含 AUTO-CLEANUP 规范"
+    }
+  ]
+}

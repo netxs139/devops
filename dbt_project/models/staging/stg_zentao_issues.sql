@@ -25,7 +25,7 @@ renamed AS (
         assigned_to_user_id,
         created_at,
         updated_at,
-        coalesce(closed_at, nullif(raw_data->>'resolvedDate', '')::timestamp) as closed_at,
+        coalesce(closed_at, nullif(nullif(raw_data->>'resolvedDate', ''), '0000-00-00 00:00:00')::timestamp) as closed_at,
         -- 特殊逻辑：借用 browser 字段来标识是否为生产环境发现的 Bug
         raw_data->>'browser' as found_in_environment,
         raw_data

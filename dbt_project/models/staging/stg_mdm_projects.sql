@@ -22,7 +22,6 @@ renamed as (
         effective_from,
         effective_to
     from source
-    where is_current = true
 )
 
 select * from renamed
