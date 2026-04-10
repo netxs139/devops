@@ -11,7 +11,6 @@ from devops_collector.auth.auth_database import get_auth_db
 from devops_collector.core.admin_service import AdminService
 from devops_collector.models.base_models import (
     User,
-    AuditLog,
 )
 from devops_portal.dependencies import (
     DataScopeFilter,
@@ -19,6 +18,8 @@ from devops_portal.dependencies import (
     RoleRequired,
 )
 from devops_portal.schemas import (
+    AuditLogQuery,
+    AuditLogView,
     IdentityMappingCreate,
     IdentityMappingUpdateStatus,
     IdentityMappingView,
@@ -147,9 +148,9 @@ async def create_identity_mapping(
     return {"status": "success", "id": mapping_id}
 
 
-@router.get("/audit-logs", response_model=list[schemas.AuditLogView])
+@router.get("/audit-logs", response_model=list[AuditLogView])
 async def list_audit_logs(
-    query: schemas.AuditLogQuery = Depends(),
+    query: AuditLogQuery = Depends(),
     service: AdminService = Depends(get_admin_service),
     admin_user: User = Depends(RoleRequired(["SYSTEM_ADMIN"])),
 ):

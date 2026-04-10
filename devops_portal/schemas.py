@@ -536,33 +536,4 @@ class AuditLogQuery(BaseModel):
     page_size: int = 50
 
 
-class AuditLogView(BaseModel):
-    """审计日志视图模型"""
 
-    model_config = ConfigDict(from_attributes=True)
-    id: int
-    timestamp: datetime
-    actor_id: uuid.UUID | None = None
-    actor_name: str | None = None
-    client_ip: str | None = None
-    action: str
-    resource_type: str
-    resource_id: str
-    changes: dict[str, Any] | None = None
-    request_id: str | None = None
-    correlation_id: str | None = None
-    status: str
-    remark: str | None = None
-
-
-class AuditLogQuery(BaseModel):
-    """审计日志搜索查询模型"""
-
-    actor_id: uuid.UUID | None = None
-    action: str | None = None
-    resource_type: str | None = None
-    resource_id: str | None = None
-    start_time: datetime | None = None
-    end_time: datetime | None = None
-    page: int = 1
-    page_size: int = 50

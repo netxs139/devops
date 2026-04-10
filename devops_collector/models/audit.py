@@ -8,8 +8,8 @@
 from datetime import UTC, datetime
 
 from sqlalchemy import JSON, Column, DateTime, Integer, String, Text
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import UUID as UUID_TYPE
+from sqlalchemy.dialects.postgresql import JSONB
 
 from devops_collector.models.base_models import Base
 
