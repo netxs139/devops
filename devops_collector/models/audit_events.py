@@ -10,6 +10,9 @@ SQLAlchemy 全量审计监听引擎 (Change Tracking Engine).
 
 import logging
 import os
+import queue
+import threading
+import time
 import uuid
 from datetime import datetime
 from typing import Any
@@ -27,6 +30,36 @@ SKIP_AUDIT = os.getenv("DEVOPS_SKIP_AUDIT", "false").lower() == "true"
 
 # 对敏感字段执行固定掩码脱敏 (L3 合规要求)
 SENSITIVE_FIELDS_SET = {"password", "secret", "token", "access_key", "checksum", "credential_key"}
+
+# ---------------------------------------------------------
+# 异步 MQ 投递器 (防止 pika BlockingConnection 并发抢占与阻塞 API)
+# ---------------------------------------------------------
+_audit_queue = queue.Queue(maxsize=10000)
+_audit_thread = None
+
+def _audit_publisher_worker():
+    mq = None
+    while True:
+        try:
+            payload = _audit_queue.get()
+            if mq is None or mq.connection.is_closed:
+                from devops_collector.mq import MessageQueue
+                mq = MessageQueue()
+
+            # 兼容 mq_client.publish_task 会自动拼接 "_tasks" 后缀
+            payload["source"] = "sys_audit"
+            mq.publish_task(payload)
+            _audit_queue.task_done()
+        except Exception as e:
+            logger.error(f"[AUDIT-ENGINE] Async Audit push blocked (Broker down?): {e}")
+            time.sleep(2)
+            mq = None  # 强制下次重连
+
+def _ensure_publisher_started():
+    global _audit_thread  # noqa: PLW0603
+    if _audit_thread is None or not _audit_thread.is_alive():
+        _audit_thread = threading.Thread(target=_audit_publisher_worker, daemon=True, name="AuditPublisherThread")
+        _audit_thread.start()
 
 
 def safe_serialize(val: Any) -> Any:
@@ -113,11 +146,13 @@ def capture_audit_event(connection, target, action: str):
     }
 
     try:
-        # LL #28: Use defensive execution to prevent test/migration failures if audit table is missing
-        connection.execute(AuditLog.__table__.insert().values(**audit_payload))
+        # LL #28 -> P3: Async RabbitMQ Architecture decoupled
+        _ensure_publisher_started()
+        _audit_queue.put_nowait(audit_payload)
+    except queue.Full:
+        logger.error("[AUDIT-ENGINE] Local queue full! Dropping audit record to prevent API crash.")
     except Exception as e:
-        # Just log it, don't crash the main transaction
-        logger.error(f"[AUDIT-ENGINE] Audit record failed (might be missing table in tests): {str(e)}")
+        logger.error(f"[AUDIT-ENGINE] Audit record tracking error: {str(e)}")
 
 
 def bind_audit_listeners(target_classes: list[Any]):
