@@ -31,6 +31,12 @@
 *   **动作**：在长任务执行中途注入 401 错误，模拟 Token 到期或 Session 失效 (LL #91, #104)。
 *   **目标**：验证客户端是否具备透明的 Token 刷新机制及防止重试死循环的逻辑。
 
+### T5: 自动化指令审计 (Automation Command Audit)
+*   **动作 (Ref LL #122)**：对 `Makefile`、`Dockerfile`、`CI` 脚本中的 CLI 指令进行精准语法与参数兼容性审查。
+    *   **专项防御**：强制检查 `uv export` 是否误用了 `--without` (该参数仅限 `uv sync`)，应修正为 `--no-dev`。
+*   **目标**：防止由于 AI 幻觉或记忆漂移导致的自动化流水线崩溃。
+*   **操作要求**：**[MANDATORY]** 在建议或修改任何指令前，必须首先调用 `[command] --help` 进行物理真实性取证。
+
 ## 4. 执行规程 (Operating Procedures)
 
 ### 第一阶段：基准扫描 (Baseline Scouting)
