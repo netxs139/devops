@@ -15,6 +15,11 @@ sys.path.append(os.getcwd())
 from sqlalchemy.orm import configure_mappers
 
 
+from devops_collector.core.plugin_loader import PluginLoader
+
+# 强制加载所有插件模型，确保 SQLAlchemy Mapper 能解析全部跨插件 relationship
+PluginLoader.load_models()
+
 try:
     configure_mappers()
 except Exception:
