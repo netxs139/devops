@@ -1,29 +1,22 @@
-# DevOps 平台项目进展跟踪 (Project Progress Tracker)
-# 最后更新: 2026-04-09 14:40 | 操作者: Antigravity
+# DevOps 平台项目进展跟踪 (Progress Tracker)
 
-🎯 当前状态 (Current Focus)
-[阶段：数仓韧性加固与混沌审计闭环]
-1. 完成全链路 (GitLab/ZenTao/MDM) dbt 模型安全审计与零日期/JSONB 陷阱修复。
-2. 内部发布 Chaos Sentinel (混沌哨兵) 技能，用于生产环境韧性实时拨测。
-3. 审计日志查询 API (Portal 侧) 已完成开发并通过 RBAC 验证。
+## 📍 当前焦点 (Current Focus)
+- [P1] 数据质量可视化大屏二期：引入更细粒度的字段级漂移监控与异构源对齐审计。
 
-⚠️ 交接备忘 (Handover Notes for Next Session)
-- **数仓状态**：SCD2 监控已部署。已添加 dbt singular test 验证 MDM 核心实体的 `is_current=true` 唯一性防线，`dbt test` 顺利通过，证明防御性重构生效。
-- **系统验证故障**：执行 `make verify` 遭遇 sqlite 继承测试死锁 (`Timeout`)，表现为 `SQLAlchemy` 对象属性取值时阻塞（已知坑点）。已挂起以待后续专人修复。
+## 💡 当前状态 (Current Status)
+- ✅ **数据质量监控大屏已上线**: 基于 Streamlit 的 Apple Style 看板已完成（`0_Quality_Monitor.py`），成功对接 Marts 层聚合模型。
+- ✅ **dbt 质量指标底座已物化**: `stg_sys_sync_logs` 与 `rpt_system_data_quality` 模型已发布，涵盖同步成功率与 Audit Guard 异常。
+- ⚠️ **环境注意**: Windows Docker 卷同步存在延迟，新增页面需执行 `docker cp` 注入容器并重启 dashboard。
 
-🏗️ 进行中 (In Progress)
-1. [P1] 数据质量监控大屏开发 (基于 Streamlit 的 dbt 指标聚合动态看板)。
+## 📅 下一步行动 (Next Steps)
+1. **[P1] 故障自愈扩展**: 基于 Chaos Sentinel 捕获的异常自动重启 Worker。
+2. **[P2] 多源字段生命周期审计**: 实现 SCD2 变更细节的明细表展示。
+3. **[P3] 线索链链路可视化**: 追踪单个 Bug 从 ZenTao 到 GitLab 代码变更的完整血缘。
 
-📅 接下来 (Backlog)
-1. [P2] 自动化故障自愈逻辑扩展 (基于 Sentinel 捕获的异常自动重启 Worker)。
-2. [P3] 日志/指标链路收集预研分析。
+## 📋 最近完成 (Recently Completed)
+1. [Dashboard] **数据质量监控大屏一期**: 实现同步成功率、审计异常、数据新鲜度 KPI 及系统明细趋势图。(2026-04-10)
+2. [Success] **审计写入异步化架构重构**: 利用 RabbitMQ 与 ThreadQueue 解耦审计日志写入。(2026-04-10)
+3. [Success] **监控 MDM 的 SCD2 历史血缘流程**: 完成 dbt test 防线断言并验证。(2026-04-10)
+4. [Success] **dbt 全链路加固**: 完成 JSONB 陷阱与 SCD2 分层逻辑加固。(2026-04-09)
 
-📋 最近完成 (Recently Completed)
-1. [Success] **审计写入异步化架构重构**: 利用 RabbitMQ 及 ThreadQueue 解耦审计事件写盘，实现极高并发抗性与批处理限流防线，解决 API 死锁隐患。 (2026-04-10)
-2. [Success] **监控 MDM 层 SCD2历史血缘流转**: 完成 `dbt test` SCD2 防线断言并验证流水线。 (2026-04-10)
-3. [Success] **dbt 全链路加固 (GitLab/ZenTao/MDM)**: 完成零日期解析、JSONB 陷阱及 SCD2 历史血缘截断修复，发布 ADR 0004。 (2026-04-09)
-4. [Security] **Portal 侧审计日志可视化 API**: 完成后端接口开发、Schema 定义及 P1 权限闭环。 (2026-04-09)
-5. [Stability] **Chaos Sentinel 技能交付**: 完成混沌工程战术库 (T1-T5) 开发并通过 100% 质量评审。 (2026-04-09)
-6. [Success] **生产环境 GitLab 同步验证**: 成功连接并触发 500+ 项目的自动数据入库。 (2026-04-08)
-
-签名：Antigravity-AI (2026-04-09T14:40+08:00)
+签名：Antigravity-AI (2026-04-10T14:50+08:00)
