@@ -18,8 +18,9 @@ from devops_collector.config import settings
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
+
 def test_gitlab_token():
-    url = settings.gitlab.url.rstrip('/')
+    url = settings.gitlab.url.rstrip("/")
     token = settings.gitlab.private_token
     verify = settings.gitlab.verify_ssl
 
@@ -51,6 +52,7 @@ def test_gitlab_token():
 
     except Exception as e:
         logging.error(f"💥 Exception during connection test: {e}")
+
 
 if __name__ == "__main__":
     test_gitlab_token()
