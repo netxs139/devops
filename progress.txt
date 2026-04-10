@@ -12,7 +12,7 @@
 - **系统验证故障**：执行 `make verify` 遭遇 sqlite 继承测试死锁 (`Timeout`)，表现为 `SQLAlchemy` 对象属性取值时阻塞（已知坑点）。已挂起以待后续专人修复。
 
 🏗️ 进行中 (In Progress)
-1. [P1] 数据质量监控大屏开发 (基于 Grafana 的 dbt 指标聚合)。
+1. [P1] 数据质量监控大屏开发 (基于 Streamlit 的 dbt 指标聚合动态看板)。
 
 📅 接下来 (Backlog)
 1. [P2] 自动化故障自愈逻辑扩展 (基于 Sentinel 捕获的异常自动重启 Worker)。
