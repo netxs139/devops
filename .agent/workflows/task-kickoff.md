@@ -40,7 +40,8 @@ description: 任务启动仪式 — 含分级判定 + Task Brief 模板 + 风险
     *   **强制动作**：显式引用并重读 [`contexts.md#5.1`](contexts.md#L91) (Surrogate PK 准则) 与 [`contexts.md#5.3`](contexts.md#L138) (外键循环两阶段协议)。
     *   **对齐检查**：检查物理 `id` (BigInt/UUID) 是否漏掉，业务 `_code` 字段是否对齐。
 2.  **前端/UI 变更**：
-    *   **强制动作**：显式重读 [`contexts.md#6`](contexts.md#L153) (Apple Style 变量规范)。
+    *   **强制动作**：显式重读 [`contexts.md#6`](contexts.md#L153) (Apple Style 变量规范) 与 [**`contexts.md#6.5`**](contexts.md#L153) (**前端功能全景地图**)。
+    *   **对齐检查**：检查拟定的索引 (Index) 与模块名是否与全景地图冲突，并确认业务域归属。
 3.  **命名准则**：
     *   **强制动作**：显式核对 [`contexts.md#11`](contexts.md#L323) (业务域前缀注册表)。
 
