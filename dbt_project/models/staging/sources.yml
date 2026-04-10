@@ -112,3 +112,12 @@ sources:
         description: "Nexus 3.x 制品组件表"
       - name: nexus_assets
         description: "Nexus 3.x 制品资产详情表"
+
+      # 9. 系统管理与审计 (System & Audit)
+      - name: sys_sync_logs
+        description: "插件同步日志表"
+      - name: stg_raw_data
+        description: "原始数据暂存 landing 层"
+      - name: sys_audit_logs
+        description: "系统审计日志表"
+
