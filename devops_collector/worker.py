@@ -8,9 +8,10 @@
 
 import json
 import logging
+import threading
 import time
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, insert
 from sqlalchemy.orm import sessionmaker
 
 # 触发插件自动发现
@@ -102,6 +103,52 @@ def process_task(ch, method, properties, body):
         if session:
             session.close()
 
+def sys_audit_batch_callback(batch_data: list, delivery_tags: list, channel):
+    """处理 AuditLog 的批量异步写入"""
+    if not batch_data:
+        return
+
+    from devops_collector.models.audit import AuditLog
+
+    session = _SessionFactory()
+    try:
+        # 清理由 mq.publish_task 产生的副作用 source 和 job_type (只取表中有的列)
+        clean_batch = []
+        for item in batch_data:
+            d = dict(item)
+            d.pop("source", None)
+            d.pop("job_type", None)
+            d.pop("correlation_id", None) # Worker 自己的框架注入，但是表里也要
+            if "correlation_id" not in d and "correlation_id" in item:
+                d["correlation_id"] = item["correlation_id"]
+            clean_batch.append(d)
+
+        session.execute(insert(AuditLog).values(clean_batch))
+        session.commit()
+
+        # 批量 ACK
+        for tag in delivery_tags:
+            channel.basic_ack(delivery_tag=tag)
+
+        logger.info(f"[sys_audit] Successfully saved batch of {len(clean_batch)} audit logs.")
+    except Exception as e:
+        session.rollback()
+        logger.error(f"[sys_audit] Failed to save audit batch: {e}")
+        # 重试补偿放入队列或直接拒绝 (取决于容错重试配置)
+        for tag in delivery_tags:
+            channel.basic_nack(delivery_tag=tag, requeue=True)
+    finally:
+        session.close()
+
+def start_audit_consumer():
+    """独占线程进行高吞吐批量审计消费。"""
+    try:
+        mq = MessageQueue()
+        # 最多攒 100 条或者挂起 3 秒就存库
+        mq.consume_batches("sys_audit_tasks", sys_audit_batch_callback, batch_size=100, timeout=3.0)
+    except Exception as e:
+        logger.error(f"Audit Consumer thread failed: {e}")
+
 
 def main():
     """Worker 主循环。"""
@@ -109,6 +156,9 @@ def main():
     PluginLoader.load_models()
 
     Base.metadata.create_all(_engine)
+    # 启动审计专用消费者线程
+    threading.Thread(target=start_audit_consumer, daemon=True, name="AuditConsumerThread").start()
+
     mq = MessageQueue()
     mq.consume_tasks(process_task)
 

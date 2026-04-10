@@ -60,7 +60,7 @@ class MessageQueue:
         try:
             self.connection = pika.BlockingConnection(self.params)
             self.channel = self.connection.channel()
-            for q in ["gitlab_tasks", "zentao_tasks", "sonarqube_tasks"]:
+            for q in ["gitlab_tasks", "zentao_tasks", "sonarqube_tasks", "sys_audit_tasks"]:
                 self.channel.queue_declare(queue=q, durable=True)
             logger.info("Connected to RabbitMQ")
         except Exception as e:
@@ -110,4 +110,44 @@ class MessageQueue:
             self.channel.stop_consuming()
         except Exception as e:
             logger.error(f"Consumer error: {e}")
+            raise e
+
+    def consume_batches(self, queue_name: str, batch_callback, batch_size: int = 100, timeout: float = 1.0) -> None:
+        """开始批处理消费任务队列 (阻塞式)。
+
+        Args:
+            queue_name: 要消费的队列名称。
+            batch_callback: 批处理回调函数，签名为 (batch_data_list, delivery_tags, channel)
+            batch_size: 每批最大消息数量
+            timeout: 空闲超时时间，超时后若缓存中有数据则立即触发回调
+        """
+        if not self.channel or self.connection.is_closed:
+            self.connect()
+        self.channel.basic_qos(prefetch_count=batch_size)
+
+        batch = []
+        delivery_tags = []
+
+        logger.info(f"Waiting for tasks in batches on {queue_name}...")
+        try:
+            for method, _properties, body in self.channel.consume(queue_name, inactivity_timeout=timeout):
+                if method is None:
+                    # Timeout reached
+                    if batch:
+                        batch_callback(batch, delivery_tags, self.channel)
+                        batch.clear()
+                        delivery_tags.clear()
+                    continue
+
+                batch.append(json.loads(body))
+                delivery_tags.append(method.delivery_tag)
+
+                if len(batch) >= batch_size:
+                    batch_callback(batch, delivery_tags, self.channel)
+                    batch.clear()
+                    delivery_tags.clear()
+        except KeyboardInterrupt:
+            self.channel.cancel()
+        except Exception as e:
+            logger.error(f"Batch Consumer error: {e}")
             raise e
