@@ -1,10 +1,8 @@
 """tests/unit 共享 fixtures。
 
-提供基于唯一物理数据库文件的 db_session，确保每个测试 case 之间的绝对物理隔离。
+提供基于内存数据库优化后的 db_session，采用 Session 级建表与事务回滚机制，
+大幅提升 Windows/Docker 环境下的测试性能 (SOP LL #63)。
 """
-
-import os
-import tempfile
 
 import pytest
 from sqlalchemy import create_engine, event
@@ -15,6 +13,16 @@ from sqlalchemy.pool import StaticPool
 from devops_collector.models.base_models import Base
 
 
+# 为单元测试分配唯一的内核内存数据库，禁用物理 IO
+_UNIT_TEST_DB_URI = "sqlite:///:memory:"
+_engine = create_engine(
+    _UNIT_TEST_DB_URI,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
+)
+_SessionLocal = sessionmaker(autocommit=False, autoflush=False)
+
+
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor = dbapi_connection.cursor()
@@ -22,50 +30,47 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.close()
 
 
+@pytest.fixture(scope="session", autouse=True)
+def setup_unit_database():
+    """在整个测试会话开始时仅执行一次建表操作。"""
+    Base.metadata.create_all(bind=_engine)
+    yield
+    # 会话结束时可选清理（内存库关闭即消失）
+
+
 @pytest.fixture(scope="function")
 def db_session():
-    """每个测试用例独立的物理数据库环境。"""
-    # 1. 分配唯一的临时数据库文件
-    db_fd, db_path = tempfile.mkstemp(suffix=".db", prefix="unit_test_")
-    os.close(db_fd)
-    db_uri = f"sqlite:///{db_path}"
-
-    # 保存原始环境变量供恢复
-    old_db_uri = os.environ.get("DB_URI")
-    os.environ["DB_URI"] = db_uri
-
-    # 2. 创建局部 Engine（禁用连接池共享）
-    test_engine = create_engine(
-        db_uri,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-
-    # 3. 初始化表结构
-    Base.metadata.create_all(bind=test_engine)
-
-    # 4. 创建会话
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
-    db = SessionLocal()
+    """采用事务回滚模式的极速 Session，确保用例间数据完全隔离。"""
+    connection = _engine.connect()
+    # 开启一个根事务
+    transaction = connection.begin()
+    # 绑定 session 到当前连接
+    session = _SessionLocal(bind=connection)
 
     try:
-        yield db
+        yield session
     finally:
-        db.close()
-        # 物理销毁
-        with test_engine.begin() as conn:
-            conn.exec_driver_sql("PRAGMA foreign_keys=OFF")
-            Base.metadata.drop_all(bind=conn)
-        test_engine.dispose()
+        session.close()
+        # 强制回滚，确保对数据库的修改不会持久化到 Session 全局
+        transaction.rollback()
+        connection.close()
 
-        if os.path.exists(db_path):
-            try:
-                os.remove(db_path)
-            except Exception:
-                pass
 
-        # 恢复环境变量
-        if old_db_uri:
-            os.environ["DB_URI"] = old_db_uri
-        else:
-            os.environ.pop("DB_URI", None)
+# 如果 unit tests 需要 TestClient，也在此补充
+@pytest.fixture(scope="function")
+def client(db_session):
+    from fastapi.testclient import TestClient
+
+    from devops_portal.dependencies import get_auth_db
+    from devops_portal.main import app
+
+    def override_get_db():
+        try:
+            yield db_session
+        finally:
+            pass
+
+    app.dependency_overrides[get_auth_db] = override_get_db
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()

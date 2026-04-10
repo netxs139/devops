@@ -103,6 +103,7 @@ def process_task(ch, method, properties, body):
         if session:
             session.close()
 
+
 def sys_audit_batch_callback(batch_data: list, delivery_tags: list, channel):
     """处理 AuditLog 的批量异步写入"""
     if not batch_data:
@@ -118,7 +119,7 @@ def sys_audit_batch_callback(batch_data: list, delivery_tags: list, channel):
             d = dict(item)
             d.pop("source", None)
             d.pop("job_type", None)
-            d.pop("correlation_id", None) # Worker 自己的框架注入，但是表里也要
+            d.pop("correlation_id", None)  # Worker 自己的框架注入，但是表里也要
             if "correlation_id" not in d and "correlation_id" in item:
                 d["correlation_id"] = item["correlation_id"]
             clean_batch.append(d)
@@ -139,6 +140,7 @@ def sys_audit_batch_callback(batch_data: list, delivery_tags: list, channel):
             channel.basic_nack(delivery_tag=tag, requeue=True)
     finally:
         session.close()
+
 
 def start_audit_consumer():
     """独占线程进行高吞吐批量审计消费。"""

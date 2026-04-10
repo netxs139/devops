@@ -18,6 +18,7 @@ from devops_collector.plugins.gitlab.models import GitLabProject
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
+
 def run():
     logging.info("Starting Mini GitLab Sync (First 5 projects)...")
 
@@ -41,7 +42,7 @@ def run():
     logging.info(f"Found {len(projects)} projects to sync.")
 
     # 4. Initialize Worker
-    worker_cls = PluginRegistry.get_worker('gitlab')
+    worker_cls = PluginRegistry.get_worker("gitlab")
     worker = worker_cls(session=db, client=client, correlation_id="mini-sync-01")
 
     # 5. Execute Sync
@@ -55,6 +56,7 @@ def run():
             logging.error(f"❌ Failed to sync {p.name}: {e}")
 
     db.close()
+
 
 if __name__ == "__main__":
     run()

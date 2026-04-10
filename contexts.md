@@ -381,6 +381,7 @@
 
 > **注意**：原“AI 原生协作”详细规程（取证原则、文档更新矩阵、会话交接等）已统一迁移至库根目录的 **[`AGENTS.md`](AGENTS.md)**。AI 助手执行任务时必须严格遵守该手册。
 
+- **分层执行律 (Stratified Testing)**: 在进行性能审计、稳定性排查或流水线验证时，**必须**遵循“先单元测试 (Unit)，后集成测试 (Integration)”的串行顺序。严禁一次性并发所有层级测试，以确保能够精准剥离逻辑缺陷与环境干扰。 (LL #5, #120)
 - **验证前置 (Validation First)**: 任何开发计划必须包含 `[Verification]` 环节。严禁只有开发逻辑而无测试方案的计划汇报。
 - **证据交付 (Evidence-Based Delivery)**: 告知任务完成时，必须包含 `Evidence of Testing` 模块。
 - **伴生测试 (Companion Tests)**: 修改代码必须同步产出测试且必须持久化到 `tests/` 目录。
@@ -398,6 +399,9 @@
     - **硬性约束**: 所有**新功能 (New Feature)**、**重大逻辑变更 (Major Change)**、**架构重构 (Refactoring)** 必须且只能在独立的业务分支上进行开发。严禁直接在 `main` 或 `master` 分支进行提交。
     - **短寿命原则**: 分支生命周期建议不超过 3 天，任务完成后立即合入 `main` 并清理分支。
 - **命名公约 (Naming Convention)**:
+- **合并工作流强制令 (Merge Workflow Mandate)**:
+    - **硬性约束**: 除非用户在当前对话中明确指令特许，否则执行任何分支合并前，**严禁使用原始 `git merge`**。
+    - **执行路径**: 必须调用对应的 **原子工作流 `/merge`** (或执行 `make verify` 后手动完成审计清单)，确保物理真实性取证。
 - **提交质量**: 
     - **原子提交**: 每次 Commit 仅包含一个逻辑变动。
     - **语义化信息**: 提交消息必须包含业务域和动作（例: `feat(sd): 实现工单异步导出`）。
@@ -442,6 +446,7 @@
 - **RBAC 模型**: 严格遵循基于角色的访问控制。默认策略为 `Deny All`，仅按需授予最小权限。
 - **安全左移**:
     - **SAST**: 代码提交前必须通过 Lint 与静态分析。
+    - **生产脱敏 (Dependency Decoupling) [LL #122]**: `requirements.txt` 必须通过 `uv export --no-dev --no-hashes` 模式生成，强制在构建清单中剥离开发/渗透工具（如 Flask/detect-secrets 相关漏洞），确保生产环境气隙安全性。
     - **依赖扫描**: 定期检查 `requirements.txt` / `package.json` 中的第三方库是否存在已知 CVE 漏洞。
 
 ### 14.4 发布与版本管理 (Release Strategy)

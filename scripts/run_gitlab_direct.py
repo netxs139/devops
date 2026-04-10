@@ -17,6 +17,7 @@ from devops_collector.plugins.gitlab.gitlab_client import GitLabClient
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
+
 def run():
     logging.info("Starting direct GitLab connectivity test...")
 
@@ -46,19 +47,20 @@ def run():
         return
 
     # 5. Initialize Worker and try a small sync
-    worker_cls = PluginRegistry.get_worker('gitlab')
+    worker_cls = PluginRegistry.get_worker("gitlab")
     worker_cls(session=db, client=client)
 
     # Just try to get one project to confirm full cycle works
     try:
         logging.info("Attempting to fetch a sample project (ID: 1)...")
-        p = client.get_project(1) # Public project on gitlab.com or your instance
+        p = client.get_project(1)  # Public project on gitlab.com or your instance
         logging.info(f"Successfully fetched project: {p.get('name')}")
         logging.info("实弹演习数据交互环节 [SUCCESS]")
     except Exception as e:
         logging.error(f"Error during data fetch: {e}")
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     run()

@@ -25,8 +25,11 @@ from devops_collector.utils.audit_context import get_snapshot
 
 logger = logging.getLogger(__name__)
 
-# 为测试环境提供“熔断”开关
-SKIP_AUDIT = os.getenv("DEVOPS_SKIP_AUDIT", "false").lower() == "true"
+# 为测试环境提供“熔断”开关 (LL #28: 自动跳过 Pytest 及其背景噪声)
+SKIP_AUDIT = (
+    os.getenv("DEVOPS_SKIP_AUDIT", "false").lower() == "true" or
+    "PYTEST_CURRENT_TEST" in os.environ
+)
 
 # 对敏感字段执行固定掩码脱敏 (L3 合规要求)
 SENSITIVE_FIELDS_SET = {"password", "secret", "token", "access_key", "checksum", "credential_key"}
@@ -37,6 +40,7 @@ SENSITIVE_FIELDS_SET = {"password", "secret", "token", "access_key", "checksum",
 _audit_queue = queue.Queue(maxsize=10000)
 _audit_thread = None
 
+
 def _audit_publisher_worker():
     mq = None
     while True:
@@ -44,6 +48,7 @@ def _audit_publisher_worker():
             payload = _audit_queue.get()
             if mq is None or mq.connection.is_closed:
                 from devops_collector.mq import MessageQueue
+
                 mq = MessageQueue()
 
             # 兼容 mq_client.publish_task 会自动拼接 "_tasks" 后缀
@@ -54,6 +59,7 @@ def _audit_publisher_worker():
             logger.error(f"[AUDIT-ENGINE] Async Audit push blocked (Broker down?): {e}")
             time.sleep(2)
             mq = None  # 强制下次重连
+
 
 def _ensure_publisher_started():
     global _audit_thread  # noqa: PLW0603
