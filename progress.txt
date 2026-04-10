@@ -8,21 +8,20 @@
 3. 审计日志查询 API (Portal 侧) 已完成开发并通过 RBAC 验证。
 
 ⚠️ 交接备忘 (Handover Notes for Next Session)
-- **数仓状态**：GitLab/ZenTao Staging 层已完成防御性重构，所有的 JSONB 转型均已增加 nullif 保护，规避了全周期同步中断风险。
-- **混沌测试**：Chaos Sentinel 已在 Iteration-1 中通过连接池挤压测试，可作为 CI/CD 的常态化质量卡点。
-- **权限提醒**：GET /admin/audit-logs 已启用 SYSTEM_ADMIN 强校验。
+- **数仓状态**：SCD2 监控已部署。已添加 dbt singular test 验证 MDM 核心实体的 `is_current=true` 唯一性防线，`dbt test` 顺利通过，证明防御性重构生效。
+- **系统验证故障**：执行 `make verify` 遭遇 sqlite 继承测试死锁 (`Timeout`)，表现为 `SQLAlchemy` 对象属性取值时阻塞（已知坑点）。已挂起以待后续专人修复。
 
 🏗️ 进行中 (In Progress)
-1. [P1] 监控 MDM 层重构后的 SCD Type 2 历史血缘流转情况。
-2. [P3] 审计写入异步化 (Kafka/RabbitMQ 队列推送) 方案设计。
+1. [P3] 审计写入异步化 (Kafka/RabbitMQ 队列推送) 方案设计。
 
 📅 接下来 (Backlog)
 1. [P1] 数据质量监控大屏开发 (基于 Grafana 的 dbt 指标聚合)。
 2. [P2] 自动化故障自愈逻辑扩展 (基于 Sentinel 捕获的异常自动重启 Worker)。
 
 📋 最近完成 (Recently Completed)
-1. [Success] **dbt 全链路加固 (GitLab/ZenTao/MDM)**: 完成零日期解析、JSONB 陷阱及 SCD2 历史血缘截断修复，发布 ADR 0004。 (2026-04-09)
-2. [Security] **Portal 侧审计日志可视化 API**: 完成后端接口开发、Schema 定义及 P1 权限闭环。 (2026-04-09)
+1. [Success] **监控 MDM 层 SCD2历史血缘流转**: 完成 `dbt test` SCD2 防线断言并验证流水线。 (2026-04-10)
+2. [Success] **dbt 全链路加固 (GitLab/ZenTao/MDM)**: 完成零日期解析、JSONB 陷阱及 SCD2 历史血缘截断修复，发布 ADR 0004。 (2026-04-09)
+3. [Security] **Portal 侧审计日志可视化 API**: 完成后端接口开发、Schema 定义及 P1 权限闭环。 (2026-04-09)
 3. [Stability] **Chaos Sentinel 技能交付**: 完成混沌工程战术库 (T1-T5) 开发并通过 100% 质量评审。 (2026-04-09)
 4. [Success] **生产环境 GitLab 同步验证**: 成功连接并触发 500+ 项目的自动数据入库。 (2026-04-08)
 

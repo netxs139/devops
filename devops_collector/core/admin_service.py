@@ -16,6 +16,7 @@ from typing import Any
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from devops_collector.core.organization_service import OrganizationService
+from devops_collector.models.audit import AuditLog
 from devops_collector.models.base_models import (
     IdentityMapping,
     OKRObjective,
@@ -26,7 +27,6 @@ from devops_collector.models.base_models import (
     Team,
     TeamMember,
     User,
-    AuditLog,
 )
 from devops_collector.plugins.gitlab.models import GitLabProject
 from devops_portal import schemas
