@@ -18,10 +18,16 @@
 
 with 
 
+{% if is_incremental() %}
+max_scan as (
+    select max(analysis_date) as last_val from {{ this }}
+),
+{% endif %}
+
 scans as (
     select * from {{ ref('int_sonar_quality_scans') }}
     {% if is_incremental() %}
-    where analysis_date >= (select max(analysis_date) - interval '3 days' from {{ this }})
+    where analysis_date >= (select last_val - interval '3 days' from max_scan)
     {% endif %}
 ),
 
