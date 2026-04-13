@@ -29,7 +29,7 @@ const SysAppHandler = {
                 title: "质量保障",
                 expanded: true,
                 items: [
-                    { id: "nav-dashboard", label: "质量看板", href: "#dashboard", view: "dashboard", icon: "rect x=3 y=3 width=7 height=7; rect x=14 y=3 width=7 height=7; rect x=14 y=14 width=7 height=7; rect x=3 y=14 width=7 height=7", active: true },
+                    { id: "nav-dashboard", label: "质量看板", href: "#dashboard", view: "dashboard", permission: "rpt:quality:view", icon: "rect x=3 y=3 width=7 height=7; rect x=14 y=3 width=7 height=7; rect x=14 y=14 width=7 height=7; rect x=3 y=14 width=7 height=7", active: true },
                     { id: "nav-tests", label: "测试用例", href: "#test-cases", view: "test-cases", icon: "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" },
                     { id: "nav-test-execution", label: "测试执行", href: "#test-execution", view: "test-execution", icon: "M13 2L3 14h9l-1 8 10-12h-9l1-8z" },
                     { id: "nav-defects", label: "缺陷管理", href: "#defects", view: "defects", icon: "circle cx=12 cy=12 r=10; line x1=12 y1=8 x2=12 y2=12; line x1=12 y1=16 x2=12.01 y2=16", badgeId: "badge-defects" },
@@ -393,6 +393,13 @@ const SysAppHandler = {
                 return;
             }
 
+            const visibleItems = group.items.filter(item => {
+                if (!item.permission) return true;
+                return Auth.hasPermission(item.permission);
+            });
+
+            if (visibleItems.length === 0) return;
+
             const groupClone = groupTemplate.content.cloneNode(true);
             const groupEl = groupClone.querySelector('.js-nav-group');
             const groupTitle = groupClone.querySelector('.js-group-label');
@@ -401,7 +408,7 @@ const SysAppHandler = {
             groupTitle.textContent = group.title;
             if (group.expanded) groupEl.classList.add('expanded');
 
-            group.items.forEach(item => {
+            visibleItems.forEach(item => {
                 const linkClone = linkTemplate.content.cloneNode(true);
                 const linkEl = linkClone.querySelector('.js-nav-link');
                 const labelEl = linkClone.querySelector('.js-link-label');

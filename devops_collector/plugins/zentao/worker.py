@@ -235,6 +235,8 @@ class ZenTaoWorker(BaseWorker):
             except Exception as case_e:
                 logger.warning(f"Failed to sync test cases for product {product_id}: {case_e}")
 
+            # 强制刷新 Session 状态，防止前序 rollback 导致 ORM 对象过期 (Ref LL #116)
+            self.session.expire_all()
             product_executions = self.session.query(ZenTaoExecution).filter_by(product_id=product.id).all()
             for exec_item in product_executions:
                 # 同步构建 (Builds)
