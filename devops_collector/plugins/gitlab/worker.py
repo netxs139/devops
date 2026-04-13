@@ -157,8 +157,6 @@ class GitLabWorker(BaseWorker, BaseMixin, TraceabilityMixin, CommitMixin, IssueM
                 return None
             self.save_to_staging(source="gitlab", entity_type="project", external_id=project_id, payload=p_data)
             namespace_id = p_data.get("namespace", {}).get("id")
-            if namespace_id:
-                self._ensure_group(namespace_id)
 
             project = self.session.query(GitLabProject).filter_by(id=project_id).first()
             if not project:
@@ -166,24 +164,45 @@ class GitLabWorker(BaseWorker, BaseMixin, TraceabilityMixin, CommitMixin, IssueM
                 self.session.add(project)
             project.name = p_data.get("name")
             project.path_with_namespace = p_data.get("path_with_namespace")
-            project.group_id = namespace_id
+            
+            # 只有在组记录确实存在(或同步成功)时才设置 group_id，避免外键冲突
+            if namespace_id and self._ensure_group(namespace_id):
+                project.group_id = namespace_id
+            else:
+                project.group_id = None
+                
             project.raw_data = p_data  # Update raw_data so hybrid properties work
             return project
         except Exception as e:
             logger.error(f"Failed to sync project {project_id}: {e}")
             return None
 
-    def _ensure_group(self, group_id: int) -> None:
-        """确保本地存在对应的 Group 记录。"""
+    def _ensure_group(self, group_id: int) -> bool:
+        """确保本地存在对应的 Group (或 Namespace) 记录。"""
         group = self.session.query(GitLabGroup).filter_by(id=group_id).first()
-        if not group:
+        if group:
+            return True
+        
+        try:
+            # 优先尝试获取 Group，失败则回退到 Namespace (兼容 User Namespaces)
             try:
                 g_data = self.client.get_group(group_id)
-                group = GitLabGroup(id=g_data["id"], name=g_data["name"], path=g_data["path"], full_path=g_data["full_path"])
-                self.session.add(group)
-                self.session.flush()
-            except Exception as e:
-                logger.warning(f"Failed to sync group {group_id}: {e}")
+            except Exception:
+                logger.debug(f"ID {group_id} is not a Group, trying Namespace API...")
+                g_data = self.client.get_namespace(group_id)
+            
+            group = GitLabGroup(
+                id=g_data["id"], 
+                name=g_data.get("name") or g_data.get("path"), 
+                path=g_data["path"], 
+                full_path=g_data.get("full_path") or g_data.get("path")
+            )
+            self.session.add(group)
+            self.session.flush()
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to sync group/namespace {group_id}: {e}")
+            return False
 
     def _match_identities(self, project: GitLabProject) -> None:
         """匹配项目内未关联用户的提交记录。"""

@@ -46,16 +46,27 @@ class GitLabClient(BaseClient):
         """
         return self._get(f"projects/{project_id}", params={"statistics": True}).json()
 
-    def get_group(self, group_id_or_path: str) -> dict:
+    def get_group(self, group_id_or_path: str | int) -> dict:
         """获取单个群组的详细信息。
 
         Args:
-            group_id_or_path (str): 群组 ID 或 URL 编码后的路径。
+            group_id_or_path (str | int): 群组 ID 或 URL 编码后的路径。
 
         Returns:
             dict: 群组详情字典。
         """
         return self._get(f"groups/{group_id_or_path}").json()
+
+    def get_namespace(self, namespace_id: int) -> dict:
+        """获取单个命名空间 (Group 或 User) 的详细信息。
+
+        Args:
+            namespace_id (int): 命名空间 ID。
+
+        Returns:
+            dict: 命名空间详情字典。
+        """
+        return self._get(f"namespaces/{namespace_id}").json()
 
     def get_project_commits(self, project_id: int, since: str | None = None, start_page: int = 1, per_page: int = 100) -> Generator[dict, None, None]:
         """获取项目的提交记录。
