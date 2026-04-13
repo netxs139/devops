@@ -14,7 +14,9 @@ from devops_collector.config import settings
 from devops_collector.plugins.gitlab.gitlab_client import GitLabClient
 from devops_collector.plugins.gitlab.quality_service import QualityService
 from devops_portal import schemas
-from devops_portal.dependencies import get_current_user
+from devops_portal.dependencies import (
+    PermissionRequired,
+)
 
 
 router = APIRouter(prefix="/quality", tags=["quality"])
@@ -27,7 +29,10 @@ def get_quality_service(db: Session = Depends(get_auth_db), client: GitLabClient
 
 
 @router.get("/projects/{project_id}/province-quality", response_model=list[schemas.ProvinceQuality])
-async def get_province_quality(project_id: int, current_user=Depends(get_current_user)):
+async def get_province_quality(
+    project_id: int,
+    current_user=Depends(PermissionRequired(["rpt:quality:view"])),
+):
     """获取各省份的质量分布数据（已实现部门级数据隔离）。"""
     from devops_collector.config import Config
 
@@ -76,7 +81,11 @@ async def get_province_quality(project_id: int, current_user=Depends(get_current
 
 
 @router.get("/projects/{project_id}/quality-gate", response_model=schemas.QualityGateStatus)
-async def get_quality_gate(project_id: int, current_user=Depends(get_current_user), service: QualityService = Depends(get_quality_service)):
+async def get_quality_gate(
+    project_id: int,
+    current_user=Depends(PermissionRequired(["rpt:quality:view"])),
+    service: QualityService = Depends(get_quality_service),
+):
     """自动化运行质量门禁合规性检查。"""
     try:
         status = await service.get_quality_gate_status(project_id, current_user)
@@ -87,7 +96,11 @@ async def get_quality_gate(project_id: int, current_user=Depends(get_current_use
 
 
 @router.get("/projects/{project_id}/test-summary")
-async def get_test_summary(project_id: int, current_user=Depends(get_current_user), service: QualityService = Depends(get_quality_service)):
+async def get_test_summary(
+    project_id: int,
+    current_user=Depends(PermissionRequired(["rpt:quality:view"])),
+    service: QualityService = Depends(get_quality_service),
+):
     """获取测试用例执行状态的统计摘要。"""
     try:
         # 延迟导入以避免循环依赖

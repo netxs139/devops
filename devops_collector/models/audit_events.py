@@ -26,10 +26,7 @@ from devops_collector.utils.audit_context import get_snapshot
 logger = logging.getLogger(__name__)
 
 # 为测试环境提供“熔断”开关 (LL #28: 自动跳过 Pytest 及其背景噪声)
-SKIP_AUDIT = (
-    os.getenv("DEVOPS_SKIP_AUDIT", "false").lower() == "true" or
-    "PYTEST_CURRENT_TEST" in os.environ
-)
+SKIP_AUDIT = os.getenv("DEVOPS_SKIP_AUDIT", "false").lower() == "true" or "PYTEST_CURRENT_TEST" in os.environ
 
 # 对敏感字段执行固定掩码脱敏 (L3 合规要求)
 SENSITIVE_FIELDS_SET = {"password", "secret", "token", "access_key", "checksum", "credential_key"}
