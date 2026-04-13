@@ -267,7 +267,7 @@ check-imports: ## [本地] 检查核心模块导入依赖
 
 sync-all: ## 手动触发全量数据同步
 	@echo "$(GREEN)Triggering full sync...$(RESET)"
-	$(EXEC_CMD) python -m devops_collector.scheduler --force-all
+	$(EXEC_CMD) python -m devops_collector.scheduler --force-all --once
 	$(EXEC_CMD) python -m devops_collector.worker --once
 
 pull-images: ## [工具] 尝试从 Nexus 预拉取基础镜像并打标 (Fallback 机制)
