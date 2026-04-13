@@ -60,6 +60,7 @@ trae.lock
 persistence_data/
 data/
 tmp/
+scratch/
 *.log
 *.tmp
 *.csv
