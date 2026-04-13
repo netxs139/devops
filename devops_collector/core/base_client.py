@@ -76,7 +76,7 @@ def is_retryable_exception(exception: Exception) -> bool:
     401 (Unauthorized) 和 403 (Forbidden) 通常表示配置错误，重试无意义。
     """
     if isinstance(exception, requests.exceptions.HTTPError):
-        if exception.response.status_code in [401, 403]:
+        if exception.response.status_code in [401, 403, 404]:
             return False
     from devops_collector.core.exceptions import CircuitBreakerOpenError
 
@@ -195,16 +195,16 @@ class BaseClient(ABC):
             response.raise_for_status()
             self._handle_success()
             return response
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code in [401, 403, 404]:
+                logger.warning(f"Client error ({e.response.status_code}) on {endpoint}")
+                raise
+            self._handle_failure(e)
+            raise
         except (requests.exceptions.RequestException, ConnectionError) as e:
             masked_headers = self._mask_headers(self.headers)
             logger.error(f"Network error on {endpoint} with headers {masked_headers}: {e}")
             self._handle_failure(e)
-            raise
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code in [401, 403]:
-                masked_headers = self._mask_headers(self.headers)
-                logger.error(f"Auth error (401/403) on {endpoint} with headers {masked_headers}")
-                raise
             raise
 
     @retry(

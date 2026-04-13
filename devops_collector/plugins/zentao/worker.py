@@ -237,27 +237,41 @@ class ZenTaoWorker(BaseWorker):
 
             # 强制刷新 Session 状态，防止前序 rollback 导致 ORM 对象过期 (Ref LL #116)
             self.session.expire_all()
-            product_executions = self.session.query(ZenTaoExecution).filter_by(product_id=product.id).all()
-            for exec_item in product_executions:
-                # 同步构建 (Builds)
-                try:
-                    builds = self.client.get_builds(exec_item.id)
-                    for b_data in builds:
-                        if _is_after_cutoff(b_data.get("date")):
-                            self._sync_build(product.id, exec_item.id, b_data)
-                except Exception as e:
-                    logger.warning(f"Failed to sync builds for execution {exec_item.id}: {e}")
+            execution_ids = [e.id for e in self.session.query(ZenTaoExecution.id).filter_by(product_id=product.id).all()]
+            for e_id in execution_ids:
+                # 重新拉取对象，防止 Session 的 commit/rollback 导致迭代器中的对象过期 (Ref LL #116)
+                exec_item = self.session.query(ZenTaoExecution).get(e_id)
+                if not exec_item:
+                    continue
 
-                # 批量同步任务 (Tasks)
                 try:
-                    tasks = self.client.get_tasks(exec_item.id)
-                    task_batch = [t for t in tasks if _is_after_cutoff(t.get("openedDate"))]
-                    if task_batch:
-                        self._sync_tasks_batch(product.id, exec_item.id, task_batch)
-                        self.session.commit()
-                except Exception as e:
-                    self.session.rollback()
-                    logger.error(f"Failed to sync tasks for execution {exec_item.id}: {e}")
+                    # 使用嵌套事务 (Savepoint) 包裹单个 Execution 的同步
+                    # 这样即使内部报错回滚，也不会导致 product 或 exec_item 变为 "Instance Deleted" 状态
+                    with self.session.begin_nested():
+                        # 同步构建 (Builds)
+                        try:
+                            builds = self.client.get_builds(exec_item.id)
+                            for b_data in builds:
+                                if _is_after_cutoff(b_data.get("date")):
+                                    self._sync_build(product.id, exec_item.id, b_data)
+                        except Exception as e:
+                            logger.warning(f"Failed to sync builds for execution {e_id}: {e}")
+
+                        # 批量同步任务 (Tasks)
+                        try:
+                            tasks = self.client.get_tasks(exec_item.id)
+                            task_batch = [t for t in tasks if _is_after_cutoff(t.get("openedDate"))]
+                            if task_batch:
+                                self._sync_tasks_batch(product.id, exec_item.id, task_batch)
+                        except Exception as e:
+                            logger.error(f"Failed to sync tasks for execution {e_id}: {e}")
+                            raise # 触发 begin_nested 的内部回滚
+
+                    # 每一个 Execution 完成后执行持久化，但不提交主事务
+                    self.session.flush()
+                except Exception:
+                    # 异常已被 begin_nested 捕获并回滚子事务
+                    continue
 
             # 5. 同步发布 (Releases)
             try:
