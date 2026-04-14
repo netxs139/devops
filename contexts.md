@@ -221,7 +221,11 @@
     - **Streamlit (已集成 ✅)**: 核心 BI 交互平台。用于轻量级、交互式数据应用开发，特别是涉及 Python 逻辑的动态看板。
     - **Superset**: 企业级可视化大盘，用于处理大规模 SQL 聚合报表。
     - **Metabase**: 用于业务侧自服务查询 (Self-service BI) 与快速简单看板搭建。
-- **数据源接入**: 所有平台必须统一接入 `PostgreSQL` 的 Marts 层 (`rpt_*` 或 `fct_*` 模型)，严禁越过 dbt 直接查询 Staging 表。
+- **数据源接入 (Data Source Access)** [MANDATORY]:
+    - **逻辑层对齐**: 所有的看板查询必须严格区分底层。
+    - **ORM/物理表优先**: Streamlit 看板连接 PostgreSQL 业务库时，**必须**直接使用 ORM 定义的物理表名（如 `gitlab_commits`），严禁使用 dbt 专属的 `stg_` 前缀，除非该视图已被显式物化。
+    - **隔离性**: 严禁在看板 SQL 中硬编码 schema 名称，统一直连 public schema。
+- **Dashboard Strategy**: 参见 [7.7 章节](#77-看板数据访问协议-dashboard-data-access-protocol-new)。
 
 ### 7.5 dbt 构建顺序与 Seed 依赖规范 (Build Order) [MANDATORY]
 > **背景**：全量部署或 Schema 变更后，若跳过 `dbt seed` 直接执行 `dbt run`，会因维度映射表（如 Nexus 存储成本映射）不存在而导致 Mart 层模型崩溃。
@@ -237,15 +241,21 @@
 - **seed 文件变更触发条件**：新增映射条目、修改维度值、首次部署新环境——任意一种情况**必须**重新执行 `dbt seed`。
 - **并发控制**：资源受限环境（如开发机）必须加 `--threads 1`，防止锁冲突导致挂起。
 
-### 7.6 数据质量监控看板规范 (Data Quality Dashboard) [已集成]
-- **平台**：Streamlit（集成于 `devops_portal` 容器，通过独立端口或反向代理暴露）。
-- **数据源**：只允许查询 Marts 层，核心依赖表：
-    - `rpt_data_quality_summary`：同步成功率、失败率、平均耗时（按数据源分组）
-    - `sys_sync_logs`：最近 N 次同步记录，用于趋势分析
-    - `sys_audit_logs`：审计异常统计
-- **核心指标**：同步成功率、数据新鲜度（最近成功同步时间）、审计异常数、队列积压深度。
-- **访问控制**：必须通过 RBAC 守卫，仅 `admin` 或 `data_engineer` 角色可访问。
-- **Dashboard Index**：已注册为前端全景地图 **Index 0**（Quality_Monitor），任何新指标必须在该页面扩展，禁止新建独立页面。
+### 7.7 看板数据访问协议 (Dashboard Data Access Protocol) [NEW]
+
+> **背景**: 为了防止开发者混淆 dbt 的 stg(Staging) 层视图与 PostgreSQL 业务物理表，特制定此强制对齐协议。
+
+- **1. 命名空间禁令 (Naming Prohibition)** [MANDATORY]:
+    - 在 `dashboard/pages/` 下的所有 Python 脚本中，SQL 查询语句中**严禁出现**以 `stg_` 开头的表名（这些是 dbt 的临时/中间视图，属于 Analytics 层，对 Dashboard 往往不可见或不稳定）。
+- **2. 物理表对齐清单 (Physical Table Mapping)**:
+    - 凡是查询 GitLab 数据，必须对应表：`gitlab_commits`, `gitlab_merge_requests`, `gitlab_projects`。
+    - 凡是查询禅道数据，必须对应表：`zentao_issues`, `zentao_executions`。
+    - 关联追踪表对应：`mdm_traceability_links`。
+- **3. ID 与 Hash 关联规程**:
+    - 在 dashboard SQL 中，关联 commit 请使用 `id` (即 full SHA)；关联 MR 请使用 `id` (BigInt)。严禁混淆 `raw_id` 与物理 `id`。
+- **4. 性能与安全**:
+    - 看板 SQL 必须包含 `LIMIT`（如果是在列表显示中）。
+    - 必须使用 `sqlalchemy.sql.text` 并通过 `params` 传参，严禁 f-string 拼接 SQL。
 
 ## 8. 运维流程与生命周期 (DevOps Ops)
 

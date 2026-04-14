@@ -51,14 +51,14 @@ def fetch_traceability(issue_id: str):
             c.title as commit_title, 
             c.author_name as commit_author, 
             c.committed_date,
-            c.web_url as commit_url,
+            c.raw_data->>'web_url' as commit_url,
             m.title as mr_title,
             m.state as mr_state,
             m.merged_at,
-            m.web_url as mr_url
+            m.raw_data->>'web_url' as mr_url
         FROM mdm_traceability_links l
-        LEFT JOIN stg_gitlab_commits c ON l.target_type = 'commit' AND l.target_id = c.commit_sha
-        LEFT JOIN stg_gitlab_merge_requests m ON l.target_type = 'mr' AND l.target_id = m.raw_id::text
+        LEFT JOIN gitlab_commits c ON l.target_type = 'commit' AND l.target_id = c.id
+        LEFT JOIN gitlab_merge_requests m ON l.target_type = 'mr' AND l.target_id = m.id::text
         WHERE l.source_system = 'zentao' AND l.source_id = :issue_id
     """)
     
