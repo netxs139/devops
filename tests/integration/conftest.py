@@ -11,6 +11,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+# LL #42: Workaround for passlib 1.7.4 compatibility with bcrypt 4.0.0+
+import bcrypt
+if not hasattr(bcrypt, "__about__"):
+    bcrypt.__about__ = type('about', (object,), {'__version__': bcrypt.__version__})
+
 
 # Mock environment variables BEFORE any other imports
 os.environ.setdefault("DB_URI", "sqlite:///:memory:")
@@ -42,9 +47,16 @@ _engine = create_engine(
 
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA foreign_keys=ON")
-    cursor.close()
+    """LL #54: 数据库方言隔离保护。仅在物理连接为 sqlite3 时执行 PRAGMA。"""
+    try:
+        # 通过 DBAPI 连接对象的模块名判定
+        if dbapi_connection.__class__.__module__.startswith("sqlite3"):
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA foreign_keys=ON")
+            cursor.close()
+    except Exception:
+        # 非 SQLite 引擎或连接异常时不应阻断测试 setup
+        pass
 
 
 _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine, expire_on_commit=False)

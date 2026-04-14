@@ -146,7 +146,13 @@ class User(Base, TimestampMixin, SCDMixin):
     department_id = Column(Integer, ForeignKey("mdm_organizations.id", use_alter=True, name="fk_user_dept"), index=True, comment="所属部门ID")
     position = Column(String(100), comment="职位/岗位名称")
     hr_relationship = Column(String(50), comment="人事关系 (如：正式/外协/实习)")
-    location_id = Column(Integer, ForeignKey("mdm_locations.id"), nullable=True, index=True, comment="常驻办公地点ID")
+    location_id = Column(
+        Integer,
+        ForeignKey("mdm_locations.id", use_alter=True, name="fk_user_location"),
+        nullable=True,
+        index=True,
+        comment="常驻办公地点ID",
+    )
     source_system = Column(String(50), nullable=True, comment="创建/更新来源系统")
     correlation_id = Column(String(100), index=True, nullable=True, comment="关联的同步任务追踪 ID")
     is_active = Column(Boolean, default=True, comment="是否在职")
@@ -752,7 +758,12 @@ class Location(Base, TimestampMixin):
     parent_id = Column(Integer, ForeignKey("mdm_locations.id", use_alter=True, name="fk_location_parent_id"), nullable=True, comment="上级位置物理ID")
     region = Column(String(50), comment="区域 (华北/华东/华南)")
     is_active = Column(Boolean, default=True, comment="是否启用")
-    manager_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True, comment="负责人")
+    manager_user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("mdm_identities.global_user_id", use_alter=True, name="fk_location_manager"),
+        nullable=True,
+        comment="负责人",
+    )
 
 
 class Calendar(Base, TimestampMixin):
