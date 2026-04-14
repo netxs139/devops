@@ -255,6 +255,19 @@ class AuthSettings(BaseModel):
         return v
 
 
+class NotifiersSettings(BaseModel):
+    """Webhook notifiers configuration.
+    
+    Attributes:
+        wecom_webhook (str): WeCom Webhook URL.
+        feishu_webhook (str): Feishu Webhook URL.
+        dingtalk_webhook (str): DingTalk Webhook URL.
+    """
+    wecom_webhook: str = ""
+    feishu_webhook: str = ""
+    dingtalk_webhook: str = ""
+
+
 class PluginSettings(BaseModel):
     """Plugin system configuration.
 
@@ -341,6 +354,7 @@ class Settings(BaseSettings):
     plugin: PluginSettings = PluginSettings()
     sla: SLASettings = SLASettings()
     auth: AuthSettings = AuthSettings()
+    notifiers: NotifiersSettings = NotifiersSettings()
     model_config = SettingsConfigDict(env_file=".env", env_nested_delimiter="__", extra="ignore")
 
 

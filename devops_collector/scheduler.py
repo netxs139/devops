@@ -152,6 +152,17 @@ def main() -> None:
 
                         logger.info("Recalculating DORA 2.0 metrics...")
                         DORAService.aggregate_all_projects(session)
+                        
+                        logger.info("Triggering automatic risk bot check...")
+                        bot_res = subprocess.run(
+                            ["python", "scripts/wecom_risk_bot.py"],
+                            capture_output=True,
+                            text=True
+                        )
+                        if bot_res.returncode != 0:
+                            logger.error(f"Risk bot failed: {bot_res.stderr}")
+                        else:
+                            logger.info(f"Risk bot finished: {bot_res.stdout.strip()}")
                 except Exception as e:
                     logger.error(f"Failed to run dbt or reverse ETL: {e}")
 
