@@ -23,10 +23,8 @@ def test_fetch_traceability_query():
             c.title as commit_title,
             c.author_name as commit_author,
             c.committed_date,
-            c.web_url as commit_url,
             m.iid as mr_iid,
-            m.state as mr_state,
-            m.web_url as mr_url
+            m.state as mr_state
         FROM mdm_traceability_links l
         LEFT JOIN gitlab_commits c ON l.target_type = 'commit' AND l.target_id = c.id
         LEFT JOIN gitlab_merge_requests m ON l.target_type = 'mr' AND l.target_id = m.id::text
