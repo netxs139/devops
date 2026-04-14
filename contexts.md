@@ -22,7 +22,10 @@
     - **辅助/调试环境 (Auxiliary)**: Windows + PowerShell。仅用于代码编写、轻量级 Lint 检查及辅助脚本调试。
     - **核心原则**: 严禁以“Windows 能跑通”作为提测标准。物理真实环境以 Docker 内的 Linux 表现为准。通过 `make test` 或 `docker-compose exec api pytest` 确保 100% 环境对齐。
 - **路径处理**: 强制使用 `pathlib` 确保跨平台路径兼容。
-- **临时输出归集 [MANDATORY]**: 严禁在根目录直接生成临时过程文件或导出结果。所有临时调试脚本、手动导出 CSV、日志重定向（Redirect）必须明确指向 `./tmp/` 或 `./data/temp/` 目录。
+- **目录用途分工 [MANDATORY]**: 禁止在根目录散落临时文件。两个临时目录用途严格区分：
+    - **`./tmp/`**：运行时生成的临时数据产物，如 CSV 导出、日志重定向、分析报告。CI 构建和镜像打包**不包含**此目录。
+    - **`./scratch/`**：开发过程中的一次性调试脚本（如 `monitor_sync.py`、`force_sync.py`）。仅用于本地排查，**必须**在 `.dockerignore` 中排除，任务结束前**必须**清理或归档至 `docs/` 下。
+    - **严禁**将 `scratch/` 脚本发展为永久性业务逻辑；若脚本具备复用价值，必须迁移至 `scripts/` 并补充测试。
 - **CSV 编码**: 所有 CSV 文件的生成、读取及模版任务强制使用 `utf-8-sig` 编码，确保在 Windows Office/Excel 环境下打开不出现汉字乱码。
 - **语义分层规范 (Semantic Alignment)**:
     - **技术侧用英文**: 数据库字段名、API Schema、核心代码变量必须使用标准英文命名（如 `pm_user_id`）。
@@ -220,6 +223,30 @@
     - **Metabase**: 用于业务侧自服务查询 (Self-service BI) 与快速简单看板搭建。
 - **数据源接入**: 所有平台必须统一接入 `PostgreSQL` 的 Marts 层 (`rpt_*` 或 `fct_*` 模型)，严禁越过 dbt 直接查询 Staging 表。
 
+### 7.5 dbt 构建顺序与 Seed 依赖规范 (Build Order) [MANDATORY]
+> **背景**：全量部署或 Schema 变更后，若跳过 `dbt seed` 直接执行 `dbt run`，会因维度映射表（如 Nexus 存储成本映射）不存在而导致 Mart 层模型崩溃。
+
+- **标准构建顺序**（首次部署 / CI 全量）：
+    ```
+    dbt seed          # 1. 载入静态维度数据（成本映射、状态映射等）
+    dbt run           # 2. 执行模型转换（stg → int → fct）
+    dbt test          # 3. 质量哨兵验证
+    ```
+    或直接使用：`dbt build`（等价于上述三步串联，推荐 CI 环境使用）。
+- **增量构建**（日常开发）：允许仅执行 `dbt run --select <model>`，但前提是 seed 数据已存在。
+- **seed 文件变更触发条件**：新增映射条目、修改维度值、首次部署新环境——任意一种情况**必须**重新执行 `dbt seed`。
+- **并发控制**：资源受限环境（如开发机）必须加 `--threads 1`，防止锁冲突导致挂起。
+
+### 7.6 数据质量监控看板规范 (Data Quality Dashboard) [已集成]
+- **平台**：Streamlit（集成于 `devops_portal` 容器，通过独立端口或反向代理暴露）。
+- **数据源**：只允许查询 Marts 层，核心依赖表：
+    - `rpt_data_quality_summary`：同步成功率、失败率、平均耗时（按数据源分组）
+    - `sys_sync_logs`：最近 N 次同步记录，用于趋势分析
+    - `sys_audit_logs`：审计异常统计
+- **核心指标**：同步成功率、数据新鲜度（最近成功同步时间）、审计异常数、队列积压深度。
+- **访问控制**：必须通过 RBAC 守卫，仅 `admin` 或 `data_engineer` 角色可访问。
+- **Dashboard Index**：已注册为前端全景地图 **Index 0**（Quality_Monitor），任何新指标必须在该页面扩展，禁止新建独立页面。
+
 ## 8. 运维流程与生命周期 (DevOps Ops)
 
 - **部署模式**: 
@@ -247,6 +274,25 @@
         - Scheduler 在推送任务前必须校验目标实体的 `sync_status`，处于 `SYNCING` 或 `QUEUED` 状态的实体严禁重复入队，防止队列无限膨胀。
         - **调度限流 (Scheduling Throttle)**: 单轮调度周期内，每个数据源推送的任务数必须设置**上限**（如每次最多 50 个），防止一次性灌满队列。
         - **独立调度周期**: 不同数据源应支持独立的同步间隔配置（如 GitLab 10min、ZenTao 30min），而非共用单一 `SYNC_INTERVAL_MINUTES`。
+- **调度器运维手册 [已知陷阱] [MANDATORY]**:
+    - **状态死锁模式**: 若数据库中大量项目处于 `QUEUED` 状态，但 RabbitMQ 队列实际为空，说明发生了状态死锁——调度器跨周期跳过了这些项目。**恢复方式**：
+        ```bash
+        make sync-all  # 内部传递 --force-all --once 强制重排
+        ```
+    - **`--force-all` 语义**: 调度器启动时将所有 `QUEUED`/`SYNCING` 状态重置为 `PENDING`，强制重新入队。
+    - **`--once` 语义**: 调度器完成一轮扫描后优雅退出，不进入无限循环，防止阻塞后续 Worker 启动。
+    - **诊断命令**：
+        ```bash
+        # 确认队列实际状态
+        docker-compose logs --tail=100 worker | findstr "Received"
+        # 确认 DB 状态分布
+        docker-compose exec -T api uv run python -c "
+        from sqlalchemy import create_engine, text; import os
+        engine = create_engine(os.getenv('DATABASE__URL'))
+        with engine.connect() as c:
+            print(c.execute(text('SELECT sync_status, COUNT(*) FROM gitlab_projects GROUP BY 1')).fetchall())
+        "
+        ```
 - **Worker 韧性 (Worker Resilience)**:
     - **自动重连 (Reconnect with Backoff)**: MQ 连接断线时，Worker 必须实现指数退避重连，而非直接崩溃退出。最大重试间隔不超过 60 秒。
     - **容器重启策略**: Docker Compose 中所有长驻服务 (`worker`, `scheduler`) 必须配置 `restart: unless-stopped`，确保进程意外退出后自动恢复。
@@ -315,6 +361,25 @@
 #### 9.5.3 降维类比 (小白专区)
 *   **本地测试 (Local)** 就像是 **“在家试装”**：你可以在镜子前快速尝试各种衣服（代码）搭配，看看扣子（语法）对不对，颜色（逻辑）顺不顺眼。这很快，但不能保证你出门后在强光（高并发）下或不平的路（复杂的 DB 索引）上表现得体。
 *   **容器测试 (Container)** 则是 **“全量彩排”**：你必须穿上正式演出服，走上真实的舞台（Docker Container），在真实的灯光和背景音乐（PostgreSQL/RabbitMQ）中走一遍完整流程。**只有彩排过了，才算真正的 DoD (Done of Done)。**
+
+### 9.6 RBAC 依赖注入规范 (RBAC Dependency Injection) [MANDATORY]
+> **背景**：Portal 层集成测试中，403 Forbidden 是最高频的失败原因。主因是 `app.dependency_overrides` 错误覆盖了具体子函数而非依赖链根节点，导致 FastAPI 的缓存机制绕过了 Mock，还原为真实的权限校验。
+
+- **正确覆盖姿势**（覆盖依赖链根节点）：
+    ```python
+    # conftest.py
+    from devops_collector.auth.dependencies import get_current_user
+
+    @pytest.fixture(autouse=True)
+    def override_auth(app):
+        app.dependency_overrides[get_current_user] = lambda: mock_user
+        yield
+        app.dependency_overrides.clear()
+    ```
+- **错误反模式 ❌**：覆盖 Router 内部的具体子函数（如 `get_token_from_header`）而非顶层 `get_current_user`——FastAPI 依赖链有缓存机制，局部覆盖会被高层驱逐。
+- **跨测试污染限制**：`dependency_overrides` 设置后必须在 fixture 的 `yield` 后执行 `.clear()`。禁止在一个测试中设置全局覆盖后不清理，导致后续测试被污染。
+- **权限层级部署**：测试 `admin` 接口时，`mock_user.roles` 必须包含完整的 `role` 对象（而非仅字符串），否则 RBAC 守卫因类型不匹配返回 403。
+- **核心守卫文件**：`dependencies.py` 是拦截非法 Mock 越权的核心守卫，测试必须依赖其正式导出的内容覆盖，禁止 Monkey-Patch 内部实现细节。
 
 ## 10. 异常处理与日志规范 (Error Handling & Logging)
 - **统一异常体系**: 
@@ -388,9 +453,19 @@
 - **问答与实现解耦**: 对于“如何实现”或“原理为何”的咨询，严禁在此轮对话中修改代码。
 
 ### 12.3 项目操作速查 (Project Operational Commands)
+- **Makefile 核心目标速查表 [NEW]**:
+    | 命令 | 用途 | 适用场景 |
+    | :--- | :--- | :--- |
+    | `make deploy` | 本地容器全栈启动（前后台+依赖） | 日常测试与验证 |
+    | `make build` / `make package` | 构建镜像 / 导出离线 Tar 包 | 交付准备 |
+    | `make verify` | 终极护栏检查 (Lint + 覆盖率 80%+) | L2 任务交付前强制执行 |
+    | `make test-local` / `make test` | 本地 SQLite 单元跑批 / 容器内真实 PG 跑批 | 开发中 / PR 合并前 |
+    | `make lint` / `make ruff-fix` | Ruff 代码自查 / 自动修复 | 随手执行 |
+    | `make sync-all` | 强制重排列队，破除 QUEUED 死锁 | 调度器异常排障 |
+    | `make deploy-offline` | 离线环境加载 Tar 镜像并启动 | 生产环境发布 |
+    | `make clean` | 清理孤儿卷、临时配置和缓存文件 | 任务完工离场前环境卫生 |
+
 - **Schema 同步**: 修改模型后必须执行 `make docs` 更新数据字典 `DATA_DICTIONARY.md`。
-- **代码自查 (Self-Review Routine)**: 交付前必须运行 `/code-review` 和 `/lint` 流水线。
-- **主数据重置**: 需要定向刷新产品、项目或组织架构时，执行 `python scripts/refresh_master_data.py --scope all --force`。
 
 ## 13. 分支开发与版本控制规范 (Branching & Versioning)
 > 基础 Git 规范（原子提交、Commit Message、Conventional Commits）参见 [`gemini.md` 第四.5 章](c:/users/netxs/.gemini/gemini.md)。以下为本项目的补充规定。
@@ -512,16 +587,30 @@
 - **Diff 解析截断**: 为防止内存溢出，单一文件 Diff 对比严禁超过 1MB。超过阈值的变更仅记录文件路径变更，不再进行代码行级的深度解析。
 
 ### 16.2 状态存活性自查 (Liveness Probe)
-- **定期僵尸检查 (Zombies Check)**: 增量任务无法感知 GitLab 侧的物理删除。系统必须配置“周级巡检任务”，全量拉取 GitLab Project ID 列表并与本地数据库对比，若本地存在但在源端已缺失，必须将其标记为 `is_deleted=True`且 `sync_status='DELETED'`。
+## 17. CI/CD 集成规范 (SonarQube & Jenkins) [NEW]
 
-## 17. 全局身份与成本归因规范 (Global Identity & Attribution)
+### 17.1 SonarQube 集成规范
+- **推拉结合模式**:
+    - **基础数据拉取**: 项目映射、质量门控配置等静态数据通过 `api/plugins/sonarqube` 周期性拉取。
+    - **报告接收 (Webhook/CI 主动推送)**: `devops_collector` 提供专用的 Webhook Receiver 接口供 CI Pipeline 主动推送扫描结果，而不是去轮询 SonarQube 查进度。
+- **表命名强制约束**: 所有表**必须**统一前缀为 `sonar_` (如 `sonar_projects`, `sonar_measures`)，严禁出现 `sonarqube_`，以防查询对齐失败。
+- **状态门控映射**: 必须将 SonarQube 的 `OK/WARN/ERROR` 强制映射为项目内的标准状态灯（枚举值 `SUCCESS`, `WARNING`, `FAILED`）。
 
-### 17.1 身份对齐优先 (Identity First) [MANDATORY]
+### 17.2 Jenkins 集成门禁 [ADR-Required]
+> ⚠️ **警告**: 当前版本暂未实现 Jenkins 插件。Jenkins 的流水线设计千变万化，且日志极度非结构化。
+- **门禁要求**: 未来实施 Jenkins 接入前，**必须先产出 ADR (架构决策记录)**。
+- **核心避坑指南**:
+    - 严禁全量拉取 Console Log 存入数据库。
+    - 建议通过 Jenkins Notification Plugin 改为 Webhook JSON 推送，仅解析关键状态（Build/Test/Deploy 时长）和关联产物（Image Tag, Commit Hash）。
+
+## 18. 全局身份与成本归因规范 (Global Identity & Attribution)
+
+### 18.1 身份对齐优先 (Identity First) [MANDATORY]
 - **主键转换原则**: 任何数据源（GitLab, ZenTao, Jira）采集到的人员标识，入库前**禁止**直接使用原始账号（username/email）作为最终业务关联键。
 - **强制转换链**: 采集原始账号 -> 调用 `IdentityManager.get_global_id()` -> 映射为统一的 UUID `global_user_id` -> 存入业务表。
 - **成本归因**: 只有完成 `global_user_id` 转换的工时或提交记录，方可参与效能度量与成本中心分摊计算。对于无法对齐的“流浪账号”，系统必须通过 `sys_unknown_identities` 表进行挂起并在看板显著提醒。
 
-### 17.2 企业级主数据管理 (Enterprise MDM) 六大金科玉律 [MANDATORY]
+### 18.2 企业级主数据管理 (Enterprise MDM) 六大金科玉律 [MANDATORY]
 为确保跨系统（如 HR、WeCom、GitLab、ZenTao）的组织与人员数据一致性，所有涉及 `mdm_*` 核心表读写的采集器 (Collector) 必须严格遵守以下六大设计要求：
 
 1. **黄金记录与幸存者规则 (Golden Record & Survivorship)**：
