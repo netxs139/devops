@@ -67,6 +67,11 @@ description: 任务启动仪式 — 含分级判定 + Task Brief 模板 + 风险
 
 ### 🟢 L1 — 免 Brief
 - 无需产出 Task Brief。直接在 Commit Message 中描述改了什么和为什么。
+- **L1 轻量豁免 [NEW]**：L1 任务**无需**执行以下流程，强制执行反而违背 MVP 精神：
+  - ❌ `/code-review`（改为执行自审即可）
+  - ❌ `/rollback`（无需生成回滚预案）
+  - ❌ 风险预判（`docs/lessons-learned.log` 扫描）
+  - ✅ `/lint` 和 `progress.txt` 更新**仍为强制**，不可豁免
 
 ### 🟡 L2 — Lite Brief (3 行)
 在回复中以文本形式确认：
