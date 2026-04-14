@@ -42,7 +42,7 @@ def run_risk_check():
     try:
         query = text("SELECT project_name, risk_type, severity, description, owner FROM view_pmo_risk_anomalies")
         risks = session.execute(query).fetchall()
-        
+
         # 将查询结果转换为可变的列表，或者使用自定义对象
         class RiskObj:
             def __init__(self, project_name, risk_type, severity, description, owner):
@@ -66,7 +66,7 @@ def run_risk_check():
                         risk_type="SYS_QUALITY",
                         severity="CRITICAL",
                         description=f"同步失败率超标: {100 - dq.success_rate_pct:.1f}% (失败 {dq.failure_count} 次)",
-                        owner="DevOps Admin"
+                        owner="DevOps Admin",
                     )
                 )
         except Exception as e:

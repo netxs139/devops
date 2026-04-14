@@ -25,6 +25,20 @@
 
 ### 下一步 (Next Steps)
 - 🟢 Go: 建议立刻终止对该插件现存逻辑的扩张，整体定级为 [L3] 任务进入重构，分拆如下行动点：
-  1. **架构倒置**: 在 `webhook_router.py` 里建立专用 SonarQube 端点，承接质量门禁的 Webhook 打击。改 Worker 盲目重扫为精细化的“被动响铃读取”。
+  1. **架构倒置与多源触发机制**: 
+     * 在 `webhook_router.py` 里建立专用 SonarQube 端点，承接质量门禁的 Webhook 打击。
+     * **[方案 A 增强预案]**: 为了绕过系统管理员权限限制并增强血缘追溯，支持 CI/CD 管道在 `sonar-scanner` 结束后通过 API 主动触发同步。该模式需配合「状态探测 (Task Status Check)」逻辑，确保服务端分析完成后再执行抽取。
+     * **[方案 B 降级预案]**: 若 Webhook 与 CI 钩子均不可用，实现基于“水位线 (Watermarks)”的增量轮询模型。通过记录 `last_analysis_date` 将全量重扫降级为针对性的增量同步。
   2. **存储层革新**: 在 `worker.py` 切换引入 `bulk_save_to_staging` 和内存 Dictionary 预加载映射（Map Load），彻底根除 N+1 循环查库陷阱。
   3. **架构解绑**: 彻底移除对 GitLab Models 的显式加载，将异构模型对齐丢入第二阶段自愈协议 (`Two-Phase Protocol`) 和 SQL dbt 中间层处理。
+
+### 数据指标与建模补充 (Data Metrics & Modeling)
+为了支持业务侧的“质量中心看板”导出需求，模型层需完成以下核心指标的计算闭环：
+1. **开发总人月预测 (Development Effort)**:
+   * **公式**: `dev_cost = round(((sqale_index / 60) / (sqale_debt_ratio / 100)) / 174)`
+   * **边界处理**: 需拦截 `sqale_debt_ratio == 0` 的异常波段，默认返回 0。
+2. **字段对齐规范**:
+   * **总行数**: 统一锚定 Sonar 原生 `lines` 字段（含空行与注释）。
+   * **门禁状态**: 在 `SonarMeasure` 中显式存储 `quality_gate_status` 字符串，用于报表导出。
+3. **导出视图**:
+   * 支持“最快照模式 (Latest Snapshot)”，聚合获取每个项目的最新一次分析指标。

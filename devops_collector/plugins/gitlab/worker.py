@@ -164,13 +164,13 @@ class GitLabWorker(BaseWorker, BaseMixin, TraceabilityMixin, CommitMixin, IssueM
                 self.session.add(project)
             project.name = p_data.get("name")
             project.path_with_namespace = p_data.get("path_with_namespace")
-            
+
             # 只有在组记录确实存在(或同步成功)时才设置 group_id，避免外键冲突
             if namespace_id and self._ensure_group(namespace_id):
                 project.group_id = namespace_id
             else:
                 project.group_id = None
-                
+
             project.raw_data = p_data  # Update raw_data so hybrid properties work
             return project
         except Exception as e:
@@ -182,7 +182,7 @@ class GitLabWorker(BaseWorker, BaseMixin, TraceabilityMixin, CommitMixin, IssueM
         group = self.session.query(GitLabGroup).filter_by(id=group_id).first()
         if group:
             return True
-        
+
         try:
             # 优先尝试获取 Group，失败则回退到 Namespace (兼容 User Namespaces)
             try:
@@ -190,12 +190,9 @@ class GitLabWorker(BaseWorker, BaseMixin, TraceabilityMixin, CommitMixin, IssueM
             except Exception:
                 logger.debug(f"ID {group_id} is not a Group, trying Namespace API...")
                 g_data = self.client.get_namespace(group_id)
-            
+
             group = GitLabGroup(
-                id=g_data["id"], 
-                name=g_data.get("name") or g_data.get("path"), 
-                path=g_data["path"], 
-                full_path=g_data.get("full_path") or g_data.get("path")
+                id=g_data["id"], name=g_data.get("name") or g_data.get("path"), path=g_data["path"], full_path=g_data.get("full_path") or g_data.get("path")
             )
             self.session.add(group)
             self.session.flush()

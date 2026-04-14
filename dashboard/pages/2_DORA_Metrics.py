@@ -142,11 +142,7 @@ with col_s:
     # Aggregate by month for the chart
     monthly_agg = filtered_df.groupby("month").agg({"wait_time_hours": "mean", "work_time_hours": "mean"}).reset_index()
 
-    fig.add_trace(
-        go.Bar(
-            name="Wait (Pickup Delay)", x=monthly_agg["month"], y=monthly_agg["wait_time_hours"], marker_color="#ef4444"
-        )
-    )
+    fig.add_trace(go.Bar(name="Wait (Pickup Delay)", x=monthly_agg["month"], y=monthly_agg["wait_time_hours"], marker_color="#ef4444"))
     fig.add_trace(
         go.Bar(
             name="Work (Review Effort)",
@@ -156,9 +152,7 @@ with col_s:
         )
     )
 
-    fig.update_layout(
-        barmode="stack", template="plotly_dark", plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)"
-    )
+    fig.update_layout(barmode="stack", template="plotly_dark", plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
     st.plotly_chart(fig, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 

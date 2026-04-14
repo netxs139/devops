@@ -7,6 +7,7 @@ from fastapi import APIRouter, Request
 
 from devops_collector.auth.auth_database import AuthSessionLocal
 from devops_collector.config import settings
+from devops_collector.mq import MessageQueue
 from devops_collector.plugins.gitlab.gitlab_client import GitLabClient
 from devops_portal.events import push_notification
 from devops_portal.state import PIPELINE_STATUS
@@ -112,4 +113,41 @@ async def gitlab_webhook(request: Request):
         return {"status": "accepted"}
     except Exception as e:
         logger.error(f"Webhook error: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+@router.post("/sonarqube")
+async def sonarqube_webhook(request: Request):
+    """处理来自 SonarQube 的官方 Webhook 推送。"""
+    try:
+        payload = await request.json()
+        project_key = payload.get("project", {}).get("key")
+        status = payload.get("status")
+
+        if project_key:
+            logger.info(f"SonarQube Webhook: Project {project_key} analysis completed with status {status}")
+            mq = MessageQueue()
+            mq.publish_task({"source": "sonarqube", "project_key": project_key, "job_type": "webhook_triggered", "sync_issues": True})
+        return {"status": "accepted"}
+    except Exception as e:
+        logger.error(f"SonarQube Webhook error: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+@router.post("/triggers/sonarqube")
+async def sonarqube_trigger(request: Request):
+    """[方案 A] 增强预案：支持 CI/CD 管道主动触发同步。"""
+    try:
+        payload = await request.json()
+        project_key = payload.get("project_key")
+
+        if not project_key:
+            return {"status": "error", "message": "project_key is required"}
+
+        logger.info(f"SonarQube Trigger: Manually triggered sync for {project_key}")
+        mq = MessageQueue()
+        mq.publish_task({"source": "sonarqube", "project_key": project_key, "job_type": "ci_triggered", "sync_issues": True})
+        return {"status": "accepted"}
+    except Exception as e:
+        logger.error(f"SonarQube Trigger error: {e}")
         return {"status": "error", "message": str(e)}

@@ -171,8 +171,8 @@ with col_list:
 # --- Detailed View ---
 with st.expander("Full Data Explorer"):
     st.dataframe(
-        filtered_df[
-            ["project_id", "file_path", "churn_90d", "estimated_loc", "risk_factor", "risk_zone", "last_modified_at"]
-        ].sort_values("risk_factor", ascending=False),
+        filtered_df[["project_id", "file_path", "churn_90d", "estimated_loc", "risk_factor", "risk_zone", "last_modified_at"]].sort_values(
+            "risk_factor", ascending=False
+        ),
         use_container_width=True,
     )

@@ -1,7 +1,6 @@
 import argparse
 import logging
 import subprocess
-import sys
 import time
 from datetime import UTC, datetime, timedelta
 
@@ -136,7 +135,7 @@ def main() -> None:
                         ["dbt", "run", "--project-dir", "dbt_project", "--profiles-dir", "dbt_project"],
                         capture_output=True,
                         text=True,
-                        check=True,
+                        check=False,
                     )
                     if result.returncode == 0:
                         logger.info("dbt run success")
@@ -152,12 +151,13 @@ def main() -> None:
 
                         logger.info("Recalculating DORA 2.0 metrics...")
                         DORAService.aggregate_all_projects(session)
-                        
+
                         logger.info("Triggering automatic risk bot check...")
                         bot_res = subprocess.run(
                             ["python", "scripts/wecom_risk_bot.py"],
                             capture_output=True,
-                            text=True
+                            text=True,
+                            check=False,
                         )
                         if bot_res.returncode != 0:
                             logger.error(f"Risk bot failed: {bot_res.stderr}")

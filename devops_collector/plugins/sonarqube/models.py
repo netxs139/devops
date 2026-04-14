@@ -207,10 +207,31 @@ class SonarMeasure(Base):
     new_vulnerabilities = Column(Integer, comment="新增漏洞数")
     new_reliability_rating = Column(String(1), comment="新增可靠性评级")
     new_security_rating = Column(String(1), comment="新增安全性评级")
-
     quality_gate_status = Column(String(10))
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     project = relationship("SonarProject", back_populates="measures")
+
+    @hybrid_property
+    def dev_cost(self) -> int:
+        """预测开发总人月成本。
+        公式: ((sqale_index / 60) / (sqale_debt_ratio / 100)) / 174
+        """
+        # 拦截债务率为 0 或数据缺失的情况
+        if not self.sqale_index or not self.sqale_debt_ratio or self.sqale_debt_ratio == 0:
+            return 0
+
+        # 计算总开发工时 (小时)
+        total_dev_time_hours = (self.sqale_index / 60.0) / (self.sqale_debt_ratio / 100.0)
+        # 转换为人月 (基准 174 小时/人月)
+        return int(round(total_dev_time_hours / 174.0))
+
+    @dev_cost.expression
+    def dev_cost(cls):
+        """SQL 级别的开发人月计算表达式。"""
+        # 适配 PostgreSQL 的浮点数除法要求 (LL #78)
+        from sqlalchemy import cast, func
+
+        return func.round(cast((cast(cls.sqale_index, Float) / 60.0) / (cast(cls.sqale_debt_ratio, Float) / 100.0) / 174.0, Float))
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.

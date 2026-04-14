@@ -85,22 +85,12 @@ st.caption("Are we investing enough in Debt and Risk? Or drowning in Defects?")
 fd_chart_data = df_weekly.sort_values("metric_week")
 
 fig_dist = go.Figure()
-fig_dist.add_trace(
-    go.Bar(name="Features", x=fd_chart_data["metric_week"], y=fd_chart_data["closed_features"], marker_color="#5B9BD5")
-)
-fig_dist.add_trace(
-    go.Bar(name="Defects", x=fd_chart_data["metric_week"], y=fd_chart_data["closed_defects"], marker_color="#C00000")
-)
-fig_dist.add_trace(
-    go.Bar(name="Debts", x=fd_chart_data["metric_week"], y=fd_chart_data["closed_debts"], marker_color="#FFC000")
-)
-fig_dist.add_trace(
-    go.Bar(name="Risks", x=fd_chart_data["metric_week"], y=fd_chart_data["closed_risks"], marker_color="#ED7D31")
-)
+fig_dist.add_trace(go.Bar(name="Features", x=fd_chart_data["metric_week"], y=fd_chart_data["closed_features"], marker_color="#5B9BD5"))
+fig_dist.add_trace(go.Bar(name="Defects", x=fd_chart_data["metric_week"], y=fd_chart_data["closed_defects"], marker_color="#C00000"))
+fig_dist.add_trace(go.Bar(name="Debts", x=fd_chart_data["metric_week"], y=fd_chart_data["closed_debts"], marker_color="#FFC000"))
+fig_dist.add_trace(go.Bar(name="Risks", x=fd_chart_data["metric_week"], y=fd_chart_data["closed_risks"], marker_color="#ED7D31"))
 
-fig_dist.update_layout(
-    barmode="stack", title="Weekly Work Distribution", height=400, xaxis_title="Week", yaxis_title="Items Completed"
-)
+fig_dist.update_layout(barmode="stack", title="Weekly Work Distribution", height=400, xaxis_title="Week", yaxis_title="Items Completed")
 st.plotly_chart(fig_dist, use_container_width=True)
 
 # --- 2. Flow Velocity & Time ---
@@ -179,17 +169,11 @@ defect_ratio = fd_chart_data["closed_defects"].sum() / total_items if total_item
 debt_ratio = fd_chart_data["closed_debts"].sum() / total_items if total_items > 0 else 0
 
 if defect_ratio > 0.4:
-    st.error(
-        f"🚨 **Quality Crisis**: {defect_ratio:.1%} of recent work is Defects (Target: < 20%). Innovation is stalled."
-    )
+    st.error(f"🚨 **Quality Crisis**: {defect_ratio:.1%} of recent work is Defects (Target: < 20%). Innovation is stalled.")
 elif defect_ratio > 0.2:
     st.warning(f"⚠️ **High Failure Demand**: {defect_ratio:.1%} is Defects. Investigate testing practices.")
 
 if debt_ratio < 0.1:
-    st.warning(
-        f"⚠️ **Tech Debt Pile-up**: Only {debt_ratio:.1%} invested in Debt/Refactoring. Future velocity is at risk."
-    )
+    st.warning(f"⚠️ **Tech Debt Pile-up**: Only {debt_ratio:.1%} invested in Debt/Refactoring. Future velocity is at risk.")
 
-st.success(
-    f"ℹ️ **Feature Allocation**: {1 - defect_ratio - debt_ratio:.1%} of capacity is delivering new business value."
-)
+st.success(f"ℹ️ **Feature Allocation**: {1 - defect_ratio - debt_ratio:.1%} of capacity is delivering new business value.")

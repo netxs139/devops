@@ -36,9 +36,7 @@ st.markdown(f"### 最近 {len(activities_df)} 条平台活动")
 st.dataframe(activities_df, use_container_width=True)
 st.markdown("### 活动强度趋势")
 activities_df["occurred_at"] = pd.to_datetime(activities_df["occurred_at"])
-daily_counts = (
-    activities_df.groupby([activities_df["occurred_at"].dt.date, "activity_type"]).size().reset_index(name="count")
-)
+daily_counts = activities_df.groupby([activities_df["occurred_at"].dt.date, "activity_type"]).size().reset_index(name="count")
 fig = px.area(
     daily_counts,
     x="occurred_at",

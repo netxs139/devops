@@ -25,9 +25,7 @@ if df.empty:
     st.warning("暂无架构脆性数据。请确保 dbt 模型 `fct_architectural_brittleness` 已生成。")
 else:
     high_risk_count = len(df[df["architectural_health_status"] == "CRITICAL_BRITTLE_CORE"])
-    st.warning(
-        f"☢️ 检测到 {high_risk_count} 个关键模块处于脆弱核心 (CRITICAL_BRITTLE_CORE) 状态，极易引发多米诺骨牌效应。"
-    )
+    st.warning(f"☢️ 检测到 {high_risk_count} 个关键模块处于脆弱核心 (CRITICAL_BRITTLE_CORE) 状态，极易引发多米诺骨牌效应。")
     st.subheader("🌋 架构风险分布")
 
     fig = px.scatter(

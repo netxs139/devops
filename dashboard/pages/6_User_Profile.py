@@ -61,9 +61,7 @@ selected_user_name = st.selectbox("🔍 搜索开发者 (姓名/ID)", users_df["
 selected_user_id = users_df[users_df["real_name"] == selected_user_name]["user_id"].iloc[0]
 
 # Detailed User Profile
-profile_df = run_query(
-    f"SELECT * FROM public_marts.fct_developer_activity_profile WHERE user_id = '{selected_user_id}'"
-)
+profile_df = run_query(f"SELECT * FROM public_marts.fct_developer_activity_profile WHERE user_id = '{selected_user_id}'")
 if profile_df.empty:
     st.error("无法获取该开发者的详细信息。")
     st.stop()
@@ -142,9 +140,7 @@ activity_query = f"""
 """
 activity_df = run_query(activity_query)
 if not activity_df.empty:
-    fig_trend = px.area(
-        activity_df, x="metric_date", y="activity_count", color_discrete_sequence=["#8F00FF"], template="plotly_dark"
-    )
+    fig_trend = px.area(activity_df, x="metric_date", y="activity_count", color_discrete_sequence=["#8F00FF"], template="plotly_dark")
     fig_trend.update_layout(height=300, margin=dict(t=20, b=20))
     st.plotly_chart(fig_trend, use_container_width=True)
 else:

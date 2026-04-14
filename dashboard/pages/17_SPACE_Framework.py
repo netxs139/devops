@@ -191,9 +191,7 @@ with col_insights:
     st.subheader("💡 智能治理建议")
 
     if metrics["A"] > metrics["P"] + 0.5:
-        st.error(
-            "🚀 **Activity Overload**: 产出量很高但性能/质量得分偏低，可能存在盲目提交或自动化测试失效，建议加强代码审查。"
-        )
+        st.error("🚀 **Activity Overload**: 产出量很高但性能/质量得分偏低，可能存在盲目提交或自动化测试失效，建议加强代码审查。")
     if metrics["S"] < 3.0:
         st.warning("😟 **Morale Alert**: 满意度跌破警戒线，建议开展 1-on-1 或回顾会议，识别流程中的摩擦点。")
     if metrics["C"] < 3.0:

@@ -73,9 +73,7 @@ def load_talent_data():
 def load_bus_factor():
     engine = get_db_engine()
     try:
-        query = (
-            "SELECT * FROM public_marts.dws_subsystem_bus_factor WHERE knowledge_risk_status != 'HEALTHY_DISTRIBUTION'"
-        )
+        query = "SELECT * FROM public_marts.dws_subsystem_bus_factor WHERE knowledge_risk_status != 'HEALTHY_DISTRIBUTION'"
         with engine.connect() as conn:
             return pd.read_sql(text(query), conn)
     except:
@@ -194,9 +192,7 @@ if not df_risk.empty:
     st.warning("The following sub-systems are heavily dependent on a single contributor.")
 
     # Simple table for risks
-    risk_display = df_risk[
-        ["project_id", "subsystem", "contributor_count", "subsystem_ownership_pct", "knowledge_risk_status"]
-    ]
+    risk_display = df_risk[["project_id", "subsystem", "contributor_count", "subsystem_ownership_pct", "knowledge_risk_status"]]
     st.table(risk_display.head(10))
     st.markdown("</div>", unsafe_allow_html=True)
 

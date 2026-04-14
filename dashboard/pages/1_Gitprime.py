@@ -13,9 +13,7 @@ from devops_collector.config import settings
 
 
 # Page Configuration
-st.set_page_config(
-    page_title="GitPrime Engineering Insights", page_icon="🌊", layout="wide", initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="GitPrime Engineering Insights", page_icon="🌊", layout="wide", initial_sidebar_state="expanded")
 
 # Custom CSS for Premium Look
 st.markdown(
@@ -139,12 +137,8 @@ def process_metrics(df):
         return df
 
     # Calculate Ratios
-    df["churn_rate"] = df.apply(
-        lambda x: (x["churn_lines"] / x["raw_additions"] * 100) if x["raw_additions"] > 0 else 0, axis=1
-    )
-    df["test_rate"] = df.apply(
-        lambda x: (x["test_lines"] / x["raw_additions"] * 100) if x["raw_additions"] > 0 else 0, axis=1
-    )
+    df["churn_rate"] = df.apply(lambda x: (x["churn_lines"] / x["raw_additions"] * 100) if x["raw_additions"] > 0 else 0, axis=1)
+    df["test_rate"] = df.apply(lambda x: (x["test_lines"] / x["raw_additions"] * 100) if x["raw_additions"] > 0 else 0, axis=1)
     df["refactor_intensity"] = df["refactor_ratio"] * 100
 
     # Assign Levels based on Rank (Dense Rank)
@@ -247,9 +241,7 @@ else:
         with c2:
             st.subheader("Leaderboard (by Impact)")
             st.dataframe(
-                df[["rank", "full_name", "impact_score", "active_days", "level"]].sort_values(
-                    "impact_score", ascending=False
-                ),
+                df[["rank", "full_name", "impact_score", "active_days", "level"]].sort_values("impact_score", ascending=False),
                 column_config={
                     "rank": "Rank",
                     "impact_score": st.column_config.NumberColumn("Impact", format="%d"),
@@ -283,9 +275,7 @@ else:
             st.dataframe(
                 df[["full_name", "churn_rate", "test_rate", "refactor_intensity", "ttf"]],
                 column_config={
-                    "churn_rate": st.column_config.ProgressColumn(
-                        "Churn %", format="%.1f%%", min_value=0, max_value=100
-                    ),
+                    "churn_rate": st.column_config.ProgressColumn("Churn %", format="%.1f%%", min_value=0, max_value=100),
                     "test_rate": st.column_config.NumberColumn("Test Coverage %", format="%.1f%%"),
                     "refactor_intensity": st.column_config.NumberColumn("Refactor %", format="%.1f%%"),
                     "ttf": "Time to Fix (Hours)",
@@ -315,9 +305,7 @@ else:
                 column_config={
                     "rank": "Rank",
                     "review_count": st.column_config.NumberColumn("Reviews Done"),
-                    "sherpa_score": st.column_config.ProgressColumn(
-                        "Sherpa Score", format="%d", max_value=max(df["sherpa_score"].max(), 100)
-                    ),
+                    "sherpa_score": st.column_config.ProgressColumn("Sherpa Score", format="%d", max_value=max(df["sherpa_score"].max(), 100)),
                 },
                 hide_index=True,
                 use_container_width=True,

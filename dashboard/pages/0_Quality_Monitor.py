@@ -1,14 +1,17 @@
-import streamlit as st
+from datetime import datetime
+
 import pandas as pd
-import numpy as np
-from datetime import datetime, timedelta
+import streamlit as st
+
 from dashboard.utils import run_query
+
 
 # Page Configuration
 st.set_page_config(page_title="Data Quality Monitor", page_icon="🛡️", layout="wide")
 
 # Custom CSS for Apple Style Glassmorphism
-st.markdown("""
+st.markdown(
+    """
 <style>
     :root {
         --glass-bg: rgba(255, 255, 255, 0.05);
@@ -70,7 +73,10 @@ st.markdown("""
         to { opacity: 1; transform: translateY(0); }
     }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
+
 
 # Data Fetching
 @st.cache_data(ttl=60)
@@ -82,6 +88,7 @@ def fetch_quality_metrics():
     except Exception as e:
         st.error(f"Failed to fetch metrics: {e}")
         return pd.DataFrame()
+
 
 df_metrics = fetch_quality_metrics()
 
@@ -98,67 +105,78 @@ if df_metrics.empty:
         st.code("make sync-all && make dbt-build")
 else:
     # Ensure datetime format
-    df_metrics['last_sync_time'] = pd.to_datetime(df_metrics['last_sync_time'])
-    
+    df_metrics["last_sync_time"] = pd.to_datetime(df_metrics["last_sync_time"])
+
     # Aggregated KPIs
-    avg_success_rate = df_metrics['success_rate_pct'].mean()
-    total_anomalies = df_metrics['total_anomalies'].max()
-    latest_sync = df_metrics['last_sync_time'].max()
-    
+    avg_success_rate = df_metrics["success_rate_pct"].mean()
+    total_anomalies = df_metrics["total_anomalies"].max()
+    latest_sync = df_metrics["last_sync_time"].max()
+
     col1, col2, col3, col4 = st.columns(4)
-    
+
     with col1:
         color = "var(--success-color)" if avg_success_rate > 95 else "var(--warning-color)"
-        st.markdown(f"""
+        st.markdown(
+            f"""
         <div class='metric-card fade-in'>
             <div class='metric-label'>Avg Sync Success</div>
             <div class='metric-value' style='color: {color}'>{avg_success_rate:.1f}%</div>
-            <span class='status-badge status-{"safe" if avg_success_rate > 95 else "warn"}'>{'Healthy' if avg_success_rate > 95 else 'Attention'}</span>
+            <span class='status-badge status-{"safe" if avg_success_rate > 95 else "warn"}'>{"Healthy" if avg_success_rate > 95 else "Attention"}</span>
         </div>
-        """, unsafe_allow_html=True)
-        
+        """,
+            unsafe_allow_html=True,
+        )
+
     with col2:
         color = "var(--error-color)" if total_anomalies > 5 else "var(--success-color)"
-        st.markdown(f"""
+        st.markdown(
+            f"""
         <div class='metric-card fade-in'>
             <div class='metric-label'>Detected Anomalies</div>
             <div class='metric-value' style='color: {color}'>{total_anomalies}</div>
-            <span class='status-badge status-{"danger" if total_anomalies > 5 else "safe"}'>{'Audit Guarded' if total_anomalies == 0 else 'Review Needed'}</span>
+            <span class='status-badge status-{"danger" if total_anomalies > 5 else "safe"}'>{"Audit Guarded" if total_anomalies == 0 else "Review Needed"}</span>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
 
     with col3:
-        sync_str = latest_sync.strftime('%H:%M:%S') if pd.notnull(latest_sync) else "N/A"
-        date_str = latest_sync.strftime('%Y-%m-%d') if pd.notnull(latest_sync) else "N/A"
-        st.markdown(f"""
+        sync_str = latest_sync.strftime("%H:%M:%S") if pd.notnull(latest_sync) else "N/A"
+        date_str = latest_sync.strftime("%Y-%m-%d") if pd.notnull(latest_sync) else "N/A"
+        st.markdown(
+            f"""
         <div class='metric-card fade-in'>
             <div class='metric-label'>Latest Sync</div>
             <div class='metric-value' style='font-size: 1.25rem; margin-top: 25px;'>{sync_str}</div>
             <div style='color: #8E8E93; font-size: 0.8rem; margin-bottom: 10px;'>{date_str}</div>
             <span class='status-badge status-safe'>Live</span>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
 
     with col4:
-        st.markdown(f"""
+        st.markdown(
+            """
         <div class='metric-card fade-in'>
             <div class='metric-label'>Data Tier</div>
             <div class='metric-value'>MARTS</div>
             <span class='status-badge status-safe'>ISO Verified</span>
         </div>
-        """, unsafe_allow_html=True)
-
+        """,
+            unsafe_allow_html=True,
+        )
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     # Detailed Table
     st.subheader("System Synchronicity Breakdown")
-    display_df = df_metrics[['source_system', 'total_sync_tasks', 'success_count', 'failure_count', 'success_rate_pct', 'last_sync_time']]
+    display_df = df_metrics[["source_system", "total_sync_tasks", "success_count", "failure_count", "success_rate_pct", "last_sync_time"]]
     st.dataframe(display_df, use_container_width=True)
 
     # Trend Chart
     st.subheader("Sync Success Rates by Source")
-    st.bar_chart(df_metrics.set_index('source_system')['success_rate_pct'])
+    st.bar_chart(df_metrics.set_index("source_system")["success_rate_pct"])
 
 # Footer
 st.markdown("---")

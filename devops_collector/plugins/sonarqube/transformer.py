@@ -112,39 +112,63 @@ class SonarDataTransformer:
         return measure
 
     def transform_issue(self, project: SonarProject, i_data: dict) -> SonarIssue:
-        """核心解析逻辑：将原始 Sonar JSON 转换为 SonarIssue 模型。
+        """单条 Issue 转换（委托给批量方法以保持逻辑统一）。"""
+        results = self.transform_issues_batch(project, [i_data])
+        return results[0]
 
-        Args:
-            project: 关联的 SonarProject 对象。
-            i_data: 单个 Issue 的原始数据字典。
+    def transform_issues_batch(self, project: SonarProject, issues_data: list[dict]) -> list[SonarIssue]:
+        """批量解析并创建/更新 SonarIssue 模型。
 
-        Returns:
-            SonarIssue: 填充好或更新后的 Issue 对象。
+        采用内存 Map 预加载 (Map Load) 模式彻底解决 N+1 查询瓶颈。 (LL #56)
         """
-        issue = self.session.query(SonarIssue).filter_by(issue_key=i_data["key"]).first()
-        if not issue:
-            issue = SonarIssue(issue_key=i_data["key"], project_id=project.id)
-            self.session.add(issue)
-        issue.type = i_data.get("type")
-        issue.severity = i_data.get("severity")
-        issue.status = i_data.get("status")
-        issue.resolution = i_data.get("resolution")
-        issue.rule = i_data.get("rule")
-        issue.message = i_data.get("message")
-        issue.component = i_data.get("component")
-        issue.line = i_data.get("line")
-        issue.effort = i_data.get("effort")
-        issue.debt = i_data.get("debt")
-        issue.assignee = i_data.get("assignee")
-        if issue.assignee:
-            u = IdentityManager.get_or_create_user(self.session, "sonarqube", issue.assignee)
-            issue.assignee_user_id = u.global_user_id
-        issue.author = i_data.get("author")
-        if issue.author:
-            u = IdentityManager.get_or_create_user(self.session, "sonarqube", issue.author)
-            issue.author_user_id = u.global_user_id
-        issue.raw_data = i_data
-        issue.creation_date = parse_iso8601(i_data.get("creationDate"))
-        issue.update_date = parse_iso8601(i_data.get("updateDate"))
-        issue.close_date = parse_iso8601(i_data.get("closeDate"))
-        return issue
+        if not issues_data:
+            return []
+
+        # 1. 提取所有 Key 并预加载现有记录
+        issue_keys = [i_data["key"] for i_data in issues_data if "key" in i_data]
+        existing_issues = {issue.issue_key: issue for issue in self.session.query(SonarIssue).filter(SonarIssue.issue_key.in_(issue_keys)).all()}
+
+        results = []
+        for i_data in issues_data:
+            key = i_data.get("key")
+            if not key:
+                continue
+
+            issue = existing_issues.get(key)
+            if not issue:
+                issue = SonarIssue(issue_key=key, project_id=project.id)
+                self.session.add(issue)
+                existing_issues[key] = issue  # 加入缓存映射
+
+            # 更新属性
+            issue.type = i_data.get("type")
+            issue.severity = i_data.get("severity")
+            issue.status = i_data.get("status")
+            issue.resolution = i_data.get("resolution")
+            issue.rule = i_data.get("rule")
+            issue.message = i_data.get("message")
+            issue.component = i_data.get("component")
+            issue.line = i_data.get("line")
+            issue.effort = i_data.get("effort")
+            issue.debt = i_data.get("debt")
+
+            # 身份关联
+            issue.assignee = i_data.get("assignee")
+            if issue.assignee:
+                u = IdentityManager.get_or_create_user(self.session, "sonarqube", issue.assignee)
+                if u:  # LL #72: 身份安全访问规程
+                    issue.assignee_user_id = u.global_user_id
+
+            issue.author = i_data.get("author")
+            if issue.author:
+                u = IdentityManager.get_or_create_user(self.session, "sonarqube", issue.author)
+                if u:
+                    issue.author_user_id = u.global_user_id
+
+            issue.raw_data = i_data
+            issue.creation_date = parse_iso8601(i_data.get("creationDate"))
+            issue.update_date = parse_iso8601(i_data.get("updateDate"))
+            issue.close_date = parse_iso8601(i_data.get("closeDate"))
+            results.append(issue)
+
+        return results
