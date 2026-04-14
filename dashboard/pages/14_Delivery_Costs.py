@@ -14,9 +14,7 @@ if not costs_df.empty:
     c1, c2 = st.columns(2)
     c1.metric("总估算成本", f"${costs_df['total_estimated_cost'].sum():,.2f}")
     c2.metric("涵盖项目数", len(costs_df))
-    fig_costs = px.pie(
-        costs_df, values="total_estimated_cost", names="project_name", title="各项目估算交付成本分布 (USD)", hole=0.4
-    )
+    fig_costs = px.pie(costs_df, values="total_estimated_cost", names="project_name", title="各项目估算交付成本分布 (USD)", hole=0.4)
     st.plotly_chart(fig_costs, use_container_width=True)
     st.markdown("### 成本明细表")
     st.dataframe(costs_df, use_container_width=True)

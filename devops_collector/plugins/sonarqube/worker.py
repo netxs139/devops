@@ -90,17 +90,24 @@ class SonarQubeWorker(BaseWorker):
         return measure
 
     def _sync_issues(self, project: SonarProject) -> int:
-        """分页同步问题详情。"""
+        """分页批量同步问题详情。"""
         count = 0
         page = 1
         while True:
             issues_data = self.client.get_issues(project.key, page=page)
             if not issues_data:
                 break
-            for i_data in issues_data:
-                self.transformer.transform_issue(project, i_data)
-                count += 1
+
+            # 批量写入 Staging
+            self.bulk_save_to_staging(source="sonarqube", entity_type="issue", payloads=[{"external_id": i["key"], "payload": i} for i in issues_data])
+
+            # 批量转换
+            self.transformer.transform_issues_batch(project, issues_data)
+
+            count += len(issues_data)
             page += 1
-            if count % 200 == 0:
+            if count % 1000 == 0:
                 self.session.flush()
+                logger.info(f"SonarQube Sync: Progress {count} issues for {project.key}")
+
         return count

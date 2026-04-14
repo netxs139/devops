@@ -52,7 +52,5 @@ def sonarqube_assets(context: AssetExecutionContext, db: DatabaseResource, confi
         keys = config.project_keys or [p.key for p in session.query(SonarProject).all()]
         for key in keys:
             context.log.info(f"Syncing SonarQube project: {key}")
-            worker.run_sync(
-                {"source": "sonarqube", "project_key": key}, model_cls=SonarProject, pk_field="key", pk_value=key
-            )
+            worker.run_sync({"source": "sonarqube", "project_key": key}, model_cls=SonarProject, pk_field="key", pk_value=key)
     return "completed"

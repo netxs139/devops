@@ -2,9 +2,7 @@ import streamlit as st
 
 
 # Page Configuration
-st.set_page_config(
-    page_title="DevOps Intelligence Platform", page_icon="🚀", layout="wide", initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="DevOps Intelligence Platform", page_icon="🚀", layout="wide", initial_sidebar_state="expanded")
 
 # Custom CSS
 st.markdown(
@@ -41,9 +39,7 @@ st.markdown(
 
 # Header
 st.markdown("<h1 class='main-header'>🚀 DevOps Intelligence Platform</h1>", unsafe_allow_html=True)
-st.markdown(
-    "<p class='sub-header'>Enterprise-Grade Engineering Analytics & Value Stream Management</p>", unsafe_allow_html=True
-)
+st.markdown("<p class='sub-header'>Enterprise-Grade Engineering Analytics & Value Stream Management</p>", unsafe_allow_html=True)
 
 # Main Dashboard Content
 st.info("👋 Welcome! Select a module from the sidebar to begin your analytics journey.")

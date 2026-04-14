@@ -85,9 +85,7 @@ st.caption("Strategic Intelligence for Engineering Leaders | v3.0 Powered by dbt
 # --- Strategic Data Ingestion ---
 try:
     # 1. Overall Portfolio Health
-    health_data = run_query(
-        "SELECT avg(health_score) as avg_score, count(*) as project_count FROM public_marts.fct_project_delivery_health"
-    )
+    health_data = run_query("SELECT avg(health_score) as avg_score, count(*) as project_count FROM public_marts.fct_project_delivery_health")
     avg_health = safe_float(health_data["avg_score"][0]) if not health_data.empty else 0
     total_projects = int(health_data["project_count"][0]) if not health_data.empty else 0
 

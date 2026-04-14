@@ -265,7 +265,7 @@ class ZenTaoWorker(BaseWorker):
                                 self._sync_tasks_batch(product.id, exec_item.id, task_batch)
                         except Exception as e:
                             logger.error(f"Failed to sync tasks for execution {e_id}: {e}")
-                            raise # 触发 begin_nested 的内部回滚
+                            raise  # 触发 begin_nested 的内部回滚
 
                     # 每一个 Execution 完成后执行持久化，但不提交主事务
                     self.session.flush()
