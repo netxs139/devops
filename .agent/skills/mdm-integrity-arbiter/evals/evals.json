@@ -67,20 +67,6 @@
           "check": "输出确指出 web_url 是逻辑属性，不能在 Raw SQL 中直接 SELECT"
         }
       ]
-    },
-    {
-      "id": 5,
-      "name": "test-pollution-defense",
-      "domain": "Defense-9 (Test Isolation)",
-      "prompt": "Review 这个测试文件头部：\n\nimport pytest\nfrom devops_portal.main import app\nfrom devops_collector.auth.auth_database import get_auth_db\n\napp.dependency_overrides[get_auth_db] = lambda: None",
-      "expected_output": "必须下达 Blocker 判决：[Ref LL#2026-04-15] 严禁在测试模块顶层设置全局副作用。禁止在模块级执行 dependency_overrides 覆盖，必须下沉至 fixture 作用域并在结束后执行 clear()，防止污染全量审计环境。",
-      "assertions": [
-        {
-          "id": "m5-1",
-          "name": "识别测试隔离风险",
-          "check": "输出必须拦截模块级的全局依赖覆盖行为"
-        }
-      ]
     }
   ]
 }

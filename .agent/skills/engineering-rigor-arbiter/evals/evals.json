@@ -1,0 +1,62 @@
+{
+  "skill_name": "engineering-rigor-arbiter",
+  "version": "1.0",
+  "evals": [
+    {
+      "id": 1,
+      "name": "test-pollution-defense",
+      "domain": "Hygiene-1 (Test Isolation)",
+      "prompt": "Review 这个测试文件头部：\n\nimport pytest\nfrom devops_portal.main import app\nfrom devops_collector.auth.auth_database import get_auth_db\n\napp.dependency_overrides[get_auth_db] = lambda: None",
+      "expected_output": "必须下达 Blocker 判决：[Ref LL#2026-04-15] 严禁在测试模块顶层设置全局副作用。禁止在模块级执行 dependency_overrides 覆盖，必须下沉至 fixture 作用域并在结束后执行 clear()，防止污染全量审计环境。",
+      "assertions": [
+        {
+          "id": "e1-1",
+          "name": "识别测试隔离风险",
+          "check": "输出必须拦截模块级的全局依赖覆盖行为并要求下沉到 fixture"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "dialect-isolation-defense",
+      "domain": "Hygiene-2 (DB Dialect)",
+      "prompt": "看下这个 pytest 的 hook：\n\n@event.listens_for(Engine, 'connect')\ndef set_pragma(dbapi_connection, connection_record):\n    cursor = dbapi_connection.cursor()\n    cursor.execute('PRAGMA foreign_keys=ON')\n    cursor.close()",
+      "expected_output": "必须下达 Blocker 判决：[Ref LL#2026-04-14] 数据库方言隔离原则。PRAGMA 是 SQLite 专有的指令，一旦配置切为 PostgreSQL，将在全量跑批时全面崩溃。必须包裹在 `if \"sqlite\" in str(engine.url)` 之内。",
+      "assertions": [
+        {
+          "id": "e2-1",
+          "name": "识别方言毒药",
+          "check": "指出 PRAGMA 缺乏基于 engine 类型的条件判断"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "global-model-loading-defense",
+      "domain": "Hygiene-3 (Global Model Loading)",
+      "prompt": "我写了一个只用于修复 Sonar 数据的小脚本，里面只用到 Sonar 模型：\n\nimport sys\nfrom devops_collector.plugins.sonarqube.models import SonarProject\nfrom dashboard.common.db import get_db_session\n\nsession = next(get_db_session())\nproject = session.query(SonarProject).first()",
+      "expected_output": "必须下达 Blocker 判决：[Ref LL#2026-04-13] 全模型加载强制律。独立脚本不能只引入单独的模型类，会引发 Registry 映射断裂导致跨表外键失效。必须显式引入总包或调用 `PluginLoader.load_models()`。",
+      "assertions": [
+        {
+          "id": "e3-1",
+          "name": "识别缺漏加载",
+          "check": "拦截孤立的模型加载方案"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "nested-transaction-defense",
+      "domain": "Hygiene-5 (Re-query)",
+      "prompt": "这是我写的修正函数：\n\ndef fix_data(session):\n    items = session.query(Item).all()\n    for item in items:\n        if item.status == 'wrong':\n            item.status = 'correct'\n            session.commit()\n        item.last_checked = True",
+      "expected_output": "必须下达 Blocker 判决：[Ref LL#2026-04-13] 嵌套事务重拉取律 (Re-query Rule)。在循环中 commit 会导致游离态（Instance Deleted 等错误），禁止操作已被 commit 清空状态的 item 对象。必须改传 ID 并重新 get，或使用 begin_nested()。",
+      "assertions": [
+        {
+          "id": "e4-1",
+          "name": "识别 ORM 游离态循环",
+          "check": "拦截在 ORM 循环内执行 commit 并继续操作对象的行为"
+        }
+      ]
+    }
+  ]
+}
