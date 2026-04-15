@@ -55,8 +55,14 @@ def override_get_db():
         db.close()
 
 
-app.dependency_overrides[get_db] = override_get_db
-client = TestClient(app)
+# 移除模块级副作用，改为在 fixture 中局部注入
+@pytest.fixture(scope="function")
+def isolated_client():
+    """创建一个带有独立数据库依赖覆盖的 API 客户端。"""
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture(scope="function")
@@ -167,7 +173,7 @@ def test_identity_resolver_logic(db_session):
 # --- 3. API 接口集成测试 ---
 
 
-def test_api_user_full_profile(db_session):
+def test_api_user_full_profile(db_session, isolated_client):
     """测试获取用户全景画像接口。"""
     # 1. 构造测试数据
     u_id = uuid.uuid4()
@@ -201,7 +207,7 @@ def test_api_user_full_profile(db_session):
     db_session.commit()
 
     # 2. 调用 API
-    response = client.get(f"/admin/users/{u_id}")
+    response = isolated_client.get(f"/admin/users/{u_id}")
     assert response.status_code == 200
     data = response.json()
 
@@ -215,7 +221,7 @@ def test_api_user_full_profile(db_session):
     assert data["teams"][0]["allocation"] == 0.8
 
 
-def test_api_create_team_and_add_member(db_session):
+def test_api_create_team_and_add_member(db_session, isolated_client):
     """测试通过 API 创建团队并添加成员。"""
     # 1. 创建用户并赋予管理员角色
     u_id = uuid.uuid4()
@@ -245,13 +251,13 @@ def test_api_create_team_and_add_member(db_session):
     with patch("devops_collector.auth.auth_service.auth_get_current_user", return_value=db_admin):
         # 2. 创建团队
         payload = {"name": "API 团队", "team_code": "API_TEAM", "description": "通过 API 创建"}
-        resp = client.post("/admin/teams", json=payload, headers=headers)
+        resp = isolated_client.post("/admin/teams", json=payload, headers=headers)
         assert resp.status_code == 200
         team_id = resp.json()["id"]
 
         # 3. 添加成员
         member_payload = {"user_id": str(u_id), "role_code": "LEADER", "allocation_ratio": 1.0}
-        resp = client.post(f"/admin/teams/{team_id}/members", json=member_payload, headers=headers)
+        resp = isolated_client.post(f"/admin/teams/{team_id}/members", json=member_payload, headers=headers)
         assert resp.status_code == 200
 
     # 4. 验证数据库
