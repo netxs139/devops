@@ -39,6 +39,48 @@
           "check": "输出明确指出 project_id 必须加 index=True"
         }
       ]
+    },
+    {
+      "id": 3,
+      "name": "rbac-hallucination-defense",
+      "domain": "Defense-7 (RBAC Paradigm)",
+      "prompt": "Review 这段代码：\n\nfrom devops_collector.models.base_models import SysRole, SysPermission\n\ndef sync_perms(db, role_id):\n    role = db.query(SysRole).get(role_id)\n    perm = db.query(SysPermission).filter_by(name='rpt:view').first()\n    role.permissions.append(perm)",
+      "expected_output": "必须下达 Blocker 判决：[Ref LL#2026-04-15] 禁止臆测 SysPermission 类。系统采用“菜单即权限”双重对齐模式，应直接校验或操作 SysMenu.perms 字段，SysPermission 非物理模型类。",
+      "assertions": [
+        {
+          "id": "m3-1",
+          "name": "识别 RBAC 幻觉",
+          "check": "输出明确指出 SysPermission 不是合法模型，并提示对齐 SysMenu.perms"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "non-physical-sql-defense",
+      "domain": "Defense-8 (SQL Persistence)",
+      "prompt": "Review 这段查询代码：\n\ndef get_commits(conn):\n    query = text('SELECT id, title, web_url FROM gitlab_commits')\n    return conn.execute(query).fetchall()",
+      "expected_output": "必须下达 Blocker 判决：[Ref LL#2026-04-15] 严禁在 Raw SQL 中引用逻辑计算属性。web_url 在 GitLabCommit 中是 @hybrid_property，物理数据库中不存在该列，直接查询会导致 UndefinedColumn 报错。",
+      "assertions": [
+        {
+          "id": "m4-1",
+          "name": "识别非物理列引用",
+          "check": "输出确指出 web_url 是逻辑属性，不能在 Raw SQL 中直接 SELECT"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "test-pollution-defense",
+      "domain": "Defense-9 (Test Isolation)",
+      "prompt": "Review 这个测试文件头部：\n\nimport pytest\nfrom devops_portal.main import app\nfrom devops_collector.auth.auth_database import get_auth_db\n\napp.dependency_overrides[get_auth_db] = lambda: None",
+      "expected_output": "必须下达 Blocker 判决：[Ref LL#2026-04-15] 严禁在测试模块顶层设置全局副作用。禁止在模块级执行 dependency_overrides 覆盖，必须下沉至 fixture 作用域并在结束后执行 clear()，防止污染全量审计环境。",
+      "assertions": [
+        {
+          "id": "m5-1",
+          "name": "识别测试隔离风险",
+          "check": "输出必须拦截模块级的全局依赖覆盖行为"
+        }
+      ]
     }
   ]
 }
