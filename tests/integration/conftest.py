@@ -65,8 +65,15 @@ _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine, ex
 @pytest.fixture(scope="session", autouse=True)
 def setup_database():
     """Create all tables once per session."""
-    # Import models to register with Base.metadata
-    # ...
+    # LL #33: 显式导入模型总包以触发 SQLAlchemy Metadata 注册
+    import devops_collector.models  # noqa: F401
+    
+    # [HARDENING] 针对本测试涉及的插件模型，若总包未涵盖则补充导入
+    try:
+        from devops_collector.plugins.zentao.models import ZenTaoIssue, ZenTaoProject, ZenTaoProduct # noqa: F401
+    except ImportError:
+        pass
+
     Base.metadata.create_all(bind=_engine)
 
 

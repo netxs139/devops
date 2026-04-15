@@ -12,6 +12,9 @@
 
 ## 2. 核心技术栈 (Technology Stack)
 - **后端 (Backend)**: Python 3.12, FastAPI (Router-Service 模式), SQLAlchemy 2.0 (Typed).
+- **数据模型 (DB/Schema)** ➜ 查阅 [`contexts.md#5.1`](contexts.md#L91) (Surrogate PK 与两阶段对齐协议)。
+- **权限建模 (Auth/RBAC)** ➜ 查阅 [`contexts.md#5.4`](contexts.md) (菜单即权限范式)。
+- **前端设计 (UI/CSS)** ➜ 查阅 [`contexts.md#6`](contexts.md#L153) (Apple Style 组件变量约定)。
 - **数据层 (Data)**: PostgreSQL 15, dbt (数据转换层), RabbitMQ (任务分发控制).
 - **前端 (Frontend)**: Native JS/CSS (Apple Style Edition), Web Components, 全局变量约束通信.
 - **运维 (DevOps)**: Docker Compose, 多阶段镜像构建, 离线 Tar 包部署支持.
@@ -102,6 +105,18 @@
 - **MDM 重构同步规程 (Schema Evolution Protocol) [MANDATORY]**:
     - 任何涉及到 MDM 核心表（`mdm_*`）物理主键或逻辑主键（`code` vs `id`）的重构，**必须同步审计并更新**所有相关的测试用例与导入脚本。
     - 脚本中严禁直接将业务编码（String）赋值给整数型外键字段。必须实现先查询（Resolve）业务码获取物理 ID（Integer），再执行赋值的闭环逻辑。
+
+### 5.4 权限建模协议 (Permission & RBAC Protocol) [MANDATORY]
+> **背景**：为了降低认知负载并实现 UI 与 API 的强一致性，系统采用「菜单即权限」的联合建模范式。
+
+- **1. 菜单-角色模型 (Menu-as-Permission)**: 
+    - 系统不设独立的 `Permission` 实体类。权限标识符（`perms`）直接作为属性挂载在 `SysMenu` 模型上。
+    - **逻辑路径**: 用户 (User) -> 分配角色 (SysRole) -> 关联菜单 (SysMenu) -> 获得权限标识 (`perms`)。
+- **2. 权限声明规范**:
+    - 权限标识符必须遵循 `{业务域}:{资源}:{操作}` 的命名公约（如 `rpt:quality:view`, `pm:project:edit`）。
+- **3. 测试注入规程**:
+    - 在集成测试中模擬权限时，**严禁猜测**名为 `SysPermission` 的类。
+    - **正确做法**: 必须通过创建 `SysMenu(perms="...")` 实例并关联至角色菜单集来实现权限注入。
 
 ### 5.2 审计与安全性 (分层要求)
     - **MDM 层 (`mdm_*`)**: 强制继承 `TimestampMixin`（`created_at`, `updated_at`）+ `SCDMixin`（`is_deleted`, `is_current`, `effective_from/to`）。SCD 机制已覆盖软删除与版本追踪。
