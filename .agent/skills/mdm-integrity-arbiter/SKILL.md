@@ -46,10 +46,7 @@ description: |
 +   - 核心红线：禁止在 `text()` 或原生 SELECT 查询中引用 `@property` 或 `@hybrid_property`（如 `GitLabCommit.web_url`）。
 +   - 规范行为：SQL 只能操作物理 `Column`。逻辑属性只能在 Python 对象层加载后访问。
 + 
-+ ### 9. 测试环境卫生与隔离 (Test Isolation Hygiene)
-+ - **判定标准**：[Ref LL#2026-04-15] **严禁在测试模块顶层注入全局副作用**。
-+   - 核心红线：禁止在测试文件（`test_*.py`）的模块级执行 `app.dependency_overrides` 或创建共享的 `TestClient` 单例。
-+   - 规范行为：所有的依赖覆盖必须封装在 `fixture(scope="function")` 内，并在 `yield` 结束后执行 `.clear()` 以防全量审计环境被交叉污染。
+
 
 ## 如何下达判决书？
 
