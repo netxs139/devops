@@ -120,22 +120,36 @@ class NexusWorker(BaseWorker):
         for item in generator:
             batch.append(item)
             if len(batch) >= batch_size:
-                self._save_batch(batch)
+                self._save_batch(batch, repository)
                 count += len(batch)
                 batch = []
         if batch:
-            self._save_batch(batch)
+            self._save_batch(batch, repository)
             count += len(batch)
         return count
 
-    def _save_batch(self, batch: list[dict]) -> None:
+    def _save_batch(self, batch: list[dict], repository: str) -> None:
         """批量保存到数据库，并执行身份/产品识别。"""
         for data in batch:
             comp_id = data["id"]
+            comp_repo = data.get("repository") or repository
             comp = self.session.query(NexusComponent).filter_by(id=comp_id).first()
             if not comp:
-                comp = NexusComponent(id=comp_id)
+                comp = NexusComponent(
+                    id=comp_id,
+                    repository=comp_repo,
+                    name=data["name"],
+                    format=data.get("format"),
+                    group=data.get("group"),
+                    version=data.get("version"),
+                )
                 self.session.add(comp)
+            else:
+                comp.repository = comp_repo
+                comp.format = data.get("format")
+                comp.group = data.get("group")
+                comp.name = data["name"]
+                comp.version = data.get("version")
 
             self.save_to_staging(
                 source="nexus",
@@ -144,12 +158,6 @@ class NexusWorker(BaseWorker):
                 payload=data,
                 schema_version=self.SCHEMA_VERSION,
             )
-
-            comp.repository = data["repository"]
-            comp.format = data["format"]
-            comp.group = data.get("group")
-            comp.name = data["name"]
-            comp.version = data.get("version")
 
             # 深度集成：自动产品对齐
             resolved_pid = self._resolve_product_id(comp.group, comp.name)

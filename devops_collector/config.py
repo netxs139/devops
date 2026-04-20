@@ -163,6 +163,32 @@ class SonarQubeSettings(BaseModel):
     sync_issues: bool = False
 
 
+class NexusSettings(BaseModel):
+    """Nexus integration settings.
+
+    Attributes:
+        url (str): The Nexus server URL.
+        user (str): The username for authentication.
+        password (str): The password for authentication.
+        sync_interval_hours (int): Interval in hours between synchronization tasks.
+        repositories (list[str]): List of repositories to sync.
+    """
+
+    url: str = ""
+    user: str = ""
+    password: str = ""
+    sync_interval_hours: int = 12
+    repositories: str | list[str] = Field(default_factory=list)
+
+    @field_validator("repositories", mode="before")
+    @classmethod
+    def split_str(cls, v):
+        """Splits comma-separated strings into lists."""
+        if isinstance(v, str):
+            return [i.strip() for i in v.split(",") if i.strip()]
+        return v
+
+
 class JenkinsSettings(BaseModel):
     """Jenkins integration settings.
 
@@ -350,6 +376,7 @@ class Settings(BaseSettings):
     sonarqube: SonarQubeSettings = SonarQubeSettings()
     jenkins: JenkinsSettings = JenkinsSettings()
     zentao: ZenTaoSettings = ZenTaoSettings()
+    nexus: NexusSettings = NexusSettings()
     ai: AISettings = AISettings()
     storage: StorageSettings = StorageSettings()
     plugin: PluginSettings = PluginSettings()
@@ -413,3 +440,7 @@ class Config:
     ADMIN_API_TOKEN = settings.auth.admin_api_token
     ZENTAO_URL = settings.zentao.url
     ZENTAO_TOKEN = settings.zentao.token
+    NEXUS_URL = settings.nexus.url
+    NEXUS_USER = settings.nexus.user
+    NEXUS_PASSWORD = settings.nexus.password
+    NEXUS_REPOSITORIES = settings.nexus.repositories

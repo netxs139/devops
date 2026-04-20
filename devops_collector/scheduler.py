@@ -112,6 +112,17 @@ def main() -> None:
                     sp.sync_status = "QUEUED"
                     session.commit()
 
+            # 4. 扫描 Nexus 仓库
+            if "nexus" in Config.ENABLED_PLUGINS:
+                from .config import settings
+                for repo in settings.nexus.repositories:
+                    task = {
+                        "source": "nexus",
+                        "repository": repo,
+                        "job_type": "full",
+                    }
+                    mq.publish_task(task)
+
             # 3. 数据转正
             try:
                 logger.info("Triggering data promotion...")
