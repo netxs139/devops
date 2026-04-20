@@ -60,7 +60,7 @@ class MessageQueue:
         try:
             self.connection = pika.BlockingConnection(self.params)
             self.channel = self.connection.channel()
-            for q in ["gitlab_tasks", "zentao_tasks", "sonarqube_tasks", "sys_audit_tasks"]:
+            for q in ["gitlab_tasks", "zentao_tasks", "sonarqube_tasks", "nexus_tasks", "sys_audit_tasks"]:
                 self.channel.queue_declare(queue=q, durable=True)
             logger.info("Connected to RabbitMQ")
         except Exception as e:
@@ -101,7 +101,7 @@ class MessageQueue:
         if not self.channel or self.connection.is_closed:
             self.connect()
         self.channel.basic_qos(prefetch_count=1)
-        for q in ["gitlab_tasks", "zentao_tasks", "sonarqube_tasks"]:
+        for q in ["gitlab_tasks", "zentao_tasks", "sonarqube_tasks", "nexus_tasks"]:
             self.channel.basic_consume(queue=q, on_message_callback=callback)
         logger.info("Waiting for tasks on all queues...")
         try:
