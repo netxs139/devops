@@ -14,7 +14,7 @@ commits as (
     select 
         author_user_id as user_id,
         project_id,
-        committed_date
+        committed_at
     from {{ ref('int_commits_with_authors') }}
 ),
 
@@ -27,7 +27,7 @@ asset_weights as (
     from commits c
     left join {{ ref('stg_mdm_entity_topology') }} et 
         on c.project_id::text = et.external_resource_id
-    where c.committed_date >= current_date - interval '90 days'
+    where c.committed_at >= current_date - interval '90 days'
     group by 1
 ),
 

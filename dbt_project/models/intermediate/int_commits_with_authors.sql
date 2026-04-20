@@ -12,7 +12,7 @@ joined as (
     select
         c.commit_sha,
         c.project_id,
-        c.committed_date,
+        c.committed_at,
         c.title,
         -- 通过校准引擎匹配 UserID
         -- 逻辑：优先匹配特定系统的映射，否则回退到通用 Email 匹配
