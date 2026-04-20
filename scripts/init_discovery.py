@@ -32,14 +32,16 @@ logger = logging.getLogger("Discovery")
 
 def discover_zentao(session):
     """从禅道发现所有产品。"""
-    if not settings.zentao.url or not settings.zentao.username:
+    if not settings.zentao.url or not settings.zentao.account:
         logger.warning("ZenTao config missing, skipping discovery.")
         return
     logger.info(f"Connecting to ZenTao at {settings.zentao.url}...")
-    client = ZenTaoClient(settings.zentao.url, settings.zentao.username, settings.zentao.password)
+    client = ZenTaoClient(settings.zentao.url, settings.zentao.token, settings.zentao.account, settings.zentao.password)
     try:
-        if not client.login():
-            logger.error("Failed to login to ZenTao. Check credentials.")
+        # ZenTaoClient v2 handles token refresh internally on 401
+        # Use test_connection() which calls 'users' endpoint to verify
+        if not client.test_connection():
+            logger.error("Failed to connect to ZenTao. Check URL and Token/Credentials.")
             return
 
         products = client.get_products()
