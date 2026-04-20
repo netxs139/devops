@@ -12,7 +12,7 @@ with
 commit_activities as (
     select
         'GITLAB-COMMIT-' || commit_sha as activity_id,
-        committed_date as occurred_at,
+        committed_at as occurred_at,
         lower(trim(author_email)) as external_author_id,
         'EMAIL' as identifier_type,
         'COMMIT' as activity_type,
@@ -25,7 +25,7 @@ commit_activities as (
         json_build_object('sha', commit_sha, 'title', title) as metadata
     from {{ ref('stg_gitlab_commits') }}
     {% if is_incremental() %}
-    where committed_date >= (select max(occurred_at) - interval '3 days' from {{ this }})
+    where committed_at >= (select max(occurred_at) - interval '3 days' from {{ this }})
     {% endif %}
 ),
 

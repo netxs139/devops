@@ -38,7 +38,7 @@ models:
         description: "所属项目 ID"
       - name: author_email
         description: "提交者邮箱"
-      - name: committed_date
+      - name: committed_at
         description: "提交时间"
       - name: message
         description: "提交信息"
@@ -167,7 +167,7 @@ models:
   - name: stg_mdm_projects
     description: "业务项目主数据清洗层"
     columns:
-      - name: project_id
+      - name: mdm_project_id
         description: "业务项目唯一标识"
         tests:
           - not_null
