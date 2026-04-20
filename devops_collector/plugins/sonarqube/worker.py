@@ -46,17 +46,43 @@ class SonarQubeWorker(BaseWorker):
 
     def process_task(self, task: dict) -> dict:
         """核心同步逻辑。"""
+        from datetime import UTC, datetime
         project_key = task.get("project_key")
         if not project_key:
             raise ValueError("project_key is required")
+
+        # 1. 获取/创建项目并标记开始
         project = self._sync_project_metadata(project_key)
         if not project:
             raise ValueError(f"SonarQube project {project_key} not found")
-        measure = self._sync_measures(project)
-        issues_count = 0
-        if task.get("sync_issues", self.sync_issues):
-            issues_count = self._sync_issues(project)
-        return {"project": project.name, "coverage": measure.coverage if measure else None, "issues": issues_count}
+
+        project.sync_status = "SYNCING"
+        self.session.commit()
+
+        try:
+            # 2. 同步指标
+            measure = self._sync_measures(project)
+
+            # 3. 同步问题 (可选)
+            issues_count = 0
+            if task.get("sync_issues", self.sync_issues):
+                issues_count = self._sync_issues(project)
+
+            # 4. 标记成功
+            project.sync_status = "SUCCESS"
+            project.last_synced_at = datetime.now(UTC)
+            self.session.commit()
+
+            return {
+                "project": project.name,
+                "coverage": measure.coverage if measure else None,
+                "issues": issues_count
+            }
+        except Exception as e:
+            self.session.rollback()
+            project.sync_status = "FAILED"
+            self.session.commit()
+            raise e
 
     def _sync_project_metadata(self, key: str) -> SonarProject | None:
         """同步项目元数据并维护映射关系。"""

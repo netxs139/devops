@@ -8,7 +8,7 @@
 (当前看板清空，暂无排队中的长期任务)
 
 ## 📅 下一步计划 (Next Steps)
-1. [Fix] 解决全量测试中的 TraceabilityBackend 物理表竞争问题。
+1. [Sonar] 接入验证: 执行 SonarQube 资产发现与数据同步，上线质量指标看板。(2026-04-20)
 2. [Cov] 专项提升插件 Worker 层的测试覆盖率，向 80% 总目标冲刺。
 
 ## 📋 最近完成 (Recently Completed)
