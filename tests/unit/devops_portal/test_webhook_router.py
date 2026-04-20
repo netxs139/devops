@@ -12,8 +12,9 @@
 - POST /webhooks/triggers/sonarqube — 缺少 project_key → error
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 
 # ---------------------------------------------------------------------------

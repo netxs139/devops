@@ -6,13 +6,14 @@
 
 import os
 
+# LL #42: Workaround for passlib 1.7.4 compatibility with bcrypt 4.0.0+
+import bcrypt
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-# LL #42: Workaround for passlib 1.7.4 compatibility with bcrypt 4.0.0+
-import bcrypt
+
 if not hasattr(bcrypt, "__about__"):
     bcrypt.__about__ = type('about', (object,), {'__version__': bcrypt.__version__})
 
@@ -67,10 +68,10 @@ def setup_database():
     """Create all tables once per session."""
     # LL #33: 显式导入模型总包以触发 SQLAlchemy Metadata 注册
     import devops_collector.models  # noqa: F401
-    
+
     # [HARDENING] 针对本测试涉及的插件模型，若总包未涵盖则补充导入
     try:
-        from devops_collector.plugins.zentao.models import ZenTaoIssue, ZenTaoProject, ZenTaoProduct # noqa: F401
+        from devops_collector.plugins.zentao.models import ZenTaoIssue, ZenTaoProduct, ZenTaoProject  # noqa: F401
     except ImportError:
         pass
 

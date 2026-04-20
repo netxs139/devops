@@ -51,25 +51,25 @@ def test_login_e2e_flow(client, db_session):
 
     hashed_pwd = services.auth_get_password_hash(password)
     db_session.add(UserCredential(user_id=user_id, password_hash=hashed_pwd))
-    
+
     # [FIX] 显式赋予 admin 角色及菜单权限，以通过之后的权限校验
-    from devops_collector.models.base_models import SysRole, SysMenu
+    from devops_collector.models.base_models import SysMenu, SysRole
     admin_role = db_session.query(SysRole).filter_by(role_key="admin").first()
     if not admin_role:
         admin_role = SysRole(role_name="管理员", role_key="admin", data_scope=1)
         db_session.add(admin_role)
-    
+
     # 确保 rpt:quality:view 权限菜单存在并关联
     perm_key = "rpt:quality:view"
     quality_menu = db_session.query(SysMenu).filter_by(perms=perm_key).first()
     if not quality_menu:
         quality_menu = SysMenu(menu_name="质量看板权限", perms=perm_key, menu_type="F")
         db_session.add(quality_menu)
-    
+
     db_session.flush()
     if quality_menu not in admin_role.menus:
         admin_role.menus.append(quality_menu)
-    
+
     if admin_role not in user.roles:
         user.roles.append(admin_role)
     db_session.commit()
