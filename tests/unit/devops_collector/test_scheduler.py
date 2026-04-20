@@ -15,11 +15,8 @@
 - 调度器主循环异常 → rollback + session.close
 """
 
-import sys
 from datetime import UTC, datetime, timedelta
-from unittest.mock import MagicMock, patch, call
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 
 # ---------------------------------------------------------------------------
