@@ -354,7 +354,7 @@ verify: ## [MANDATORY] 100% 验证防御：包含覆盖率审计的全量校验 
 
 scan-secrets: ## [SECURITY] 源码机密审计 (detect-secrets)
 	@echo "$(CYAN)Scanning for hardcoded secrets using detect-secrets...$(RESET)"
-	$(EXEC_CMD) detect-secrets scan --baseline .secrets.baseline --exclude-files ".*/tests/.*" --exclude-files ".*\.lock"
+	uv run detect-secrets scan --baseline .secrets.baseline --exclude-files ".*/tests/.*" --exclude-files ".*\.lock"
 
 scan-sast: ## [SECURITY] 代码静态安全审计 (Bandit)
 	@echo "$(GREEN)Running Bandit SAST (Static Application Security Testing)...$(RESET)"
@@ -362,7 +362,7 @@ scan-sast: ## [SECURITY] 代码静态安全审计 (Bandit)
 
 scan-deps: ## [SECURITY] 依赖漏洞审计 (Safety)
 	@echo "\033[1;33mChecking dependencies for known vulnerabilities using Safety...\033[0m"
-	docker-compose exec -T api safety check --ignore 64459 --ignore 64396 --ignore 86269 --json > reports/security/safety_report.json
+	$(EXEC_CMD) safety check --ignore 64459 --ignore 64396 --ignore 86269 --json > reports/security/safety_report.json
 
 security-audit: scan-secrets scan-sast scan-deps ## [SECURITY] 全量安全卡点：源码 + 逻辑 + 依赖
 
