@@ -706,6 +706,11 @@
     3.  `make build`: Docker 镜像构建成功。
 - **复杂度与异常**: 如果因架构需求必须引入复杂逻辑导致复杂度超标（PLR 规则），必须报备并在 `ruff.toml` 或行内添加显式忽略原因。
 
+### 18.4 门禁防御左移与并发提速 (Left-Shift & Concurrent Gatekeeper) [NEW]
+为应对大规模项目全量门禁检查造成的长反馈弧，系统实行“左移与并发”架构（详见 `ADR 005`）：
+- **检查左移 (Left-Shift)**：高频静态扫描（Ruff, Bandit, detect-secrets）与增量测试（pytest-picked）剥离出重量级流水线，通过 `.pre-commit-config.yaml` 挂载在本地 Git Commit 阶段，实现秒级反馈。此类工具强依赖宿主机代码树，严禁下沉到生产容器栈内执行。
+- **并发提速 (Concurrency)**：本地单元测试强制使用 `pytest-xdist (-n auto)` 榨干宿主机多核算力。`gatekeeper.py` 流水线引擎摒弃串行，利用 `concurrent.futures` 建立安全与测试的并行组，确保最大化压榨 I/O 与 CPU 资源。
+
 ## 19. 防御性编程十大守则 (Defensive Programming Mandates) [MANDATORY]
 
 > **定位**：本章是跨越所有模块（Core、Plugins、Scripts、API）的**强制性编码红线**。任何新增代码在 Code Review 时必须逐条对照本章自检。
