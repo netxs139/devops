@@ -1,35 +1,39 @@
-# Pre-commit configuration for DevOps Platform
-# See https://pre-commit.com for more information
+# Pre-commit configuration for DevOps Platform (Full Local & Lightning Fast)
+# All tools are managed by 'uv' and executed locally to avoid network dependencies.
 
 repos:
-  # 代码格式化与 Linting (Ruff - AI Native Standard)
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.10
-    hooks:
-      - id: ruff
-        args: [ --fix ]
-      - id: ruff-format
-
-  # 敏感信息扫描 (L1 门禁左移)
-  - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.5.0
-    hooks:
-      - id: detect-secrets
-        args: ['--baseline', '.secrets.baseline']
-        exclude: '.*\.lock|tests/.*'
-
-  # SAST 静态安全扫描 (L1 门禁左移)
-  - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.9
-    hooks:
-      - id: bandit
-        args: ["-ll"]
-        files: "^(devops_collector/|devops_portal/)"
-
-  # 本地自定义检查
   - repo: local
     hooks:
-      # 极速单元测试防线 (L1) - 使用多核与 picked 仅跑变更文件
+      # 代码格式化与 Linting (Ruff)
+      - id: ruff
+        name: Ruff Lint
+        entry: uv run ruff check --fix
+        language: system
+        types: [python]
+
+      - id: ruff-format
+        name: Ruff Format
+        entry: uv run ruff format
+        language: system
+        types: [python]
+
+      # 敏感信息扫描 (Left-shifted to Host)
+      - id: detect-secrets
+        name: Detect Secrets
+        entry: uv run detect-secrets-hook --baseline .secrets.baseline
+        language: system
+        types: [text]
+        exclude: '.*\.lock|tests/.*'
+
+      # SAST 静态安全扫描 (Bandit)
+      - id: bandit
+        name: Bandit Security Scan
+        entry: uv run bandit -ll -r devops_collector/ devops_portal/
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      # 极速单元测试防线 (L1)
       - id: pytest-unit
         name: Fast Unit Tests
         entry: uv run pytest tests/unit/ --picked
@@ -40,16 +44,15 @@ repos:
       # 数据字典新鲜度检查
       - id: check-data-dict
         name: Check Data Dictionary Freshness
-        entry: python scripts/check_data_dict_freshness.py
+        entry: uv run python scripts/check_data_dict_freshness.py
         language: python
         files: 'devops_collector/models/.*\.py$|devops_collector/plugins/.*/models\.py$'
         pass_filenames: false
-        always_run: false
 
       # 禁止提交包含表情符号的文件
       - id: check-no-emoji
         name: Check No Emoji in Code
-        entry: python -c "import sys; sys.exit(1 if any(ord(c) > 127 and ord(c) in range(0x1F600, 0x1F64F) for c in open(sys.argv[1]).read()) else 0)"
+        entry: uv run python -c "import sys; sys.exit(1 if any(ord(c) > 127 and ord(c) in range(0x1F600, 0x1F64F) for c in open(sys.argv[1]).read()) else 0)"
         language: python
         types: [python, markdown, html, css, javascript]
         exclude: '^(tests/|archived/)'
@@ -58,12 +61,12 @@ repos:
       - id: check-docstrings
         name: Check Docstrings Exist
         entry: >
-          python -c "import sys, ast; tree = ast.parse(open(sys.argv[1]).read()); [print(f'Missing docstring: {n.name} in {sys.argv[1]}') for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.ClassDef)) and not ast.get_docstring(n)]"
-        language: python
+          uv run python -c "import sys, ast; tree = ast.parse(open(sys.argv[1]).read()); [print(f'Missing docstring: {n.name} in {sys.argv[1]}') for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.ClassDef)) and not ast.get_docstring(n)]"
+        language: system
         types: [python]
         exclude: '^(tests/|archived/|scripts/)'
 
-      # 渐进式静态类型检查 (防线)
+      # 渐进式静态类型检查 (MyPy)
       - id: mypy-check
         name: MyPy Type Check (Core Domains)
         entry: uv run mypy
@@ -72,7 +75,7 @@ repos:
         files: 'devops_collector/(models|schemas|auth|plugins/.*?/models)\.py$'
         pass_filenames: true
 
-      # HTML/Jinja2 缩进规范 (Python 原生)
+      # HTML/Jinja2 缩进规范 (djHTML)
       - id: djhtml
         name: djHTML Formatter
         entry: uv run djhtml --tabwidth 2
@@ -80,7 +83,7 @@ repos:
         files: '\.(html|j2)$'
         pass_filenames: true
 
-      # Markdown 文档对齐 (Python 原生)
+      # Markdown 文档对齐 (mdformat)
       - id: mdformat
         name: Markdown Formatter
         entry: uv run mdformat
