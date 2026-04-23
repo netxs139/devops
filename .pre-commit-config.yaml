@@ -57,7 +57,8 @@ repos:
       # 检查中文注释规范
       - id: check-docstrings
         name: Check Docstrings Exist
-        entry: python -c "import sys, ast; tree = ast.parse(open(sys.argv[1]).read()); [print(f'Missing docstring: {n.name} in {sys.argv[1]}') for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.ClassDef)) and not ast.get_docstring(n)]"
+        entry: >
+          python -c "import sys, ast; tree = ast.parse(open(sys.argv[1]).read()); [print(f'Missing docstring: {n.name} in {sys.argv[1]}') for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.ClassDef)) and not ast.get_docstring(n)]"
         language: python
         types: [python]
         exclude: '^(tests/|archived/|scripts/)'
