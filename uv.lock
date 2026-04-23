@@ -952,6 +952,8 @@ dev = [
     { name = "bandit" },
     { name = "black" },
     { name = "detect-secrets" },
+    { name = "djhtml" },
+    { name = "mdformat" },
     { name = "mypy" },
     { name = "pip-tools" },
     { name = "pylint" },
@@ -1002,11 +1004,13 @@ requires-dist = [
     { name = "dbt-core", specifier = ">=1.8.0,<2.0.0" },
     { name = "dbt-postgres", specifier = ">=1.8.0,<2.0.0" },
     { name = "detect-secrets", marker = "extra == 'dev'", specifier = ">=1.5.0" },
+    { name = "djhtml", marker = "extra == 'dev'", specifier = ">=3.0.6" },
     { name = "email-validator", specifier = ">=2.1.0,<3.0.0" },
     { name = "fastapi", specifier = ">=0.115.0,<1.0.0" },
     { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
     { name = "httpx", marker = "extra == 'e2e'", specifier = ">=0.27.0,<1.0.0" },
     { name = "jinja2", specifier = ">=3.1.6,<4.0.0" },
+    { name = "mdformat", marker = "extra == 'dev'", specifier = ">=0.7.21" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.15.0,<2.0.0" },
     { name = "openpyxl", specifier = ">=3.1.0,<4.0.0" },
     { name = "pandas", specifier = ">=2.2.0,<3.0.0" },
@@ -1070,6 +1074,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/81/e1/56027a71e31b02ddc53c7d65b01e68edf64dea2932122fe7746a516f75d5/dill-0.4.1.tar.gz", hash = "sha256:423092df4182177d4d8ba8290c8a5b640c66ab35ec7da59ccfa00f6fa3eea5fa", size = 187315, upload-time = "2026-01-19T02:36:56.85Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1e/77/dc8c558f7593132cf8fefec57c4f60c83b16941c574ac5f619abb3ae7933/dill-0.4.1-py3-none-any.whl", hash = "sha256:1e1ce33e978ae97fcfcff5638477032b801c46c7c65cf717f95fbc2248f79a9d", size = 120019, upload-time = "2026-01-19T02:36:55.663Z" },
+]
+
+[[package]]
+name = "djhtml"
+version = "3.0.11"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/22/57/5771714b5961b7ee275a5696cabc3bd8c4a602d7cca103a44016109509fd/djhtml-3.0.11.tar.gz", hash = "sha256:dbaf55684294bda6486a094954e43847a1c0945e521282e008a9aabdac245688", size = 28615, upload-time = "2026-03-26T16:39:17.118Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a3/c0/8e1f10c58e03fddd1ff4c21a6c22be6cde72dd9cc85f101c2f55e803fd44/djhtml-3.0.11-py3-none-any.whl", hash = "sha256:0013d15d429eb34769aeaf6ea395ad278cf0b8ef35ad19d2cf0c1f214f2843ac", size = 26758, upload-time = "2026-03-26T16:39:15.99Z" },
 ]
 
 [[package]]
@@ -1649,6 +1662,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/e7/ff/0ffefdcac38932a54d2b5eed4e0ba8a408f215002cd178ad1df0f2806ff8/mccabe-0.7.0.tar.gz", hash = "sha256:348e0240c33b60bbdf4e523192ef919f28cb2c3d7d5c7794f74009290f236325", size = 9658, upload-time = "2022-01-24T01:14:51.113Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/27/1a/1f68f9ba0c207934b35b86a8ca3aad8395a3d6dd7921c0686e23853ff5a9/mccabe-0.7.0-py2.py3-none-any.whl", hash = "sha256:6c2d30ab6be0e4a46919781807b4f0d834ebdd6c6e3dca0bda5a15f863427b6e", size = 7350, upload-time = "2022-01-24T01:14:49.62Z" },
+]
+
+[[package]]
+name = "mdformat"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "markdown-it-py" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3f/05/32b5e14b192b0a8a309f32232c580aefedd9d06017cb8fe8fce34bec654c/mdformat-1.0.0.tar.gz", hash = "sha256:4954045fcae797c29f86d4ad879e43bb151fa55dbaf74ac6eaeacf1d45bb3928", size = 56953, upload-time = "2025-10-16T12:05:03.695Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/54/9a/8fe71b95985ca7a4001effbcc58e5a07a1f2a2884203f74dcf48a3b08315/mdformat-1.0.0-py3-none-any.whl", hash = "sha256:bca015d65a1d063a02e885a91daee303057bc7829c2cd37b2075a50dbb65944b", size = 53288, upload-time = "2025-10-16T12:05:02.607Z" },
 ]
 
 [[package]]
