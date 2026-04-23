@@ -71,21 +71,24 @@ def main():
 
     overall_start = time.time()
 
-    # 阶段 1: Linting (L1)
-    if not run_command("make lint", "L1: Linting & Style Check"):
+    # 阶段 1: Security Audit (L1)
+    if not run_command("make security-audit", "L1: Security Audit (Secrets, SAST, Deps)"):
         sys.exit(1)
 
-    # 阶段 2: Testing (L2 - Containerized)
-    if not run_command("make test", "L2: All Tests (Unit + Integration)"):
+    # 阶段 2: Verification (L2 - Lint, Imports, Tests + Coverage >= 80%)
+    if not run_command("make verify", "L2: Total Verification (Lint, Imports, Cov >= 80%)"):
         sys.exit(1)
 
-    # 阶段 3: Building (L3 - Full Mode only)
+    # 阶段 3: Building & Advanced Checks (L3 - Full Mode only)
     if args.mode == "full":
         if not run_command("make build", "L3: Docker Image Build & Cache Verification"):
             sys.exit(1)
 
-        # 可选：阶段 4: 冒烟测试
-        # if not run_command("make test-smoke", "L4: Smoke Test (Containerized)"):
+        if not run_command("make dbt-build", "L4: dbt Data Model Audit"):
+            sys.exit(1)
+
+        # Playwright E2E 冒烟测试 (可选，如需强制门禁可解除注释)
+        # if not run_command("make e2e-smoke", "L5: Smoke Test (Playwright)"):
         #     sys.exit(1)
 
     overall_duration = time.time() - overall_start
