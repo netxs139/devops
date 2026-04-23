@@ -71,3 +71,19 @@ repos:
         types: [python]
         files: 'devops_collector/(models|schemas|auth|plugins/.*?/models)\.py$'
         pass_filenames: true
+
+      # HTML/Jinja2 缩进规范 (Python 原生)
+      - id: djhtml
+        name: djHTML Formatter
+        entry: uv run djhtml --tabwidth 2
+        language: system
+        files: '\.(html|j2)$'
+        pass_filenames: true
+
+      # Markdown 文档对齐 (Python 原生)
+      - id: mdformat
+        name: Markdown Formatter
+        entry: uv run mdformat
+        language: system
+        types: [markdown]
+        pass_filenames: true
