@@ -2,7 +2,7 @@ import argparse
 import subprocess
 import sys
 import time
-
+import concurrent.futures
 
 # 定义 ANSI 颜色
 GREEN = "\033[92m"
@@ -11,52 +11,56 @@ CYAN = "\033[96m"
 YELLOW = "\033[93m"
 RESET = "\033[0m"
 
-
-def run_command(command, description):
-    print(f"\n{CYAN}>>> [{description}] Executing: {command}{RESET}")
+def run_command_captured(command, description):
     start_time = time.time()
-
     try:
-        # 强制使用 UTF-8 编码读取输出，并对错误字节进行替换，防止 GBK 解码失败
-        process = subprocess.Popen(
+        process = subprocess.run(
             command,
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
             encoding="utf-8",
-            errors="replace",
-            bufsize=1,
-            universal_newlines=True,
+            errors="replace"
         )
-
-        # 实时打印输出流
-        if process.stdout is not None:
-            for line in process.stdout:
-                print(line, end="")
-
-        process.wait()
         duration = time.time() - start_time
-
-        if process.returncode == 0:
-            print(f"{GREEN}[V] [{description}] PASSED ({duration:.1f}s){RESET}")
-            return True
-        else:
-            print(f"{RED}[X] [{description}] FAILED (Exit code: {process.returncode}){RESET}")
-            return False
-
+        success = process.returncode == 0
+        return success, process.stdout, duration, description, process.returncode
     except Exception as e:
-        # 使用 ASCII 兼容的错误输出
-        print(f"{RED}[X] [{description}] ERROR: {str(e)}{RESET}")
-        return False
+        duration = time.time() - start_time
+        return False, f"ERROR: {str(e)}", duration, description, -1
 
+def execute_stage_parallel(tasks, stage_name):
+    print(f"\n{CYAN}>>> Starting {stage_name} (Parallel Execution)...{RESET}")
+    all_success = True
+    results = []
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(tasks)) as executor:
+        future_to_task = {
+            executor.submit(run_command_captured, cmd, desc): desc 
+            for cmd, desc in tasks
+        }
+        for future in concurrent.futures.as_completed(future_to_task):
+            success, output, duration, desc, retcode = future.result()
+            results.append((success, output, duration, desc, retcode))
+            if not success:
+                all_success = False
+
+    # 统一打印结果避免输出交错
+    for success, output, duration, desc, retcode in results:
+        print(f"\n{YELLOW}--- Output for: {desc} ---{RESET}")
+        print(output.strip())
+        if success:
+            print(f"{GREEN}[V] [{desc}] PASSED ({duration:.1f}s){RESET}")
+        else:
+            print(f"{RED}[X] [{desc}] FAILED (Exit code: {retcode}){RESET}")
+            
+    return all_success
 
 def main():
-    # 强制设置控制台输出为 UTF-8 (Python 3.7+)
     if sys.stdout.encoding.lower() != "utf-8":
         try:
             import io
-
             sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
         except Exception:
             pass
@@ -71,32 +75,31 @@ def main():
 
     overall_start = time.time()
 
-    # 阶段 1: Security Audit (L1)
-    if not run_command("make security-audit", "L1: Security Audit (Secrets, SAST, Deps)"):
+    # Stage 1: Fast & Core Checks (Parallel)
+    stage1_tasks = [
+        ("make security-audit", "L1: Security Audit (Secrets, SAST, Deps)"),
+        ("make verify", "L2: Total Verification (Lint, Imports, Cov >= 80%)")
+    ]
+    
+    if not execute_stage_parallel(stage1_tasks, "Stage 1 (Security & Verification)"):
+        print(f"\n{RED}>>> Stage 1 FAILED. Gate execution stopped.{RESET}")
         sys.exit(1)
 
-    # 阶段 2: Verification (L2 - Lint, Imports, Tests + Coverage >= 80%)
-    if not run_command("make verify", "L2: Total Verification (Lint, Imports, Cov >= 80%)"):
-        sys.exit(1)
-
-    # 阶段 3: Building & Advanced Checks (L3 - Full Mode only)
+    # Stage 2: Build & Advanced Checks (Parallel)
     if args.mode == "full":
-        if not run_command("make build", "L3: Docker Image Build & Cache Verification"):
+        stage2_tasks = [
+            ("make build", "L3: Docker Image Build & Cache Verification"),
+            ("make dbt-build", "L4: dbt Data Model Audit")
+        ]
+        if not execute_stage_parallel(stage2_tasks, "Stage 2 (Build & Data Audit)"):
+            print(f"\n{RED}>>> Stage 2 FAILED. Gate execution stopped.{RESET}")
             sys.exit(1)
-
-        if not run_command("make dbt-build", "L4: dbt Data Model Audit"):
-            sys.exit(1)
-
-        # Playwright E2E 冒烟测试 (可选，如需强制门禁可解除注释)
-        # if not run_command("make e2e-smoke", "L5: Smoke Test (Playwright)"):
-        #     sys.exit(1)
 
     overall_duration = time.time() - overall_start
     print(f"\n{GREEN}====================================================================")
     print(f"        SUCCESS: FULL GATE PASSED ({overall_duration:.1f}s)            ")
     print("        Your code is now ready for merge/deployment.                ")
     print(f"===================================================================={RESET}")
-
 
 if __name__ == "__main__":
     main()
