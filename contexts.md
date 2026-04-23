@@ -194,6 +194,13 @@
 - **组件工程**: 优先使用 Web Components (Shadow DOM) 实现高内聚组件（如搜索框、卡片）。
 - **通信机制**: 跨组件通信通过 `CustomEvent` 实现，严禁随意污染全局 `window` 命名空间。
 
+## 6.6 前端与文档格式化策略 (Frontend & Doc Formatting) [NEW]
+为保持环境纯净，本项目拒绝引入 Node.js/Prettier 体系，采用纯 Python 生态工具进行前端格式化：
+- **HTML/Jinja2**: 强制使用 `djhtml` 进行缩进对齐（`--tabwidth 2`）。它能完美识别 Jinja2 标签且不破坏语义。
+- **Markdown**: 强制使用 `mdformat` 统一文档风格。
+- **JS/CSS**: 暂不引入重型工具。依赖 IDE 内置格式化及 AI 生成时的样式自律（Apple Style 规范）。
+- **执行机制**: 上述工具已集成至 `pre-commit` 门禁，确保入库代码 100% 物理对齐。
+
 ## 6.5 前端功能全景地图 (Frontend Dashboard Map) [MANDATORY PRE-CHECK]
 
 任何涉及前端 `dashboard/pages` 的新增或修改任务，**必须首先**在该地图中确认索引位（Index）与业务域（Domain）的唯一性，严禁索引冲突。
