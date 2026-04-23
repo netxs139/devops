@@ -62,3 +62,12 @@ repos:
         language: python
         types: [python]
         exclude: '^(tests/|archived/|scripts/)'
+
+      # 渐进式静态类型检查 (防线)
+      - id: mypy-check
+        name: MyPy Type Check (Core Domains)
+        entry: uv run mypy
+        language: system
+        types: [python]
+        files: 'devops_collector/(models|schemas|auth|plugins/.*?/models)\.py$'
+        pass_filenames: true
