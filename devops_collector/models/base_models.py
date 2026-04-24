@@ -91,12 +91,9 @@ class Organization(Base, TimestampMixin, SCDMixin):
     """组织架构表，支持 SCD Type 2 生命周期管理。"""
 
     __tablename__ = "mdm_organizations"
-    __table_args__ = (
-        UniqueConstraint("org_code", name="uq_mdm_org_code"),
-        Index("idx_mdm_org_active_lookup", "org_code", "is_current"),
-    )
+    __table_args__ = (Index("idx_mdm_org_active_lookup", "org_code", "is_current"),)
     id = Column(Integer, primary_key=True, autoincrement=True, comment="自增主键")
-    org_code = Column(String(100), nullable=False, unique=True, index=True, comment="组织唯一标识 (HR系统同步)")
+    org_code = Column(String(100), nullable=False, index=True, comment="组织唯一标识 (HR系统同步)")
     org_name = Column(String(200), nullable=False, comment="组织名称")
     org_level = Column(Integer, default=1, comment="组织层级 (1=公司, 2=部门, 3=团队)")
     parent_id = Column(Integer, ForeignKey("mdm_organizations.id", use_alter=True, name="fk_org_parent_id"), nullable=True, index=True, comment="上级组织ID")

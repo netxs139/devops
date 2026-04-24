@@ -12,6 +12,7 @@ from devops_portal.routers.quality_router import get_quality_service
 # Province Quality (Config.http_client 存在时)
 # ---------------------------------------------------------------------------
 
+
 def test_province_quality(authenticated_client, mock_user, monkeypatch):
     """省份质量数据按用户归属地过滤。"""
     mock_response = AsyncMock()
@@ -29,6 +30,7 @@ def test_province_quality(authenticated_client, mock_user, monkeypatch):
     monkeypatch.setattr(Config, "http_client", mock_client)
 
     from devops_collector.models.base_models import Location
+
     mock_user.location = Location(short_name="Liaoning")
 
     response = authenticated_client.get("/quality/projects/1/province-quality")
@@ -42,6 +44,7 @@ def test_province_quality(authenticated_client, mock_user, monkeypatch):
 # ---------------------------------------------------------------------------
 # Province Quality — httpx 回退路径 (Config.http_client is None)
 # ---------------------------------------------------------------------------
+
 
 def test_province_quality_fallback_httpx(authenticated_client, mock_user, monkeypatch):
     """Config.http_client 为空时回退实例化 httpx.AsyncClient。"""
@@ -81,6 +84,7 @@ def test_province_quality_exception(authenticated_client, monkeypatch):
 # Quality Gate
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_quality_gate(authenticated_client):
     mock_service = AsyncMock()
@@ -94,6 +98,7 @@ async def test_quality_gate(authenticated_client):
     }
 
     from devops_portal.main import app
+
     app.dependency_overrides[get_quality_service] = lambda: mock_service
 
     try:
@@ -113,6 +118,7 @@ async def test_get_quality_gate_exception(authenticated_client):
     mock_service.get_quality_gate_status.side_effect = ValueError("Broken gate")
 
     from devops_portal.main import app
+
     app.dependency_overrides[get_quality_service] = lambda: mock_service
 
     try:
@@ -126,6 +132,7 @@ async def test_get_quality_gate_exception(authenticated_client):
 # ---------------------------------------------------------------------------
 # MR Summary
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_get_mr_summary(authenticated_client):
@@ -143,6 +150,7 @@ async def test_get_mr_summary(authenticated_client):
     }
 
     from devops_portal.main import app
+
     app.dependency_overrides[get_quality_service] = lambda: mock_service
 
     try:
@@ -162,6 +170,7 @@ async def test_get_mr_summary_exception(authenticated_client):
     mock_service.get_mr_analytics.side_effect = ValueError("MR fail")
 
     from devops_portal.main import app
+
     app.dependency_overrides[get_quality_service] = lambda: mock_service
     try:
         response = authenticated_client.get("/quality/projects/1/mr-summary")
@@ -174,12 +183,14 @@ async def test_get_mr_summary_exception(authenticated_client):
 # Quality Report
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_get_quality_report(authenticated_client):
     mock_service = AsyncMock()
     mock_service.generate_report.return_value = "## Report"
 
     from devops_portal.main import app
+
     app.dependency_overrides[get_quality_service] = lambda: mock_service
 
     try:
@@ -198,6 +209,7 @@ async def test_get_quality_report_exception(authenticated_client):
     mock_service.generate_report.side_effect = ValueError("Report fail")
 
     from devops_portal.main import app
+
     app.dependency_overrides[get_quality_service] = lambda: mock_service
     try:
         response = authenticated_client.get("/quality/projects/1/quality-report")
@@ -210,18 +222,21 @@ async def test_get_quality_report_exception(authenticated_client):
 # get_quality_service DI factory
 # ---------------------------------------------------------------------------
 
+
 def test_get_quality_service():
     """测试依赖注入函数的实例创建。"""
     mock_db = MagicMock()
     mock_client = MagicMock()
     service = get_quality_service(mock_db, mock_client)
     from devops_collector.plugins.gitlab.quality_service import QualityService
+
     assert isinstance(service, QualityService)
 
 
 # ---------------------------------------------------------------------------
 # Test Summary (delegates to test_management_router)
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_get_test_summary_success(authenticated_client):
@@ -230,6 +245,7 @@ async def test_get_test_summary_success(authenticated_client):
     mock_service.test_service = MagicMock()
 
     from devops_portal.main import app
+
     app.dependency_overrides[get_quality_service] = lambda: mock_service
 
     with patch("devops_portal.routers.test_management_router.get_test_summary", new_callable=AsyncMock) as mock_internal:
@@ -247,6 +263,7 @@ async def test_get_test_summary_exception(authenticated_client):
     mock_service = AsyncMock()
 
     from devops_portal.main import app
+
     app.dependency_overrides[get_quality_service] = lambda: mock_service
 
     with patch("devops_portal.routers.test_management_router.get_test_summary", new_callable=AsyncMock) as mock_internal:
