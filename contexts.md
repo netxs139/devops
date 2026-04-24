@@ -58,7 +58,10 @@
     - **`./tmp/`**：运行时生成的临时数据产物，如 CSV 导出、日志重定向、分析报告。CI 构建和镜像打包**不包含**此目录。
     - **`./scratch/`**：开发过程中的一次性调试脚本（如 `monitor_sync.py`、`force_sync.py`）。仅用于本地排查，**必须**在 `.dockerignore` 中排除，任务结束前**必须**清理或归档至 `docs/` 下。
     - **严禁**将 `scratch/` 脚本发展为永久性业务逻辑；若脚本具备复用价值，必须迁移至 `scripts/` 并补充测试。
-- **CI/CD 平台**: GitHub Actions (`ubuntu-latest`)。工作流定义在 `.github/workflows/full-gate.yml`，逻辑通过 `scripts/gatekeeper.py` 与本地 `make full-gate` 完全对齐。
+- **CI/CD 平台 (双引擎并行策略)**: 
+    - **GitHub Actions** (`ubuntu-latest`): 用于开源/外网代码库托管的防御，定义在 `.github/workflows/full-gate.yml`。
+    - **GitLab CI** (私有化 Docker Runner): 用于内网企业级部署与验证，拥有直连私有 Nexus 与 DB 的优势，定义在 `.gitlab-ci.yml`。
+    - **核心防线解耦**: 两套 CI 仅仅是调度器，**核心卡点逻辑 100% 封装于 `scripts/gatekeeper.py` 与 `Makefile` 中**，确保“编写一次，到处/多引擎运行”。
 - **CSV 编码**: 所有 CSV 文件的生成、读取及模版任务强制使用 `utf-8-sig` 编码，确保在 Windows Office/Excel 环境下打开不出现汉字乱码。
 - **语义分层规范 (Semantic Alignment)**:
     - **技术侧用英文**: 数据库字段名、API Schema、核心代码变量必须使用标准英文命名（如 `pm_user_id`）。

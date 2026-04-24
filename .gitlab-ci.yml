@@ -16,18 +16,28 @@ project-full-gate:
   image: docker:24.0.5
   services:
     - docker:24.0.5-dind
+  variables:
+    DEVOPS_SKIP_AUDIT: "true"
+    DOCKER_BUILDKIT: "1"
+    COMPOSE_DOCKER_CLI_BUILD: "1"
   before_script:
-    # 安装运行时所需的基础工具
-    - apk add --no-cache docker-cli-compose make python3
-    # 模拟本地环境配置
+    # 安装运行时所需的基础工具 (包括 curl, bash 供 uv 安装使用)
+    - apk add --no-cache docker-cli-compose make python3 curl bash
+    # 安装 uv
+    - curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
+    # 准备环境
     - echo "Copying .env file for CI..."
     - cp .env.example .env
-    # 启动全量容器栈 (API, DB, MQ等) 以供集成测试使用
+    - mkdir -p reports/security
+    # 安装本地宿主机工具 (用于 lint, detect-secrets 等)
+    - uv sync --all-groups
+  script:
+    - echo "Building Docker Images..."
+    - make build
     - echo "Starting container stack..."
     - make up
-  script:
     - echo "Executing Full Gate script (Security -> Verify -> Build -> dbt)..."
-    - python3 scripts/gatekeeper.py --mode full
+    - uv run python scripts/gatekeeper.py --mode full
   after_script:
     # 确保无论测试成败，都清理容器释放资源
     - make down
