@@ -50,10 +50,15 @@
     - **辅助/调试环境 (Auxiliary)**: Windows + PowerShell。仅用于代码编写、轻量级 Lint 检查及辅助脚本调试。
     - **核心原则**: 严禁以“Windows 能跑通”作为提测标准。物理真实环境以 Docker 内的 Linux 表现为准。通过 `make test` 或 `docker-compose exec api pytest` 确保 100% 环境对齐。
 - **路径处理**: 强制使用 `pathlib` 确保跨平台路径兼容。
+- **Shell 方言约束 [MANDATORY]**:
+    - **宿主机 (Windows + PowerShell 5.1)**: 严禁在终端指令中使用 `&&`、`||`、`$(...)` 等 bash-only 语法。链式命令必须拆分为独立调用或使用 `;` 分号。
+    - **容器内 (Linux + bash)**: Makefile 中使用 `$(EXEC_CMD)` 前缀的命令在容器内执行，可自由使用 bash 语法。
+    - **Makefile 跨平台**: 涉及 OS 特有指令的 target 必须使用 `ifeq ($(OS),Windows_NT)` 环境嗅探并提供双分支实现，严禁硬编码单一 Shell。
 - **目录用途分工 [MANDATORY]**: 禁止在根目录散落临时文件。两个临时目录用途严格区分：
     - **`./tmp/`**：运行时生成的临时数据产物，如 CSV 导出、日志重定向、分析报告。CI 构建和镜像打包**不包含**此目录。
     - **`./scratch/`**：开发过程中的一次性调试脚本（如 `monitor_sync.py`、`force_sync.py`）。仅用于本地排查，**必须**在 `.dockerignore` 中排除，任务结束前**必须**清理或归档至 `docs/` 下。
     - **严禁**将 `scratch/` 脚本发展为永久性业务逻辑；若脚本具备复用价值，必须迁移至 `scripts/` 并补充测试。
+- **CI/CD 平台**: GitHub Actions (`ubuntu-latest`)。工作流定义在 `.github/workflows/full-gate.yml`，逻辑通过 `scripts/gatekeeper.py` 与本地 `make full-gate` 完全对齐。
 - **CSV 编码**: 所有 CSV 文件的生成、读取及模版任务强制使用 `utf-8-sig` 编码，确保在 Windows Office/Excel 环境下打开不出现汉字乱码。
 - **语义分层规范 (Semantic Alignment)**:
     - **技术侧用英文**: 数据库字段名、API Schema、核心代码变量必须使用标准英文命名（如 `pm_user_id`）。
