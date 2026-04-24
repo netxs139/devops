@@ -21,8 +21,8 @@ ifeq ($(OS),Windows_NT)
     DETECTED_OS := Windows
     BUILD_CMD := $$env:DOCKER_BUILDKIT=1; $$env:COMPOSE_DOCKER_CLI_BUILD=1; docker-compose build --build-arg UV_IMAGE=astral-sh/uv:latest --build-arg PIP_INDEX_URL=$(NEXUS_PYPI_URL)
     CLEAN_CMD := Get-ChildItem -Path . -Include __pycache__ -Recurse -Directory | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; \
-                 Get-ChildItem -Path . -Include *.pyc,*.pyo,*.log,.coverage,*.tmp,traceback.txt,debug_output.txt,dbt_*.txt -File -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue; \
-                 Get-ChildItem -Path . -Include debug_*.py,test_tmp_*.py,tmp_*.py,parse_dbt_*.py,drop_b.py -File -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue; \
+                 Get-ChildItem -Path . -Include *.pyc,*.pyo,.coverage,*.tmp,traceback.txt,debug_output.txt,dbt_*.txt -File -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue; \
+                 Get-ChildItem -Path . -Include debug_*.py,test_tmp_*.py,tmp_*.py,parse_dbt_*.py,drop_b.py,*.log.tmp -File -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue; \
                  if (Test-Path htmlcov) { Remove-Item -Path htmlcov -Recurse -Force }; \
                  if (Test-Path .pytest_cache) { Remove-Item -Path .pytest_cache -Recurse -Force }; \
                  if (Test-Path .ruff_cache) { Remove-Item -Path .ruff_cache -Recurse -Force }; \
@@ -32,15 +32,10 @@ else
     DETECTED_OS := Linux
     BUILD_CMD := DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker-compose build --build-arg UV_IMAGE=astral-sh/uv:latest --build-arg PIP_INDEX_URL=$(NEXUS_PYPI_URL)
     CLEAN_CMD := find . -type d -name "__pycache__" -exec rm -rf {} +; \
-                 find . -type f -name "*.pyc" -delete; \
-                 find . -type f -name "*.pyo" -delete; \
-                 find . -type f -name "*.log" -delete; \
+                 find . -type f \( -name "*.pyc" -o -name "*.pyo" \) -delete; \
                  rm -f .coverage *.tmp traceback.txt debug_output.txt dbt_*.txt; \
                  rm -rf htmlcov .pytest_cache .ruff_cache test-results; \
-                 find . -type f -name "debug_*.py" -delete; \
-                 find . -type f -name "test_tmp_*.py" -delete; \
-                 find . -type f -name "tmp_*.py" -delete; \
-                 find . -type f -name "parse_dbt_*.py" -delete; \
+                 find . -type f \( -name "debug_*.py" -o -name "test_tmp_*.py" -o -name "tmp_*.py" -o -name "parse_dbt_*.py" \) -delete; \
                  rm -f drop_b.py
     SHELL_BIN := /bin/bash -c
 endif
