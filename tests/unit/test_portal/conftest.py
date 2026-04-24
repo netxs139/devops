@@ -21,20 +21,15 @@ from devops_portal.main import app
 
 @pytest.fixture(scope="function")
 def portal_db():
-    """每个 Portal 测试用例独立的物理数据库环境。"""
-    # 1. 唯一物理文件路径配置
-    db_fd, db_path = tempfile.mkstemp(suffix=".db", prefix="portal_test_")
-    os.close(db_fd)
-    db_uri = f"sqlite:///{db_path}"
+    """每个 Portal 测试用例独立的内存数据库环境，避免 xdist 并发时的物理死锁。"""
+    db_uri = "sqlite:///:memory:"
 
-    # 2. 同步环境变量 (关键)
     os.environ["DB_URI"] = db_uri
     os.environ["GITLAB_URL"] = "https://gitlab.example.com"
     os.environ["GITLAB_TOKEN"] = "testtoken"
     os.environ["JWT_SECRET_KEY"] = "testsecret"
     os.environ["JWT_ALGORITHM"] = "HS256"
 
-    # 3. 创建 Engine 与会话工厂
     engine = create_engine(
         db_uri,
         connect_args={"check_same_thread": False},
@@ -50,17 +45,7 @@ def portal_db():
         yield db, engine, db_uri
     finally:
         db.close()
-        # 物理清理
-        with engine.begin() as conn:
-            conn.exec_driver_sql("PRAGMA foreign_keys=OFF")
-            Base.metadata.drop_all(bind=conn)
         engine.dispose()
-
-        if os.path.exists(db_path):
-            try:
-                os.remove(db_path)
-            except Exception:
-                pass
 
 
 @pytest.fixture(scope="function")

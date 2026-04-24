@@ -26,12 +26,11 @@ logging.basicConfig(level=Config.LOG_LEVEL)
 logger = logging.getLogger("Worker")
 
 # 模块级数据库连接池 (全局唯一，多任务共享)
-_engine = create_engine(
-    Config.DB_URI,
-    pool_size=5,
-    max_overflow=10,
-    pool_pre_ping=True,
-)
+_engine_kwargs = {"pool_pre_ping": True}
+if not Config.DB_URI.startswith("sqlite"):
+    _engine_kwargs.update({"pool_size": 5, "max_overflow": 10})
+
+_engine = create_engine(Config.DB_URI, **_engine_kwargs)
 _SessionFactory = sessionmaker(bind=_engine)
 
 
