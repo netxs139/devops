@@ -66,27 +66,23 @@
 
 ## 🛠️ 技术栈 (Tech Stack)
 
-* **语言**: Python 3.9+
-* **数据库**: PostgreSQL (生产环境推荐)
-* **ORM**: SQLAlchemy
-* **架构**: ELT (Extract-Load-Transform)，采用 **Airbyte** 进行统一数据抽取 (Extract) 与加载 (Load)，重度依赖 **dbt** 进行数据建模与逻辑编排，辅以 SQL Views 进行实时分析。
-* **数据质量**: Great Expectations (v1.10.0) - 用于深度数据质量校验。
+* **语言**: Python 3.12+
+* **包管理**: **uv** (Astral 出品的极速 Python 包与环境管理器)
+* **数据库**: PostgreSQL 15+ (生产环境推荐)
+* **ORM**: SQLAlchemy 2.0 (全量 Typed 声明)
+* **架构**: ELT (Extract-Load-Transform)，自研插件工厂进行统一数据抽取 (Extract) 与加载 (Load)，重度依赖 **dbt** 进行数据建模与逻辑编排，辅以 SQL Views 进行实时分析。
+* **CI/CD 引擎**: **双 CI 并行策略 (Dual CI Engine)** - 原生支持 GitHub Actions 与 GitLab CI，共享同一套核心门禁脚本 (`gatekeeper.py`)。
 
 ## 🚀 快速开始 (Quick Start)
 
 ### 1. 环境准备
 
-确保已安装 **Docker** 和 **Docker Compose**。本项目实现了完全容器化部署，无需本地配置 Python 环境。
+确保已安装 **Docker**, **Docker Compose** 以及 **uv**。
+本项目实现了完全容器化部署，且全面拥抱了 `uv` 作为依赖管理与虚拟环境工具。
 
 > **🇨🇳 中国大陆用户特别提示**:
-> 由于网络原因，拉取 Docker Hub 镜像可能会失败。本项目提供了自动配置脚本：
->
-> ```bash
-> # 自动配置国内镜像加速 (需要 root 权限)
-> sudo bash scripts/setup_china_mirrors.sh
-> ```
->
-> 此外，`Dockerfile` 已默认集成了阿里云 (Debian) 和清华源 (PyPI) 加速，`deploy.sh` 脚本在部署时也会自动检测网络状况并提示优化。
+> 本项目已将 Docker 镜像源默认配置为清华源 (`pypi.tuna.tsinghua.edu.cn`)。
+> 若内网拉取镜像受限，配置会自动 fallback 到 Nexus 私服缓存。
 
 ### 2. 配置说明
 
@@ -97,42 +93,31 @@
 cp .env.example .env
 
 # 2. 编辑 .env 文件
-#    - 基础设施: 设置 DB_PASSWORD, RABBITMQ_USER 等
-#    - 业务集成: 设置 GITLAB__URL, SONARQUBE__TOKEN 等 (注意使用双下划线 __ 处理层级)
+#    - 基础设施: 设置 POSTGRES_PASSWORD, RABBITMQ__PASSWORD 等
+#    - 业务集成: 设置 GITLAB__URL, SONARQUBE__TOKEN 等
 ```
 
 ### 3. 多环境部署指南 (Deployment Modes)
 
-系统支持三种标准的构建与部署模式，请根据您的使用场景选择：
+系统支持三种标准的构建与部署模式，均由跨平台 `Makefile` (支持 Windows/Linux) 统一调度：
 
-| 模式 | 适用场景 | 配置文件 | 镜像策略 | 包含组件 |
-| :--- | :--- | :--- | :--- | :--- |
-| **A. 开发环境** | 本地编码/调试 | `docker-compose.yml` | 本地构建 + Dev依赖 | API, dbt, Streamlit, **Pytest, Black** |
-| **B. 生产环境** | 在线服务器 | `docker-compose.prod.yml` | 纯净精简镜像 | API, dbt, Streamlit, **DataHub CLI** |
-| **C. 离线环境** | 内网隔离环境 | `docker-compose.prod.yml` | `tar` 包导入 | 同生产环境 (**含 DataHub 独立镜像**) |
+| 模式 | 适用场景 | 配置文件 | 包含组件 |
+| :--- | :--- | :--- | :--- |
+| **A. 本地验证全门禁** | 提交代码前 | `Makefile` (fast-gate/full-gate) | API, DB, MQ, **Lint, Pytest, detect-secrets** |
+| **B. 开发环境** | 本地持续编码 | `docker-compose.yml` | API, DB, MQ (自动挂载本地代码卷) |
+| **C. CI/CD 流水线** | 远端合并/发布 | `.github/workflows` / `.gitlab-ci.yml` | 全量自动化验证与滚动部署 |
 
 #### A. 开发环境 (Development)
 >
-> 适用于开发人员本地使用，支持代码热重载，并自动安装测试框架。
+> 适用于开发人员本地使用，支持代码热重载，并通过 `uv` 极速安装依赖。
 
 ```bash
-make deploy
-```
+# 构建镜像并启动容器栈
+make build
+make up
 
-* **动作**: 停止旧容器 -> 构建镜像 -> 启动服务 -> **安装开发依赖 (`requirements-dev.txt`)** -> 初始化数据。
-* **依赖**: 容器启动后会自动执行 `pip install` 安装 `pytest`, `black`, `flake8` 等工具。
-* **验证**: 运行 `make test` 确保开发环境正常。
-
-#### B. 生产环境 (Production)
->
-> 适用于可联网的生产服务器。使用精简镜像，剥离了编译器和开发工具，确保安全与稳定。
-
-```bash
-# 方式 1: 使用脚本 (推荐)
-./deploy.sh
-
-# 方式 2: 使用 Make 命令
-make deploy-prod
+# 执行全量单元测试与本地质量门禁
+make verify
 ```
 
 * **动作**: 停止旧容器 -> 构建生产镜像 (`--target release`) -> 启动服务 -> 初始化数据。
