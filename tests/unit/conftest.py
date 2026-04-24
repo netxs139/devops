@@ -4,13 +4,27 @@
 大幅提升 Windows/Docker 环境下的测试性能 (SOP LL #63)。
 """
 
+import os
+import sys
+
 import pytest
+
+
+# 确保项目根目录在 path 中，以便导入 scripts 等模块
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from devops_collector.models.base_models import Base
+# 强制加载所有核心模型以完成 Metadata 注册
+from devops_collector.models import Base
+
+# 动态加载所有插件模型 (LL #135)
+from devops_collector.plugins import load_all_plugins
+
+
+load_all_plugins()
 
 
 # 为单元测试分配唯一的内核内存数据库，禁用物理 IO

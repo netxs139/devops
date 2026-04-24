@@ -87,7 +87,8 @@ class TestNexusWorker(unittest.TestCase):
             }
         ]
 
-        self.worker._save_batch(batch)
+        # 3. Save batch
+        self.worker._save_batch(batch, "maven-releases")
 
         # 验证是否创建了组件且绑定了 product_code
         args, kwargs = self.session.add.call_args

@@ -105,14 +105,17 @@ Issues = "https://github.com/netxs2000/devops/projects"
 devops-collector = "devops_collector.cli:main"
 
 [tool.setuptools]
-packages = ["devops_collector"]
+packages = ["devops_collector", "devops_portal"]
 
 [tool.setuptools.package-data]
 devops_collector = ["sql/*.sql"]
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-addopts = "-ra -q --strict-markers --timeout=30 -m 'not slow' -n auto --instafail"
+addopts = "-ra -q --strict-markers --timeout=30 -m 'not slow' --instafail"
+env = [
+    "DEVOPS_SKIP_AUDIT=true",
+]
 testpaths = [
     "tests/unit",
     "tests/integration",

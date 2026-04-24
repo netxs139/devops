@@ -17,6 +17,7 @@ import pytest
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def ch():
     """模拟 pika channel。"""
@@ -47,6 +48,7 @@ def make_body(source="gitlab", job_type="sync_commits"):
 # process_task() — Happy Path
 # ---------------------------------------------------------------------------
 
+
 @patch("devops_collector.worker._SessionFactory")
 @patch("devops_collector.worker.PluginRegistry")
 def test_process_task_happy_path(mock_registry, mock_session_factory, ch, method, properties):
@@ -73,6 +75,7 @@ def test_process_task_happy_path(mock_registry, mock_session_factory, ch, method
 # process_task() — Corrupt JSON Payload
 # ---------------------------------------------------------------------------
 
+
 @patch("devops_collector.worker._SessionFactory")
 @patch("devops_collector.worker.PluginRegistry")
 def test_process_task_corrupt_json(mock_registry, mock_session_factory, ch, method, properties):
@@ -92,6 +95,7 @@ def test_process_task_corrupt_json(mock_registry, mock_session_factory, ch, meth
 # ---------------------------------------------------------------------------
 # process_task() — No Client Registered
 # ---------------------------------------------------------------------------
+
 
 @patch("devops_collector.worker._SessionFactory")
 @patch("devops_collector.worker.PluginRegistry")
@@ -114,6 +118,7 @@ def test_process_task_no_client_raises(mock_registry, mock_session_factory, ch, 
 # ---------------------------------------------------------------------------
 # process_task() — Worker Execution Raises
 # ---------------------------------------------------------------------------
+
 
 @patch("devops_collector.worker._SessionFactory")
 @patch("devops_collector.worker.PluginRegistry")
@@ -141,6 +146,7 @@ def test_process_task_worker_raises(mock_registry, mock_session_factory, ch, met
 # process_task() — No correlation_id in properties (backward compat)
 # ---------------------------------------------------------------------------
 
+
 @patch("devops_collector.worker._SessionFactory")
 @patch("devops_collector.worker.PluginRegistry")
 def test_process_task_fallback_correlation_id(mock_registry, mock_session_factory, ch, method):
@@ -153,11 +159,7 @@ def test_process_task_fallback_correlation_id(mock_registry, mock_session_factor
     mock_registry.get_config.return_value = {"client": {}, "worker": {}}
     mock_registry.get_client_instance.return_value = None  # 触发失败路径
 
-    body = json.dumps({
-        "source": "gitlab",
-        "job_type": "sync",
-        "correlation_id": "fallback-cid-999"
-    }).encode()
+    body = json.dumps({"source": "gitlab", "job_type": "sync", "correlation_id": "fallback-cid-999"}).encode()
 
     from devops_collector.worker import process_task
 
@@ -170,6 +172,7 @@ def test_process_task_fallback_correlation_id(mock_registry, mock_session_factor
 # ---------------------------------------------------------------------------
 # sys_audit_batch_callback() — Happy Path
 # ---------------------------------------------------------------------------
+
 
 @patch("devops_collector.worker._SessionFactory")
 def test_sys_audit_batch_callback_happy(mock_session_factory):
@@ -184,8 +187,9 @@ def test_sys_audit_batch_callback_happy(mock_session_factory):
     ]
     delivery_tags = [1, 2]
 
-    with patch("devops_collector.worker.insert") as mock_insert:
+    with patch("devops_collector.worker.insert"):
         from devops_collector.worker import sys_audit_batch_callback
+
         sys_audit_batch_callback(batch_data, delivery_tags, mock_channel)
 
     mock_session.commit.assert_called_once()
@@ -196,6 +200,7 @@ def test_sys_audit_batch_callback_happy(mock_session_factory):
 # ---------------------------------------------------------------------------
 # sys_audit_batch_callback() — Empty Batch Short-Circuit
 # ---------------------------------------------------------------------------
+
 
 @patch("devops_collector.worker._SessionFactory")
 def test_sys_audit_batch_callback_empty(mock_session_factory):
@@ -214,6 +219,7 @@ def test_sys_audit_batch_callback_empty(mock_session_factory):
 # sys_audit_batch_callback() — DB Write Failure → NACK + requeue
 # ---------------------------------------------------------------------------
 
+
 @patch("devops_collector.worker._SessionFactory")
 def test_sys_audit_batch_callback_db_failure(mock_session_factory):
     """数据库写入失败时：rollback，所有 tag 被 NACK + requeue=True。"""
@@ -227,6 +233,7 @@ def test_sys_audit_batch_callback_db_failure(mock_session_factory):
 
     with patch("devops_collector.worker.insert"):
         from devops_collector.worker import sys_audit_batch_callback
+
         sys_audit_batch_callback(batch_data, delivery_tags, mock_channel)
 
     mock_session.rollback.assert_called_once()
@@ -237,6 +244,7 @@ def test_sys_audit_batch_callback_db_failure(mock_session_factory):
 # ---------------------------------------------------------------------------
 # start_audit_consumer() — MQ Exception Swallowed
 # ---------------------------------------------------------------------------
+
 
 @patch("devops_collector.worker.MessageQueue")
 def test_start_audit_consumer_mq_failure(mock_mq_cls):
@@ -252,6 +260,7 @@ def test_start_audit_consumer_mq_failure(mock_mq_cls):
 # ---------------------------------------------------------------------------
 # main() — Bootstrap Chain
 # ---------------------------------------------------------------------------
+
 
 @patch("devops_collector.worker.MessageQueue")
 @patch("devops_collector.worker.threading.Thread")

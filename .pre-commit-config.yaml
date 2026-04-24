@@ -52,7 +52,7 @@ repos:
       # 禁止提交包含表情符号的文件
       - id: check-no-emoji
         name: Check No Emoji in Code
-        entry: uv run python -c "import sys; sys.exit(1 if any(ord(c) > 127 and ord(c) in range(0x1F600, 0x1F64F) for c in open(sys.argv[1]).read()) else 0)"
+        entry: uv run python -c "import sys; sys.exit(1 if any(ord(c) > 127 and ord(c) in range(0x1F600, 0x1F64F) for c in open(sys.argv[1], encoding='utf-8').read()) else 0)"
         language: python
         types: [python, markdown, html, css, javascript]
         exclude: '^(tests/|archived/)'
@@ -61,7 +61,7 @@ repos:
       - id: check-docstrings
         name: Check Docstrings Exist
         entry: >
-          uv run python -c "import sys, ast; tree = ast.parse(open(sys.argv[1]).read()); [print(f'Missing docstring: {n.name} in {sys.argv[1]}') for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.ClassDef)) and not ast.get_docstring(n)]"
+          uv run python -c "import sys, ast; tree = ast.parse(open(sys.argv[1], encoding='utf-8').read()); [print(f'Missing docstring: {n.name} in {sys.argv[1]}') for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.ClassDef)) and not ast.get_docstring(n)]"
         language: system
         types: [python]
         exclude: '^(tests/|archived/|scripts/)'

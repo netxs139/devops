@@ -23,6 +23,7 @@ from unittest.mock import MagicMock, patch
 # Helper: build a fake project object with given sync_status / last_synced_at
 # ---------------------------------------------------------------------------
 
+
 def make_project(sync_status="PENDING", last_synced_at=None):
     p = MagicMock()
     p.sync_status = sync_status
@@ -50,19 +51,21 @@ PATCHES = [
 
 def _run_main(argv, setup_session_fn=None):
     """Helper: patch all external deps, inject argv, run main() once."""
-    with patch("sys.argv", ["scheduler"] + argv), \
-         patch("devops_collector.scheduler.PluginLoader") as mock_loader, \
-         patch("devops_collector.scheduler.create_engine") as mock_engine_cls, \
-         patch("devops_collector.scheduler.sessionmaker") as mock_sm, \
-         patch("devops_collector.scheduler.MessageQueue") as mock_mq_cls, \
-         patch("devops_collector.scheduler.Base") as mock_base, \
-         patch("devops_collector.scheduler.PromotionService") as mock_ps, \
-         patch("devops_collector.scheduler.subprocess") as mock_subprocess, \
-         patch("devops_collector.scheduler.DORAService") as mock_dora, \
-         patch("devops_collector.plugins.gitlab.models.GitLabProject", create=True), \
-         patch("devops_collector.plugins.sonarqube.models.SonarProject", create=True), \
-         patch("devops_collector.plugins.zentao.models.ZenTaoProduct", create=True):
-
+    with (
+        patch("sys.argv", ["scheduler"] + argv),
+        patch("devops_collector.scheduler.PluginLoader") as mock_loader,
+        patch("devops_collector.scheduler.create_engine") as mock_engine_cls,
+        patch("devops_collector.scheduler.sessionmaker") as mock_sm,
+        patch("devops_collector.scheduler.MessageQueue") as mock_mq_cls,
+        patch("devops_collector.scheduler.Base") as mock_base,
+        patch("devops_collector.scheduler.PromotionService") as mock_ps,
+        patch("devops_collector.scheduler.subprocess") as mock_subprocess,
+        patch("devops_collector.scheduler.DORAService") as mock_dora,
+        patch("devops_collector.plugins.gitlab.models.GitLabProject", create=True),
+        patch("devops_collector.plugins.sonarqube.models.SonarProject", create=True),
+        patch("devops_collector.plugins.zentao.models.ZenTaoProduct", create=True),
+        patch("devops_collector.scheduler.Config.ENABLED_PLUGINS", []),
+    ):
         mock_engine = MagicMock()
         mock_engine_cls.return_value = mock_engine
 
@@ -88,6 +91,7 @@ def _run_main(argv, setup_session_fn=None):
             setup_session_fn(mock_session, mock_mq, mock_ps, mock_subprocess, mock_dora, mock_engine)
 
         from devops_collector.scheduler import main
+
         main()
 
         return {
@@ -106,8 +110,10 @@ def _run_main(argv, setup_session_fn=None):
 # Test 1: Bootstrap chain (PluginLoader + create_all) -- once mode, no projects
 # ---------------------------------------------------------------------------
 
+
 def test_main_bootstrap_loads_models_and_creates_tables():
     """main() 必须调用 PluginLoader.load_models() 并执行 Base.metadata.create_all。"""
+
     def setup(session, mq, ps, subp, dora, engine):
         session.query.return_value.all.return_value = []
 
@@ -120,8 +126,10 @@ def test_main_bootstrap_loads_models_and_creates_tables():
 # Test 2: --force-all resets sync statuses via raw SQL
 # ---------------------------------------------------------------------------
 
+
 def test_force_all_resets_sync_status():
     """--force-all 时必须对三张表执行 UPDATE sync_status='PENDING' SQL。"""
+
     def setup(session, mq, ps, subp, dora, engine):
         session.query.return_value.all.return_value = []
 
@@ -135,6 +143,7 @@ def test_force_all_resets_sync_status():
 # Test 3: ZenTao product with no last_synced_at → task published
 # ---------------------------------------------------------------------------
 
+
 def test_zentao_product_never_synced_publishes_task():
     """last_synced_at=None 的 ZenTao product 必须发布任务且 sync_status='QUEUED'。"""
     zp = make_project(sync_status="PENDING", last_synced_at=None)
@@ -142,9 +151,9 @@ def test_zentao_product_never_synced_publishes_task():
     def setup(session, mq, ps, subp, dora, engine):
         # query 顺序: zentao → gitlab → sonar
         session.query.return_value.all.side_effect = [
-            [zp],   # zentao products
-            [],     # gitlab projects
-            [],     # sonar projects
+            [zp],  # zentao products
+            [],  # gitlab projects
+            [],  # sonar projects
         ]
 
     ctx = _run_main(["--once", "--skip-dbt"], setup_session_fn=setup)
@@ -158,6 +167,7 @@ def test_zentao_product_never_synced_publishes_task():
 # Test 4: GitLab project stale → incremental task published
 # ---------------------------------------------------------------------------
 
+
 def test_gitlab_stale_project_publishes_incremental_task():
     """上次同步时间超过 SYNC_INTERVAL_MINUTES 的 gitlab project 发布 incremental 任务。"""
     old_time = datetime.now(UTC) - timedelta(hours=25)  # > SYNC_INTERVAL_MINUTES(1440=24h)
@@ -165,9 +175,9 @@ def test_gitlab_stale_project_publishes_incremental_task():
 
     def setup(session, mq, ps, subp, dora, engine):
         session.query.return_value.all.side_effect = [
-            [],      # zentao
+            [],  # zentao
             [proj],  # gitlab
-            [],      # sonar
+            [],  # sonar
         ]
 
     ctx = _run_main(["--once", "--skip-dbt"], setup_session_fn=setup)
@@ -181,15 +191,16 @@ def test_gitlab_stale_project_publishes_incremental_task():
 # Test 5: SYNCING project is skipped (not force-all)
 # ---------------------------------------------------------------------------
 
+
 def test_syncing_project_not_queued_again():
     """sync_status='SYNCING' 的项目在非 force-all 模式下不能重复发布任务。"""
     proj = make_project(sync_status="SYNCING", last_synced_at=None)
 
     def setup(session, mq, ps, subp, dora, engine):
         session.query.return_value.all.side_effect = [
-            [],       # zentao
-            [proj],   # gitlab
-            [],       # sonar
+            [],  # zentao
+            [proj],  # gitlab
+            [],  # sonar
         ]
 
     ctx = _run_main(["--once", "--skip-dbt"], setup_session_fn=setup)
@@ -200,8 +211,10 @@ def test_syncing_project_not_queued_again():
 # Test 6: PromotionService success → commit called
 # ---------------------------------------------------------------------------
 
+
 def test_promotion_service_success_commits():
     """PromotionService 有数据时，session.commit() 在 promotion 结束后被调用。"""
+
     def setup(session, mq, ps, subp, dora, engine):
         session.query.return_value.all.return_value = []
         ps.promote_gitlab_commits.return_value = 5
@@ -216,8 +229,10 @@ def test_promotion_service_success_commits():
 # Test 7: PromotionService raises → rollback called
 # ---------------------------------------------------------------------------
 
+
 def test_promotion_service_failure_rollbacks():
     """PromotionService 抛异常时，session.rollback() 必须被调用。"""
+
     def setup(session, mq, ps, subp, dora, engine):
         session.query.return_value.all.return_value = []
         ps.promote_gitlab_commits.side_effect = RuntimeError("DB connection lost")
@@ -230,8 +245,10 @@ def test_promotion_service_failure_rollbacks():
 # Test 8: dbt run success → reverse ETL + DORA called
 # ---------------------------------------------------------------------------
 
+
 def test_dbt_success_triggers_reverse_etl_and_dora():
     """dbt returncode=0 时，DORAService.aggregate_all_projects 和 reverse ETL 必须被触发。"""
+
     def setup(session, mq, ps, subp, dora, engine):
         session.query.return_value.all.return_value = []
         dbt_ok = MagicMock()
@@ -242,9 +259,11 @@ def test_dbt_success_triggers_reverse_etl_and_dora():
         bot_ok.stdout = "Risk bot OK"
         subp.run.side_effect = [dbt_ok, bot_ok]
 
-    with patch("devops_collector.core.reverse_etl.sync_aligned_entities_to_mdm"), \
-         patch("devops_collector.core.reverse_etl.sync_shadow_it_findings"), \
-         patch("devops_collector.core.reverse_etl.sync_talent_tags_to_mdm"):
+    with (
+        patch("devops_collector.core.reverse_etl.sync_aligned_entities_to_mdm"),
+        patch("devops_collector.core.reverse_etl.sync_shadow_it_findings"),
+        patch("devops_collector.core.reverse_etl.sync_talent_tags_to_mdm"),
+    ):
         ctx = _run_main(["--once"], setup_session_fn=setup)
 
     ctx["dora"].aggregate_all_projects.assert_called_once()
@@ -254,8 +273,10 @@ def test_dbt_success_triggers_reverse_etl_and_dora():
 # Test 9: dbt run fails → reverse ETL NOT called
 # ---------------------------------------------------------------------------
 
+
 def test_dbt_failure_skips_reverse_etl():
     """dbt returncode!=0 时，reverse ETL 不能被触发。"""
+
     def setup(session, mq, ps, subp, dora, engine):
         session.query.return_value.all.return_value = []
         dbt_fail = MagicMock()
@@ -271,8 +292,10 @@ def test_dbt_failure_skips_reverse_etl():
 # Test 10: --skip-dbt prevents dbt subprocess call
 # ---------------------------------------------------------------------------
 
+
 def test_skip_dbt_prevents_subprocess_call():
     """--skip-dbt 时，subprocess.run 不能被调用（dbt 命令跳过）。"""
+
     def setup(session, mq, ps, subp, dora, engine):
         session.query.return_value.all.return_value = []
 
@@ -284,8 +307,10 @@ def test_skip_dbt_prevents_subprocess_call():
 # Test 11: Session always closed (finally block)
 # ---------------------------------------------------------------------------
 
+
 def test_session_always_closed_even_on_error():
     """主 try 块抛异常后，session.close() 必须仍在 finally 被调用。"""
+
     def setup(session, mq, ps, subp, dora, engine):
         session.query.side_effect = Exception("unexpected DB error")
 
