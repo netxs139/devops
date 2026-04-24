@@ -1,5 +1,6 @@
 name: DevOps Platform Full Gate
 # 此工作流确保云端 GitHub Actions 与本地 `make full-gate` 完全对齐，消除环境脱节。
+# 关键依赖链：build (镜像) -> up (容器栈) -> gatekeeper.py (全门禁)
 
 on:
   push:
@@ -7,41 +8,52 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  DEVOPS_SKIP_AUDIT: "true"
+  DOCKER_BUILDKIT: "1"
+  COMPOSE_DOCKER_CLI_BUILD: "1"
+
 jobs:
   full-gate:
     name: "Full Gate (Security -> Verify -> Build -> dbt)"
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up uv
+      # ── Python & uv 环境 ──────────────────────────────────
+      - name: Set up uv (with dependency cache)
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
           cache-dependency-path: "uv.lock"
 
-      - name: Set up Python
+      - name: Set up Python 3.11
         run: uv python install 3.11
 
+      # ── 环境准备 ──────────────────────────────────────────
       - name: Prepare Environment
         run: |
-          echo "Copying .env file for CI..."
           cp .env.example .env
-          # 注入 CI 专用环境变量 (跳过 RabbitMQ 审计以加速单元测试)
-          echo "DEVOPS_SKIP_AUDIT=true" >> $GITHUB_ENV
+          # 确保 reports 目录存在 (security-audit 需要)
+          mkdir -p reports/security
 
-      - name: Install Local Tools
+      - name: Install Host Tools (Lint, detect-secrets, etc.)
         run: uv sync --all-groups
 
-      - name: Launch Full Gate Check
-        run: |
-          # 启动容器栈 (数据库、消息队列等，供集成测试使用)
-          make up
-          # 执行全门禁脚本
-          python scripts/gatekeeper.py --mode full
+      # ── 容器栈：先构建镜像，再启动服务 ─────────────────────
+      - name: Build Docker Images
+        run: make build
 
+      - name: Start Container Stack (DB, MQ, API)
+        run: make up
+
+      # ── 全门禁执行 ────────────────────────────────────────
+      - name: Launch Full Gate Check
+        run: uv run python scripts/gatekeeper.py --mode full
+
+      # ── 清场 ──────────────────────────────────────────────
       - name: Cleanup Containers
         if: always()
         run: make down

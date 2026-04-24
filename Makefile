@@ -291,7 +291,8 @@ sync-all: ## 手动触发全量数据同步
 	$(EXEC_CMD) python -m devops_collector.worker --once
 
 pull-images: ## [工具] 尝试从 Nexus 预拉取基础镜像并打标 (Fallback 机制)
-	@echo "$(GREEN)Checking base images (Local First Strategy)...$(RESET)"
+	@echo "$(GREEN)Checking base images (Local First Strategy - $(DETECTED_OS))...$(RESET)"
+ifeq ($(OS),Windows_NT)
 	@powershell -Command " \
 		$$images = @('python:3.11-slim-bookworm', 'postgres:15-alpine', 'rabbitmq:3-management-alpine', 'astral-sh/uv:latest'); \
 		foreach ($$img in $$images) { \
@@ -318,6 +319,16 @@ pull-images: ## [工具] 尝试从 Nexus 预拉取基础镜像并打标 (Fallbac
 		} \
 		exit 0; \
 	"
+else
+	@for img in python:3.11-slim-bookworm postgres:15-alpine rabbitmq:3-management-alpine ghcr.io/astral-sh/uv:latest; do \
+		if docker images -q $$img 2>/dev/null | grep -q .; then \
+			echo "[SKIP] $$img already exists locally."; \
+		else \
+			echo "[PULL] Pulling $$img from Docker Hub..."; \
+			docker pull $$img || echo "[WARN] Failed to pull $$img, build may still work with cache."; \
+		fi; \
+	done
+endif
 
 dbt-build: ## 执行 dbt 建模转换
 	@echo "$(GREEN)Running dbt transformations...$(RESET)"
