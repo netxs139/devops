@@ -16,6 +16,35 @@ RESET := \033[0m
 EXEC_CMD := docker-compose exec -T api uv run
 NEXUS_DOCKER_REGISTRY ?= 192.168.5.64:8082
 
+# 跨平台 Shell 指令处理
+ifeq ($(OS),Windows_NT)
+    DETECTED_OS := Windows
+    BUILD_CMD := $$env:DOCKER_BUILDKIT=1; $$env:COMPOSE_DOCKER_CLI_BUILD=1; docker-compose build --build-arg UV_IMAGE=astral-sh/uv:latest --build-arg PIP_INDEX_URL=$(NEXUS_PYPI_URL)
+    CLEAN_CMD := Get-ChildItem -Path . -Include __pycache__ -Recurse -Directory | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; \
+                 Get-ChildItem -Path . -Include *.pyc,*.pyo,*.log,.coverage,*.tmp,traceback.txt,debug_output.txt,dbt_*.txt -File -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue; \
+                 Get-ChildItem -Path . -Include debug_*.py,test_tmp_*.py,tmp_*.py,parse_dbt_*.py,drop_b.py -File -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue; \
+                 if (Test-Path htmlcov) { Remove-Item -Path htmlcov -Recurse -Force }; \
+                 if (Test-Path .pytest_cache) { Remove-Item -Path .pytest_cache -Recurse -Force }; \
+                 if (Test-Path .ruff_cache) { Remove-Item -Path .ruff_cache -Recurse -Force }; \
+                 if (Test-Path test-results) { Remove-Item -Path test-results -Recurse -Force }
+    SHELL_BIN := powershell -Command
+else
+    DETECTED_OS := Linux
+    BUILD_CMD := DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker-compose build --build-arg UV_IMAGE=astral-sh/uv:latest --build-arg PIP_INDEX_URL=$(NEXUS_PYPI_URL)
+    CLEAN_CMD := find . -type d -name "__pycache__" -exec rm -rf {} +; \
+                 find . -type f -name "*.pyc" -delete; \
+                 find . -type f -name "*.pyo" -delete; \
+                 find . -type f -name "*.log" -delete; \
+                 rm -f .coverage *.tmp traceback.txt debug_output.txt dbt_*.txt; \
+                 rm -rf htmlcov .pytest_cache .ruff_cache test-results; \
+                 find . -type f -name "debug_*.py" -delete; \
+                 find . -type f -name "test_tmp_*.py" -delete; \
+                 find . -type f -name "tmp_*.py" -delete; \
+                 find . -type f -name "parse_dbt_*.py" -delete; \
+                 rm -f drop_b.py
+    SHELL_BIN := /bin/bash -c
+endif
+
 help: ## 显示帮助信息
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "$(YELLOW)%-20s$(RESET) %s\n", $$1, $$2}'
 
@@ -183,12 +212,8 @@ prod-down: ## [服务器专用] 停止生产服务
 NEXUS_PYPI_URL ?= http://192.168.5.64:8081/repository/group-pypi/simple
 
 build: pull-images ## 构建 Docker 镜像 (Local First + BuildKit Cache)
-	@echo "$(GREEN)Building Docker images with BuildKit cache & Nexus args...$(RESET)"
-	@powershell -Command " \
-		$$env:DOCKER_BUILDKIT=1; \
-		$$env:COMPOSE_DOCKER_CLI_BUILD=1; \
-		docker-compose build --build-arg UV_IMAGE=astral-sh/uv:latest --build-arg PIP_INDEX_URL=$(NEXUS_PYPI_URL) \
-	"
+	@echo "$(GREEN)Building Docker images with BuildKit cache & Nexus args ($(DETECTED_OS))...$(RESET)"
+	@$(SHELL_BIN) "$(BUILD_CMD)"
 
 up: ## 启动 Docker 容器 (等待健康检查通过)
 	@echo "$(GREEN)Starting services & waiting for DB...$(RESET)"
@@ -379,20 +404,8 @@ datahub-ingest: ## 同步元数据到 DataHub (PostgreSQL & dbt)
 	$(DATAHUB_CMD) datahub ingest -c datahub/recipe_dbt.yml
 
 clean: ## [增强] 清理所有临时文件、日志和 AI 调试脚本 (Environment Hygiene)
-	@echo "$(GREEN)Cleaning temporary files and test artifacts...$(RESET)"
-	@powershell -Command " \
-		# 1. 清理 Python 编译缓存 \
-		Get-ChildItem -Path . -Include __pycache__ -Recurse -Directory | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; \
-		# 2. 清理通用垃圾后缀 (保持 .env 完整) \
-		Get-ChildItem -Path . -Include *.pyc,*.pyo,*.log,.coverage,*.tmp,traceback.txt,debug_output.txt,dbt_*.txt -File -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue; \
-		# 3. 针对性清理 AI 调试/脚本残留 \
-		Get-ChildItem -Path . -Include debug_*.py,test_tmp_*.py,tmp_*.py,parse_dbt_*.py,drop_b.py -File -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue; \
-		# 4. 清理测试产出文件夹 \
-		if (Test-Path htmlcov) { Remove-Item -Path htmlcov -Recurse -Force }; \
-		if (Test-Path .pytest_cache) { Remove-Item -Path .pytest_cache -Recurse -Force }; \
-		if (Test-Path .ruff_cache) { Remove-Item -Path .ruff_cache -Recurse -Force }; \
-		if (Test-Path test-results) { Remove-Item -Path test-results -Recurse -Force }; \
-	"
+	@echo "$(GREEN)Cleaning temporary files and test artifacts ($(DETECTED_OS))...$(RESET)"
+	@$(SHELL_BIN) "$(CLEAN_CMD)"
 
 # =============================================================================
 # 文档生成工具
