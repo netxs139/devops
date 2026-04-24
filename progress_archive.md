@@ -4,6 +4,18 @@
 
 ______________________________________________________________________
 
+## 归档批次：2026-04-24 (会话 2)
+
+### 1. [Refactor] 测试目录规范化: 重构 tests/unit 目录，将 devops_collector 重命名为 test_collector，解决了 pytest 运行时的包阴影 (Shadowing) 冲突问题。(2026-04-24)
+
+### 2. [Cov] 核心覆盖率攻坚: 实现了 core/services, core/algorithms, core/utils 等核心模块的单元测试，services 模块覆盖率达到 100%，整体核心逻辑稳步迈向 80% 目标。(2026-04-24)
+
+### 3. [Fix] SCD Type 2 架构对齐: 修复 Organization 模型中 org_code 的 UNIQUE 约束冲突，支持了多版本历史记录并行存储，消除了更新时的 IntegrityError。(2026-04-24)
+
+### 4. [Hardening] 离线测试门禁: 实现 DEVOPS_SKIP_AUDIT 环境变量，支持在单元测试中自动关停 RabbitMQ/Audit 引擎，大幅提升本地极速反馈效率。(2026-04-24)
+
+______________________________________________________________________
+
 ## 归档批次：2026-04-24
 
 ### 1. [Gatekeeper] 门禁防线极速重构: 实现本地 Pre-commit (Ruff, Bandit) 左移与单元测试并发架构 (pytest-xdist)，门禁耗时大幅缩减。(2026-04-23)
