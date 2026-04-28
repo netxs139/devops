@@ -20,7 +20,9 @@ calc_trends as (
         lag(deployment_frequency) over (partition by product_name order by audit_month) as prev_deploy_freq,
         lag(mttr_hours) over (partition by product_name order by audit_month) as prev_mttr,
         lag(lead_time_hours) over (partition by product_name order by audit_month) as prev_lead_time,
-        lag(change_failure_rate_pct) over (partition by product_name order by audit_month) as prev_cfr
+        lag(change_failure_rate_pct) over (partition by product_name order by audit_month) as prev_cfr,
+        lag(avg_lines_per_commit) over (partition by product_name order by audit_month) as prev_alpc,
+        lag(mr_commit_ratio) over (partition by product_name order by audit_month) as prev_mcr
     from base
 ),
 
@@ -36,7 +38,7 @@ select
     product_name,
     coalesce(audit_month, CURRENT_DATE) as last_updated_month,
     
-    -- 部署频率 (Higher is better)
+    -- DORA 4 Core
     deployment_frequency,
     case 
         when deployment_frequency > coalesce(prev_deploy_freq, 0) then '↑'
@@ -44,7 +46,6 @@ select
         else '→'
     end as deploy_trend_icon,
     
-    -- MTTR (Lower is better)
     mttr_hours,
     case 
         when mttr_hours < coalesce(prev_mttr, 9999) then '↑' -- 向上箭头表示“优化”
@@ -52,7 +53,6 @@ select
         else '→'
     end as mttr_trend_icon,
     
-    -- 前置时间 (Lower is better)
     lead_time_hours,
     case 
         when lead_time_hours < coalesce(prev_lead_time, 9999) then '↑'
@@ -60,13 +60,27 @@ select
         else '→'
     end as lead_time_trend_icon,
     
-    -- 变更失败率 (Lower is better)
     change_failure_rate_pct,
     case 
         when change_failure_rate_pct < coalesce(prev_cfr, 100) then '↑'
         when change_failure_rate_pct > coalesce(prev_cfr, 0) then '↓'
         else '→'
     end as cfr_trend_icon,
+
+    -- 工程节奏 (Engineering Rhythm)
+    avg_lines_per_commit,
+    case 
+        when avg_lines_per_commit < coalesce(prev_alpc, 9999) then '↑' -- 向上表示代码更原子
+        when avg_lines_per_commit > coalesce(prev_alpc, 0) then '↓'
+        else '→'
+    end as alpc_trend_icon,
+
+    mr_commit_ratio,
+    case 
+        when mr_commit_ratio > coalesce(prev_mcr, 0) then '↑' -- 向上表示协作密度增加
+        when mr_commit_ratio < coalesce(prev_mcr, 999) then '↓'
+        else '→'
+    end as mcr_trend_icon,
 
     -- 效能评级 (基于 Lead Time)
     case 
