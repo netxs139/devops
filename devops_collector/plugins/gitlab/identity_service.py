@@ -123,7 +123,7 @@ class UserResolver:
                 employee_id=user_data.get("username"),
             )
             if user:
-                dept_name = user_data.get("skype")
+                dept_name = user_data.get("linkedin")
                 if dept_name:
                     # 使用统一服务进行 Upsert (GitLab 场景通常使用部门名作为唯一标识)
                     org = self.org_service.upsert_organization(org_code=f"gitlab_dept_{dept_name}", org_name=dept_name, org_level=2, source="gitlab_identity")

@@ -8,6 +8,7 @@
 
 | Session ID | Start Time | End Time | End Commit | Status | Key Deliverables / Next Steps |
 | :--- | :--- | :--- | :--- | :--- | :--- |
+| be3b0b64... | 2026-04-28 18:14 | 18:25 | N/A (Local) | SUCCESS | **GitLab 字段映射迁移 (v18.10 适配)**: 1. 完成从 `skype` 到 `linkedin` 的部门字段迁移; 2. 更新 `GitLabUserSchema` 校验层; 3. 修复 `UserResolver` 身份解析逻辑; 4. 补齐单元测试验证。 |
 | 58ed7dfb... | 2026-04-24 13:40 | 18:45 | 4903609 | SUCCESS | **性能优化探针与交互防线加固**: 1. 落地 PostgreSQL `tmpfs` 内存加速与 `pytest-testmon` 精准测试; 2. 修复 `test_portal` 并发死锁; 3. **硬化「凭据隔离与二次确认协议」 (AGENTS.md Rule 16)**，解决“凭据即授权”的严重逻辑失误; 4. 沉淀 2 条实战教训。 |
 | 58ed7dfb... | 2026-04-24 11:30 | 12:15 | 394d0ee | SUCCESS | **双 CI 架构落地与配置同步**: 1. 明确双引擎并行架构 (GitHub Actions + GitLab CI); 2. 补全 `.env.example` 以防护 CI 环境崩溃; 3. 升级 `README.md` 反映 Python 3.12+ 与 uv 生态; 4. 新增 `AGENTS.md` 宿主机方言隔离红线; 5. 沉淀架构剥离教训。 |
 | 58ed7dfb... | 2026-04-24 09:15 | 11:30 | N/A (Local) | SUCCESS | **CI/CD 架构核心层覆盖率攻坚完成**: 1. 达成核心模块高覆盖率: services(100%), registry(99%), base_worker(94%), algorithms(83%+); 2. 补齐 BaseWorker 复杂 Staging 持久化逻辑测试 (含 PG 批量加载 Mock); 3. 完善 Registry 冲突与异常处理路径; 4. 固化 Mock 属性隔离实战教训。 |
