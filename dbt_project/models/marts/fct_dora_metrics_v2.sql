@@ -34,6 +34,26 @@ lead_time as (
     group by 1, 2
 ),
 
+-- 4. GitLab 节奏指标 (Commit & MR)
+gitlab_activities as (
+    select
+        project_id,
+        date_trunc('month', committed_at) as month,
+        count(*) as commit_count,
+        sum(churn_lines) as total_churn
+    from {{ ref('stg_gitlab_commits') }}
+    group by 1, 2
+),
+
+gitlab_mrs as (
+    select
+        project_id,
+        date_trunc('month', created_at) as month,
+        count(*) as mr_count
+    from {{ ref('stg_gitlab_merge_requests') }}
+    group by 1, 2
+),
+
 -- 基础信息
 products as (
     select 
@@ -45,7 +65,7 @@ products as (
 
 select
     p.product_name,
-    coalesce(d.month, i.month, l.month) as audit_month,
+    coalesce(d.month, i.month, l.month, ga.month, gm.month) as audit_month,
     
     -- DORA Core 4
     coalesce(d.deployment_frequency, 0) as deployment_frequency,
@@ -58,12 +78,27 @@ select
         2
     ) as change_failure_rate_pct,
     
-    -- 识别线上事故数
+    -- 工程节奏 (新增)
+    round(
+        (coalesce(ga.total_churn, 0)::numeric / nullif(ga.commit_count, 0)), 
+        2
+    ) as avg_lines_per_commit,
+    
+    round(
+        (coalesce(gm.mr_count, 0)::numeric / nullif(ga.commit_count, 0)), 
+        2
+    ) as mr_commit_ratio,
+
+    -- 识别基础计数
+    coalesce(ga.commit_count, 0) as commit_count,
+    coalesce(gm.mr_count, 0) as mr_count,
     coalesce(i.incident_count, 0) as production_incidents_count
 
 from products p
 full join deployments d on p.product_id = d.product_id
-full join incidents i on p.product_id = i.product_id and d.month = i.month
+full join incidents i on p.product_id = i.product_id and (d.month = i.month or d.month is null)
 full join lead_time l on p.product_id = l.product_id and (d.month = l.month or i.month = l.month)
+left join gitlab_activities ga on p.gitlab_project_id = ga.project_id and (d.month = ga.month or i.month = ga.month or l.month = ga.month)
+left join gitlab_mrs gm on p.gitlab_project_id = gm.project_id and (ga.month = gm.month or d.month = gm.month)
 where p.product_id is not null
 order by audit_month desc, deployment_frequency desc
