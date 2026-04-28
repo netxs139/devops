@@ -46,7 +46,7 @@ class TestGitLabUserMapping(unittest.TestCase):
         """'''
         self.session.close()
 
-    def test_skype_mapping(self):
+    def test_linkedin_mapping(self):
         '''"""TODO: Add description.
 
         Args:
@@ -63,7 +63,7 @@ class TestGitLabUserMapping(unittest.TestCase):
             "username": "gitlab_user",
             "name": "GitLab User",
             "email": "user@example.com",
-            "skype": "Cloud Department",
+            "linkedin": "Cloud Department",
         }
 
         from uuid import uuid4

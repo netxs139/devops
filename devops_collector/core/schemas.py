@@ -19,7 +19,7 @@ class GitLabUserSchema(BaseModel):
         name: 显示名称
         email: 邮箱地址
         state: 用户状态 (active/blocked)
-        skype: Skype ID (alias for skypeid. equals department)
+        linkedin: LinkedIn ID (alias for linkedinid. equals department)
     """
 
     id: int
@@ -27,7 +27,7 @@ class GitLabUserSchema(BaseModel):
     name: str
     email: str | None = None
     state: str = "active"
-    skype: str | None = Field(None, alias="skypeid")
+    linkedin: str | None = Field(None, alias="linkedinid")
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
