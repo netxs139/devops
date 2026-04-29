@@ -16,6 +16,7 @@ dws_stats as (
         sum(mr_open_count) as mr_open_count,
         sum(issue_close_count) as issue_closed_count,
         sum(daily_impact_score) as total_impact_score,
+        count(distinct metric_date) as active_days_count,  -- METRICS_ARCHITECTURE §2.1: distinct days with activity
         min(metric_date) as first_active_day,
         max(metric_date) as last_active_day
     from {{ ref('dws_developer_metrics_daily') }}
@@ -35,6 +36,7 @@ select
     s.mr_open_count,
     s.issue_closed_count,
     s.total_impact_score,
+    s.active_days_count,
     
     -- 角色判定逻辑 (封装在应用层事实表中)
     case 
@@ -44,9 +46,10 @@ select
         else 'Generalist'
     end as developer_archetype,
     
+    -- daily_velocity: 用实际活跃天数做分母，而非日历跨度
     round(
         s.total_impact_score / 
-        nullif(extract(day from (s.last_active_day::timestamp - s.first_active_day::timestamp)) + 1, 0)::numeric, 
+        nullif(s.active_days_count, 0)::numeric, 
         2
     ) as daily_velocity
     

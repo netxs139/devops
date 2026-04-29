@@ -3,8 +3,9 @@
 从环境变量中读取 Nexus 相关配置。
 """
 
-import os
 from typing import Any
+
+from devops_collector.config import settings
 
 
 def get_config() -> dict[str, Any]:
@@ -15,10 +16,10 @@ def get_config() -> dict[str, Any]:
     """
     return {
         "client": {
-            "url": os.getenv("NEXUS_URL", ""),
-            "user": os.getenv("NEXUS_USER", ""),
-            "password": os.getenv("NEXUS_PASSWORD", ""),
-            "rate_limit": int(os.getenv("REQUESTS_PER_SECOND", "10")),
+            "url": settings.nexus.url,
+            "user": settings.nexus.user,
+            "password": settings.nexus.password,
+            "rate_limit": settings.ratelimit.requests_per_second,
         },
         "worker": {},
     }

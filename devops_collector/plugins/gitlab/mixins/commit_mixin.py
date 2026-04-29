@@ -4,6 +4,7 @@
 """
 
 import logging
+import math
 
 import pytz
 from dateutil import parser
@@ -218,7 +219,9 @@ class CommitMixin:
 
             # --- 5. Persist to Plugin-Specific GitLabCommit fields (Decoupled from Core) ---
             commit.eloc_score = total_eloc
-            commit.impact_score = total_impact
+            # Apply BreadthFactor at commit aggregation level (ADVANCED_METRICS_DESIGN §2.2)
+            breadth_factor = math.log(file_count + 1) if file_count > 0 else 1.0
+            commit.impact_score = total_impact * breadth_factor
             commit.churn_lines = total_churn_lines
             commit.file_count = file_count
             commit.test_lines = int(total_test_lines)
