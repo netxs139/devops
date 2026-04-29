@@ -25,25 +25,25 @@ def diag_zentao():
     print("ZenTao Connection & Model Diagnosis")
     print("=" * 60)
 
-    # 1. 检查配置
+    # 1. 检查配�?
     print(f"URL: {settings.zentao.url}")
     print(f"Token: {settings.zentao.token[:5]}***{settings.zentao.token[-5:] if len(settings.zentao.token) > 10 else ''}")
 
-    # 2. 测试 API 连通性
+    # 2. 测试 API 连通�?
     print("\n[1/3] Testing API connectivity...")
     ZenTaoClient(url=settings.zentao.url, token=settings.zentao.token)
     try:
-        # 使用基础 requests 测试以获得更多信息
+        # 使用基础 requests 测试以获得更多信�?
         headers = {"Token": settings.zentao.token, "Accept": "application/json"}
         resp = requests.get(f"{settings.zentao.url}/products", headers=headers, verify=False)
         print(f"HTTP Status: {resp.status_code}")
         if resp.status_code == 200:
             products = resp.json().get("products", [])
-            print(f"✓ Success! Found {len(products)} products.")
+            print(f"�?Success! Found {len(products)} products.")
         else:
-            print(f"✗ Failed! Body: {resp.text}")
+            print(f"�?Failed! Body: {resp.text}")
 
-            # 尝试不同的 Header
+            # 尝试不同�?Header
             print("\nTrying with x-zentao-token...")
             resp2 = requests.get(f"{settings.zentao.url}/products", headers={"x-zentao-token": settings.zentao.token}, verify=False)
             print(f"x-zentao-token Status: {resp2.status_code}")
@@ -57,19 +57,19 @@ def diag_zentao():
             print(f"Authorization Status: {resp3.status_code}")
 
     except Exception as e:
-        print(f"✗ API Error: {e}")
+        print(f"�?API Error: {e}")
 
-    # 3. 检查数据库和模型映射
+    # 3. 检查数据库和模型映�?
     print("\n[2/3] Checking DB mapping...")
     try:
         engine = create_engine(settings.database.uri)
         Session = sessionmaker(bind=engine)
         session = Session()
         p_count = session.query(ZenTaoProduct).count()
-        print(f"✓ DB connection OK. ZenTaoProduct count: {p_count}")
+        print(f"�?DB connection OK. ZenTaoProduct count: {p_count}")
         session.close()
     except Exception as e:
-        print(f"✗ DB Mapping Error: {e}")
+        print(f"�?DB Mapping Error: {e}")
         import traceback
 
         traceback.print_exc()

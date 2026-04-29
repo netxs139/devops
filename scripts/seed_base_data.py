@@ -1,7 +1,7 @@
 """
-Seed base data (Organizations & Products) from docs/ CSV files.
+Seed base data (Organizations & Products) from docs/assets/sample_data/ CSV files.
 
-Reads docs/organizations.csv and docs/products.csv, transforms them
+Reads docs/assets/sample_data/organizations.csv and docs/assets/sample_data/products.csv, transforms them
 to match the DB schema, and inserts via SQLAlchemy.
 
 Usage (in Docker):
@@ -31,12 +31,12 @@ def generate_org_id(name: str) -> str:
 def seed_organizations(session: Session, csv_path: Path):
     """Import hierarchical organizations from CSV.
 
-    CSV format: 中心, 部门, 负责人, 所属体系
+    CSV format: 中心, 部门, 负责�? 所属体�?
     Maps to 3 levels:
       Level 1: 公司 (Root)
       Level 2: 中心 (e.g., 财政研发中心)
-      Level 3: 部门 (e.g., 测试部)
-    "所属体系" is saved as business_line attribute.
+      Level 3: 部门 (e.g., 测试�?
+    "所属体�? is saved as business_line attribute.
     """
     print(f"\n--- Seeding Organizations from {csv_path} ---")
 
@@ -79,10 +79,10 @@ def seed_organizations(session: Session, csv_path: Path):
     stats["created"] += 1
 
     for row in rows:
-        tixi = (row.get("所属体系") or "").strip()
+        tixi = (row.get("所属体�?) or "").strip()
         center = (row.get("中心") or "").strip()
         dept = (row.get("部门") or "").strip()
-        manager_name = (row.get("负责人") or "").strip()
+        manager_name = (row.get("负责�?) or "").strip()
 
         if not center:
             continue
@@ -181,7 +181,7 @@ def seed_products(session: Session, csv_path: Path):
         product = Product(
             product_id=pid,
             product_name=name,
-            product_description=f"{name} 产品线",
+            product_description=f"{name} 产品�?,
             node_type=node_type,
             parent_product_id=parent_id,
             category=category,
@@ -204,7 +204,7 @@ def main():
         seed_organizations(session, docs_dir / "organizations.csv")
         seed_products(session, docs_dir / "products.csv")
 
-    print("\n✅ Base data seeding complete.")
+    print("\n�?Base data seeding complete.")
 
 
 if __name__ == "__main__":

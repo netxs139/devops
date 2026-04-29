@@ -21,7 +21,7 @@ def main():
 
     try:
         # 1. Sync Products
-        product_csv = "docs/zentao_product_map.csv"
+        product_csv = "docs/assets/sample_data/zentao_product_map.csv"
         if os.path.exists(product_csv):
             print(f"Syncing products from {product_csv}...")
             with open(product_csv, encoding="utf-8-sig") as f:
@@ -30,7 +30,7 @@ def main():
                     zt_id = row.get("zentao_product_id")
                     mdm_id = row.get("mdm_product_id")
                     if zt_id and mdm_id:
-                        # 尝试通过 ID 或 Code 查找产品
+                        # 尝试通过 ID �?Code 查找产品
                         p = None
                         if zt_id.isdigit():
                             p = session.query(ZenTaoProduct).filter_by(id=int(zt_id)).first()
@@ -71,7 +71,7 @@ def main():
             session.commit()
 
         # 2. Sync Projects/Executions
-        project_csv = "docs/zentao_project_map.csv"
+        project_csv = "docs/assets/sample_data/zentao_project_map.csv"
         if os.path.exists(project_csv):
             print(f"Syncing projects from {project_csv}...")
             with open(project_csv, encoding="utf-8-sig") as f:

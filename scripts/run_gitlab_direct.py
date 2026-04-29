@@ -34,16 +34,16 @@ def run():
     token = settings.gitlab.private_token
 
     if not token:
-        logging.error("‚ùå GitLab Private Token not found in settings/.env!")
+        logging.error("‚ù?GitLab Private Token not found in settings/.env!")
         return
 
     client = GitLabClient(url=url, token=token)
 
     # 4. Test connection
     if client.test_connection():
-        logging.info("‚úÖ GitLab connection successful!")
+        logging.info("‚ú?GitLab connection successful!")
     else:
-        logging.error("‚ùå GitLab connection failed!")
+        logging.error("‚ù?GitLab connection failed!")
         return
 
     # 5. Initialize Worker and try a small sync

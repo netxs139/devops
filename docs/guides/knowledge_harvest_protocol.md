@@ -11,7 +11,7 @@
     - 修复了一个涉及 `Retry` 2次以上的 Bug。
     - 发现并绕过了数据源（GitLab/ZenTao 等）的一个非标 API 行为。
     - 实施了一项旨在解决性能瓶颈的架构调整。
-- **动作**：在 `docs/lessons-learned.log` 中追加一条结构化记录。
+- **动作**：在 `docs/history/lessons-learned.log` 中追加一条结构化记录。
 
 ### 阶段 B：评估与提炼 (Drafting)
 - **触发条件**：
@@ -34,7 +34,7 @@
 
 ## 2. 割取内容模板 (Capture Template)
 
-在 `docs/lessons-learned.log` 中记录时必须包含：
+在 `docs/history/lessons-learned.log` 中记录时必须包含：
 
 | 字段 | 说明 |
 | :--- | :--- |
@@ -46,8 +46,8 @@
 
 ## 3. 审计与维护机制
 
-- **每周审计**：在周总结时，AI 应对 `lessons-learned.log` 进行全量扫描，识别潜在的技术债，并转化为 `Backlog` 任务。
-- **新人/新 Agent 入场**：任何新会话的第一步，除了读取 `progress.txt`，必须扫描最近 20 条 `lessons-learned.log` 以建立即时上下文。
+- **每周审计**：在周总结时，AI 应对 `../history/lessons-learned.log` 进行全量扫描，识别潜在的技术债，并转化为 `Backlog` 任务。
+- **新人/新 Agent 入场**：任何新会话的第一步，除了读取 `progress.txt`，必须扫描最近 20 条 `../history/lessons-learned.log` 以建立即时上下文。
 
 ---
 *Status: Active*

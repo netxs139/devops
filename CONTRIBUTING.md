@@ -32,10 +32,10 @@
 * `refactor: ...` 代码重构
 * `chore: ...` 构建/依赖杂项
 
-### 1.3 架构原则
-
-1. **ELT 模式**: 采集中优先拉取原始数据入库 (`raw_data_staging`)，再在数据库中通过视图 (SQL Views) 实现业务逻辑转换。
-2. **异步解耦**: 耗时任务（如全量同步）应通过 RabbitMQ 分发至 Worker 执行。
+### 1.3 架构原则与协作模型
+1. **AI-Native 协作**: 本项目采用人机协同模式。所有逻辑变更必须遵守 [`AGENTS.md`](./AGENTS.md) 定义的物理红线与指令工作流。
+2. **ELT 模式**: 采集中优先拉取原始数据入库 (`raw_data_staging`)，再在数据库中通过视图 (SQL Views) 或 dbt 模型实现业务逻辑转换。
+3. **异步解耦**: 耗时任务（如全量同步）应通过 RabbitMQ 分发至 Worker 执行。
 
 ---
 
@@ -63,20 +63,18 @@
 
 ---
 
-## 3. 测试与验证 (Testing)
+## 3. 测试、验证与文档 (Testing & Docs)
 
-### 3.1 仿真测试 (Simulation)
+### 3.1 物理验证红线 (Verification)
+任何 PR 提交前，必须在本地或容器环境执行：
+```bash
+make verify
+```
+*   **硬性指标**: 核心层 (`devops_collector/core/`) 单元测试覆盖率必须达到 **100%**。
+*   **集成测试**: 必须通过所有业务集成场景测试。
 
-新插件开发完成后，应在 `tests/simulations/` 下增加对应的模拟场景，验证在模拟 API 返回下的数据库一致性。
-
-### 3.2 逻辑重演
-
-使用 `scripts/reprocess_staging_data.py` 验证 Transform 逻辑对历史 Staging 数据的解析正确性。
-
-### 3.3 文档同步
-
-任何的功能变更或 Schema 修改，必须同步更新：
-
-* `DATA_DICTIONARY.md` (物理层)
-* `PROJECT_SUMMARY_AND_MANUAL.md` (功能说明)
-* `CHANGELOG.md` (版本记录)
+### 3.2 文档同步 (SSOT)
+任何功能变更或 Schema 修改，必须通过以下方式同步：
+1. 更新 [`DOC_INDEX.md`](./docs/DOC_INDEX.md) 中受影响的模块。
+2. 运行 `/doc-audit` 指令检查文档冲突。
+3. 确保 [`progress.txt`](./progress.txt) 已更新至最新状态。

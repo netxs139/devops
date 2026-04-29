@@ -1,6 +1,6 @@
 """Initialize ZenTao project and product mappings.
 
-This script reads docs/zentao_product_map.csv and docs/zentao_project_map.csv,
+This script reads docs/assets/sample_data/zentao_product_map.csv and docs/assets/sample_data/zentao_project_map.csv,
 establishing links between ZenTao entities and MDM Master Data (Product/Project).
 
 Execution:
@@ -29,8 +29,8 @@ from devops_collector.plugins.zentao.models import ZenTaoExecution, ZenTaoProduc
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("InitZenTaoLinks")
 
-PRODUCT_MAP_CSV = "docs/zentao_product_map.csv"
-PROJECT_MAP_CSV = "docs/zentao_project_map.csv"
+PRODUCT_MAP_CSV = "docs/assets/sample_data/zentao_product_map.csv"
+PROJECT_MAP_CSV = "docs/assets/sample_data/zentao_project_map.csv"
 
 
 def ensure_system_registry(session: Session):

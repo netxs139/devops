@@ -41,4 +41,4 @@ cast([field] as timestamp with time zone) at time zone 'UTC' as [field_at]
 
 ## 4. 引用 (References)
 *   [ADR 0002: ID Normalization](0002-id-normalization.md)
-*   [Lessons Learned #69 (JSONB Trap)](../lessons-learned.log)
+*   [Lessons Learned #69 (JSONB Trap)](../history/lessons-learned.log)
