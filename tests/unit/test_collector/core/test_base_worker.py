@@ -41,13 +41,14 @@ def test_worker_init(worker, db_session):
     assert worker.correlation_id == "test-cid"
     assert isinstance(worker.logger.logger, logging.Logger)  # LoggerAdapter.logger
 
+
 def test_process_task_pass():
     # Cover the pass in the abstract method
     class DummyWorker(BaseWorker):
         def process_task(self, task):
             super().process_task(task)
             return "ok"
-    
+
     w = DummyWorker(None, None)
     assert w.process_task({}) == "ok"
 
@@ -75,7 +76,7 @@ def test_run_sync_failure(worker, db_session):
     task = {"source": "test_src", "should_fail": True}
     mock_instance = MagicMock()
     mock_instance.sync_status = "PENDING"
-    
+
     # We must not use spec=MockSyncModel because hasattr will return true but it doesn't actually have the attribute natively if mocked certain ways.
     # Instead, we just assign it.
     db_session.query.return_value.filter_by.return_value.first.return_value = mock_instance
@@ -85,24 +86,23 @@ def test_run_sync_failure(worker, db_session):
 
     assert mock_instance.sync_status == "FAILED"
     db_session.rollback.assert_called_once()
-    assert db_session.commit.call_count >= 1 # Because the failure path commits the FAILED status
+    assert db_session.commit.call_count >= 1  # Because the failure path commits the FAILED status
+
 
 def test_run_sync_failure_with_db_error(worker, db_session):
     task = {"source": "test_src", "should_fail": True}
     mock_instance = MagicMock()
     mock_instance.sync_status = "PENDING"
-    
+
     # First query succeeds (sets SYNCING), second query throws exception
-    db_session.query.return_value.filter_by.return_value.first.side_effect = [
-        mock_instance, 
-        Exception("DB failed during rollback status update")
-    ]
+    db_session.query.return_value.filter_by.return_value.first.side_effect = [mock_instance, Exception("DB failed during rollback status update")]
 
     with pytest.raises(ValueError, match="Forced failure"):
         worker.run_sync(task, model_cls=MockSyncModel, pk_value=1)
 
     assert mock_instance.sync_status == "SYNCING"  # Because the second query failed
     db_session.rollback.assert_called_once()
+
 
 def test_logging(worker):
     with patch.object(worker.logger, "info") as mock_info:
@@ -111,7 +111,7 @@ def test_logging(worker):
 
         worker.log_progress("Work", 1, 2)
         mock_info.assert_called_with("[PROGRESS] Work: 1/2 (50.0%)")
-        
+
     with patch.object(worker.logger, "error") as mock_error:
         worker.log_failure("Failed msg")
         mock_error.assert_called_with("[FAILURE] Failed msg")
