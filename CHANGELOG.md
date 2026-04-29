@@ -2,6 +2,23 @@
 
 所有对 DevOps Data Application Platform 的重要更改都将记录在此文件中。
 
+## [5.0.0] - 2026-04-29
+
+### 新增 (Added) - v5.0.0
+*   **文档基建 2.0 (Documentation Infrastructure)**:
+    *   **SSOT 治理**: 确立了以 `DOC_INDEX.md` 为核心的“单一事实来源”索引体系，将 27+ 份文档重构为 Architecture, Features, Analytics, Guides, History 五大模块。
+    *   **架构白皮书收官**: 交付了 `SYSTEM_DESIGN.md`，深度定义了 MDS + SDA 分层逻辑。
+    *   **资产血缘对齐**: 完成了全量初始化脚本对 `docs/assets/sample_data/` 物理路径的重连。
+*   **质量红线突破**:
+    *   **100% 核心覆盖率**: 核心调度层与注册表模块通过深度单元测试，正式达成 100% 物理分支覆盖率目标。
+*   **合规与安全**:
+    *   **开源协议落地**: 根目录新增 Apache 2.0 License，完成项目法律合规性闭环。
+    *   **安全扫描实操指南**: 交付了 `SECURITY_SCAN.md`，指导 OWASP Dependency-Check 的深度应用。
+
+### 优化 (Improved) - v5.0.0
+*   **AI 协作协议 (AGENTS.md V2.0)**: 固化了“凭据-意图防火墙”和“物理取证原则”，确保人机协同的安全边界。
+*   **目录结构精简**: 根目录执行“控制平面”清理，仅保留 5 个元文档，大幅降低认知负荷。
+
 ## [4.3.0] - 2026-02-16
 
 ### 新增 (Added) - v4.3.0

@@ -94,3 +94,22 @@ def test_registry_instance_creation():
     assert client.url == "http://test.com"
 
     assert PluginRegistry.get_client_instance("nonexistent") is None
+
+
+def test_get_worker_instance():
+    PluginRegistry.clear()
+
+    class ParamWorker:
+        def __init__(self, session, client, correlation_id="unknown", **kwargs):
+            self.session = session
+            self.client = client
+            self.correlation_id = correlation_id
+            self.kwargs = kwargs
+
+    PluginRegistry.register_worker("param", ParamWorker)
+
+    worker = PluginRegistry.get_worker_instance("param", session="sess", client="cli", extra="val")
+    assert isinstance(worker, ParamWorker)
+    assert worker.session == "sess"
+    assert worker.client == "cli"
+    assert worker.kwargs == {"extra": "val"}

@@ -95,4 +95,4 @@ coalesce(
 - 身份与组织关联必须统一遵循：`优先查找 is_current=True` -> `失败则回溯最近历史版本` -> `仍失败则回填业务桩记录(Stub)` 的流水线逻辑。
 
 ---
-**参考文档**: [contexts.md](../../contexts.md) | [lessons-learned.log](../lessons-learned.log)
+**参考文档**: [contexts.md](../../contexts.md) | [lessons-learned.log](../history/lessons-learned.log)

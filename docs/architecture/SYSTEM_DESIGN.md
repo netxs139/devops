@@ -1,4 +1,4 @@
-# 研发主数据与工程效能平台技术白皮书 (Technical Architecture v4.0)
+# 研发主数据与工程效能平台系统设计 (System Design v4.2)
 
 > **核心理念**: 基于 Modern Data Stack (MDS) 构建，以主数据为基石，活动流为核心，通过软件定义资产 (SDA) 驱动全链路自动化编排，实现工程效能与研发成本的透明化治理。
 
@@ -86,7 +86,6 @@ graph TD
 基于此统一流，系统通过语义识别关联任务进行自动财务核算：
 * **资本化 (CapEx)**: 挂载需求、功能的变更。
 * **费用化 (OpEx)**: 修复 Bug、处理债务、线上支持。
-结合 `mdm_calendar` 模型扣除节假日，并在统计效能时引入 AI 对合并代码的复杂度与紧急修复进行权重修正。
 
 ## 4. 健壮性与治理架构 (Governance & Testing Guardrails)
 
@@ -100,22 +99,26 @@ graph TD
 ### 4.2 架构测试 (Architecture Test & Unittests)
 * **单元测试 (Unit Tests)**: 针对转换层 (`int_`) 的复杂逻辑（如财务分类、DORA Leadtime 计算）编写 Mock 案例，确保代码修改不破坏业务定义。
 * **架构测试 (dbt Schema Tests)**: 校验主键唯一性、关系引用的回溯以及值集的枚举规范（例如 `audit_status`）。
-* **命名解耦机制**: 新版测试架构将强管理模型增加了 `GTM` 前缀（Go-to-Market / Governance Test Model），消除业务与测试框架（如 pytest）的类名收集冲突。
 
-### 4.3 拓展接入 (Extensibility & Registration)
-新增外部采集系统只需通过继承 `BaseWorker` 并注册至 `PluginRegistry`。旧有冗余采集器已全面废弃，统一推送到标准化队列引擎进行抽取（Webhook 或 Scheduled Partitions）。
+## 5. 建设规划路线图 (Roadmap)
 
-## 5. 最终技术栈 (Tech Stack Summary)
+### 第一阶段：底座升维
+* **目标**：实现数据从“采集”到“治理”的转型。
+* **关键任务**：引入 **dbt** 替换现有的原生 SQL View，解决逻辑黑盒问题；建立 **Identity Resolution** 引擎。
+
+### 第二阶段：价值穿透
+* **目标**：打通财务维度，落地 FinOps。
+* **关键任务**：对接 HR/财务系统，实现研发工时到金额的自动折算；落地 **DORA 指标体系**。
+
+### 第三阶段：智能与合规
+* **目标**：构建知识图谱与自动审计。
+* **关键任务**：构建“技术栈专家图谱”；自动化审计证据链生成。
+
+## 6. 技术栈总结 (Tech Stack)
 * **Orchestrator**: Dagster (SDA)
 * **Transformation**: dbt (Data Build Tool) 1.8+
-* **Database**: PostgreSQL 16 (支持向量化与 JSONB 索引)
+* **Database**: PostgreSQL 16
 * **Validation**: Great Expectations
 * **Governance**: DataHub
-* **Messaging**: RabbitMQ / SSE
 * **Backend**: FastAPI (Python 3.11+)
 * **Frontend**: Vanilla JS (Portal) + Streamlit (Analytics)
-
----
-
-## 结语
-本架构通过“分而治之”的设计方案，利用“主数据对齐”解决跨工具墙壁，利用“五层数据仓库”隔离清洗与分析逻辑，最终将不稳定的碎片化工具数据转化为高可信、可穿透、可扩展的工程研发资产底座。

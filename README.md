@@ -8,15 +8,14 @@
 
 ## 📚 关键文档索引 (Key Documentation)
 
-### 1. 开发规范 (Guidelines)
-*   **全局工作流**: `~/.gemini/GEMINI.md` (Workflow & Principles)
-*   **项目架构**: [`contexts.md`](./contexts.md) (Tech Stack & Architecture)
-*   **前端规范**: [`docs/frontend/CONVENTIONS.md`](docs/frontend/CONVENTIONS.md) (Apple Style Guide)
-*   **API/DB**: [`docs/api/DATA_DICTIONARY.md`](docs/api/DATA_DICTIONARY.md) (Data Models)
+> **[MANDATORY]** 本项目采用 **Map & Reduce** 策略管理文档，所有资产的导航请通过：
+> ### 🔗 [**全局文档地图 (DOC_INDEX.md)**](./docs/DOC_INDEX.md)
 
-### 2. 进度与变更 (Tracking)
-*   **当前状态**: [`progress.txt`](./progress.txt) (Tasks & Backlog)
-*   **变更日志**: [`docs/CHANGELOG.md`](docs/CHANGELOG.md) (Release Notes)
+### 核心指南 (Quick Access)
+*   **AI 协作与指令**: [`AGENTS.md`](./AGENTS.md) (Meta-Prompt & Workflows)
+*   **技术架构与规范**: [`contexts.md`](./contexts.md) (Tech Stack & Architecture)
+*   **当前看板**: [`progress.txt`](./progress.txt) (Tasks & Backlog)
+*   **系统设计**: [`docs/architecture/SYSTEM_DESIGN.md`](docs/architecture/SYSTEM_DESIGN.md) (Architecture v4.0+)
 
 ## 📖 项目简介 (Introduction)
 
@@ -203,17 +202,16 @@ dbt_project/          # 现代数仓建模层 (dbt)
 * **代码热点雷达 (Code Hotspots)**: 基于 **Michael Feathers** 理论的 F-C 象限分析，通过“复杂度 vs 变更频率”自动识别高危技术债务。
 * **DORA 金标准看板**: 引入行业对标评级 (High/Elite/Low)，让效能改进有据可依。
 
-## 📚 文档 (Documentation)
+## 📚 文档中心 (Documentation Hub)
 
-* **[架构技术白皮书 (ARCHITECTURE_WHITE_PAPER.md)](./docs/design/ARCHITECTURE_WHITE_PAPER.md)**: 🚀 **CORE** 深入解读“主数据 (MDM) + 现代数仓 (dbt)”的六层深度重构架构。
-* **[度量体系白皮书 (METRICS_ARCHITECTURE.md)](./docs/design/METRICS_ARCHITECTURE.md)**: 🔥 **NEW** 详解 ELOC 2.0、DORA、SPACE、Flow 等核心算法与实现逻辑。
-* [用户手册 (PROJECT_SUMMARY_AND_MANUAL.md)](./docs/PROJECT_SUMMARY_AND_MANUAL.md): 功能说明与操作指南。
-* [数据字典 (DATA_DICTIONARY.md)](./docs/api/DATA_DICTIONARY.md): 表结构定义。
-* [API 接口参考 (API_REFERENCE.md)](./docs/api/API_REFERENCE.md): RESTful API 接口文档。
-* [部署与运维 (DEPLOYMENT.md)](./docs/guides/DEPLOYMENT.md): 环境配置与部署指南。
-* [故障排查 (TROUBLESHOOTING.md)](./docs/guides/TROUBLESHOOTING.md): 常见问题解决方案。
-* **[RBAC 2.0 权限设计 (RBAC_DESIGN_PROPOSAL.md)](./docs/design/RBAC_DESIGN_PROPOSAL.md)**: 🛡️ **SECURITY** 详解新一代基于“角色-菜单-数据范围”的权限控制体系。
-* [安全政策 (SECURITY.md)](./docs/SECURITY.md): 漏洞报告与安全最佳实践。
+> 所有详细文档已通过 **[DOC_INDEX.md](./docs/DOC_INDEX.md)** 进行了系统化编目。
+
+*   **[系统设计方案 (SYSTEM_DESIGN.md)](./docs/architecture/SYSTEM_DESIGN.md)**: 🚀 **CORE** 深入解读“主数据 (MDM) + 现代数仓 (dbt)”的六层深度重构架构。
+*   **[指标体系白皮书 (METRICS_GLOSSARY.md)](./docs/analytics/METRICS_GLOSSARY.md)**: 🔥 **NEW** 详解 ELOC 2.0、DORA、SPACE、Flow 等核心算法与指标口径。
+*   **[安全审计手册 (SECURITY_SCAN.md)](./docs/guides/SECURITY_SCAN.md)**: 🛡️ **SECURITY** 详解 OWASP Dependency-Check 的集成与合规治理。
+*   **[数据字典 (DATA_DICTIONARY.md)](./docs/api/DATA_DICTIONARY.md)**: 详述表结构、字段定义与业务语义。
+*   **[部署手册 (DEPLOYMENT.md)](./docs/guides/DEPLOYMENT.md)**: 环境配置与 Docker 快速启动指南。
+*   **[用户手册 (USER_GUIDE.md)](./docs/guides/USER_GUIDE.md)**: 面向管理者的看板查阅及指标说明。
 
 ## 📂 看板与视图 (Analytics Mapping)
 

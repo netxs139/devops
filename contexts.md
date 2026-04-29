@@ -655,6 +655,11 @@
 - **同步深度守卫 (Sync Depth Limit) [MANDATORY]**: 首次同步 (Full Sync) 必须显式传递 `since` 参数。默认仅追溯近 365 天的历史记录，严禁对数万 Commit 的仓库进行无限制全量抓取，除非经用户通过 `force_full_history` 标记确认。
 - **Diff 解析截断**: 为防止内存溢出，单一文件 Diff 对比严禁超过 1MB。超过阈值的变更仅记录文件路径变更，不再进行代码行级的深度解析。
 
+### 16.2 字段映射与元数据规程 (Field Mapping & Metadata) [LL #11]
+- **借用字段映射一致性原则 (Borrowed Field Consistency)**:
+    - 凡是“借用” GitLab 非标字段存储部门等元数据时（如 V18.10 之前使用 `skype`，之后使用 `linkedin`），必须在插件的 `schemas.py` 中通过 `Field(alias=...)` 进行集中映射管理。
+    - 严禁在业务逻辑中直接硬编码硬编码字段名。更名后必须同步更新 `UserResolver` 逻辑、数据字典及 Mock 测试数据。
+
 ### 16.2 状态存活性自查 (Liveness Probe)
 ## 17. CI/CD 集成规范 (SonarQube & Jenkins) [NEW]
 

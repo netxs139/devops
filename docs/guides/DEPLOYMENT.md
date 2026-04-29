@@ -18,7 +18,22 @@
 * **Database**: PostgreSQL 12+
 * **Message Queue**: RabbitMQ 3.8+ (必选，系统核心异步总线，用于支持海量数据采集与重试)
 
-## 2. 安装步骤 (Installation)
+## 2. 容器化一键部署 (Docker Quick Start) 🚀
+
+如果您希望快速体验，推荐使用 **Docker + Make** 进行标准化部署：
+
+1. **环境准备**: `cp .env.example .env` 并填入数据库密码及各工具 Token。
+2. **一键启动**:
+    ```bash
+    # 方式 A: 自动化部署脚本
+    ./deploy.sh
+    
+    # 方式 B: Make 生产模式
+    make deploy-prod
+    ```
+3. **初始化**: 容器启动后会自动执行数据 Schema 迁移。首次运行建议执行 `make sync-all` 触发初始同步。
+
+## 3. 手动安装步骤 (Manual Installation)
 
 ### 2.1 获取代码
 
