@@ -1,6 +1,6 @@
-"""初始化产品与项目主数据�?
+"""初始化产品与项目主数据。
 
-本脚本已重构为从 docs/assets/sample_data/products.csv �?docs/assets/sample_data/projects.csv 动态加载�?
+本脚本已重构为从 docs/assets/sample_data/products.csv 和 docs/assets/sample_data/projects.csv 动态加载。
 """
 
 import csv
@@ -31,8 +31,8 @@ from scripts.utils import build_user_indexes, resolve_user
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-PRD_CSV = Path(__file__).parent.parent / "docs" / "assets" / "sample_data" / "products.csv"
-PROJ_CSV = Path(__file__).parent.parent / "docs" / "assets" / "sample_data" / "projects.csv"
+PRD_CSV = Path(__file__).parent.parent / "docs" / "products.csv"
+PROJ_CSV = Path(__file__).parent.parent / "docs" / "projects.csv"
 
 
 def ensure_system_registry(session: Session, code="gitlab-prod", name="生产环境GitLab"):
@@ -47,7 +47,7 @@ def ensure_system_registry(session: Session, code="gitlab-prod", name="生产环
 def init_products(session: Session):
     if not PRD_CSV.exists():
         return {}
-    logger.info("同步产品主数�?..")
+    logger.info("同步产品主数据...")
     prod_map_id = {}  # code -> Integer ID
 
     # 预加载组织和用户索引
@@ -55,7 +55,7 @@ def init_products(session: Session):
     orgs = {o.org_name: o.id for o in session.query(Organization).filter_by(is_current=True).all()}
     email_idx, name_idx = build_user_indexes(session)
 
-    # 第一遍：创建产品并构建名称映�?(First Pass: Create Products & Build Map)
+    # 第一遍：创建产品并构建名称映射 (First Pass: Create Products & Build Map)
     product_rows = []
     with open(PRD_CSV, encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
@@ -75,12 +75,12 @@ def init_products(session: Session):
                 product = Product(product_code=prod_code, product_name=name, product_description=name, version_schema="SemVer", is_current=True)
                 session.add(product)
 
-            # 更新属�?(Update Attributes)
+            # 更新属性 (Update Attributes)
             product.product_name = name
             product.node_type = row.get("节点类型", row.get("node_type", "APP")).strip().upper()
             product.category = row.get("产品分类", row.get("category", "")).strip()
 
-            # 处理关联团队和人�?
+            # 处理关联团队和人员
             team_name = row.get("负责团队", row.get("owner_team_id", "")).strip()
             if team_name in orgs:
                 product.owner_team_id = orgs[team_name]
@@ -93,7 +93,7 @@ def init_products(session: Session):
             # 人员解析
             for csv_col, attr in [
                 ("产品经理", "product_manager_id"),
-                ("开发经�?, "dev_lead_id"),
+                ("开发经理", "dev_lead_id"),
                 ("测试经理", "qa_lead_id"),
                 ("发布经理", "release_lead_id"),
             ]:
@@ -114,10 +114,10 @@ def init_products(session: Session):
     for product, row in product_rows:
         parent_ref = row.get("上级产品ID", row.get("parent_product_id", "")).strip()
         if parent_ref:
-            # 尝试通过 名称 �?Code 查找父级 ID
+            # 尝试通过 名称 或 Code 查找父级 ID
             parent_id = prod_map_id.get(parent_ref)
             if parent_id:
-                # 防止自引用循�?
+                # 防止自引用循环
                 if parent_id != product.id:
                     product.parent_product_id = parent_id
                 else:
@@ -134,10 +134,10 @@ def init_products(session: Session):
 def init_projects(session: Session, prod_map_id):
     if not PROJ_CSV.exists():
         return
-    logger.info("同步项目主数�?..")
+    logger.info("同步项目主数据...")
 
     email_idx, name_idx = build_user_indexes(session)
-    # 预加载组�?
+    # 预加载组织
     orgs_by_name = {o.org_name: o.id for o in session.query(Organization).filter_by(is_current=True).all()}
 
     with open(PROJ_CSV, encoding="utf-8-sig") as f:
@@ -145,7 +145,7 @@ def init_projects(session: Session, prod_map_id):
         for row in reader:
             code_val = row.get("项目代号", "").strip()
             name = row.get("项目名称", "").strip()
-            prod_name = row.get("所属产�?, "").strip()
+            prod_name = row.get("所属产品", "").strip()
 
             if not code_val or not name:
                 continue
@@ -173,7 +173,7 @@ def init_projects(session: Session, prod_map_id):
                 # 确保 SystemRegistry 存在
                 system = ensure_system_registry(session)
 
-                # 必须�?flush 确保 project �?ID
+                # 必须先 flush 确保 project 有 ID
                 session.flush()
 
                 # 检查是否已存在关联
@@ -192,11 +192,11 @@ def init_projects(session: Session, prod_map_id):
                     session.add(topology)
                     logger.info(f"Created topology link for project {proj_code} -> {repo_url}")
 
-            # 关联项目成员 (支持邮箱或姓�?
+            # 关联项目成员 (支持邮箱或姓名)
             for csv_col, attr in [
                 ("项目经理", "pm_user_id"),
                 ("产品经理", "product_owner_id"),
-                ("开发经�?, "dev_lead_id"),
+                ("开发经理", "dev_lead_id"),
                 ("测试经理", "qa_lead_id"),
                 ("发布经理", "release_lead_id"),
             ]:

@@ -51,7 +51,7 @@ def seed_e2e_admin():
         # Ensure SYSTEM_ADMIN role
         admin_role = session.query(SysRole).filter_by(role_key="SYSTEM_ADMIN").first()
         if not admin_role:
-            admin_role = SysRole(role_key="SYSTEM_ADMIN", role_name="系统管理�?, is_active=True)
+            admin_role = SysRole(role_key="SYSTEM_ADMIN", role_name="系统管理员", is_active=True)
             session.add(admin_role)
             session.flush()
             print("Created SYSTEM_ADMIN role")
