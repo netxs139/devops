@@ -4,13 +4,14 @@
 > **版本**: v2.2 (企业级标准版)
 > **状态**: 有效 (Active)
 
----
+______________________________________________________________________
 
 ## 文档说明
 
 本数据字典基于系统最新的 SQLAlchemy ORM 模型自动生成，确保与实际数据库结构的一致性。
 
 ### 文档结构
+
 - **表名**: 数据库表的物理名称
 - **模型类**: 对应的 Python ORM 模型类名
 - **业务描述**: 从模型 Docstring 提取的业务用途说明
@@ -18,18 +19,19 @@
 - **关系映射**: 表间的 ORM 关系（一对多、多对一等）
 
 ### 字段注释规范
+
 - 所有新增字段必须在模型定义中使用 `comment` 参数添加业务说明
 - 枚举类型字段需列出所有可选值
 - 外键字段需说明关联的业务实体
 
----
+______________________________________________________________________
 
 ## 数据表清单
 
 本系统共包含 **74 个数据表**，分为以下几个业务域：
 
-
 ### 核心主数据域
+
 - `mdm_business_systems` - BusinessSystem
 - `mdm_calendar` - Calendar
 - `mdm_companies` - Company
@@ -61,6 +63,7 @@
 - `stg_mdm_resource_costs` - ResourceCost
 
 ### 测试管理域
+
 - `gtm_requirements` - GTMRequirement
 - `gtm_test_case_issue_links` - GTMTestCaseIssueLink
 - `gtm_test_cases` - GTMTestCase
@@ -68,6 +71,7 @@
 - `qa_jenkins_test_executions` - JenkinsTestExecution
 
 ### GitLab 集成域
+
 - `gitlab_branches` - GitLabBranch
 - `gitlab_commits` - GitLabCommit
 - `gitlab_deployments` - GitLabDeployment
@@ -85,11 +89,13 @@
 - `gitlab_tags` - GitLabTag
 
 ### 认证与授权域
+
 - `sys_user_credentials` - UserCredential
 - `sys_user_oauth_tokens` - UserOAuthToken
 - `sys_user_roles` - UserRole
 
 ### 其他辅助域
+
 - `dependencies` - Dependency
 - `dependency_cves` - DependencyCVE
 - `dependency_scans` - DependencyScan
@@ -113,7 +119,7 @@
 - `sys_team_members` - TeamMember
 - `sys_teams` - Team
 
----
+______________________________________________________________________
 
 ## 核心主数据域
 
@@ -148,7 +154,7 @@
 - **owner**: many-to-one -> `User`
 - **business_owner**: many-to-one -> `User`
 
----
+______________________________________________________________________
 
 ### Calendar (`mdm_calendar`)
 
@@ -176,7 +182,7 @@
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 
----
+______________________________________________________________________
 
 ### Company (`mdm_companies`)
 
@@ -210,7 +216,7 @@
 
 - **location**: many-to-one -> `Location`
 
----
+______________________________________________________________________
 
 ### ComplianceIssue (`mdm_compliance_issues`)
 
@@ -232,7 +238,7 @@
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 
----
+______________________________________________________________________
 
 ### ContractPaymentNode (`mdm_contract_payment_nodes`)
 
@@ -260,7 +266,7 @@
 
 - **contract**: many-to-one -> `RevenueContract`
 
----
+______________________________________________________________________
 
 ### CostCode (`mdm_cost_codes`)
 
@@ -288,7 +294,7 @@
 - **parent**: many-to-one -> `CostCode`
 - **children**: one-to-many -> `CostCode`
 
----
+______________________________________________________________________
 
 ### EntityTopology (`mdm_entity_topology`)
 
@@ -325,7 +331,7 @@
 - **project**: many-to-one -> `ProjectMaster`
 - **target_system**: many-to-one -> `SystemRegistry`
 
----
+______________________________________________________________________
 
 ### EpicMaster (`mdm_epics`)
 
@@ -373,7 +379,7 @@
 - **parent**: many-to-one -> `EpicMaster`
 - **children**: one-to-many -> `EpicMaster`
 
----
+______________________________________________________________________
 
 ### User (`mdm_identities`)
 
@@ -423,7 +429,7 @@
 - **team_memberships**: one-to-many -> `TeamMember`
 - **credential**: many-to-one -> `UserCredential`
 
----
+______________________________________________________________________
 
 ### IdentityMapping (`mdm_identity_mappings`)
 
@@ -451,7 +457,7 @@
 
 - **user**: many-to-one -> `User`
 
----
+______________________________________________________________________
 
 ### Incident (`mdm_incidents`)
 
@@ -494,7 +500,7 @@
 - **project**: many-to-one -> `ProjectMaster`
 - **service**: many-to-one -> `Service`
 
----
+______________________________________________________________________
 
 ### LaborRateConfig (`mdm_labor_rate_config`)
 
@@ -516,7 +522,7 @@
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 
----
+______________________________________________________________________
 
 ### Location (`mdm_locations`)
 
@@ -541,7 +547,7 @@
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 
----
+______________________________________________________________________
 
 ### MetricDefinition (`mdm_metric_definitions`)
 
@@ -583,7 +589,7 @@
 - **business_owner**: many-to-one -> `User`
 - **technical_owner**: many-to-one -> `User`
 
----
+______________________________________________________________________
 
 ### OKRKeyResult (`mdm_okr_key_results`)
 
@@ -613,7 +619,7 @@
 - **objective**: many-to-one -> `OKRObjective`
 - **owner**: many-to-one -> `User`
 
----
+______________________________________________________________________
 
 ### OKRObjective (`mdm_okr_objectives`)
 
@@ -653,7 +659,7 @@
 - **key_results**: one-to-many -> `OKRKeyResult`
 - **children**: one-to-many -> `OKRObjective`
 
----
+______________________________________________________________________
 
 ### Organization (`mdm_organizations`)
 
@@ -692,7 +698,7 @@
 - **children**: one-to-many -> `Organization`
 - **roles**: one-to-many -> `SysRole`
 
----
+______________________________________________________________________
 
 ### Product (`mdm_products`)
 
@@ -744,7 +750,7 @@
 - **children**: one-to-many -> `Product`
 - **objectives**: one-to-many -> `OKRObjective`
 
----
+______________________________________________________________________
 
 ### ProjectMaster (`mdm_projects`)
 
@@ -799,7 +805,7 @@
 - **gitlab_repos**: one-to-many -> `GitLabProject`
 - **product_relations**: one-to-many -> `ProjectProductRelation`
 
----
+______________________________________________________________________
 
 ### PurchaseContract (`mdm_purchase_contracts`)
 
@@ -829,7 +835,7 @@
 
 - **cost_code**: many-to-one -> `CostCode`
 
----
+______________________________________________________________________
 
 ### ProjectProductRelation (`mdm_rel_project_product`)
 
@@ -855,7 +861,7 @@
 - **project**: many-to-one -> `ProjectMaster`
 - **product**: many-to-one -> `Product`
 
----
+______________________________________________________________________
 
 ### RevenueContract (`mdm_revenue_contracts`)
 
@@ -883,7 +889,7 @@
 - **product**: many-to-one -> `Product`
 - **payment_nodes**: one-to-many -> `ContractPaymentNode`
 
----
+______________________________________________________________________
 
 ### ServiceProjectMapping (`mdm_service_project_mapping`)
 
@@ -906,7 +912,7 @@
 
 - **service**: many-to-one -> `Service`
 
----
+______________________________________________________________________
 
 ### Service (`mdm_services`)
 
@@ -945,7 +951,7 @@
 - **project_mappings**: one-to-many -> `ServiceProjectMapping`
 - **resources**: one-to-many -> `EntityTopology`
 
----
+______________________________________________________________________
 
 ### SLO (`mdm_slo_definitions`)
 
@@ -971,7 +977,7 @@
 
 - **service**: many-to-one -> `Service`
 
----
+______________________________________________________________________
 
 ### SystemRegistry (`mdm_systems_registry`)
 
@@ -1016,7 +1022,7 @@
 - **technical_owner**: many-to-one -> `User`
 - **projects**: one-to-many -> `ProjectMaster`
 
----
+______________________________________________________________________
 
 ### TraceabilityLink (`mdm_traceability_links`)
 
@@ -1040,7 +1046,7 @@
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 
----
+______________________________________________________________________
 
 ### Vendor (`mdm_vendors`)
 
@@ -1073,7 +1079,7 @@
 | `is_current` | Boolean | INDEX | 是 | True | - |
 | `is_deleted` | Boolean | - | 是 | False | - |
 
----
+______________________________________________________________________
 
 ### ResourceCost (`stg_mdm_resource_costs`)
 
@@ -1107,7 +1113,7 @@
 - **cost_code**: many-to-one -> `CostCode`
 - **purchase_contract**: many-to-one -> `PurchaseContract`
 
----
+______________________________________________________________________
 
 ## 测试管理域
 
@@ -1137,7 +1143,7 @@
 - **project**: many-to-one -> `GitLabProject`
 - **test_cases**: one-to-many -> `GTMTestCase`
 
----
+______________________________________________________________________
 
 ### GTMTestCaseIssueLink (`gtm_test_case_issue_links`)
 
@@ -1155,7 +1161,7 @@
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 
----
+______________________________________________________________________
 
 ### GTMTestCase (`gtm_test_cases`)
 
@@ -1188,7 +1194,7 @@
 - **associated_requirements**: one-to-many -> `GTMRequirement`
 - **execution_records**: one-to-many -> `GTMTestExecutionRecord`
 
----
+______________________________________________________________________
 
 ### GTMTestExecutionRecord (`gtm_test_execution_records`)
 
@@ -1218,7 +1224,7 @@
 
 - **project**: many-to-one -> `GitLabProject`
 
----
+______________________________________________________________________
 
 ### JenkinsTestExecution (`qa_jenkins_test_executions`)
 
@@ -1245,7 +1251,7 @@
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 
----
+______________________________________________________________________
 
 ## GitLab 集成域
 
@@ -1272,7 +1278,7 @@
 
 - **project**: many-to-one -> `GitLabProject`
 
----
+______________________________________________________________________
 
 ### GitLabCommit (`gitlab_commits`)
 
@@ -1305,7 +1311,7 @@
 - **project**: many-to-one -> `GitLabProject`
 - **author**: many-to-one -> `User`
 
----
+______________________________________________________________________
 
 ### GitLabDeployment (`gitlab_deployments`)
 
@@ -1330,7 +1336,7 @@
 
 - **project**: many-to-one -> `GitLabProject`
 
----
+______________________________________________________________________
 
 ### GitLabGroupMember (`gitlab_group_members`)
 
@@ -1354,7 +1360,7 @@
 - **group**: many-to-one -> `GitLabGroup`
 - **user**: many-to-one -> `User`
 
----
+______________________________________________________________________
 
 ### GitLabGroup (`gitlab_groups`)
 
@@ -1384,7 +1390,7 @@
 - **members**: one-to-many -> `GitLabGroupMember`
 - **parent**: many-to-one -> `GitLabGroup`
 
----
+______________________________________________________________________
 
 ### GitLabIssue (`gitlab_issues`)
 
@@ -1427,7 +1433,7 @@
 - **merge_requests**: one-to-many -> `GitLabMergeRequest`
 - **associated_test_cases**: one-to-many -> `GTMTestCase`
 
----
+______________________________________________________________________
 
 ### GitLabMergeRequest (`gitlab_merge_requests`)
 
@@ -1472,7 +1478,7 @@
 - **author**: many-to-one -> `User`
 - **project**: many-to-one -> `GitLabProject`
 
----
+______________________________________________________________________
 
 ### GitLabMilestone (`gitlab_milestones`)
 
@@ -1500,7 +1506,7 @@
 - **releases**: one-to-many -> `GitLabRelease`
 - **issues**: one-to-many -> `GitLabIssue`
 
----
+______________________________________________________________________
 
 ### GitLabNote (`gitlab_notes`)
 
@@ -1526,7 +1532,7 @@
 
 - **project**: many-to-one -> `GitLabProject`
 
----
+______________________________________________________________________
 
 ### GitLabPackage (`gitlab_packages`)
 
@@ -1551,7 +1557,7 @@
 - **project**: many-to-one -> `GitLabProject`
 - **files**: one-to-many -> `GitLabPackageFile`
 
----
+______________________________________________________________________
 
 ### GitLabPipeline (`gitlab_pipelines`)
 
@@ -1578,7 +1584,7 @@
 
 - **project**: many-to-one -> `GitLabProject`
 
----
+______________________________________________________________________
 
 ### GitLabProjectMember (`gitlab_project_members`)
 
@@ -1604,7 +1610,7 @@
 - **project**: many-to-one -> `GitLabProject`
 - **user**: many-to-one -> `User`
 
----
+______________________________________________________________________
 
 ### GitLabProject (`gitlab_projects`)
 
@@ -1657,7 +1663,7 @@
 - **sonar_projects**: one-to-many -> `SonarProject`
 - **jira_projects**: one-to-many -> `JiraProject`
 
----
+______________________________________________________________________
 
 ### GitLabRelease (`gitlab_releases`)
 
@@ -1682,7 +1688,7 @@
 - **project**: many-to-one -> `GitLabProject`
 - **milestones**: one-to-many -> `GitLabMilestone`
 
----
+______________________________________________________________________
 
 ### GitLabTag (`gitlab_tags`)
 
@@ -1703,7 +1709,7 @@
 
 - **project**: many-to-one -> `GitLabProject`
 
----
+______________________________________________________________________
 
 ## 认证与授权域
 
@@ -1728,7 +1734,7 @@
 
 - **user**: many-to-one -> `User`
 
----
+______________________________________________________________________
 
 ### UserOAuthToken (`sys_user_oauth_tokens`)
 
@@ -1750,7 +1756,7 @@
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 
----
+______________________________________________________________________
 
 ### UserRole (`sys_user_roles`)
 
@@ -1763,7 +1769,7 @@
 | `user_id` | UUID | PK, FK | 否 | - | 用户ID |
 | `role_id` | Integer | PK, FK | 否 | - | 角色ID |
 
----
+______________________________________________________________________
 
 ## 其他辅助域
 
@@ -1811,7 +1817,7 @@
 - **project**: many-to-one -> `GitLabProject`
 - **cves**: one-to-many -> `DependencyCVE`
 
----
+______________________________________________________________________
 
 ### DependencyCVE (`dependency_cves`)
 
@@ -1844,7 +1850,7 @@
 
 - **dependency**: many-to-one -> `Dependency`
 
----
+______________________________________________________________________
 
 ### DependencyScan (`dependency_scans`)
 
@@ -1885,7 +1891,7 @@
 - **project**: many-to-one -> `GitLabProject`
 - **dependencies**: one-to-many -> `Dependency`
 
----
+______________________________________________________________________
 
 ### JiraBoard (`jira_boards`)
 
@@ -1906,7 +1912,7 @@
 - **project**: many-to-one -> `JiraProject`
 - **sprints**: one-to-many -> `JiraSprint`
 
----
+______________________________________________________________________
 
 ### JiraIssue (`jira_issues`)
 
@@ -1952,7 +1958,7 @@
 - **history**: one-to-many -> `JiraIssueHistory`
 - **sprint**: many-to-one -> `JiraSprint`
 
----
+______________________________________________________________________
 
 ### JiraProject (`jira_projects`)
 
@@ -1980,7 +1986,7 @@
 - **boards**: one-to-many -> `JiraBoard`
 - **issues**: one-to-many -> `JiraIssue`
 
----
+______________________________________________________________________
 
 ### JiraSprint (`jira_sprints`)
 
@@ -2004,7 +2010,7 @@
 - **board**: many-to-one -> `JiraBoard`
 - **issues**: one-to-many -> `JiraIssue`
 
----
+______________________________________________________________________
 
 ### LicenseRiskRule (`license_risk_rules`)
 
@@ -2031,7 +2037,7 @@
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 
----
+______________________________________________________________________
 
 ### CommitMetrics (`rpt_commit_metrics`)
 
@@ -2062,7 +2068,7 @@
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 
----
+______________________________________________________________________
 
 ### DailyDevStats (`rpt_daily_dev_stats`)
 
@@ -2085,7 +2091,7 @@
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 
----
+______________________________________________________________________
 
 ### ServiceDeskTicket (`service_desk_tickets`)
 
@@ -2113,7 +2119,7 @@
 | `created_at` | DateTime | - | 是 | - | - |
 | `updated_at` | DateTime | - | 是 | - | - |
 
----
+______________________________________________________________________
 
 ### SonarIssue (`sonar_issues`)
 
@@ -2149,7 +2155,7 @@
 
 - **project**: many-to-one -> `SonarProject`
 
----
+______________________________________________________________________
 
 ### SonarMeasure (`sonar_measures`)
 
@@ -2207,7 +2213,7 @@
 
 - **project**: many-to-one -> `SonarProject`
 
----
+______________________________________________________________________
 
 ### SonarProject (`sonar_projects`)
 
@@ -2237,7 +2243,7 @@
 - **issues**: one-to-many -> `SonarIssue`
 - **latest_measure**: many-to-one -> `SonarMeasure`
 
----
+______________________________________________________________________
 
 ### RawDataStaging (`stg_raw_data`)
 
@@ -2260,7 +2266,7 @@
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 
----
+______________________________________________________________________
 
 ### SysMenu (`sys_menu`)
 
@@ -2274,17 +2280,17 @@
 | `menu_name` | String(50) | - | 否 | - | 菜单名称 |
 | `parent_id` | Integer | FK | 是 | - | 父菜单ID (0或NULL表示顶级) |
 | `order_num` | Integer | - | 是 | 0 | 显示顺序 |
-| `path` | String(200) | - | 是 |  | 路由地址 |
+| `path` | String(200) | - | 是 | | 路由地址 |
 | `component` | String(255) | - | 是 | - | 组件路径 |
 | `query` | String(255) | - | 是 | - | 路由参数 |
 | `is_frame` | Boolean | - | 是 | False | 是否为外链 |
 | `is_cache` | Boolean | - | 是 | True | 是否缓存 |
-| `menu_type` | String(1) | - | 是 |  | 菜单类型 (M目录 C菜单 F按钮) |
+| `menu_type` | String(1) | - | 是 | | 菜单类型 (M目录 C菜单 F按钮) |
 | `visible` | Boolean | - | 是 | True | 菜单状态 (True显示 False隐藏) |
 | `status` | Boolean | - | 是 | True | 菜单状态 (True正常 False停用) |
 | `perms` | String(100) | - | 是 | - | 权限标识 (e.g. system:user:list) |
 | `icon` | String(100) | - | 是 | # | 菜单图标 |
-| `remark` | String(500) | - | 是 |  | 备注 |
+| `remark` | String(500) | - | 是 | | 备注 |
 | `created_at` | DateTime | - | 是 | (auto) | 创建时间 |
 | `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
@@ -2296,7 +2302,7 @@
 - **parent**: many-to-one -> `SysMenu`
 - **roles**: one-to-many -> `SysRole`
 
----
+______________________________________________________________________
 
 ### SysRole (`sys_role`)
 
@@ -2326,7 +2332,7 @@
 - **depts**: one-to-many -> `Organization`
 - **users**: one-to-many -> `User`
 
----
+______________________________________________________________________
 
 ### SysRoleDept (`sys_role_dept`)
 
@@ -2339,7 +2345,7 @@
 | `role_id` | Integer | PK, FK | 否 | - | - |
 | `dept_id` | Integer | PK, FK | 否 | - | - |
 
----
+______________________________________________________________________
 
 ### SysRoleMenu (`sys_role_menu`)
 
@@ -2352,7 +2358,7 @@
 | `role_id` | Integer | PK, FK | 否 | - | - |
 | `menu_id` | Integer | PK, FK | 否 | - | - |
 
----
+______________________________________________________________________
 
 ### SyncLog (`sys_sync_logs`)
 
@@ -2374,7 +2380,7 @@
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 
----
+______________________________________________________________________
 
 ### TeamMember (`sys_team_members`)
 
@@ -2399,7 +2405,7 @@
 - **team**: many-to-one -> `Team`
 - **user**: many-to-one -> `User`
 
----
+______________________________________________________________________
 
 ### Team (`sys_teams`)
 
@@ -2433,18 +2439,18 @@
 - **members**: one-to-many -> `TeamMember`
 - **children**: one-to-many -> `Team`
 
----
-
+______________________________________________________________________
 
 ## 变更日志
 
 ### v2.2 (自动生成)
+
 - 基于最新 SQLAlchemy 模型自动生成
 - 支持变更检测和 Diff 对比
 - 增强字段注释提取
 - 优化默认值显示
 
----
+______________________________________________________________________
 
 **维护说明**: 本文档由 `scripts/generate_data_dictionary.py` 自动生成。
 如需更新，请修改模型定义并运行 `make docs` 命令。

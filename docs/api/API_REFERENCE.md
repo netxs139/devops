@@ -7,21 +7,21 @@
 
 > **在线文档**: 系统运行后，可访问 `http://localhost:8000/docs` 获取 Swagger UI 交互式文档。
 
----
+______________________________________________________________________
 
 ## 目录
 
-1. [认证接口 (Authentication)](#1-认证接口-authentication)
-2. [服务台接口 (Service Desk)](#2-服务台接口-service-desk)
-3. [测试管理接口 (Test Management)](#3-测试管理接口-test-management)
-4. [迭代计划接口 (Iteration Plan)](#4-迭代计划接口-iteration-plan)
-5. [质量分析接口 (Quality Analytics)](#5-质量分析接口-quality-analytics)
-6. [DevEx 脉搏接口 (DevEx Pulse)](#6-devex-脉搏接口-devex-pulse)
-7. [管理接口 (Admin)](#7-管理接口-admin)
-8. [通用响应格式](#8-通用响应格式)
-9. [错误代码](#9-错误代码)
+1. [认证接口 (Authentication)](#1-%E8%AE%A4%E8%AF%81%E6%8E%A5%E5%8F%A3-authentication)
+1. [服务台接口 (Service Desk)](#2-%E6%9C%8D%E5%8A%A1%E5%8F%B0%E6%8E%A5%E5%8F%A3-service-desk)
+1. [测试管理接口 (Test Management)](#3-%E6%B5%8B%E8%AF%95%E7%AE%A1%E7%90%86%E6%8E%A5%E5%8F%A3-test-management)
+1. [迭代计划接口 (Iteration Plan)](#4-%E8%BF%AD%E4%BB%A3%E8%AE%A1%E5%88%92%E6%8E%A5%E5%8F%A3-iteration-plan)
+1. [质量分析接口 (Quality Analytics)](#5-%E8%B4%A8%E9%87%8F%E5%88%86%E6%9E%90%E6%8E%A5%E5%8F%A3-quality-analytics)
+1. [DevEx 脉搏接口 (DevEx Pulse)](#6-devex-%E8%84%89%E6%90%8F%E6%8E%A5%E5%8F%A3-devex-pulse)
+1. [管理接口 (Admin)](#7-%E7%AE%A1%E7%90%86%E6%8E%A5%E5%8F%A3-admin)
+1. [通用响应格式](#8-%E9%80%9A%E7%94%A8%E5%93%8D%E5%BA%94%E6%A0%BC%E5%BC%8F)
+1. [错误代码](#9-%E9%94%99%E8%AF%AF%E4%BB%A3%E7%A0%81)
 
----
+______________________________________________________________________
 
 ## 1. 认证接口 (Authentication)
 
@@ -56,7 +56,7 @@ POST /auth/register
 }
 ```
 
----
+______________________________________________________________________
 
 ### 1.2 用户登录
 
@@ -82,7 +82,7 @@ username=user@example.com&password=your_password
 }
 ```
 
----
+______________________________________________________________________
 
 ### 1.3 获取当前用户
 
@@ -106,7 +106,7 @@ Authorization: Bearer <token>
 }
 ```
 
----
+______________________________________________________________________
 
 ### 1.4 GitLab OAuth 绑定
 
@@ -119,7 +119,7 @@ Authorization: Bearer <token>
 
 **响应**: 302 重定向至 GitLab 授权页面
 
----
+______________________________________________________________________
 
 ### 1.5 GitLab OAuth 回调
 
@@ -131,7 +131,7 @@ GET /auth/gitlab/callback?code={code}&state={state}
 
 **响应**: 302 重定向至前端页面
 
----
+______________________________________________________________________
 
 ## 2. 服务台接口 (Service Desk)
 
@@ -158,7 +158,7 @@ Authorization: Bearer <token>
 ]
 ```
 
----
+______________________________________________________________________
 
 ### 2.2 提交缺陷
 
@@ -189,7 +189,7 @@ Authorization: Bearer <token>
 }
 ```
 
----
+______________________________________________________________________
 
 ### 2.3 提交需求
 
@@ -220,7 +220,7 @@ Authorization: Bearer <token>
 }
 ```
 
----
+______________________________________________________________________
 
 ### 2.4 获取工单列表
 
@@ -247,7 +247,7 @@ Authorization: Bearer <token>
 ]
 ```
 
----
+______________________________________________________________________
 
 ### 2.5 查询工单状态
 
@@ -257,7 +257,7 @@ Authorization: Bearer <token>
 GET /service-desk/track/{ticket_id}
 ```
 
----
+______________________________________________________________________
 
 ### 2.6 获取我的工单
 
@@ -268,7 +268,7 @@ GET /service-desk/my-tickets
 Authorization: Bearer <token>
 ```
 
----
+______________________________________________________________________
 
 ### 2.7 更新工单状态
 
@@ -287,7 +287,7 @@ Authorization: Bearer <token>
 }
 ```
 
----
+______________________________________________________________________
 
 ### 2.8 拒绝工单
 
@@ -307,7 +307,7 @@ Authorization: Bearer <token>
 }
 ```
 
----
+______________________________________________________________________
 
 ## 3. 测试管理接口 (Test Management)
 
@@ -363,7 +363,7 @@ POST /projects/{project_id}/test-cases/clone?source_project_id={id}
 Authorization: Bearer <token>
 ```
 
----
+______________________________________________________________________
 
 ### 3.2 执行测试
 
@@ -384,7 +384,7 @@ Authorization: Bearer <token>
 }
 ```
 
----
+______________________________________________________________________
 
 ### 3.3 需求管理
 
@@ -416,7 +416,7 @@ PUT /projects/{project_id}/requirements/{iid}/review-state?review_state={approve
 Authorization: Bearer <token>
 ```
 
----
+______________________________________________________________________
 
 ### 3.4 缺陷管理
 
@@ -433,7 +433,7 @@ POST /projects/{project_id}/defects
 Authorization: Bearer <token>
 ```
 
----
+______________________________________________________________________
 
 ### 3.5 AI 辅助功能
 
@@ -486,7 +486,7 @@ Authorization: Bearer <token>
 POST /projects/{project_id}/defects/{iid}/rca
 ```
 
----
+______________________________________________________________________
 
 ### 3.6 报告导出
 
@@ -499,7 +499,7 @@ Authorization: Bearer <token>
 
 **响应类型**: `text/markdown`
 
----
+______________________________________________________________________
 
 ## 4. 迭代计划接口 (Iteration Plan)
 
@@ -526,7 +526,7 @@ GET /iteration-plan/milestones/{milestone_id}/issues?project_id={id}
 Authorization: Bearer <token>
 ```
 
----
+______________________________________________________________________
 
 ## 5. 质量分析接口 (Quality Analytics)
 
@@ -546,7 +546,7 @@ GET /quality/benchmarking
 Authorization: Bearer <token>
 ```
 
----
+______________________________________________________________________
 
 ## 6. DevEx 脉搏接口 (DevEx Pulse)
 
@@ -576,7 +576,7 @@ GET /devex-pulse/trends?days=30
 Authorization: Bearer <token>
 ```
 
----
+______________________________________________________________________
 
 ## 7. 管理接口 (Admin)
 
@@ -605,7 +605,7 @@ GET /admin/departments
 POST /admin/departments
 ```
 
----
+______________________________________________________________________
 
 ## 8. 通用响应格式
 
@@ -631,7 +631,7 @@ POST /admin/departments
 }
 ```
 
----
+______________________________________________________________________
 
 ## 9. 错误代码
 
@@ -664,7 +664,7 @@ POST /admin/departments
 }
 ```
 
----
+______________________________________________________________________
 
 ## 认证说明
 
@@ -676,10 +676,10 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 Token 有效期默认为 24 小时。如需调整，请修改 `.env` 中的 `JWT_EXPIRATION_HOURS` 配置。
 
----
+______________________________________________________________________
 
 ## 更多信息
 
-* **Swagger UI**: `http://localhost:8000/docs`
-* **ReDoc**: `http://localhost:8000/redoc`
-* **OpenAPI JSON**: `http://localhost:8000/openapi.json`
+- **Swagger UI**: `http://localhost:8000/docs`
+- **ReDoc**: `http://localhost:8000/redoc`
+- **OpenAPI JSON**: `http://localhost:8000/openapi.json`

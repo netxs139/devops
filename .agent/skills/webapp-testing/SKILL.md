@@ -1,14 +1,13 @@
----
-name: webapp-testing
-description: 使用 Playwright 与本地 Web 应用程序交互及进行测试的工具包。支持验证前端功能、调试 UI 行为、捕获浏览器截图以及查看浏览器日志。
-license: 完整条款见 LICENSE.txt
----
+______________________________________________________________________
+
+## name: webapp-testing description: 使用 Playwright 与本地 Web 应用程序交互及进行测试的工具包。支持验证前端功能、调试 UI 行为、捕获浏览器截图以及查看浏览器日志。 license: 完整条款见 LICENSE.txt
 
 # Web 应用程序测试
 
 要测试本地 Web 应用程序，请编写原生的 Python Playwright 脚本。
 
 **可用的辅助脚本**:
+
 - `scripts/with_server.py` - 管理服务器生命周期（支持多服务器）
 
 **务必先运行带有 `--help` 参数的脚本**以查看用法。除非您在尝试运行脚本后发现绝对需要自定义解决方案，否则不要阅读源码。这些脚本可能非常庞大，从而污染您的上下文窗口。它们旨在作为黑盒脚本直接调用，而不是摄入到您的上下文窗口中。
@@ -37,11 +36,13 @@ license: 完整条款见 LICENSE.txt
 要启动服务器，请先运行 `--help`，然后使用该辅助工具：
 
 **单个服务器：**
+
 ```bash
 python scripts/with_server.py --server "npm run dev" --port 5173 -- python your_automation.py
 ```
 
 **多个服务器（例如，后端 + 前端）：**
+
 ```bash
 python scripts/with_server.py \
   --server "cd backend && python server.py" --port 3000 \
@@ -50,6 +51,7 @@ python scripts/with_server.py \
 ```
 
 要创建自动化脚本，仅需包含 Playwright 逻辑（服务器由程序自动管理）：
+
 ```python
 from playwright.sync_api import sync_playwright
 
@@ -65,15 +67,16 @@ with sync_playwright() as p:
 ## 侦察并行动模式
 
 1. **检查渲染后的 DOM**：
+
    ```python
    page.screenshot(path='/tmp/inspect.png', full_page=True)
    content = page.content()
    page.locator('button').all()
    ```
 
-2. **从检查结果中识别选择器 (selectors)**
+1. **从检查结果中识别选择器 (selectors)**
 
-3. **使用发现的选择器执行操作**
+1. **使用发现的选择器执行操作**
 
 ## 常见陷阱
 

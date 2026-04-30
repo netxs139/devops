@@ -56,7 +56,7 @@ python scripts/run_identity_resolver.py --apply
 在完成身份对齐后，管理员可以开始组建业务维度的虚拟组织。
 
 1. **创建团队**：通过 `/admin/teams` 接口定义团队名称与所属行政层级（仅挂载参考）。
-2. **添加成员**：指定 `user_id`、`role_code` (LEADER/MEMBER) 以及 `allocation_ratio` (0.0-1.0)。
+1. **添加成员**：指定 `user_id`、`role_code` (LEADER/MEMBER) 以及 `allocation_ratio` (0.0-1.0)。
 
 ### 4.2 应用场景
 
@@ -66,10 +66,11 @@ python scripts/run_identity_resolver.py --apply
 ## 5. 部署预查清单 (Checklist)
 
 1. **数据库迁移**：确保运行了最新的 SQL 脚本，包含 `sys_teams` 和 `sys_team_members` 表。
-2. **配置文件 (config.ini)**：
+1. **配置文件 (config.ini)**：
    - 检查 `DB_URI` 是否正确指向 PostgreSQL 实例。
    - 配置内部域名后缀，以提高 `IdentityResolver` 的匹配准确度。
-3. **环境变量**：确保 `GITLAB_PRIVATE_TOKEN` 具有足够的权限访问用户列表，以执行外部账号发现。
+1. **环境变量**：确保 `GITLAB_PRIVATE_TOKEN` 具有足够的权限访问用户列表，以执行外部账号发现。
 
----
+______________________________________________________________________
+
 *本文档由 Antigravity AI 生成，用于指导 DevOps 系统的身份与组织治理工作。*
