@@ -1,7 +1,7 @@
----
-name: ui-ux-pro-max
-description: UI/UX design intelligence. 50 styles, 21 palettes, 50 font pairings, 20 charts, 9 stacks.
----
+______________________________________________________________________
+
+## name: ui-ux-pro-max description: UI/UX design intelligence. 50 styles, 21 palettes, 50 font pairings, 20 charts, 9 stacks.
+
 # ui-ux-pro-max
 
 Comprehensive design guide for web and mobile applications. Contains 67 styles, 96 color palettes, 57 font pairings, 99 UX guidelines, and 25 chart types across 13 technology stacks. Searchable database with priority-based recommendations.
@@ -17,21 +17,24 @@ python3 --version || python --version
 If Python is not installed, install it based on user's OS:
 
 **macOS:**
+
 ```bash
 brew install python3
 ```
 
 **Ubuntu/Debian:**
+
 ```bash
 sudo apt update && sudo apt install python3
 ```
 
 **Windows:**
+
 ```powershell
 winget install Python.Python.3.12
 ```
 
----
+______________________________________________________________________
 
 ## How to Use This Skill
 
@@ -40,6 +43,7 @@ When user requests UI/UX work (design, build, create, implement, review, fix, im
 ### Step 1: Analyze User Requirements
 
 Extract key information from user request:
+
 - **Product type**: SaaS, e-commerce, portfolio, dashboard, landing page, etc.
 - **Style keywords**: minimal, playful, professional, elegant, dark mode, etc.
 - **Industry**: healthcare, fintech, gaming, education, etc.
@@ -54,12 +58,14 @@ python3 skills/ui-ux-pro-max/scripts/search.py "<product_type> <industry> <keywo
 ```
 
 This command:
+
 1. Searches 5 domains in parallel (product, style, color, landing, typography)
-2. Applies reasoning rules from `ui-reasoning.csv` to select best matches
-3. Returns complete design system: pattern, style, colors, typography, effects
-4. Includes anti-patterns to avoid
+1. Applies reasoning rules from `ui-reasoning.csv` to select best matches
+1. Returns complete design system: pattern, style, colors, typography, effects
+1. Includes anti-patterns to avoid
 
 **Example:**
+
 ```bash
 python3 skills/ui-ux-pro-max/scripts/search.py "beauty spa wellness service" --design-system -p "Serenity Spa"
 ```
@@ -73,21 +79,25 @@ python3 skills/ui-ux-pro-max/scripts/search.py "<query>" --design-system --persi
 ```
 
 This creates:
+
 - `design-system/MASTER.md` — Global Source of Truth with all design rules
 - `design-system/pages/` — Folder for page-specific overrides
 
 **With page-specific override:**
+
 ```bash
 python3 skills/ui-ux-pro-max/scripts/search.py "<query>" --design-system --persist -p "Project Name" --page "dashboard"
 ```
 
 This also creates:
+
 - `design-system/pages/dashboard.md` — Page-specific deviations from Master
 
 **How hierarchical retrieval works:**
+
 1. When building a specific page (e.g., "Checkout"), first check `design-system/pages/checkout.md`
-2. If the page file exists, its rules **override** the Master file
-3. If not, use `design-system/MASTER.md` exclusively
+1. If the page file exists, its rules **override** the Master file
+1. If not, use `design-system/MASTER.md` exclusively
 
 ### Step 3: Supplement with Detailed Searches (as needed)
 
@@ -117,7 +127,7 @@ python3 skills/ui-ux-pro-max/scripts/search.py "<keyword>" --stack html-tailwind
 
 Available stacks: `html-tailwind`, `react`, `nextjs`, `vue`, `svelte`, `swiftui`, `react-native`, `flutter`, `shadcn`, `jetpack-compose`
 
----
+______________________________________________________________________
 
 ## Search Reference
 
@@ -151,13 +161,14 @@ Available stacks: `html-tailwind`, `react`, `nextjs`, `vue`, `svelte`, `swiftui`
 | `shadcn` | shadcn/ui components, theming, forms, patterns |
 | `jetpack-compose` | Composables, Modifiers, State Hoisting, Recomposition |
 
----
+______________________________________________________________________
 
 ## Example Workflow
 
 **User request:** "Làm landing page cho dịch vụ chăm sóc da chuyên nghiệp"
 
 ### Step 1: Analyze Requirements
+
 - Product type: Beauty/Spa service
 - Style keywords: elegant, professional, soft
 - Industry: Beauty/Wellness
@@ -189,7 +200,7 @@ python3 skills/ui-ux-pro-max/scripts/search.py "layout responsive form" --stack 
 
 **Then:** Synthesize design system + detailed searches and implement the design.
 
----
+______________________________________________________________________
 
 ## Output Formats
 
@@ -203,18 +214,18 @@ python3 skills/ui-ux-pro-max/scripts/search.py "fintech crypto" --design-system
 python3 skills/ui-ux-pro-max/scripts/search.py "fintech crypto" --design-system -f markdown
 ```
 
----
+______________________________________________________________________
 
 ## Tips for Better Results
 
 1. **Be specific with keywords** - "healthcare SaaS dashboard" > "app"
-2. **Search multiple times** - Different keywords reveal different insights
-3. **Combine domains** - Style + Typography + Color = Complete design system
-4. **Always check UX** - Search "animation", "z-index", "accessibility" for common issues
-5. **Use stack flag** - Get implementation-specific best practices
-6. **Iterate** - If first search doesn't match, try different keywords
+1. **Search multiple times** - Different keywords reveal different insights
+1. **Combine domains** - Style + Typography + Color = Complete design system
+1. **Always check UX** - Search "animation", "z-index", "accessibility" for common issues
+1. **Use stack flag** - Get implementation-specific best practices
+1. **Iterate** - If first search doesn't match, try different keywords
 
----
+______________________________________________________________________
 
 ## Common Rules for Professional UI
 
@@ -254,13 +265,14 @@ These are frequently overlooked issues that make UI look unprofessional:
 | **Content padding** | Account for fixed navbar height | Let content hide behind fixed elements |
 | **Consistent max-width** | Use same `max-w-6xl` or `max-w-7xl` | Mix different container widths |
 
----
+______________________________________________________________________
 
 ## Pre-Delivery Checklist
 
 Before delivering UI code, verify these items:
 
 ### Visual Quality
+
 - [ ] No emojis used as icons (use SVG instead)
 - [ ] All icons from consistent icon set (Heroicons/Lucide)
 - [ ] Brand logos are correct (verified from Simple Icons)
@@ -268,24 +280,28 @@ Before delivering UI code, verify these items:
 - [ ] Use theme colors directly (bg-primary) not var() wrapper
 
 ### Interaction
+
 - [ ] All clickable elements have `cursor-pointer`
 - [ ] Hover states provide clear visual feedback
 - [ ] Transitions are smooth (150-300ms)
 - [ ] Focus states visible for keyboard navigation
 
 ### Light/Dark Mode
+
 - [ ] Light mode text has sufficient contrast (4.5:1 minimum)
 - [ ] Glass/transparent elements visible in light mode
 - [ ] Borders visible in both modes
 - [ ] Test both modes before delivery
 
 ### Layout
+
 - [ ] Floating elements have proper spacing from edges
 - [ ] No content hidden behind fixed navbars
 - [ ] Responsive at 375px, 768px, 1024px, 1440px
 - [ ] No horizontal scroll on mobile
 
 ### Accessibility
+
 - [ ] All images have alt text
 - [ ] Form inputs have labels
 - [ ] Color is not the only indicator

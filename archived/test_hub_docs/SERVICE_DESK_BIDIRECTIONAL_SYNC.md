@@ -4,14 +4,14 @@
 
 Service Desk 现已实现与 GitLab Issue 的**完整双向同步**，确保两个系统的数据始终保持一致。
 
----
+______________________________________________________________________
 
 ## 🔄 双向同步机制
 
 ### 1. GitLab → Service Desk（自动同步）
 
-**触发方式**: GitLab Webhook  
-**触发事件**: Issue Hook  
+**触发方式**: GitLab Webhook\
+**触发事件**: Issue Hook\
 **同步时机**: GitLab Issue 发生任何变更时
 
 #### 同步内容
@@ -40,12 +40,12 @@ if "origin::service-desk" in labels:
     # 自动持久化保存
 ```
 
----
+______________________________________________________________________
 
 ### 2. Service Desk → GitLab（API 触发）
 
-**触发方式**: REST API  
-**API 端点**: `PATCH /service-desk/tickets/{tracking_code}/status`  
+**触发方式**: REST API\
+**API 端点**: `PATCH /service-desk/tickets/{tracking_code}/status`\
 **触发时机**: 管理员或系统主动更新工单状态时
 
 #### API 参数
@@ -69,8 +69,8 @@ if "origin::service-desk" in labels:
 #### 额外功能
 
 1. **自动添加评论**: 在 GitLab Issue 中添加状态变更记录
-2. **智能重开**: 如果 Issue 已关闭但状态改为 `in-progress` 或 `pending`，自动重新打开
-3. **标签管理**: 自动添加/移除相关标签
+1. **智能重开**: 如果 Issue 已关闭但状态改为 `in-progress` 或 `pending`，自动重新打开
+1. **标签管理**: 自动添加/移除相关标签
 
 #### 返回示例
 
@@ -86,60 +86,60 @@ if "origin::service-desk" in labels:
 }
 ```
 
----
+______________________________________________________________________
 
 ## 🎯 使用场景
 
 ### 场景 1: 业务方提交 Bug
 
 1. 业务方通过 Service Desk 提交 Bug
-2. 系统自动在 GitLab 创建 Issue（带 `origin::service-desk` 标签）
-3. 技术团队在 GitLab 中处理 Issue
-4. **自动同步**: GitLab 的任何变更自动同步到 Service Desk
-5. 业务方通过追踪码查看最新状态
+1. 系统自动在 GitLab 创建 Issue（带 `origin::service-desk` 标签）
+1. 技术团队在 GitLab 中处理 Issue
+1. **自动同步**: GitLab 的任何变更自动同步到 Service Desk
+1. 业务方通过追踪码查看最新状态
 
 ### 场景 2: 管理员更新工单状态
 
 1. 管理员调用 API 更新工单状态为 `in-progress`
-2. **自动同步**: GitLab Issue 自动添加 `in-progress` 标签
-3. **自动评论**: GitLab Issue 中自动添加状态变更记录
-4. 技术团队在 GitLab 中看到最新状态
+1. **自动同步**: GitLab Issue 自动添加 `in-progress` 标签
+1. **自动评论**: GitLab Issue 中自动添加状态变更记录
+1. 技术团队在 GitLab 中看到最新状态
 
 ### 场景 3: 技术团队关闭 Issue
 
 1. 技术团队在 GitLab 中关闭 Issue
-2. **Webhook 触发**: GitLab 发送 Issue Hook 到 Service Desk
-3. **自动同步**: Service Desk 工单状态自动更新为 `completed`
-4. **持久化保存**: 状态变更自动保存到 JSON 文件
-5. 业务方查询时看到工单已完成
+1. **Webhook 触发**: GitLab 发送 Issue Hook 到 Service Desk
+1. **自动同步**: Service Desk 工单状态自动更新为 `completed`
+1. **持久化保存**: 状态变更自动保存到 JSON 文件
+1. 业务方查询时看到工单已完成
 
----
+______________________________________________________________________
 
 ## 🔧 配置 Webhook
 
 ### 步骤 1: 在 GitLab 中配置 Webhook
 
 1. 进入 GitLab 项目
-2. 导航到 **Settings** → **Webhooks**
-3. 添加新的 Webhook：
+1. 导航到 **Settings** → **Webhooks**
+1. 添加新的 Webhook：
    - **URL**: `http://your-server:8000/webhook`
    - **Trigger**: 勾选 `Issue events`
    - **SSL verification**: 根据实际情况选择
-4. 点击 **Add webhook**
+1. 点击 **Add webhook**
 
 ### 步骤 2: 测试 Webhook
 
 1. 在 Webhook 列表中找到刚添加的 Webhook
-2. 点击 **Test** → **Issue events**
-3. 检查响应状态（应该返回 200）
+1. 点击 **Test** → **Issue events**
+1. 检查响应状态（应该返回 200）
 
 ### 步骤 3: 验证同步
 
 1. 在 GitLab 中修改一个 Service Desk Issue
-2. 检查 Service Desk 工单状态是否自动更新
-3. 查看日志确认同步成功
+1. 检查 Service Desk 工单状态是否自动更新
+1. 查看日志确认同步成功
 
----
+______________________________________________________________________
 
 ## 📊 状态映射表
 
@@ -162,7 +162,7 @@ if "origin::service-desk" in labels:
 | completed | 关闭 Issue |
 | rejected | 关闭 Issue + 添加 status::rejected 标签 |
 
----
+______________________________________________________________________
 
 ## 🧪 测试双向同步
 
@@ -173,10 +173,11 @@ python test_bidirectional_sync.py
 ```
 
 测试脚本会：
+
 1. 提交一个测试工单
-2. 通过 API 更新状态（Service Desk → GitLab）
-3. 查询工单状态验证同步
-4. 提供手动测试 Webhook 的指导
+1. 通过 API 更新状态（Service Desk → GitLab）
+1. 查询工单状态验证同步
+1. 提供手动测试 Webhook 的指导
 
 ### 方法 2: 手动测试
 
@@ -197,14 +198,14 @@ curl -X PATCH "http://localhost:8000/service-desk/tickets/BUG-20251227-001/statu
 #### 测试 GitLab → Service Desk
 
 1. 在 GitLab 中找到 Service Desk Issue（带 `origin::service-desk` 标签）
-2. 添加 `in-progress` 标签或关闭 Issue
-3. 查询工单状态：
+1. 添加 `in-progress` 标签或关闭 Issue
+1. 查询工单状态：
    ```bash
    curl http://localhost:8000/service-desk/track/BUG-20251227-001
    ```
-4. 验证状态是否已自动更新
+1. 验证状态是否已自动更新
 
----
+______________________________________________________________________
 
 ## 🔍 日志监控
 
@@ -213,21 +214,24 @@ curl -X PATCH "http://localhost:8000/service-desk/tickets/BUG-20251227-001/statu
 同步操作会记录详细日志：
 
 **GitLab → Service Desk 同步成功**:
+
 ```
 ✅ Service Desk Sync: BUG-20251227-001 status updated from GitLab: pending → in-progress
 ```
 
 **Service Desk → GitLab 同步成功**:
+
 ```
 ✅ Service Desk → GitLab Sync: BUG-20251227-001 status updated: pending → in-progress
 ```
 
 **同步失败**:
+
 ```
 ❌ Failed to sync status to GitLab for BUG-20251227-001: [错误信息]
 ```
 
----
+______________________________________________________________________
 
 ## ⚠️ 注意事项
 
@@ -253,7 +257,7 @@ curl -X PATCH "http://localhost:8000/service-desk/tickets/BUG-20251227-001/statu
 - 状态更新 API 会等待 GitLab 同步完成
 - 大量并发更新时注意 GitLab API 限流
 
----
+______________________________________________________________________
 
 ## 🚀 API 使用示例
 
@@ -312,7 +316,7 @@ console.log('同步状态:', result.gitlab_synced);
 console.log('同步信息:', result.gitlab_message);
 ```
 
----
+______________________________________________________________________
 
 ## 📈 功能对比
 
@@ -326,19 +330,19 @@ console.log('同步信息:', result.gitlab_message);
 | 评论记录 | ❌ 不支持 | ✅ 自动添加 |
 | 标签管理 | ❌ 不支持 | ✅ 自动管理 |
 
----
+______________________________________________________________________
 
 ## ✅ 总结
 
 Service Desk 现已实现**完整的双向同步**：
 
 1. **GitLab → Service Desk**: 通过 Webhook 实时自动同步
-2. **Service Desk → GitLab**: 通过 API 主动同步
-3. **数据一致性**: 两个系统的状态始终保持同步
-4. **审计追踪**: 所有状态变更都有日志和评论记录
-5. **持久化保存**: 所有变更自动保存到 JSON 文件
+1. **Service Desk → GitLab**: 通过 API 主动同步
+1. **数据一致性**: 两个系统的状态始终保持同步
+1. **审计追踪**: 所有状态变更都有日志和评论记录
+1. **持久化保存**: 所有变更自动保存到 JSON 文件
 
----
+______________________________________________________________________
 
-**更新时间**: 2025-12-27  
+**更新时间**: 2025-12-27\
 **版本**: v2.0 - 双向同步版本

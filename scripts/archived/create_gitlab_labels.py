@@ -23,16 +23,12 @@ except ImportError:
 # 如果核心包没有 logger，则回退到标准 logging
 if not logger:
     import logging
-    logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
-    logger = logging.getLogger('LabelTool')
+
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+    logger = logging.getLogger("LabelTool")
 
 
-def create_labels_batch(
-    client: GitLabClient,
-    target_type: str,
-    target_id: int,
-    label_types: list[str] = None
-) -> dict[str, int]:
+def create_labels_batch(client: GitLabClient, target_type: str, target_id: int, label_types: list[str] = None) -> dict[str, int]:
     """批量创建标签。"""
     if label_types is None:
         label_types = list(LABEL_DEFINITIONS.keys())
@@ -59,7 +55,7 @@ def create_labels_batch(
                 stats["success"] += 1
             except Exception as e:
                 # 兼容处理已存在的情况
-                if hasattr(e, 'response') and e.response.status_code == 409:
+                if hasattr(e, "response") and e.response.status_code == 409:
                     logger.warning(f"- 已存在: {label['name']}")
                     stats["success"] += 1
                 else:
@@ -103,7 +99,7 @@ def main():
     stats = create_labels_batch(client, target_type, target_id, args.types)
 
     logger.info(f"\n=== 完成 ===\n总计: {stats['total']}, 成功: {stats['success']}, 失败: {stats['failed']}")
-    if stats['failed'] > 0:
+    if stats["failed"] > 0:
         sys.exit(1)
 
 

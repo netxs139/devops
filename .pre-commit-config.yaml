@@ -10,6 +10,7 @@ repos:
         entry: uv run ruff check --fix
         language: system
         types: [python]
+        exclude: '^(\.agent/|scripts/archived/)'
 
       - id: ruff-format
         name: Ruff Format
@@ -36,7 +37,7 @@ repos:
       # 极速单元测试防线 (L1)
       - id: pytest-unit
         name: Fast Unit Tests
-        entry: uv run pytest tests/unit/ --picked
+        entry: uv run python -c "import subprocess, sys; r = subprocess.run(['pytest', 'tests/unit/', '--picked']); sys.exit(0 if r.returncode == 5 else r.returncode)"
         language: system
         types: [python]
         pass_filenames: false

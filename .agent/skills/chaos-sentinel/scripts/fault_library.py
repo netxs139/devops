@@ -1,25 +1,24 @@
-
+import os
 import socket
 import time
-import os
-import signal
-import threading
 from contextlib import contextmanager
+
 
 class ChaosEngine:
     """混沌故障注入引擎核心类"""
-    
+
     @staticmethod
     @contextmanager
     def api_latency(seconds: float = 30.0):
         """模拟全局网络延迟 (Monkeypatch requests)"""
         import requests
+
         original_send = requests.Session.send
-        
+
         def delayed_send(*args, **kwargs):
             time.sleep(seconds)
             return original_send(*args, **kwargs)
-        
+
         requests.Session.send = delayed_send
         print(f"🔥 [Chaos] Injected {seconds}s latency into requests.Session")
         try:
@@ -36,7 +35,7 @@ class ChaosEngine:
         print(f"🔥 [Chaos] Simulating Port {port} unreachable...")
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            s.bind(('127.0.0.1', port))
+            s.bind(("127.0.0.1", port))
             s.listen(1)
             yield
         except Exception as e:
@@ -86,26 +85,28 @@ class ChaosEngine:
     def auth_token_poisoning(client, failure_after: int = 5):
         """模拟中途身份过期 (LL #91, #104)"""
         original_request = client.session.request
-        call_count = [0] # 闭包
-        
+        call_count = [0]  # 闭包
+
         def mock_request(*args, **kwargs):
             call_count[0] += 1
             if call_count[0] > failure_after:
                 # 注入 401
                 from requests.models import Response
+
                 res = Response()
                 res.status_code = 401
                 res._content = b'{"error": "Unauthorized"}'
                 print(f"🔥 [Chaos] Injected 401 Unauthorized at call #{call_count[0]}")
                 return res
             return original_request(*args, **kwargs)
-            
+
         client.session.request = mock_request
         try:
             yield
         finally:
             client.session.request = original_request
             print("🛡️ [Chaos] Auth poisoning removed")
+
 
 if __name__ == "__main__":
     # 自测逻辑
