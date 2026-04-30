@@ -40,8 +40,8 @@ class GitLabPlugin(BasePlugin):
 plugin = GitLabPlugin()
 
 # 为了向下兼容，仍然保留导出（但不再主动调用注册函数）
-Client = plugin.get_client_class()
-GitLabWorker = plugin.get_worker_class()
-get_config = plugin.get_config_getter()
+# [Lazy-Break] Client = plugin.get_client_class()
+# [Lazy-Break] GitLabWorker = plugin.get_worker_class()
+# [Lazy-Break] get_config = plugin.get_config_getter()
 
 __all__ = ["plugin", "Client", "GitLabWorker", "get_config"]

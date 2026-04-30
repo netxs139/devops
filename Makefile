@@ -4,7 +4,7 @@
 #  所有操作均在容器内部执行，确保环境一致性
 # -----------------------------------------------------------
 
-.PHONY: help deploy init test test-local test-int-local test-all lint fmt diagnose check-imports build up down logs sync-all shell clean lock install init-dev docs e2e-install e2e-test e2e-test-headed e2e-test-trace e2e-smoke e2e-show-trace
+.PHONY: help deploy init test test-local test-int-local test-all lint fmt diagnose check-imports arch-audit build up down logs sync-all shell clean lock install init-dev docs e2e-install e2e-test e2e-test-headed e2e-test-trace e2e-smoke e2e-show-trace
 
 # 颜色定义
 YELLOW := \033[1;33m
@@ -284,6 +284,10 @@ diag-mq: ## [本地] 消息队列专项诊断
 check-imports: ## [本地] 检查核心模块导入依赖
 	@echo "$(GREEN)Checking module imports...$(RESET)"
 	python scripts/check_imports.py
+
+arch-audit: ## [MANDATORY] 架构合规性审计 (Anti-Patterns Check)
+	@echo "$(CYAN)Running Architecture & Anti-Pattern Audit...$(RESET)"
+	python scripts/arch_auditor.py
 
 sync-all: ## 手动触发全量数据同步
 	@echo "$(GREEN)Triggering full sync...$(RESET)"

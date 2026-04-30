@@ -38,6 +38,15 @@ logger = logging.getLogger(__name__)
 class AdminService:
     """系统管理业务逻辑服务。"""
 
+    # [Observability-as-Contract] 声明该组件承诺输出的核心指标
+    __metrics__ = {
+        "admin_profile_fetch_total": "Counter: 用户画像查询总次数",
+        "admin_identity_update_total": "Counter: 身份映射更新次数",
+        "admin_import_process_total": "Counter: 批量导入处理行数",
+        "admin_import_error_total": "Counter: 批量导入失败行数",
+        "admin_audit_search_latency": "Histogram: 审计日志搜索耗时",
+    }
+
     def __init__(self, session: Session):
         """初始化管理服务。
 

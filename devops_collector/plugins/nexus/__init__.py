@@ -34,8 +34,8 @@ class NexusPlugin(BasePlugin):
 plugin = NexusPlugin()
 
 # 向下兼容导出
-Client = plugin.get_client_class()
-NexusWorker = plugin.get_worker_class()
-get_config = plugin.get_config_getter()
+# [Lazy-Break] Client = plugin.get_client_class()
+# [Lazy-Break] NexusWorker = plugin.get_worker_class()
+# [Lazy-Break] get_config = plugin.get_config_getter()
 
 __all__ = ["plugin", "Client", "NexusWorker", "get_config"]

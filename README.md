@@ -9,13 +9,15 @@
 ## 📚 关键文档索引 (Key Documentation)
 
 > **[MANDATORY]** 本项目采用 **Map & Reduce** 策略管理文档，所有资产的导航请通过：
+>
 > ### 🔗 [**全局文档地图 (DOC_INDEX.md)**](./docs/DOC_INDEX.md)
 
 ### 核心指南 (Quick Access)
-*   **AI 协作与指令**: [`AGENTS.md`](./AGENTS.md) (Meta-Prompt & Workflows)
-*   **技术架构与规范**: [`contexts.md`](./contexts.md) (Tech Stack & Architecture)
-*   **当前看板**: [`progress.txt`](./progress.txt) (Tasks & Backlog)
-*   **系统设计**: [`docs/architecture/SYSTEM_DESIGN.md`](docs/architecture/SYSTEM_DESIGN.md) (Architecture v4.0+)
+
+- **AI 协作与指令**: [`AGENTS.md`](./AGENTS.md) (Meta-Prompt & Workflows)
+- **技术架构与规范**: [`contexts.md`](./contexts.md) (Tech Stack & Architecture)
+- **当前看板**: [`progress.txt`](./progress.txt) (Tasks & Backlog)
+- **系统设计**: [`docs/architecture/SYSTEM_DESIGN.md`](docs/architecture/SYSTEM_DESIGN.md) (Architecture v4.0+)
 
 ## 📖 项目简介 (Introduction)
 
@@ -23,54 +25,54 @@
 
 系统的核心目标是为企业提供：
 
-* **标准化数据模型**: 采用 Google Style 规范重构的高质量数据模型层，全面接入 **dbt (data build tool)** 驱动的现代数据仓库架构，支持深度的 ODS/DW 转换与血缘追溯。
-* **企业级 RBAC 2.0 🌟**: 应用新一代基于菜单树的权限模型，支持分布式数据范围 (Data Scope) 过滤与 RLS (行级安全)，保障敏感数据的多租户/多部门隔离。
-* **数据校验哨兵 (Data Quality Sentinel)**: 内置基于 dbt 的 Schema 测试、单元测试和业务规则测试，确保核心指标（如 DORA, SPACE）的 100% 准确性。
-* **研发效能度量**: 自动计算 DORA 指标（部署频率、变更前置时间等）、SPACE 框架指标及 流动效能 (Flow Efficiency)。
-* **测试管理中台 (Test Management Hub)**: 专为 GitLab 社区版设计的轻量级测试管理工具，支持测试用例库、执行追踪、缺陷看板及质量报告。
-* **战略决策支持 (ROI)**: 提供波士顿矩阵（明星/现金牛项目识别）和 ROI 投入产出比分析，对接财务合同数据。
-* **智能化生成的测试管理 (AI Generative QA)**: 利用 LLM 自动将需求 AC 转化为标准化测试步骤，提升 50%+ 的用例设计效率。
-* **Pydantic V2 零拷贝架构**: 全量采用 V2 特性，实现数据库到 DTO 的极速、优雅转换。
-* **人才洞察**: 识别高潜人才、技术专家和离职风险。
-* **组织效能分析**: 依托企业组织架构，透视各部门的人力投入与产出。
+- **标准化数据模型**: 采用 Google Style 规范重构的高质量数据模型层，全面接入 **dbt (data build tool)** 驱动的现代数据仓库架构，支持深度的 ODS/DW 转换与血缘追溯。
+- **企业级 RBAC 2.0 🌟**: 应用新一代基于菜单树的权限模型，支持分布式数据范围 (Data Scope) 过滤与 RLS (行级安全)，保障敏感数据的多租户/多部门隔离。
+- **数据校验哨兵 (Data Quality Sentinel)**: 内置基于 dbt 的 Schema 测试、单元测试和业务规则测试，确保核心指标（如 DORA, SPACE）的 100% 准确性。
+- **研发效能度量**: 自动计算 DORA 指标（部署频率、变更前置时间等）、SPACE 框架指标及 流动效能 (Flow Efficiency)。
+- **测试管理中台 (Test Management Hub)**: 专为 GitLab 社区版设计的轻量级测试管理工具，支持测试用例库、执行追踪、缺陷看板及质量报告。
+- **战略决策支持 (ROI)**: 提供波士顿矩阵（明星/现金牛项目识别）和 ROI 投入产出比分析，对接财务合同数据。
+- **智能化生成的测试管理 (AI Generative QA)**: 利用 LLM 自动将需求 AC 转化为标准化测试步骤，提升 50%+ 的用例设计效率。
+- **Pydantic V2 零拷贝架构**: 全量采用 V2 特性，实现数据库到 DTO 的极速、优雅转换。
+- **人才洞察**: 识别高潜人才、技术专家和离职风险。
+- **组织效能分析**: 依托企业组织架构，透视各部门的人力投入与产出。
 
 ## ✨ 核心特性 (Key Features)
 
-* **统一身份认证 (Unified Identity)**: 自动关联 GitLab 账号与 SonarQube 账号，识别离职员工和外部贡献者。
-* **权限与安全管理 🌟**:
-  * **RBAC 2.0 架构**: 经典的五表体系（用户、角色、菜单、角色-菜单、用户-角色），支持细粒度按钮级权限。
-  * **行级数据隔离 (RLS)**: 基于 `data_scope` 的自动化 SQL 注入过滤，支持“全部、自定义部门、本部门、本部门及以下、仅本人”五大范围控制。
-  * **角色继承**: 支持父子角色权限自动聚合，简化大规模组织下的权限管理。
-* **测试管理 🌟**:
-  * **结构化用例**: 支持预置条件、测试步骤、优先级等结构化数据存储。
-  * **执行审计**: 每次执行自动在 GitLab Issue 记录评论，确保持续集成反馈环闭合。
-  * **缺陷联动**: 支持从失败用例一键生成 Bug 链接，内置缺陷看板追踪修复进度。
-  * **CI/CD 联动**: 实时关联流水线状态，自动捕捉执行时的构建上下文。
-  * **一键质量报告**: 导出包含执行详情与缺陷全景分析的结构化 Markdown 报告。
-* **多源数据采集 (Multi-Source Collection)**: 集成 **Airbyte** 实现对 **GitLab** (代码/MR/流水线/Issue)、**SonarQube** (质量/问题/技术债)、**Jira** (敏捷管理) 和 **Jenkins** (构建任务/构建历史) 的高性能数据同步。
-* **分析数据集市 (Analytics Mart)**: 内置丰富的 SQL 视图，直接生成 DORA、部门记分卡、资源热力图等报表。
-* **战略与财务 (FinOps & ROI)**: 支持 **CBS 成本科目管理**、**合同回款对齐** 与 **ROI 成本投入产出分析**，对齐产研与业务。
-* **流动效能 (Flow & Cycle Time)**: 自动追踪 Issue 状态流转，量化阻塞时长，提升过程透明度。
-* **智能语义 (AI Insights)**: 基于 LLM 自动提取 Commit/MR/Issue 的业务贡献摘要。
-* **工程卓越度 (Developer Experience)**: 采集 MR 评审轮次、深度差异分析、加班分布，全方位量化协作质量。
-* **合规与风控 (Governance & Risk)**: 监控绕过流程的 Direct Push 和积压的安全漏洞。
-* **开源许可证合规 (OSS License Compliance) 🌟**: 集成 OWASP Dependency-Check，自动扫描项目依赖，识别高风险许可证（GPL/AGPL）和 CVE 安全漏洞，支持 SPDX 标准化和 CVSS 评分。
-* **模块化预警与通知 (Modular Alerting & Notification) 🌟**: 系统内置了高性能的“多渠道风险预警引擎”，实现从数据洞察到管理动作的闭环：
-  * **异常识别**: 定时扫描 `view_pmo_risk_anomalies` 视图，识别异常数据。
-  * **多端推送**: 支持 **企业微信 (WeCom)**、**飞书 (Feishu)** 和 **钉钉 (DingTalk)** 的 Webhook 集成。
-  * **结构化触达**: 自动生成富文本卡片，包含风险等级颜色标识与责任人 @ 提及功能。
-* **断点续传 (Resumable Sync)**: 针对海量数据同步设计，支持意外中断后自动恢复。
-* **数据时光机 (Data Time Machine)**: 完整的 Raw Data Staging 层记录，支持基于历史原始数据进行逻辑重演与修复 (Reprocessing)。
-* **极致简洁架构 (Refactor)**: 采用微内核 + 插件工厂模型，代码资产完全模块化，核心逻辑与具体数据源解耦。
+- **统一身份认证 (Unified Identity)**: 自动关联 GitLab 账号与 SonarQube 账号，识别离职员工和外部贡献者。
+- **权限与安全管理 🌟**:
+  - **RBAC 2.0 架构**: 经典的五表体系（用户、角色、菜单、角色-菜单、用户-角色），支持细粒度按钮级权限。
+  - **行级数据隔离 (RLS)**: 基于 `data_scope` 的自动化 SQL 注入过滤，支持“全部、自定义部门、本部门、本部门及以下、仅本人”五大范围控制。
+  - **角色继承**: 支持父子角色权限自动聚合，简化大规模组织下的权限管理。
+- **测试管理 🌟**:
+  - **结构化用例**: 支持预置条件、测试步骤、优先级等结构化数据存储。
+  - **执行审计**: 每次执行自动在 GitLab Issue 记录评论，确保持续集成反馈环闭合。
+  - **缺陷联动**: 支持从失败用例一键生成 Bug 链接，内置缺陷看板追踪修复进度。
+  - **CI/CD 联动**: 实时关联流水线状态，自动捕捉执行时的构建上下文。
+  - **一键质量报告**: 导出包含执行详情与缺陷全景分析的结构化 Markdown 报告。
+- **多源数据采集 (Multi-Source Collection)**: 集成 **Airbyte** 实现对 **GitLab** (代码/MR/流水线/Issue)、**SonarQube** (质量/问题/技术债)、**Jira** (敏捷管理) 和 **Jenkins** (构建任务/构建历史) 的高性能数据同步。
+- **分析数据集市 (Analytics Mart)**: 内置丰富的 SQL 视图，直接生成 DORA、部门记分卡、资源热力图等报表。
+- **战略与财务 (FinOps & ROI)**: 支持 **CBS 成本科目管理**、**合同回款对齐** 与 **ROI 成本投入产出分析**，对齐产研与业务。
+- **流动效能 (Flow & Cycle Time)**: 自动追踪 Issue 状态流转，量化阻塞时长，提升过程透明度。
+- **智能语义 (AI Insights)**: 基于 LLM 自动提取 Commit/MR/Issue 的业务贡献摘要。
+- **工程卓越度 (Developer Experience)**: 采集 MR 评审轮次、深度差异分析、加班分布，全方位量化协作质量。
+- **合规与风控 (Governance & Risk)**: 监控绕过流程的 Direct Push 和积压的安全漏洞。
+- **开源许可证合规 (OSS License Compliance) 🌟**: 集成 OWASP Dependency-Check，自动扫描项目依赖，识别高风险许可证（GPL/AGPL）和 CVE 安全漏洞，支持 SPDX 标准化和 CVSS 评分。
+- **模块化预警与通知 (Modular Alerting & Notification) 🌟**: 系统内置了高性能的“多渠道风险预警引擎”，实现从数据洞察到管理动作的闭环：
+  - **异常识别**: 定时扫描 `view_pmo_risk_anomalies` 视图，识别异常数据。
+  - **多端推送**: 支持 **企业微信 (WeCom)**、**飞书 (Feishu)** 和 **钉钉 (DingTalk)** 的 Webhook 集成。
+  - **结构化触达**: 自动生成富文本卡片，包含风险等级颜色标识与责任人 @ 提及功能。
+- **断点续传 (Resumable Sync)**: 针对海量数据同步设计，支持意外中断后自动恢复。
+- **数据时光机 (Data Time Machine)**: 完整的 Raw Data Staging 层记录，支持基于历史原始数据进行逻辑重演与修复 (Reprocessing)。
+- **极致简洁架构 (Refactor)**: 采用微内核 + 插件工厂模型，代码资产完全模块化，核心逻辑与具体数据源解耦。
 
 ## 🛠️ 技术栈 (Tech Stack)
 
-* **语言**: Python 3.12+
-* **包管理**: **uv** (Astral 出品的极速 Python 包与环境管理器)
-* **数据库**: PostgreSQL 15+ (生产环境推荐)
-* **ORM**: SQLAlchemy 2.0 (全量 Typed 声明)
-* **架构**: ELT (Extract-Load-Transform)，自研插件工厂进行统一数据抽取 (Extract) 与加载 (Load)，重度依赖 **dbt** 进行数据建模与逻辑编排，辅以 SQL Views 进行实时分析。
-* **CI/CD 引擎**: **双 CI 并行策略 (Dual CI Engine)** - 原生支持 GitHub Actions 与 GitLab CI，共享同一套核心门禁脚本 (`gatekeeper.py`)。
+- **语言**: Python 3.12+
+- **包管理**: **uv** (Astral 出品的极速 Python 包与环境管理器)
+- **数据库**: PostgreSQL 15+ (生产环境推荐)
+- **ORM**: SQLAlchemy 2.0 (全量 Typed 声明)
+- **架构**: ELT (Extract-Load-Transform)，自研插件工厂进行统一数据抽取 (Extract) 与加载 (Load)，重度依赖 **dbt** 进行数据建模与逻辑编排，辅以 SQL Views 进行实时分析。
+- **CI/CD 引擎**: **双 CI 并行策略 (Dual CI Engine)** - 原生支持 GitHub Actions 与 GitLab CI，共享同一套核心门禁脚本 (`gatekeeper.py`)。
 
 ## 🚀 快速开始 (Quick Start)
 
@@ -107,49 +109,49 @@ cp .env.example .env
 | **C. CI/CD 流水线** | 远端合并/发布 | `.github/workflows` / `.gitlab-ci.yml` | 全量自动化验证与滚动部署 |
 
 #### A. 开发环境 (Development)
->
+
 > 适用于开发人员本地使用，支持代码热重载，并通过 `uv` 极速安装依赖。
 
 ```bash
 # 构建镜像并启动容器栈
-make build
-make up
+just build
+just up
 
 # 执行全量单元测试与本地质量门禁
-make verify
+just verify
 ```
 
-* **动作**: 停止旧容器 -> 构建生产镜像 (`--target release`) -> 启动服务 -> 初始化数据。
-* **特点**: 自动配置 `restart: always`，日志滚动策略，以及时区同步。
+- **动作**: 停止旧容器 -> 构建生产镜像 (`--target release`) -> 启动服务 -> 初始化数据。
+- **特点**: 自动配置 `restart: always`，日志滚动策略，以及时区同步。
 
 #### C. 离线环境 (Offline / Air-gapped)
->
+
 > 适用于银行/军工等无法连接外网的敏感环境。
 
 **步骤 1: 在有网机器上打包**
 
 ```bash
-make package
+just package
 ```
 
-* **产物**: 生成 `devops-platform.tar` 文件（约 800MB+）。
-* **包含**:
-    1. `devops-platform:latest`: 核心应用镜像。
-    2. `devops-platform-datahub:latest`: 独立 DataHub 采集器镜像。
+- **产物**: 生成 `devops-platform.tar` 文件（约 800MB+）。
+- **包含**:
+  1. `devops-platform:latest`: 核心应用镜像。
+  1. `devops-platform-datahub:latest`: 独立 DataHub 采集器镜像。
 
 **步骤 2: 上传至离线服务器并部署**
 将 `tar` 包、`Makefile`、`docker-compose.prod.yml` 和 `.env` 上传至服务器。
 
 ```bash
-make deploy-offline
+just deploy-offline
 ```
 
-* **动作**: 加载 Docker 镜像 -> 启动服务 (跳过构建) -> 初始化数据。
+- **动作**: 加载 Docker 镜像 -> 启动服务 (跳过构建) -> 初始化数据。
 
 部署完成后，服务将运行在后台：
 
-* **API 服务**: <http://localhost:8000>
-* **RabbitMQ 管理后台**: <http://localhost:15672> (用户/密码: guest/guest)
+- **API 服务**: <http://localhost:8000>
+- **RabbitMQ 管理后台**: <http://localhost:15672> (用户/密码: guest/guest)
 
 ### 4. 常用运维命令
 
@@ -157,21 +159,21 @@ make deploy-offline
 
 ```bash
 # 查看实时日志
-make logs
+just logs
 
 # 运行测试用例
-make test
+just test
 
 # 手动触发全量同步
-make sync-all
+just sync-all
 
 # 停止服务
-make down
+just down
 ```
 
 ### 5. 部署分析视图
 
-初始化过程 (`make deploy`) 已自动包含基础数据初始化。如需更新 SQL 分析视图：
+初始化过程 (`just deploy`) 已自动包含基础数据初始化。如需更新 SQL 分析视图：
 
 ```bash
 # (高级) 手动进入数据库容器执行 SQL
@@ -195,23 +197,23 @@ dbt_project/          # 现代数仓建模层 (dbt)
 
 本版本引入了基于 **GitPrime**, **DORA**, **SPACE**, **Flow Framework** 四大理论的下一代效能度量体系。
 
-* **ELOC 2.0 (Equivalent Lines of Code)**: 告别单纯的“代码行数”。引入 **Impact Score** (对老代码修改加权) 和 **Churn Rate** (对近期重写代码降权)，还原代码真实价值。
-* **Flow Framework (价值流管理)**: 自动将工作项分类为 **Feature**, **Defect**, **Debt**, **Risk**，可视化展示研发资源的配比与价值流动速率。
-* **SPACE 框架 (多维平衡)**: 从 **S**atisfaction (心情打卡), **P**erformance (DORA), **A**ctivity, **C**ommunication, **E**fficiency 五个维度构建平衡记分卡。
-* **研发体验脉搏 (DevEx Pulse)**: 内置心情打卡挂件，实时捕捉团队士气波动。
-* **代码热点雷达 (Code Hotspots)**: 基于 **Michael Feathers** 理论的 F-C 象限分析，通过“复杂度 vs 变更频率”自动识别高危技术债务。
-* **DORA 金标准看板**: 引入行业对标评级 (High/Elite/Low)，让效能改进有据可依。
+- **ELOC 2.0 (Equivalent Lines of Code)**: 告别单纯的“代码行数”。引入 **Impact Score** (对老代码修改加权) 和 **Churn Rate** (对近期重写代码降权)，还原代码真实价值。
+- **Flow Framework (价值流管理)**: 自动将工作项分类为 **Feature**, **Defect**, **Debt**, **Risk**，可视化展示研发资源的配比与价值流动速率。
+- **SPACE 框架 (多维平衡)**: 从 **S**atisfaction (心情打卡), **P**erformance (DORA), **A**ctivity, **C**ommunication, **E**fficiency 五个维度构建平衡记分卡。
+- **研发体验脉搏 (DevEx Pulse)**: 内置心情打卡挂件，实时捕捉团队士气波动。
+- **代码热点雷达 (Code Hotspots)**: 基于 **Michael Feathers** 理论的 F-C 象限分析，通过“复杂度 vs 变更频率”自动识别高危技术债务。
+- **DORA 金标准看板**: 引入行业对标评级 (High/Elite/Low)，让效能改进有据可依。
 
 ## 📚 文档中心 (Documentation Hub)
 
 > 所有详细文档已通过 **[DOC_INDEX.md](./docs/DOC_INDEX.md)** 进行了系统化编目。
 
-*   **[系统设计方案 (SYSTEM_DESIGN.md)](./docs/architecture/SYSTEM_DESIGN.md)**: 🚀 **CORE** 深入解读“主数据 (MDM) + 现代数仓 (dbt)”的六层深度重构架构。
-*   **[指标体系白皮书 (METRICS_GLOSSARY.md)](./docs/analytics/METRICS_GLOSSARY.md)**: 🔥 **NEW** 详解 ELOC 2.0、DORA、SPACE、Flow 等核心算法与指标口径。
-*   **[安全审计手册 (SECURITY_SCAN.md)](./docs/guides/SECURITY_SCAN.md)**: 🛡️ **SECURITY** 详解 OWASP Dependency-Check 的集成与合规治理。
-*   **[数据字典 (DATA_DICTIONARY.md)](./docs/api/DATA_DICTIONARY.md)**: 详述表结构、字段定义与业务语义。
-*   **[部署手册 (DEPLOYMENT.md)](./docs/guides/DEPLOYMENT.md)**: 环境配置与 Docker 快速启动指南。
-*   **[用户手册 (USER_GUIDE.md)](./docs/guides/USER_GUIDE.md)**: 面向管理者的看板查阅及指标说明。
+- **[系统设计方案 (SYSTEM_DESIGN.md)](./docs/architecture/SYSTEM_DESIGN.md)**: 🚀 **CORE** 深入解读“主数据 (MDM) + 现代数仓 (dbt)”的六层深度重构架构。
+- **[指标体系白皮书 (METRICS_GLOSSARY.md)](./docs/analytics/METRICS_GLOSSARY.md)**: 🔥 **NEW** 详解 ELOC 2.0、DORA、SPACE、Flow 等核心算法与指标口径。
+- **[安全审计手册 (SECURITY_SCAN.md)](./docs/guides/SECURITY_SCAN.md)**: 🛡️ **SECURITY** 详解 OWASP Dependency-Check 的集成与合规治理。
+- **[数据字典 (DATA_DICTIONARY.md)](./docs/api/DATA_DICTIONARY.md)**: 详述表结构、字段定义与业务语义。
+- **[部署手册 (DEPLOYMENT.md)](./docs/guides/DEPLOYMENT.md)**: 环境配置与 Docker 快速启动指南。
+- **[用户手册 (USER_GUIDE.md)](./docs/guides/USER_GUIDE.md)**: 面向管理者的看板查阅及指标说明。
 
 ## 📂 看板与视图 (Analytics Mapping)
 

@@ -33,7 +33,7 @@ class DependencyCheckPlugin(BasePlugin):
 plugin = DependencyCheckPlugin()
 
 # 向下兼容导出
-DependencyCheckWorker = plugin.get_worker_class()
-get_config = plugin.get_config_getter()
+# [Lazy-Break] DependencyCheckWorker = plugin.get_worker_class()
+# [Lazy-Break] get_config = plugin.get_config_getter()
 
 __all__ = ["plugin", "DependencyCheckWorker", "get_config"]

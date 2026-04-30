@@ -41,6 +41,42 @@
      - *正确模式*: “编写能重现 Bug 的测试并执行通过；输出 100% 覆盖率报告”。
    - **计划先行**: 对于多步骤任务，必须先输出分步计划及每个步骤的物理验证方法 (`1.[步骤] -> 验证:[检查]`)，严禁“憋大招”式的一次性全量同步。
 
+## 1.6 负面模式与架构红线 (Anti-Patterns & Architectural Redlines) [NEW]
+
+为防止架构腐化并规避已知的物理坑位，所有开发必须避开以下负面模式：
+
+1. **[Import] 插件自注册陷阱 (Side-effect Imports)**:
+
+   - **禁止**: 在插件的 `__init__.py` 中直接导入 `Worker` 或 `Client` 类（这会导致启动时触发大量级联导入与循环依赖）。
+   - **正解**: 仅暴露轻量元数据，业务类必须通过 `get_worker_class()` 延迟加载。
+
+1. **[DB] SCD2 物理唯一性冲突 (SCD2 Unique Conflict)**:
+
+   - **禁止**: 在继承了 `SCDMixin` 的主数据表（如 `User`, `Org`）的业务键列上直接设置物理 `unique=True`。
+   - **原因**: 这会阻止创建历史快照（旧记录也是同一个业务键）。
+   - **正解**: 必须改用 **部分索引 (Partial Index)**，添加 `postgresql_where="is_current IS TRUE"` 过滤条件。
+
+1. **[Type] 过时类型引用 (Deprecated Typing)**:
+
+   - **禁止**: 在 Python 3.9+ 代码中使用 `from typing import Type, List, Dict`。
+   - **正解**: 直接使用内置小写的 `type`, `list`, `dict`。
+
+1. **[Hook] 静默抽象钩子 (Silent ABC Hooks)**:
+
+   - **禁止**: 在 ABC 基类中定义空的 `pass` 方法而不加说明，这会触发 Ruff B027 告警。
+   - **正解**: 显式标注 `# noqa: B027` 声明其为可选的无操作默认钩子。
+
+1. **[Logic] 循环内 N+1 查询 (N+1 Query in Loops)**:
+
+   - **禁止**: 在处理同步任务的循环中执行 `session.query(...).first()`。
+   - **正解**: 必须在循环外使用 `in_` 批量拉取数据并建立内存 Map。
+
+1. **[Shell] Windows 重定向编码崩溃 (Windows Redirection corruption)**:
+
+   - **禁止**: 在 Windows PowerShell 环境下使用 `>` 或 `Set-Content` 处理包含中文的代码文件。
+   - **原因**: 默认编码 (UTF-16/GBK) 会损坏 UTF-8 字节流。
+   - **正解**: 必须使用显式声明 `encoding='utf-8'` 的 Python 脚本进行批处理。
+
 ## 2. 核心技术栈 (Technology Stack)
 
 - **后端 (Backend)**: Python 3.12, FastAPI (Router-Service 模式), SQLAlchemy 2.0 (Typed).
@@ -56,7 +92,7 @@
 - **开发与测试环境 (Dev & Test Env)**:
   - **主验证环境 (Primary)**: **Docker Desktop (Linux 模式)**。所有功能逻辑、数据库变更、集成测试**必须**首先在容器内验证。
   - **辅助/调试环境 (Auxiliary)**: Windows + PowerShell。仅用于代码编写、轻量级 Lint 检查及辅助脚本调试。
-  - **核心原则**: 严禁以“Windows 能跑通”作为提测标准。物理真实环境以 Docker 内的 Linux 表现为准。通过 `make test` 或 `docker-compose exec api pytest` 确保 100% 环境对齐。
+  - **核心原则**: 严禁以“Windows 能跑通”作为提测标准。物理真实环境以 Docker 内的 Linux 表现为准。通过 `just test` 或 `docker-compose exec api pytest` 确保 100% 环境对齐。
 - **路径处理**: 强制使用 `pathlib` 确保跨平台路径兼容。
 - **Shell 方言约束 [MANDATORY]**:
   - **宿主机 (Windows + PowerShell 5.1)**: 严禁在终端指令中使用 `&&`、`||`、`$(...)` 等 bash-only 语法。链式命令必须拆分为独立调用或使用 `;` 分号。
@@ -340,10 +376,10 @@
 ## 8. 运维流程与生命周期 (DevOps Ops)
 
 - **部署模式**:
-  - `make deploy`: 本地快速验证部署。支持基础镜像 Nexus 回退机制 (Nexus -> Docker Hub)。
-  - `make package`: 生成镜像存档 `devops-platform.tar`。
-  - `make deploy-offline`: 生产/隔离环境一键镜像加载并启动。
-- **镜像加速与回退**: 项目支持通过 `NEXUS_DOCKER_REGISTRY` 配置私有镜像存储加速。在 `make build` 或 `make package` 时，系统会优先尝试从该私服拉取并打标 (tag) 核心基础镜像 (`python`, `postgres`, `rabbitmq`)，失败则自动回退至官方源。
+  - `just deploy`: 本地快速验证部署。支持基础镜像 Nexus 回退机制 (Nexus -> Docker Hub)。
+  - `just package`: 生成镜像存档 `devops-platform.tar`。
+  - `just deploy-offline`: 生产/隔离环境一键镜像加载并启动。
+- **镜像加速与回退**: 项目支持通过 `NEXUS_DOCKER_REGISTRY` 配置私有镜像存储加速。在 `just build` 或 `just package` 时，系统会优先尝试从该私服拉取并打标 (tag) 核心基础镜像 (`python`, `postgres`, `rabbitmq`)，失败则自动回退至官方源。
 - **健康检查 (Healthcheck Resilience) [MANDATORY]**:
   - 所有容器必须定义 `healthcheck`。对于 RabbitMQ、Postgres 等启动较慢的基础设施，`retries` 必须设为不少于 **60** 次，且配置 `start_period`。
   - 针对低配环境，必须显式限制内存/磁盘水位（如 `RABBITMQ_VM_MEMORY_HIGH_WATERMARK_RELATIVE=0.7`），防止误报导致的重启风暴。
@@ -367,7 +403,7 @@
 - **调度器运维手册 [已知陷阱] [MANDATORY]**:
   - **状态死锁模式**: 若数据库中大量项目处于 `QUEUED` 状态，但 RabbitMQ 队列实际为空，说明发生了状态死锁——调度器跨周期跳过了这些项目。**恢复方式**：
     ```bash
-    make sync-all  # 内部传递 --force-all --once 强制重排
+    just sync-all  # 内部传递 --force-all --once 强制重排
     ```
   - **`--force-all` 语义**: 调度器启动时将所有 `QUEUED`/`SYNCING` 状态重置为 `PENDING`，强制重新入队。
   - **`--once` 语义**: 调度器完成一轮扫描后优雅退出，不进入无限循环，防止阻塞后续 Worker 启动。
@@ -434,7 +470,7 @@
 
 1. **强制测试与运行 (Mandatory Test & Run)**：AI 代理在生成或修改逻辑代码后，**必须**自行编写对应的 `pytest` 测试用例并执行验证。
 1. **测试持久化 (Test Persistence)**：**严禁**仅使用 `tmp/` 下的一次性验证脚本作为终态交付。所有核心逻辑（如 Transformer, Service, Algorithms）的验证必须直接在 `tests/unit/` 或 `tests/integration/` 下创建永久性测试文件。
-1. **容器内验证 (Container-In Validation) [MANDATORY]**：所有测试执行**必须**在 Docker 容器内完成（使用 `make test` 或 `docker-compose exec api pytest`），**严禁**在宿主机环境（如 Windows）下进行单纯的 Python 逻辑验证，以确保在 Linux 环境下的完全兼容。
+1. **容器内验证 (Container-In Validation) [MANDATORY]**：所有测试执行**必须**在 Docker 容器内完成（使用 `just test` 或 `docker-compose exec api pytest`），**严禁**在宿主机环境（如 Windows）下进行单纯的 Python 逻辑验证，以确保在 Linux 环境下的完全兼容。
 1. **DoD 增强 (DoD Enhancement)**：在向用户汇报“任务完成”或“验证通过”前，AI 代理必须提供容器内 pytest 运行成功的日志明细，作为交付成果的一部分。
 
 ### 9.5 本地与容器化测试分工规范 (Local vs. Containerized Testing Guidelines) [NEW/MANDATORY]
@@ -553,7 +589,7 @@
 为确保项目演进过程的可追溯性，所有调研与决策文档必须遵循以下物理命名规范：
 
 - **技术调研 (Spikes)**：存放于 `docs/spikes/`。**强制**遵循 `YYYY-MM-DD_小写下划线描述.md` 格式（例：`2026-04-30_plugin_system_2.0_spike.md`）。这确保了调研结论能按时间线性排列，方便 AI 与开发者快速回溯历史背景。
-- **架构决策 (ADRs)**：存放于 `docs/architecture/adr/`。遵循 `XXXX-标题.md` 编号格式（例：`0001-queue-isolation.md`）。
+- **架构决策 (ADRs)**：存放于 `docs/adr/`。遵循 `XXXX-标题.md` 编号格式（例：`0001-queue-isolation.md`）。
 
 ### 11.5 性能红线与容量预警协议 (Performance & Capacity Defense) [NEW/MANDATORY]
 
@@ -613,7 +649,7 @@
 - **合并工作流强制令 (Merge Workflow Mandate)**:
 
   - **硬性约束**: 除非用户在当前对话中明确指令特许，否则执行任何分支合并前，**严禁使用原始 `git merge`**。
-  - **执行路径**: 必须调用对应的 **原子工作流 `/merge`** (或执行 `make verify` 后手动完成审计清单)，确保物理真实性取证。
+  - **执行路径**: 必须调用对应的 **原子工作流 `/merge`** (或执行 `just verify` 后手动完成审计清单)，确保物理真实性取证。
 
 - **提交质量**:
 
@@ -679,13 +715,13 @@
 - **代码层面**: 通过所有 Lint 检查，无死代码，注释清晰且无拼写错误。
 - **验证自动化闭环 (Mandatory Automation)**:
   - **后端任务**: 必须通过所有对应的 `pytest` 单元测试与集成测试，确保逻辑覆盖率。
-  - **数据转换任务 [NEW]**: 涉及 Schema 变更或 dbt 模型重构时，**强制执行 `make dbt-build`**。严禁仅凭数据库入库成功即交付，必须通过 dbt 血缘审计。
+  - **数据转换任务 [NEW]**: 涉及 Schema 变更或 dbt 模型重构时，**强制执行 `just dbt-build`**。严禁仅凭数据库入库成功即交付，必须通过 dbt 血缘审计。
   - **前端/UI 任务**: 涉及到 UI 重构或交互逻辑变更，**强制开展 E2E 测试** (Playwright)，确保护核心业务链路正常。
 - **文档层面对齐 (Document Sync Matrix)**:
   - 任何关键变更必须根据 [`AGENTS.md`](AGENTS.md) 第 2.1 节定义的“任务文档对齐矩阵”完成文档同步。
   - **物理先行约束 [NEW]**: 会话交接时，教训总结与历史记录的落盘**必须优于或同步于**交付结论输出。未落盘的结论视为无效。
 - **完工标准回溯 (Estimation Tracking)**: 每条 [L2] 及以上任务完成后，在「最近完成」记录中须附带估时对比：`预估 Xh / 实际 Yh`。偏差超过 50% 须分析原因。
-- **环境卫生清理 (Cleanup on Exit) [MANDATORY]**: 每次完成阶段性交付前，**必须执行** `make clean`。确保根目录洁净无调试脚本，并更新 `progress.txt` 标记已清理。具体清单见 `AGENTS.md`。
+- **环境卫生清理 (Cleanup on Exit) [MANDATORY]**: 每次完成阶段性交付前，**必须执行** `just clean`。确保根目录洁净无调试脚本，并更新 `progress.txt` 标记已清理。具体清单见 `AGENTS.md`。
 
 ## 15. 禅道集成规范与元数据对齐 (ZenTao Integration & Metadata)
 
@@ -805,9 +841,9 @@
 - **核心工具**: 项目全面采用 **Ruff** 作为唯一的静态代码检查 (Lint) 与格式化 (Format) 工具，取代了传统的 Flake8、Black、isort 和 Pylint (部分核心检查已迁移)。
 - **配置标准**: 必须遵循根目录下的 `ruff.toml` 配置。
 - **命令行标准**:
-  - 代码检查: `make lint` (内部执行 `ruff check`)。
-  - 自动修复: `make ruff-fix` (执行 `ruff check --fix`)。
-  - 代码格式化: `make fmt` (执行 `ruff format`)。
+  - 代码检查: `just lint` (内部执行 `ruff check`)。
+  - 自动修复: `just ruff-fix` (执行 `ruff check --fix`)。
+  - 代码格式化: `just fmt` (执行 `ruff format`)。
 
 ### 18.2 关键编码禁令 (Hard Rules)
 
@@ -818,11 +854,11 @@
 
 ### 18.3 完工标准 (DoD) [REVISED]
 
-- **Green Build**: 任何 PR 在合入 `main` 分支前，必须确保本地执行 `make full-gate` 通过。
-- **Full Gate 强制卡点**: `make full-gate` 必须涵盖：
-  1. `make lint`: 0 错误输出。
-  1. `make test`: 容器内全量测试（单元+集成）100% 通过。
-  1. `make build`: Docker 镜像构建成功。
+- **Green Build**: 任何 PR 在合入 `main` 分支前，必须确保本地执行 `just full-gate` 通过。
+- **Full Gate 强制卡点**: `just full-gate` 必须涵盖：
+  1. `just lint`: 0 错误输出。
+  1. `just test`: 容器内全量测试（单元+集成）100% 通过。
+  1. `just build`: Docker 镜像构建成功。
 - **复杂度与异常**: 如果因架构需求必须引入复杂逻辑导致复杂度超标（PLR 规则），必须报备并在 `ruff.toml` 或行内添加显式忽略原因。
 
 ### 18.4 门禁防御左移与并发提速 (Left-Shift & Concurrent Gatekeeper) [NEW]

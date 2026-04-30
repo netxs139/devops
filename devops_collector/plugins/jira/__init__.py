@@ -38,8 +38,8 @@ class JiraPlugin(BasePlugin):
 plugin = JiraPlugin()
 
 # 向下兼容导出
-Client = plugin.get_client_class()
-JiraWorker = plugin.get_worker_class()
-get_config = plugin.get_config_getter()
+# [Lazy-Break] Client = plugin.get_client_class()
+# [Lazy-Break] JiraWorker = plugin.get_worker_class()
+# [Lazy-Break] get_config = plugin.get_config_getter()
 
 __all__ = ["plugin", "Client", "JiraWorker", "get_config"]

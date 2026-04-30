@@ -1,8 +1,9 @@
 import argparse
+import concurrent.futures
 import subprocess
 import sys
 import time
-import concurrent.futures
+
 
 # 定义 ANSI 颜色
 GREEN = "\033[92m"
@@ -69,7 +70,11 @@ def main():
     overall_start = time.time()
 
     # Stage 1: Fast & Core Checks (Parallel)
-    stage1_tasks = [("make security-audit", "L1: Security Audit (Secrets, SAST, Deps)"), ("make verify", "L2: Total Verification (Lint, Imports, Cov >= 80%)")]
+    stage1_tasks = [
+        ("just security-audit", "L1: Security Audit (Secrets, SAST, Deps)"),
+        ("just verify", "L2: Total Verification (Lint, Imports, Cov >= 80%)"),
+        ("just arch-audit", "L1.5: Architecture & Anti-Pattern Audit"),
+    ]
 
     if not execute_stage_parallel(stage1_tasks, "Stage 1 (Security & Verification)"):
         print(f"\n{RED}>>> Stage 1 FAILED. Gate execution stopped.{RESET}")
@@ -77,7 +82,7 @@ def main():
 
     # Stage 2: Build & Advanced Checks (Parallel)
     if args.mode == "full":
-        stage2_tasks = [("make build", "L3: Docker Image Build & Cache Verification"), ("make dbt-build", "L4: dbt Data Model Audit")]
+        stage2_tasks = [("just build", "L3: Docker Image Build & Cache Verification"), ("just dbt-build", "L4: dbt Data Model Audit")]
         if not execute_stage_parallel(stage2_tasks, "Stage 2 (Build & Data Audit)"):
             print(f"\n{RED}>>> Stage 2 FAILED. Gate execution stopped.{RESET}")
             sys.exit(1)
