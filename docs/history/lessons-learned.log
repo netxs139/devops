@@ -8,6 +8,8 @@
 
 | Timestamp | Domain | Phenomenon | Root Cause | Universal Rule (The Defense) |
 | :--- | :--- | :--- | :--- | :--- |
+| 2026-04-30 | Engineering/CI | Commit blocked by `pytest-unit` exit code 5 | Pytest returns code 5 when no tests are collected (e.g. only modifying `conftest.py`), which pre-commit treats as failure. | **测试空跑归一化 (Test Null-run Normalization)**: 1. 必须使用 Python 包装器拦截并重置 exit code 5 为 0。 2. 确保配置变动不因“无对应测试”而导致提交死锁。 |
+| 2026-04-30 | Engineering/Lint | Ruff Lint blocking on non-business scripts | 存量工具脚本（.agent/）中的不合规代码拦截了主业务提交。 | **审计域物理隔离 (Audit Scope Isolation)**: 1. `exclude` 模式必须包含工具链、归档代码及第三方 Schema。 2. 确保门禁报错 100% 具备“业务修复价值”。 |
 | 2026-04-30 | Engineering/Process | Delivery Illusion | Agent claimed task completion without physical verification of code logic. | **交付报告物理对齐律 (Evidence-as-Delivery)**: 1. 任何逻辑变更的交付必须包含对应终端执行日志。 2. 严禁以“文档同步”代替“功能验证”。 (Codified in AGENTS.md Rule 27) |
 | 2026-04-30 | Interaction | Interaction Friction | Multi-choice questions required manual typing of words, increasing user cognitive load. | **结构化选项强格式 (Structured Options A/B/C)**: 1. 所有多选交互必须采用 A.XXX B.XXX 格式。 2. 严禁使用开放式提问进行决策对齐。 (Codified in GEMINI.md) |
 | 2026-04-30 | Content/Writing | Writing Style Fluff | AI-generated content used flowery adjectives like "elegant" in technical contexts. | **工程师审美脱水 (No Fluff Writing)**: 1. 技术博文禁止使用主观形容词。 2. 采用白描叙述，多用动词与名词，强调干货密度。 (Upgraded xhs-writer v2.1) |

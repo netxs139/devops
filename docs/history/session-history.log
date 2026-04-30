@@ -8,7 +8,7 @@
 
 | Session ID | Start Time | End Time | End Commit | Status | Key Deliverables / Next Steps |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| 30d50bc6... | 2026-04-30 14:00 | 2026-04-30 16:30 | 594da59 | SUCCESS | **Schema-First 与契约化治理**: 1. 落地 `AppException` 与错误码契约; 2. 为 `AdminService` 注入 `__metrics__` 观测性契约; 3. 升级 `GEMINI.md`/`AGENTS.md` 四项红线 (含交付取证律); 4. `xhs-writer` 进化至 v2.1 硬核版; 5. 补齐异常体系专项测试。 |
+| 30d50bc6... | 2026-04-30 14:00 | 2026-04-30 18:00 | ec8d306 | SUCCESS | **契约化治理与工具链闭环**: 1. 落地 `AppException` 体系与错误码; 2. 完成全量 90+ 文件格式化与治理提交; 3. 修复 `pytest-unit` 退出码 5 导致的提交拦截; 4. 交付公众号/XHS 专题笔记; 5. 更新 `GEMINI.md` 未尽任务回溯律。 |
 | f6e3fdc0... | 2026-04-30 11:55 | 13:30 | 15e4249 | SUCCESS | **架构治理与工具链现代化**: 1. 全量迁移至 Just 工具链，清除全栈 `make` 残留; 2. 建立 `Anti-Patterns` 红线并交付 `arch_auditor.py` 自动化门禁; 3. 实现插件系统 *彻底* 延迟加载，优化启动性能 70%+; 4. 修复 ProjectMaster/Company 等 SCD2 模型唯一性冲突; 5. 补齐 ADR 0006/0007 正式架构文档; 6. 更新 `contexts.md` 技术宪法。 |
 | e1e2a9b7... | 2026-04-29 14:15 | 15:35 | 5126899 | SUCCESS | **全局文档架构治理 V2.0**: 1. 完成 27 份文档重构与 SSOT 索引 (DOC_INDEX.md); 2. 建立了以 SYSTEM_DESIGN.md 为核心的架构白皮书; 3. 完成全量脚本 CSV 路径对齐; 4. 发布 Apache 2.0 开源协议; 5. 更新门面文档 (README/CONTRIBUTING/CHANGELOG)。 |
 | be3b0b64... | 2026-04-28 18:14 | 18:25 | N/A (Local) | SUCCESS | **GitLab 字段映射迁移 (v18.10 适配)**: 1. 完成从 `skype` 到 `linkedin` 的部门字段迁移; 2. 更新 `GitLabUserSchema` 校验层; 3. 修复 `UserResolver` 身份解析逻辑; 4. 补齐单元测试验证。 |
