@@ -1,10 +1,10 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 
-class ErrorCode(str, Enum):
+class ErrorCode(StrEnum):
     """项目统一错误码谱系 (Error Pedigree)
     分类编码：
     - 1xxx: 系统/基础设施错误
