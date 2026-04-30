@@ -79,6 +79,7 @@ rabbitmq_data/
 # --- LOGS & TEMP ---
 logs/
 *.log
+!docs/history/*.log
 tmp/
 temp/
 *.tmp
