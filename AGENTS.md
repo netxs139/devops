@@ -5,7 +5,8 @@
 >
 > **继承优先级**：`contexts.md` (技术标准) > 本文件 (行为调度) > `gemini.md` (全局哲学)。
 >
-> - **项目地图 (Document Map)**: 全局文档索引、定位与业务域映射定义在 [`docs/DOC_INDEX.md`](docs/DOC_INDEX.md)。
+> - **项目地图 (Project Map)**: 物理目录索引定义在 [`docs/PROJECT_MAP.md`](docs/PROJECT_MAP.md)。
+> - **文档地图 (Document Map)**: 文档资产索引定义在 [`docs/DOC_INDEX.md`](docs/DOC_INDEX.md)。
 
 ## 1. 规则继承 (Inheritance)
 
