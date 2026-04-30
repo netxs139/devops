@@ -11,7 +11,6 @@ def test_fetch_traceability_query(db_session):
     # 构造一个 1024 号 Issue 的链路
     issue_id = "1024"
     commit_id = str(uuid.uuid4())
-    mr_id = "55"
 
     # 注入基础数据 (Raw SQL 注入以验证物理链路)
     db_session.execute(
