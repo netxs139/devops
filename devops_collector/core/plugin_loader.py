@@ -18,6 +18,9 @@ import logging
 import sys
 from pathlib import Path
 
+from devops_collector.core.base_plugin import BasePlugin
+from devops_collector.core.registry import PluginRegistry
+
 
 logger = logging.getLogger(__name__)
 
@@ -88,15 +91,24 @@ class PluginLoader:
                 module_path = f"devops_collector.plugins.{plugin_name}"
                 logger.debug(f"Loading plugin: {plugin_name} ({module_path})")
 
-                # 导入模块（触发 __init__.py 中的自注册代码）
-                importlib.import_module(module_path)
+                # 导入模块
+                module = importlib.import_module(module_path)
+
+                # 检查是否为 2.0 插件 (声明式)
+                plugin_obj = getattr(module, "plugin", None)
+                if isinstance(plugin_obj, BasePlugin):
+                    logger.info(f"Discovered Plugin 2.0: {plugin_name}")
+                    # 使用 2.0 协议进行注册
+                    cls._register_v2_plugin(plugin_obj)
+                else:
+                    logger.debug(f"Plugin {plugin_name} is Legacy (v1.0), relying on side-effect registration.")
 
                 if plugin_name not in cls._loaded_plugins:
                     cls._loaded_plugins.append(plugin_name)
                     loaded.append(plugin_name)
                     logger.info(f"Successfully loaded plugin: {plugin_name}")
                 else:
-                    logger.debug(f"Plugin {plugin_name} already loaded, skipping registration.")
+                    logger.debug(f"Plugin {plugin_name} already loaded.")
 
             except Exception as e:
                 logger.error(f"Failed to load plugin {item.name}: {e}", exc_info=True)
@@ -177,6 +189,27 @@ class PluginLoader:
                 continue
             except Exception as e:
                 logger.error(f"Critical error loading models for plugin {plugin_name}: {e}", exc_info=True)
+
+    @classmethod
+    def _register_v2_plugin(cls, plugin: BasePlugin) -> None:
+        """使用 2.0 协议注册插件。"""
+        name = plugin.metadata.name
+
+        # 注册 Client
+        client_cls = plugin.get_client_class()
+        PluginRegistry.register_client(name, client_cls)
+
+        # 注册 Worker
+        worker_cls = plugin.get_worker_class()
+        PluginRegistry.register_worker(name, worker_cls)
+
+        # 注册 Config
+        config_getter = plugin.get_config_getter()
+        if config_getter:
+            PluginRegistry.register_config(name, config_getter)
+
+        # 触发初始化钩子
+        plugin.on_setup()
 
     @classmethod
     def clear(cls) -> None:

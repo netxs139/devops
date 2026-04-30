@@ -1,20 +1,41 @@
-"""禅道插件包
+"""禅道采集插件 (v2.0)
 
-支持禅道 (ZenTao) 数据采集。
-
-本模块在导入时自动完成插件注册。
+基于声明式协议，由 PluginLoader 2.0 自动加载。
 """
 
-from devops_collector.core.registry import PluginRegistry
-
-from .client import ZenTaoClient
-from .config import get_config
-from .worker import ZenTaoWorker
+from devops_collector.core.base_plugin import BasePlugin, PluginMetadata
 
 
-# 自注册
-PluginRegistry.register_client("zentao", ZenTaoClient)
-PluginRegistry.register_worker("zentao", ZenTaoWorker)
-PluginRegistry.register_config("zentao", get_config)
+class ZenTaoPlugin(BasePlugin):
+    """禅道插件实现类。"""
 
-__all__ = ["ZenTaoClient", "ZenTaoWorker", "get_config"]
+    @property
+    def metadata(self) -> PluginMetadata:
+        return PluginMetadata(
+            name="zentao",
+            version="2.0.1",
+            description="ZenTao Project Management Data Plugin",
+            data_source_type="project_management",
+            required_config=["url", "token"],
+        )
+
+    def get_worker_class(self) -> type:
+        from .worker import ZenTaoWorker
+
+        return ZenTaoWorker
+
+    def get_client_class(self) -> type:
+        from .client import ZenTaoClient
+
+        return ZenTaoClient
+
+
+# 实例化插件
+plugin = ZenTaoPlugin()
+
+# 向下兼容导出
+Client = plugin.get_client_class()
+ZenTaoWorker = plugin.get_worker_class()
+get_config = plugin.get_config_getter()
+
+__all__ = ["plugin", "Client", "ZenTaoWorker", "get_config"]

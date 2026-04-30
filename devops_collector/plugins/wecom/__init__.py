@@ -1,30 +1,41 @@
-"""企业微信 (WeCom) 插件包
+"""企业微信 (WeCom) 采集插件 (v2.0)
 
-支持企业微信通讯录数据采集（部门 + 成员）。
-本模块在导入时自动完成插件注册。
+基于声明式协议，由 PluginLoader 2.0 自动加载。
 """
 
-from devops_collector.core.registry import PluginRegistry
-
-from .client import WeComClient
-from .worker import WeComWorker
+from devops_collector.core.base_plugin import BasePlugin, PluginMetadata
 
 
-def get_config() -> dict:
-    """返回 WeCom 插件所需的环境变量配置映射。"""
-    import os
+class WeComPlugin(BasePlugin):
+    """企业微信插件实现类。"""
 
-    return {
-        "corp_id": os.getenv("WECOM__CORP_ID", ""),
-        "secret": os.getenv("WECOM__SECRET", ""),
-        "verify_ssl": os.getenv("WECOM__VERIFY_SSL", "True").lower() in ("true", "1"),
-        "excluded_departments": [id.strip() for id in os.getenv("WECOM__EXCLUDED_DEPARTMENTS", "").split(",") if id.strip()],
-    }
+    @property
+    def metadata(self) -> PluginMetadata:
+        return PluginMetadata(
+            name="wecom",
+            version="1.5.0",
+            description="Enterprise WeChat Directory Data Plugin",
+            data_source_type="messenger_org",
+            required_config=["corp_id", "secret"],
+        )
+
+    def get_worker_class(self) -> type:
+        from .worker import WeComWorker
+
+        return WeComWorker
+
+    def get_client_class(self) -> type:
+        from .client import WeComClient
+
+        return WeComClient
 
 
-# 自注册
-PluginRegistry.register_client("wecom", WeComClient)
-PluginRegistry.register_worker("wecom", WeComWorker)
-PluginRegistry.register_config("wecom", get_config)
+# 实例化插件
+plugin = WeComPlugin()
 
-__all__ = ["WeComClient", "WeComWorker", "get_config"]
+# 向下兼容导出
+Client = plugin.get_client_class()
+WeComWorker = plugin.get_worker_class()
+get_config = plugin.get_config_getter()
+
+__all__ = ["plugin", "Client", "WeComWorker", "get_config"]

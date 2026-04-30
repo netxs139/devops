@@ -54,6 +54,7 @@ def test_login_e2e_flow(client, db_session):
 
     # [FIX] 显式赋予 admin 角色及菜单权限，以通过之后的权限校验
     from devops_collector.models.base_models import SysMenu, SysRole
+
     admin_role = db_session.query(SysRole).filter_by(role_key="admin").first()
     if not admin_role:
         admin_role = SysRole(role_name="管理员", role_key="admin", data_scope=1)

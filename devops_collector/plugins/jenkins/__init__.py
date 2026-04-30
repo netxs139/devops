@@ -1,28 +1,45 @@
-"""Jenkins 插件包
+"""Jenkins 采集插件 (v2.0)
 
-支持 Jenkins 构建数据的采集。
-
-本模块在导入时自动完成插件注册。
+基于声明式协议，由 PluginLoader 2.0 自动加载。
 """
 
 import os
 
-from devops_collector.core.registry import PluginRegistry
-
-from .config import get_config
-from .models import JenkinsBuild, JenkinsJob
-from .worker import JenkinsWorker
+from devops_collector.core.base_plugin import BasePlugin, PluginMetadata
 
 
-# 动态选择客户端：基于 USE_PYAIRBYTE 环境变量
-if os.getenv("USE_PYAIRBYTE", "false").lower() == "true":
-    from .airbyte_client import AirbyteJenkinsClient as Client
-else:
-    from .client import JenkinsClient as Client
+class JenkinsPlugin(BasePlugin):
+    """Jenkins 插件实现类。"""
 
-# 自注册: 客户端、Worker 和配置
-PluginRegistry.register_client("jenkins", Client)
-PluginRegistry.register_worker("jenkins", JenkinsWorker)
-PluginRegistry.register_config("jenkins", get_config)
+    @property
+    def metadata(self) -> PluginMetadata:
+        return PluginMetadata(
+            name="jenkins",
+            version="1.1.5",
+            description="CI/CD Pipeline Data Plugin",
+            data_source_type="ci_cd",
+            required_config=["url", "user", "token"],
+        )
 
-__all__ = ["Client", "JenkinsWorker", "JenkinsJob", "JenkinsBuild", "get_config"]
+    def get_worker_class(self) -> type:
+        from .worker import JenkinsWorker
+
+        return JenkinsWorker
+
+    def get_client_class(self) -> type:
+        if os.getenv("USE_PYAIRBYTE", "false").lower() == "true":
+            from .airbyte_client import AirbyteJenkinsClient as Client
+        else:
+            from .client import JenkinsClient as Client
+        return Client
+
+
+# 实例化插件
+plugin = JenkinsPlugin()
+
+# 向下兼容导出
+Client = plugin.get_client_class()
+JenkinsWorker = plugin.get_worker_class()
+get_config = plugin.get_config_getter()
+
+__all__ = ["plugin", "Client", "JenkinsWorker", "get_config"]

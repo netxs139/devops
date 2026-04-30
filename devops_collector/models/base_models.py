@@ -91,7 +91,10 @@ class Organization(Base, TimestampMixin, SCDMixin):
     """组织架构表，支持 SCD Type 2 生命周期管理。"""
 
     __tablename__ = "mdm_organizations"
-    __table_args__ = (Index("idx_mdm_org_active_lookup", "org_code", "is_current"),)
+    __table_args__ = (
+        Index("idx_mdm_org_active_lookup", "org_code", postgresql_where="is_current IS TRUE"),
+        Index("uq_mdm_org_code_active", "org_code", unique=True, postgresql_where="is_current IS TRUE"),
+    )
     id = Column(Integer, primary_key=True, autoincrement=True, comment="自增主键")
     org_code = Column(String(100), nullable=False, index=True, comment="组织唯一标识 (HR系统同步)")
     org_name = Column(String(200), nullable=False, comment="组织名称")
@@ -132,14 +135,16 @@ class User(Base, TimestampMixin, SCDMixin):
 
     __tablename__ = "mdm_identities"
     __table_args__ = (
-        Index("idx_mdm_user_active_lookup", "employee_id", "is_current"),
-        Index("idx_mdm_user_email_lookup", "primary_email", "is_current"),
+        Index("idx_mdm_user_active_lookup", "employee_id", postgresql_where="is_current IS TRUE"),
+        Index("idx_mdm_user_email_lookup", "primary_email", postgresql_where="is_current IS TRUE"),
+        Index("uq_user_employee_id_active", "employee_id", unique=True, postgresql_where="is_current IS TRUE"),
+        Index("uq_user_email_active", "primary_email", unique=True, postgresql_where="is_current IS TRUE"),
     )
     global_user_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, comment="全局唯一用户标识")
-    employee_id = Column(String(50), unique=True, index=True, comment="HR系统工号")
+    employee_id = Column(String(50), index=True, comment="HR系统工号")
     username = Column(String(100), comment="登录用户名")
     full_name = Column(String(200), comment="用户姓名")
-    primary_email = Column(String(255), unique=True, index=True, comment="主邮箱地址")
+    primary_email = Column(String(255), index=True, comment="主邮箱地址")
     department_id = Column(Integer, ForeignKey("mdm_organizations.id", use_alter=True, name="fk_user_dept"), index=True, comment="所属部门ID")
     position = Column(String(100), comment="职位/岗位名称")
     hr_relationship = Column(String(50), comment="人事关系 (如：正式/外协/实习)")
@@ -384,10 +389,13 @@ class Team(Base, TimestampMixin, SCDMixin):
     """
 
     __tablename__ = "sys_teams"
-    __table_args__ = (Index("idx_mdm_team_active_lookup", "team_code", "is_current"),)
+    __table_args__ = (
+        Index("idx_mdm_team_active_lookup", "team_code", postgresql_where="is_current IS TRUE"),
+        Index("uq_mdm_team_code_active", "team_code", unique=True, postgresql_where="is_current IS TRUE"),
+    )
     id = Column(Integer, primary_key=True, autoincrement=True, comment="自增主键")
     name = Column(String(100), nullable=False, comment="团队名称")
-    team_code = Column(String(50), unique=True, index=True, comment="团队代码")
+    team_code = Column(String(50), index=True, comment="团队代码")
     description = Column(Text, comment="团队描述")
     parent_id = Column(Integer, ForeignKey("sys_teams.id", use_alter=True, name="fk_team_parent_id"), nullable=True, comment="上级团队ID")
     org_id = Column(Integer, ForeignKey("mdm_organizations.id"), nullable=True, comment="所属组织ID")
@@ -433,9 +441,12 @@ class Product(Base, TimestampMixin, SCDMixin):
     """
 
     __tablename__ = "mdm_products"
-    __table_args__ = (Index("idx_mdm_product_active_lookup", "product_code", "is_current"),)
+    __table_args__ = (
+        Index("idx_mdm_product_active_lookup", "product_code", postgresql_where="is_current IS TRUE"),
+        Index("uq_mdm_product_code_active", "product_code", unique=True, postgresql_where="is_current IS TRUE"),
+    )
     id = Column(Integer, primary_key=True, autoincrement=True, comment="自增主键")
-    product_code = Column(String(100), unique=True, index=True, nullable=False, comment="产品业务唯一标识")
+    product_code = Column(String(100), index=True, nullable=False, comment="产品业务唯一标识")
     product_name = Column(String(255), nullable=False, comment="产品名称")
     product_description = Column(Text, nullable=False, comment="产品描述")
     category = Column(String(100), comment="产品分类 (平台/应用/组件)")
@@ -602,10 +613,11 @@ class MetricDefinition(Base, TimestampMixin, SCDMixin):
     """
 
     __tablename__ = "mdm_metric_definitions"
+    __table_args__ = (Index("uq_mdm_metric_code_active", "metric_code", unique=True, postgresql_where="is_current IS TRUE"),)
 
     # 1. 基础信息
     id = Column(Integer, primary_key=True, autoincrement=True, comment="自增主键")
-    metric_code = Column(String(100), unique=True, index=True, nullable=False, comment="指标唯一编码 (如 DORA_MTTR_PROD)")
+    metric_code = Column(String(100), index=True, nullable=False, comment="指标唯一编码 (如 DORA_MTTR_PROD)")
     metric_name = Column(String(200), nullable=False, comment="指标展示名称 (如 生产环境平均修复时间)")
     domain = Column(String(50), nullable=False, comment="所属业务域 (DEVOPS/FINANCE/OPERATION)")
     metric_type = Column(String(50), comment="指标类型 (ATOMIC:原子指标 / DERIVED:派生指标 / COMPOSITE:复合指标)")
@@ -650,10 +662,11 @@ class SystemRegistry(Base, TimestampMixin, SCDMixin):
     """
 
     __tablename__ = "mdm_systems_registry"
+    __table_args__ = (Index("uq_mdm_system_code_active", "system_code", unique=True, postgresql_where="is_current IS TRUE"),)
 
     # 基础信息
     id = Column(Integer, primary_key=True, autoincrement=True, comment="自增主键")
-    system_code = Column(String(50), nullable=False, unique=True, index=True, comment="系统唯一标准代号 (如 gitlab-corp)")
+    system_code = Column(String(50), nullable=False, index=True, comment="系统唯一标准代号 (如 gitlab-corp)")
     system_name = Column(String(100), nullable=False, comment="系统显示名称")
     system_type = Column(String(50), comment="工具类型 (VCS/TICKET/CI/SONAR/K8S)")
     env_tag = Column(String(20), default="PROD", comment="环境标签 (PROD/Stage/Test)")
@@ -801,8 +814,9 @@ class OKRObjective(Base, TimestampMixin, SCDMixin):
     """OKR 目标定义表。"""
 
     __tablename__ = "mdm_okr_objectives"
+    __table_args__ = (Index("uq_mdm_okr_objective_active", "objective_id", unique=True, postgresql_where="is_current IS TRUE"),)
     id = Column(Integer, primary_key=True, autoincrement=True, comment="自增主键")
-    objective_id = Column(String(50), unique=True, index=True, comment="目标唯一标识")
+    objective_id = Column(String(50), index=True, comment="目标唯一标识")
     title = Column(String(255), nullable=False, comment="目标标题")
     description = Column(Text, comment="目标描述")
     period = Column(String(20), index=True, comment="周期 (2024-Q1/2024-H1)")
@@ -967,9 +981,12 @@ class ProjectMaster(Base, TimestampMixin, SCDMixin, OwnableMixin):
     """项目全生命周期主数据 (mdm_projects)。"""
 
     __tablename__ = "mdm_projects"
-    __table_args__ = (Index("idx_mdm_project_active_lookup", "project_code", "is_current"),)
+    __table_args__ = (
+        Index("idx_mdm_project_active_lookup", "project_code", postgresql_where="is_current IS TRUE"),
+        Index("uq_mdm_project_code_active", "project_code", unique=True, postgresql_where="is_current IS TRUE"),
+    )
     id = Column(Integer, primary_key=True, autoincrement=True, comment="自增主键")
-    project_code = Column(String(100), unique=True, index=True, nullable=False, comment="项目业务唯一标识")
+    project_code = Column(String(100), index=True, nullable=False, comment="项目业务唯一标识")
 
     @classmethod
     def get_owner_column(cls):
@@ -1120,10 +1137,11 @@ class Company(Base, TimestampMixin, SCDMixin):
     """
 
     __tablename__ = "mdm_companies"
+    __table_args__ = (Index("uq_mdm_company_code_active", "company_code", unique=True, postgresql_where="is_current IS TRUE"),)
 
     # 基础信息
     id = Column(Integer, primary_key=True, autoincrement=True, comment="自增主键")
-    company_code = Column(String(50), unique=True, index=True, nullable=False, comment="公司唯一业务标识 (如 COM-BJ-01)")
+    company_code = Column(String(50), index=True, nullable=False, comment="公司唯一业务标识 (如 COM-BJ-01)")
     name = Column(String(200), nullable=False, comment="公司注册全称")
     short_name = Column(String(100), comment="公司简称")
     tax_id = Column(String(50), unique=True, index=True, comment="统一社会信用代码/税号")
@@ -1147,10 +1165,11 @@ class Vendor(Base, TimestampMixin, SCDMixin):
     """外部供应商主数据表。"""
 
     __tablename__ = "mdm_vendors"
+    __table_args__ = (Index("uq_mdm_vendor_code_active", "vendor_code", unique=True, postgresql_where="is_current IS TRUE"),)
 
     # 基础信息
     id = Column(Integer, primary_key=True, autoincrement=True, comment="自增主键")
-    vendor_code = Column(String(50), unique=True, index=True, nullable=False, comment="供应商唯一业务编码")
+    vendor_code = Column(String(50), index=True, nullable=False, comment="供应商唯一业务编码")
     name = Column(String(200), nullable=False, comment="供应商全称")
     short_name = Column(String(100), comment="供应商简称")
 
