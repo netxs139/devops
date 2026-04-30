@@ -51,9 +51,9 @@ def run():
         try:
             task = {"source": "gitlab", "project_id": p.id, "job_type": "full"}
             worker.process_task(task)
-            logging.info(f"‚ú?Finished syncing {p.name}")
+            logging.info(f"‚úÖ Finished syncing {p.name}")
         except Exception as e:
-            logging.error(f"‚ù?Failed to sync {p.name}: {e}")
+            logging.error(f"‚ùå Failed to sync {p.name}: {e}")
 
     db.close()
 

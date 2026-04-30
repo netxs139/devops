@@ -30,7 +30,7 @@ def main():
                     zt_id = row.get("zentao_product_id")
                     mdm_id = row.get("mdm_product_id")
                     if zt_id and mdm_id:
-                        # 尝试通过 ID �?Code 查找产品
+                        # 尝试通过 ID 或 Code 查找产品
                         p = None
                         if zt_id.isdigit():
                             p = session.query(ZenTaoProduct).filter_by(id=int(zt_id)).first()
