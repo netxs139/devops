@@ -47,6 +47,7 @@ class SonarQubeWorker(BaseWorker):
     def process_task(self, task: dict) -> dict:
         """核心同步逻辑。"""
         from datetime import UTC, datetime
+
         project_key = task.get("project_key")
         if not project_key:
             raise ValueError("project_key is required")
@@ -73,11 +74,7 @@ class SonarQubeWorker(BaseWorker):
             project.last_synced_at = datetime.now(UTC)
             self.session.commit()
 
-            return {
-                "project": project.name,
-                "coverage": measure.coverage if measure else None,
-                "issues": issues_count
-            }
+            return {"project": project.name, "coverage": measure.coverage if measure else None, "issues": issues_count}
         except Exception as e:
             self.session.rollback()
             project.sync_status = "FAILED"

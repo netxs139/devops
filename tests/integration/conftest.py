@@ -15,7 +15,7 @@ from sqlalchemy.orm import sessionmaker
 
 
 if not hasattr(bcrypt, "__about__"):
-    bcrypt.__about__ = type('about', (object,), {'__version__': bcrypt.__version__})
+    bcrypt.__about__ = type("about", (object,), {"__version__": bcrypt.__version__})
 
 
 # Mock environment variables BEFORE any other imports

@@ -1,27 +1,45 @@
-"""Jira 插件包
+"""Jira 采集插件 (v2.0)
 
-支持 Jira 数据采集。
-
-本模块在导入时自动完成插件注册。
+基于声明式协议，由 PluginLoader 2.0 自动加载。
 """
 
 import os
 
-from devops_collector.core.registry import PluginRegistry
-
-from .config import get_config
-from .worker import JiraWorker
+from devops_collector.core.base_plugin import BasePlugin, PluginMetadata
 
 
-# 动态选择客户端：基于 USE_PYAIRBYTE 环境变量
-if os.getenv("USE_PYAIRBYTE", "false").lower() == "true":
-    from .airbyte_client import AirbyteJiraClient as Client
-else:
-    from .client import JiraClient as Client
+class JiraPlugin(BasePlugin):
+    """Jira 插件实现类。"""
 
-# 自注册
-PluginRegistry.register_client("jira", Client)
-PluginRegistry.register_worker("jira", JiraWorker)
-PluginRegistry.register_config("jira", get_config)
+    @property
+    def metadata(self) -> PluginMetadata:
+        return PluginMetadata(
+            name="jira",
+            version="1.0.0",
+            description="Jira Agile Project Management Data Plugin",
+            data_source_type="project_management",
+            required_config=["url", "token"],
+        )
 
-__all__ = ["Client", "JiraWorker", "get_config"]
+    def get_worker_class(self) -> type:
+        from .worker import JiraWorker
+
+        return JiraWorker
+
+    def get_client_class(self) -> type:
+        if os.getenv("USE_PYAIRBYTE", "false").lower() == "true":
+            from .airbyte_client import AirbyteJiraClient as Client
+        else:
+            from .client import JiraClient as Client
+        return Client
+
+
+# 实例化插件
+plugin = JiraPlugin()
+
+# 向下兼容导出
+Client = plugin.get_client_class()
+JiraWorker = plugin.get_worker_class()
+get_config = plugin.get_config_getter()
+
+__all__ = ["plugin", "Client", "JiraWorker", "get_config"]

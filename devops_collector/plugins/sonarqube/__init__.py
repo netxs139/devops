@@ -1,28 +1,45 @@
-"""SonarQube 数据采集插件
+"""SonarQube 采集插件 (v2.0)
 
-提供 SonarQube Web API 客户端和数据采集 Worker。
-
-本模块在导入时自动完成插件注册。
+基于声明式协议，由 PluginLoader 2.0 自动加载。
 """
 
 import os
 
-from devops_collector.core.registry import PluginRegistry
-
-from .config import get_config
-from .models import SonarIssue, SonarMeasure, SonarProject
-from .worker import SonarQubeWorker
+from devops_collector.core.base_plugin import BasePlugin, PluginMetadata
 
 
-# 根据环境变量动态选择 Client 实现
-if os.getenv("USE_PYAIRBYTE", "false").lower() == "true":
-    from .airbyte_client import AirbyteSonarQubeClient as Client
-else:
-    from .client import SonarQubeClient as Client
+class SonarQubePlugin(BasePlugin):
+    """SonarQube 插件实现类。"""
 
-# 自注册: 客户端、Worker 和配置
-PluginRegistry.register_client("sonarqube", Client)
-PluginRegistry.register_worker("sonarqube", SonarQubeWorker)
-PluginRegistry.register_config("sonarqube", get_config)
+    @property
+    def metadata(self) -> PluginMetadata:
+        return PluginMetadata(
+            name="sonarqube",
+            version="1.2.0",
+            description="Static Code Analysis Data Plugin",
+            data_source_type="code_quality",
+            required_config=["url", "token"],
+        )
 
-__all__ = ["Client", "SonarQubeWorker", "get_config"]
+    def get_worker_class(self) -> type:
+        from .worker import SonarQubeWorker
+
+        return SonarQubeWorker
+
+    def get_client_class(self) -> type:
+        if os.getenv("USE_PYAIRBYTE", "false").lower() == "true":
+            from .airbyte_client import AirbyteSonarQubeClient as Client
+        else:
+            from .client import SonarQubeClient as Client
+        return Client
+
+
+# 实例化插件
+plugin = SonarQubePlugin()
+
+# 向下兼容导出
+Client = plugin.get_client_class()
+SonarQubeWorker = plugin.get_worker_class()
+get_config = plugin.get_config_getter()
+
+__all__ = ["plugin", "Client", "SonarQubeWorker", "get_config"]

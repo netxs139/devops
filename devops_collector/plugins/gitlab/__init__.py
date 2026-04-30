@@ -1,27 +1,47 @@
-"""GitLab 数据采集插件
+"""GitLab 数据采集插件 (v2.0)
 
-提供 GitLab API 客户端和数据采集 Worker。
-
-本模块在导入时自动完成插件注册。
+基于声明式协议，由 PluginLoader 2.0 自动加载。
 """
 
 import os
 
-from devops_collector.core.registry import PluginRegistry
-
-from .config import get_config
-from .worker import GitLabWorker
+from devops_collector.core.base_plugin import BasePlugin, PluginMetadata
 
 
-# 根据环境变量动态选择 Client 实现
-if os.getenv("USE_PYAIRBYTE", "false").lower() == "true":
-    from .airbyte_client import AirbyteGitLabClient as Client
-else:
-    from .gitlab_client import GitLabClient as Client
+class GitLabPlugin(BasePlugin):
+    """GitLab 插件实现类。"""
 
-# 自注册: 客户端、Worker 和配置
-PluginRegistry.register_client("gitlab", Client)
-PluginRegistry.register_worker("gitlab", GitLabWorker)
-PluginRegistry.register_config("gitlab", get_config)
+    @property
+    def metadata(self) -> PluginMetadata:
+        return PluginMetadata(
+            name="gitlab",
+            version="2.1.0",
+            description="Enterprise GitLab Data Collection Plugin",
+            data_source_type="git_scm",
+            required_config=["url", "token"],
+        )
 
-__all__ = ["Client", "GitLabWorker", "get_config"]
+    def get_worker_class(self) -> type:
+        # 延迟导入，彻底消除 Side-effect
+        from .worker import GitLabWorker
+
+        return GitLabWorker
+
+    def get_client_class(self) -> type:
+        # 延迟导入并根据环境选择实现
+        if os.getenv("USE_PYAIRBYTE", "false").lower() == "true":
+            from .airbyte_client import AirbyteGitLabClient as Client
+        else:
+            from .gitlab_client import GitLabClient as Client
+        return Client
+
+
+# 实例化插件对象，供 PluginLoader 发现
+plugin = GitLabPlugin()
+
+# 为了向下兼容，仍然保留导出（但不再主动调用注册函数）
+Client = plugin.get_client_class()
+GitLabWorker = plugin.get_worker_class()
+get_config = plugin.get_config_getter()
+
+__all__ = ["plugin", "Client", "GitLabWorker", "get_config"]

@@ -1,20 +1,41 @@
-"""Nexus 插件包
+"""Nexus 采集插件 (v2.0)
 
-支持 Nexus Repository OSS 数据采集。
-
-本模块在导入时自动完成插件注册。
+基于声明式协议，由 PluginLoader 2.0 自动加载。
 """
 
-from devops_collector.core.registry import PluginRegistry
-
-from .client import NexusClient
-from .config import get_config
-from .worker import NexusWorker
+from devops_collector.core.base_plugin import BasePlugin, PluginMetadata
 
 
-# 自注册
-PluginRegistry.register_client("nexus", NexusClient)
-PluginRegistry.register_worker("nexus", NexusWorker)
-PluginRegistry.register_config("nexus", get_config)
+class NexusPlugin(BasePlugin):
+    """Nexus 插件实现类。"""
 
-__all__ = ["NexusClient", "NexusWorker", "get_config"]
+    @property
+    def metadata(self) -> PluginMetadata:
+        return PluginMetadata(
+            name="nexus",
+            version="1.0.2",
+            description="Nexus Repository Data Plugin",
+            data_source_type="artifact_repository",
+            required_config=["url", "user", "password"],
+        )
+
+    def get_worker_class(self) -> type:
+        from .worker import NexusWorker
+
+        return NexusWorker
+
+    def get_client_class(self) -> type:
+        from .client import NexusClient
+
+        return NexusClient
+
+
+# 实例化插件
+plugin = NexusPlugin()
+
+# 向下兼容导出
+Client = plugin.get_client_class()
+NexusWorker = plugin.get_worker_class()
+get_config = plugin.get_config_getter()
+
+__all__ = ["plugin", "Client", "NexusWorker", "get_config"]

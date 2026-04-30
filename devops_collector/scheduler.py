@@ -115,6 +115,7 @@ def main() -> None:
             # 4. 扫描 Nexus 仓库
             if "nexus" in Config.ENABLED_PLUGINS:
                 from .config import settings
+
                 for repo in settings.nexus.repositories:
                     task = {
                         "source": "nexus",

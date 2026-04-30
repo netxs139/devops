@@ -62,6 +62,9 @@ class PluginRegistry:
         Raises:
             ValueError: 如果同名插件已注册且实现类不同
         """
+        if client_class is None:
+            return
+
         if name in cls._clients:
             existing = cls._clients[name]
             if existing is not client_class:
@@ -81,6 +84,9 @@ class PluginRegistry:
         Raises:
             ValueError: 如果同名 Worker 已注册且实现类不同
         """
+        if worker_class is None:
+            return
+
         if name in cls._workers:
             existing = cls._workers[name]
             if existing is not worker_class:

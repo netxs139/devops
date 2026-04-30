@@ -11,18 +11,11 @@ CYAN = "\033[96m"
 YELLOW = "\033[93m"
 RESET = "\033[0m"
 
+
 def run_command_captured(command, description):
     start_time = time.time()
     try:
-        process = subprocess.run(
-            command,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            encoding="utf-8",
-            errors="replace"
-        )
+        process = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace")
         duration = time.time() - start_time
         success = process.returncode == 0
         return success, process.stdout, duration, description, process.returncode
@@ -30,16 +23,14 @@ def run_command_captured(command, description):
         duration = time.time() - start_time
         return False, f"ERROR: {str(e)}", duration, description, -1
 
+
 def execute_stage_parallel(tasks, stage_name):
     print(f"\n{CYAN}>>> Starting {stage_name} (Parallel Execution)...{RESET}")
     all_success = True
     results = []
-    
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(tasks)) as executor:
-        future_to_task = {
-            executor.submit(run_command_captured, cmd, desc): desc 
-            for cmd, desc in tasks
-        }
+        future_to_task = {executor.submit(run_command_captured, cmd, desc): desc for cmd, desc in tasks}
         for future in concurrent.futures.as_completed(future_to_task):
             success, output, duration, desc, retcode = future.result()
             results.append((success, output, duration, desc, retcode))
@@ -54,13 +45,15 @@ def execute_stage_parallel(tasks, stage_name):
             print(f"{GREEN}[V] [{desc}] PASSED ({duration:.1f}s){RESET}")
         else:
             print(f"{RED}[X] [{desc}] FAILED (Exit code: {retcode}){RESET}")
-            
+
     return all_success
+
 
 def main():
     if sys.stdout.encoding.lower() != "utf-8":
         try:
             import io
+
             sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
         except Exception:
             pass
@@ -76,21 +69,15 @@ def main():
     overall_start = time.time()
 
     # Stage 1: Fast & Core Checks (Parallel)
-    stage1_tasks = [
-        ("make security-audit", "L1: Security Audit (Secrets, SAST, Deps)"),
-        ("make verify", "L2: Total Verification (Lint, Imports, Cov >= 80%)")
-    ]
-    
+    stage1_tasks = [("make security-audit", "L1: Security Audit (Secrets, SAST, Deps)"), ("make verify", "L2: Total Verification (Lint, Imports, Cov >= 80%)")]
+
     if not execute_stage_parallel(stage1_tasks, "Stage 1 (Security & Verification)"):
         print(f"\n{RED}>>> Stage 1 FAILED. Gate execution stopped.{RESET}")
         sys.exit(1)
 
     # Stage 2: Build & Advanced Checks (Parallel)
     if args.mode == "full":
-        stage2_tasks = [
-            ("make build", "L3: Docker Image Build & Cache Verification"),
-            ("make dbt-build", "L4: dbt Data Model Audit")
-        ]
+        stage2_tasks = [("make build", "L3: Docker Image Build & Cache Verification"), ("make dbt-build", "L4: dbt Data Model Audit")]
         if not execute_stage_parallel(stage2_tasks, "Stage 2 (Build & Data Audit)"):
             print(f"\n{RED}>>> Stage 2 FAILED. Gate execution stopped.{RESET}")
             sys.exit(1)
@@ -100,6 +87,7 @@ def main():
     print(f"        SUCCESS: FULL GATE PASSED ({overall_duration:.1f}s)            ")
     print("        Your code is now ready for merge/deployment.                ")
     print(f"===================================================================={RESET}")
+
 
 if __name__ == "__main__":
     main()

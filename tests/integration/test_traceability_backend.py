@@ -14,17 +14,25 @@ def test_fetch_traceability_query(db_session):
     mr_id = "55"
 
     # 注入基础数据 (Raw SQL 注入以验证物理链路)
-    db_session.execute(text("INSERT INTO gitlab_commits (id, title, author_name) VALUES (:id, :title, :author)"),
-                       {"id": commit_id, "title": "feat: traceability fix", "author": "Antigravity"})
+    db_session.execute(
+        text("INSERT INTO gitlab_commits (id, title, author_name) VALUES (:id, :title, :author)"),
+        {"id": commit_id, "title": "feat: traceability fix", "author": "Antigravity"},
+    )
 
-    db_session.execute(text("INSERT INTO gitlab_merge_requests (id, iid, title, state) VALUES (:id, :iid, :title, :state)"),
-                       {"id": 55, "iid": 55, "title": "MR 55", "state": "merged"})
+    db_session.execute(
+        text("INSERT INTO gitlab_merge_requests (id, iid, title, state) VALUES (:id, :iid, :title, :state)"),
+        {"id": 55, "iid": 55, "title": "MR 55", "state": "merged"},
+    )
 
-    db_session.execute(text("INSERT INTO mdm_traceability_links (source_system, source_id, target_type, target_id) VALUES (:sys, :sid, :tt, :tid)"),
-                       {"sys": "zentao", "sid": issue_id, "tt": "commit", "tid": commit_id})
+    db_session.execute(
+        text("INSERT INTO mdm_traceability_links (source_system, source_id, target_type, target_id) VALUES (:sys, :sid, :tt, :tid)"),
+        {"sys": "zentao", "sid": issue_id, "tt": "commit", "tid": commit_id},
+    )
 
-    db_session.execute(text("INSERT INTO mdm_traceability_links (source_system, source_id, target_type, target_id) VALUES (:sys, :sid, :tt, :tid)"),
-                       {"sys": "zentao", "sid": issue_id, "tt": "mr", "tid": "55"})
+    db_session.execute(
+        text("INSERT INTO mdm_traceability_links (source_system, source_id, target_type, target_id) VALUES (:sys, :sid, :tt, :tid)"),
+        {"sys": "zentao", "sid": issue_id, "tt": "mr", "tid": "55"},
+    )
 
     db_session.flush()
 

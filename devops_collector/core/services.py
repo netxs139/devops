@@ -95,3 +95,85 @@ def close_current_and_insert_new(session: Session, model_cls: type[Base], natura
         new_obj.sync_version,
     )
     return new_obj
+
+
+def batch_upsert_scd2(session: Session, model_cls: type[Base], natural_key_names: list[str], batch_data: list[dict[str, Any]]) -> int:
+    """批量高效处理 SCD Type2 更新。
+
+    该函数适用于同步大量主数据，通过减少数据库交互次数来提升性能。
+
+    算法流程：
+    1. 一次性查询 batch 中所有自然键对应的当前记录。
+    2. 过滤出需要更新的记录（版本匹配且内容有变，或新增记录）。
+    3. 批量将旧记录标记为 is_current=False。
+    4. 批量插入新记录。
+
+    参数:
+        session: SQLAlchemy 会话。
+        model_cls: 模型类。
+        natural_key_names: 构成自然键的字段名列表（如 ['employee_id']）。
+        batch_data: 待处理的数据字典列表，每项必须包含 natural_key 字段和 sync_version。
+
+    返回:
+        成功处理（更新或新增）的记录总数。
+    """
+    if not batch_data:
+        return 0
+
+    now = datetime.now(UTC)
+
+    # 1. 提取所有自然键用于批量查询
+    # 注意：这里假设自然键是单字段，如果是复合键需要更复杂的 Tuple 过滤
+    if len(natural_key_names) != 1:
+        raise NotImplementedError("batch_upsert_scd2 目前仅支持单字段自然键")
+
+    key_name = natural_key_names[0]
+    keys = [d[key_name] for d in batch_data]
+
+    # 2. 批量拉取数据库中的当前版本
+    existing_records = session.query(model_cls).filter(getattr(model_cls, key_name).in_(keys), model_cls.is_current).all()
+
+    current_map = {getattr(r, key_name): r for r in existing_records}
+
+    # 动态获取主键名称 (处理 User.global_user_id 与 其他模型 .id 的差异)
+    pk_name = model_cls.__table__.primary_key.columns.keys()[0]
+
+    updates_to_close = []
+    new_inserts = []
+
+    for item in batch_data:
+        key_val = item[key_name]
+        current = current_map.get(key_val)
+
+        if current:
+            # 乐观锁校验
+            expected_version = item.get("sync_version")
+            if expected_version is not None and current.sync_version != expected_version:
+                log.warning("跳过记录 %s: 乐观锁冲突 (DB:%s, Batch:%s)", key_val, current.sync_version, expected_version)
+                continue
+
+            # 标记旧记录失效
+            updates_to_close.append({pk_name: getattr(current, pk_name), "is_current": False, "effective_to": now})
+
+            # 准备新记录数据
+            new_record_data = {**item}
+            new_record_data.update(
+                {"sync_version": current.sync_version + 1, "effective_from": now, "effective_to": None, "is_current": True, "is_deleted": False}
+            )
+            new_inserts.append(new_record_data)
+        else:
+            # 全新记录插入
+            new_record_data = {**item}
+            new_record_data.update({"sync_version": 1, "effective_from": now, "effective_to": None, "is_current": True, "is_deleted": False})
+            new_inserts.append(new_record_data)
+
+    # 3. 批量执行
+    if updates_to_close:
+        session.bulk_update_mappings(model_cls, updates_to_close)
+
+    if new_inserts:
+        session.bulk_insert_mappings(model_cls, new_inserts)
+
+    session.flush()
+    log.info("SCD2 批量更新完成: %s (关闭 %d, 插入 %d)", model_cls.__name__, len(updates_to_close), len(new_inserts))
+    return len(new_inserts)

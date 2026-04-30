@@ -1,18 +1,39 @@
-"""Dependency Check 插件
+"""Dependency Check 采集插件 (v2.0)
 
-支持 OWASP Dependency-Check 依赖扫描。
-
-本模块在导入时自动完成插件注册。
+基于声明式协议，由 PluginLoader 2.0 自动加载。
 """
 
-from devops_collector.core.registry import PluginRegistry
-
-from .config import get_config
-from .worker import DependencyCheckWorker
+from devops_collector.core.base_plugin import BasePlugin, PluginMetadata
 
 
-# 自注册
-PluginRegistry.register_worker("dependency_check", DependencyCheckWorker)
-PluginRegistry.register_config("dependency_check", get_config)
+class DependencyCheckPlugin(BasePlugin):
+    """Dependency Check 插件实现类。"""
 
-__all__ = ["DependencyCheckWorker", "get_config"]
+    @property
+    def metadata(self) -> PluginMetadata:
+        return PluginMetadata(
+            name="dependency_check",
+            version="1.0.0",
+            description="OWASP Dependency-Check Vulnerability Data Plugin",
+            data_source_type="security_scan",
+            required_config=[],
+        )
+
+    def get_worker_class(self) -> type:
+        from .worker import DependencyCheckWorker
+
+        return DependencyCheckWorker
+
+    def get_client_class(self) -> type | None:
+        # 该插件仅接收推送报告，无需客户端
+        return None
+
+
+# 实例化插件
+plugin = DependencyCheckPlugin()
+
+# 向下兼容导出
+DependencyCheckWorker = plugin.get_worker_class()
+get_config = plugin.get_config_getter()
+
+__all__ = ["plugin", "DependencyCheckWorker", "get_config"]
