@@ -39,6 +39,7 @@ ______________________________________________________________________
 
 - **判定标准 1 (FK Index)**：所有 `ForeignKey` 字段必须显式声明 `index=True`。Postgres 不会自动索引外键，漏掉此项会导致生产环境关联查询瞬间爆表。
 - **判定标准 2 (Naming)**：检查 `Base.metadata` 必须包含全局 `NAMING_CONVENTION` (ix/uq/ck/fk/pk) 以确保 DDL 可溯源、可撤销。
+- **判定标准 3 (SCD2 Partial Index)**：严禁在 SCD2 (Slowly Changing Dimension Type 2) 历史追踪模型的业务主键上直接设置物理 `unique=True`。必须强制要求使用 PostgreSQL 部分索引隔离律，即通过 `Index("idx_...", "biz_key", unique=True, postgresql_where="is_current IS TRUE")` 建立逻辑唯一屏障，防止历史快照写入时发生冲突。
 
 *
 * ### 7. RBAC 范式保护与模型幻觉 (RBAC Paradigm & No Hallucination)
