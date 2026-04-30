@@ -5,24 +5,24 @@
 
 本文档汇总了 DevOps Data Application Platform 常见问题及其解决方案。
 
----
+______________________________________________________________________
 
 ## 目录
 
-1. [部署与启动问题](#1-部署与启动问题)
-2. [数据库问题](#2-数据库问题)
-3. [数据同步问题](#3-数据同步问题)
-4. [认证与授权问题](#4-认证与授权问题)
-5. [Dashboard 问题](#5-dashboard-问题)
-6. [Docker 容器问题](#6-docker-容器问题)
-7. [性能问题](#7-性能问题)
-8. [日志与调试](#8-日志与调试)
+1. [部署与启动问题](#1-%E9%83%A8%E7%BD%B2%E4%B8%8E%E5%90%AF%E5%8A%A8%E9%97%AE%E9%A2%98)
+1. [数据库问题](#2-%E6%95%B0%E6%8D%AE%E5%BA%93%E9%97%AE%E9%A2%98)
+1. [数据同步问题](#3-%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5%E9%97%AE%E9%A2%98)
+1. [认证与授权问题](#4-%E8%AE%A4%E8%AF%81%E4%B8%8E%E6%8E%88%E6%9D%83%E9%97%AE%E9%A2%98)
+1. [Dashboard 问题](#5-dashboard-%E9%97%AE%E9%A2%98)
+1. [Docker 容器问题](#6-docker-%E5%AE%B9%E5%99%A8%E9%97%AE%E9%A2%98)
+1. [性能问题](#7-%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98)
+1. [日志与调试](#8-%E6%97%A5%E5%BF%97%E4%B8%8E%E8%B0%83%E8%AF%95)
 
----
+______________________________________________________________________
 
 ## 1. 部署与启动问题
 
-### Q1.1: 执行 `make deploy` 时报错 "Cannot connect to Docker daemon"
+### Q1.1: 执行 `just deploy` 时报错 "Cannot connect to Docker daemon"
 
 **症状**:
 
@@ -45,7 +45,7 @@ sudo systemctl start docker
 sudo usermod -aG docker $USER
 ```
 
----
+______________________________________________________________________
 
 ### Q1.2: 镜像拉取超时或失败
 
@@ -75,7 +75,7 @@ EOF
 sudo systemctl restart docker
 ```
 
----
+______________________________________________________________________
 
 ### Q1.3: 端口被占用
 
@@ -98,7 +98,7 @@ netstat -ano | findstr :8000
 # 终止进程或修改 docker-compose.yml 中的端口映射
 ```
 
----
+______________________________________________________________________
 
 ## 2. 数据库问题
 
@@ -125,7 +125,7 @@ docker-compose down -v
 docker-compose up -d
 ```
 
----
+______________________________________________________________________
 
 ### Q2.2: 数据库连接超时
 
@@ -150,7 +150,7 @@ docker-compose logs db
 docker-compose restart db
 ```
 
----
+______________________________________________________________________
 
 ### Q2.3: 表或列不存在
 
@@ -167,7 +167,7 @@ column "xxx" does not exist
 
 ```bash
 # 1. 运行 dbt 构建所有模型
-make dbt-run
+just dbt-run
 
 # 或手动进入容器执行
 docker-compose exec api dbt run --project-dir dbt_project
@@ -176,7 +176,7 @@ docker-compose exec api dbt run --project-dir dbt_project
 docker-compose exec -T db psql -U postgres -d devops_db -f /app/devops_collector/sql/XXX.sql
 ```
 
----
+______________________________________________________________________
 
 ## 3. 数据同步问题
 
@@ -208,7 +208,7 @@ docker-compose restart api
 excluded_projects = project-with-huge-history
 ```
 
----
+______________________________________________________________________
 
 ### Q3.2: SonarQube 数据为空
 
@@ -238,7 +238,7 @@ curl -u "TOKEN:" "https://sonar.example.com/api/projects/search"
 # 修改 _resolve_project_key() 方法
 ```
 
----
+______________________________________________________________________
 
 ### Q3.3: RabbitMQ 队列积压
 
@@ -260,7 +260,7 @@ docker-compose restart worker
 docker-compose exec rabbitmq rabbitmqctl purge_queue gitlab_tasks
 ```
 
----
+______________________________________________________________________
 
 ## 4. 认证与授权问题
 
@@ -277,10 +277,11 @@ The redirect_uri is missing or invalid
 **解决方案**:
 
 1. 检查 GitLab OAuth Application 配置:
-   - Redirect URI 必须精确匹配
-Format: `http://localhost:8000/callback`
 
-2. 检查 `.env` 配置:
+   - Redirect URI 必须精确匹配
+     Format: `http://localhost:8000/callback`
+
+1. 检查 `.env` 配置:
 
 ```bash
 GITLAB__CLIENT_ID=your_client_id
@@ -288,7 +289,7 @@ GITLAB__CLIENT_SECRET=your_client_secret
 GITLAB__REDIRECT_URI=http://localhost:8000/callback
 ```
 
----
+______________________________________________________________________
 
 ### Q4.2: JWT Token 过期
 
@@ -308,7 +309,7 @@ GITLAB__REDIRECT_URI=http://localhost:8000/callback
 JWT_EXPIRATION_HOURS=48
 ```
 
----
+______________________________________________________________________
 
 ### Q4.3: 用户无权限访问资源
 
@@ -336,7 +337,7 @@ WHERE u.email = 'user@example.com';
 INSERT INTO user_roles (user_id, role_id) VALUES (user_id, role_id);
 ```
 
----
+______________________________________________________________________
 
 ## 5. Dashboard 问题
 
@@ -357,7 +358,7 @@ docker-compose logs dashboard
 python scripts/test_dashboard_pages.py
 ```
 
----
+______________________________________________________________________
 
 ### Q5.2: 图表数据不显示
 
@@ -374,10 +375,10 @@ docker-compose exec db psql -U postgres -d devops_db -c "SELECT COUNT(*) FROM pu
 # 2. 检查时间范围筛选条件
 
 # 3. 确认 dbt 模型已构建
-make dbt-run
+just dbt-run
 ```
 
----
+______________________________________________________________________
 
 ## 6. Docker 容器问题
 
@@ -400,7 +401,7 @@ docker-compose logs --tail=100 <service_name>
 # docker-compose.yml 中调整 mem_limit
 ```
 
----
+______________________________________________________________________
 
 ### Q6.2: 磁盘空间不足
 
@@ -423,7 +424,7 @@ docker-compose logs --no-log-prefix > /dev/null
 docker system df
 ```
 
----
+______________________________________________________________________
 
 ## 7. 性能问题
 
@@ -452,7 +453,7 @@ dbt run --select tag:incremental
 dbt run --threads 4
 ```
 
----
+______________________________________________________________________
 
 ## 8. 日志与调试
 
@@ -490,14 +491,14 @@ docker-compose exec api python -c "from devops_collector.core.db import get_engi
 docker-compose exec api python -c "from devops_collector.plugins.gitlab.client import GitLabClient; print(GitLabClient().test_connection())"
 ```
 
----
+______________________________________________________________________
 
 ## 需要更多帮助?
 
 如果以上方案未能解决您的问题，请:
 
 1. 检查项目 [Issue 列表](https://gitlab.example.com/devops/devops_collector/issues) 是否有类似问题
-2. 收集以下信息后提交新 Issue:
+1. 收集以下信息后提交新 Issue:
    - 系统版本 (`cat /etc/os-release`)
    - Docker 版本 (`docker --version`)
    - 完整错误日志

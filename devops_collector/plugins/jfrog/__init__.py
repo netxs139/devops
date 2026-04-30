@@ -34,8 +34,8 @@ class JFrogPlugin(BasePlugin):
 plugin = JFrogPlugin()
 
 # 向下兼容导出
-Client = plugin.get_client_class()
-JFrogWorker = plugin.get_worker_class()
-get_config = plugin.get_config_getter()
+# [Lazy-Break] Client = plugin.get_client_class()
+# [Lazy-Break] JFrogWorker = plugin.get_worker_class()
+# [Lazy-Break] get_config = plugin.get_config_getter()
 
 __all__ = ["plugin", "Client", "JFrogWorker", "get_config"]

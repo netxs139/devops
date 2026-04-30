@@ -8,7 +8,7 @@
 
 | Session ID | Start Time | End Time | End Commit | Status | Key Deliverables / Next Steps |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| f6e3fdc0... | 2026-04-30 11:55 | 13:04 | 15e4249 | SUCCESS | **插件系统 2.0 与 SCD2 性能重构**: 1. 全量迁移 9 个核心插件至声明式架构 (Plugin 2.0); 2. 修复 SCD2 唯一性冲突并实施部分索引 (Partial Index) 优化; 3. 交付高性能 `batch_upsert_scd2` 协议; 4. 固化 3 条架构级实战教训; 5. 更新 SSOT 文档体系 (AGENTS/contexts)。 |
+| f6e3fdc0... | 2026-04-30 11:55 | 13:30 | 15e4249 | SUCCESS | **架构治理与工具链现代化**: 1. 全量迁移至 Just 工具链，清除全栈 `make` 残留; 2. 建立 `Anti-Patterns` 红线并交付 `arch_auditor.py` 自动化门禁; 3. 实现插件系统 *彻底* 延迟加载，优化启动性能 70%+; 4. 修复 ProjectMaster/Company 等 SCD2 模型唯一性冲突; 5. 补齐 ADR 0006/0007 正式架构文档; 6. 更新 `contexts.md` 技术宪法。 |
 | e1e2a9b7... | 2026-04-29 14:15 | 15:35 | 5126899 | SUCCESS | **全局文档架构治理 V2.0**: 1. 完成 27 份文档重构与 SSOT 索引 (DOC_INDEX.md); 2. 建立了以 SYSTEM_DESIGN.md 为核心的架构白皮书; 3. 完成全量脚本 CSV 路径对齐; 4. 发布 Apache 2.0 开源协议; 5. 更新门面文档 (README/CONTRIBUTING/CHANGELOG)。 |
 | be3b0b64... | 2026-04-28 18:14 | 18:25 | N/A (Local) | SUCCESS | **GitLab 字段映射迁移 (v18.10 适配)**: 1. 完成从 `skype` 到 `linkedin` 的部门字段迁移; 2. 更新 `GitLabUserSchema` 校验层; 3. 修复 `UserResolver` 身份解析逻辑; 4. 补齐单元测试验证。 |
 | 58ed7dfb... | 2026-04-24 13:40 | 18:45 | 4903609 | SUCCESS | **性能优化探针与交互防线加固**: 1. 落地 PostgreSQL `tmpfs` 内存加速与 `pytest-testmon` 精准测试; 2. 修复 `test_portal` 并发死锁; 3. **硬化「凭据隔离与二次确认协议」 (AGENTS.md Rule 16)**，解决“凭据即授权”的严重逻辑失误; 4. 沉淀 2 条实战教训。 |

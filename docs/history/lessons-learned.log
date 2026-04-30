@@ -8,6 +8,9 @@
 
 | Timestamp | Domain | Phenomenon | Root Cause | Universal Rule (The Defense) |
 | :--- | :--- | :--- | :--- | :--- |
+| 2026-04-30 | Architecture | Lazy Load Trap | Calling `plugin.get_worker_class()` at the module level in `__init__.py` for backward compatibility. | **彻底延迟加载原则 (True Lazy Load)**: 1. 严禁在 `__init__.py` 模块顶层调用任何触发 `import` 的 getter。 2. 注册时仅传递插件对象本身。 3. 使用 `__getattr__` 实现按需加载的向下兼容。 |
+| 2026-04-30 | Toolchain | Toolchain Divergence | AI used `make` instead of `just` despite the transition, due to reading outdated `contexts.md`. | **文档先行对齐律 (SSOT First)**: 1. 工具链迁移必须首步清理 `contexts.md` 等核心规范。 2. AI 必须通过 `/doc-update` 原子工作流强刷规范认知，防止路径依赖。 |
+| 2026-04-30 | Audit | Audit Regex Hang | Using greedy `[\s\S]*` across multiple classes led to slow regex matching and false positives. | **审计逻辑局部性 (Audit Locality)**: 1. 跨行正则审计严禁使用跨类贪婪模式。 2. 优先采用基于行首缩进的状态机（Line-by-Line Scanner）来界定审计边界，提升鲁棒性。 |
 | 2026-04-30 | Architecture/Plugin | System startup slow with circular dependency risks | Workers/Clients eagerly imported in `__init__.py` triggered massive side effects. | **声明式发现协议 (Declarative Discovery)**: 1. 插件 `__init__.py` 仅允许暴露轻量元数据。 2. 业务类必须通过 `get_worker_class()` 延迟加载。 3. 系统启动初始化深度减少 70%。 |
 | 2026-04-30 | Database/SCD2 | SCD2 history records failed to insert with UNIQUE violation | Physical `UNIQUE` constraints block multi-version coexistence (Active + History). | **PostgreSQL 部分索引隔离律 (Partial Index Isolation)**: 1. 严禁在 SCD2 业务键上直接设置物理 `unique=True`。 2. 必须使用 `Index(..., unique=True, postgresql_where="is_current IS TRUE")` 建立逻辑 unique 屏障。 |
 | 2026-04-30 | Engineering/Lint | Pre-commit hooks failed on `UP035` and `B027` | Using deprecated `typing.Type` and intentional no-op methods in ABCs. | **现代 Python 类型与钩子规范 (Modern Typing & Hooks)**: 1. 全面使用原生 `type` 替代 `typing.Type`。 2. 对 ABC 中的可选钩子，使用 `# noqa: B027` 显式声明意图，杜绝静默告警。 |

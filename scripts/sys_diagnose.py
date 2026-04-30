@@ -33,7 +33,7 @@ async def diagnose():
             else:
                 print(f"   ✗ API 服务返回异常状态码: {resp.status_code}")
         except Exception as e:
-            print(f"   ✗ 无法连接到 API 服务 (请确保已运行 make up): {e}")
+            print(f"   ✗ 无法连接到 API 服务 (请确保已运行 just up): {e}")
 
     # 2. 检查数据库和管理员账户
     print("\n[2/3] 检查数据库与角色...")

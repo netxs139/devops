@@ -984,6 +984,7 @@ class ProjectMaster(Base, TimestampMixin, SCDMixin, OwnableMixin):
     __table_args__ = (
         Index("idx_mdm_project_active_lookup", "project_code", postgresql_where="is_current IS TRUE"),
         Index("uq_mdm_project_code_active", "project_code", unique=True, postgresql_where="is_current IS TRUE"),
+        Index("uq_mdm_project_external_id_active", "external_id", unique=True, postgresql_where="is_current IS TRUE"),
     )
     id = Column(Integer, primary_key=True, autoincrement=True, comment="自增主键")
     project_code = Column(String(100), index=True, nullable=False, comment="项目业务唯一标识")
@@ -1007,7 +1008,7 @@ class ProjectMaster(Base, TimestampMixin, SCDMixin, OwnableMixin):
     plan_end_date = Column(Date, comment="计划结束日期")
     actual_start_at = Column(DateTime(timezone=True), comment="实际开始时间")
     actual_end_at = Column(DateTime(timezone=True), comment="实际结束时间")
-    external_id = Column(String(100), unique=True, comment="外部系统项目ID")
+    external_id = Column(String(100), comment="外部系统项目ID")
     system_id = Column(Integer, ForeignKey("mdm_systems_registry.id"), index=True, comment="数据来源系统")
     budget_code = Column(String(100), comment="预算编码")
     budget_type = Column(String(50), comment="预算类型 (CAPEX/OPEX)")
@@ -1137,14 +1138,17 @@ class Company(Base, TimestampMixin, SCDMixin):
     """
 
     __tablename__ = "mdm_companies"
-    __table_args__ = (Index("uq_mdm_company_code_active", "company_code", unique=True, postgresql_where="is_current IS TRUE"),)
+    __table_args__ = (
+        Index("uq_mdm_company_code_active", "company_code", unique=True, postgresql_where="is_current IS TRUE"),
+        Index("uq_mdm_company_tax_id_active", "tax_id", unique=True, postgresql_where="is_current IS TRUE"),
+    )
 
     # 基础信息
     id = Column(Integer, primary_key=True, autoincrement=True, comment="自增主键")
     company_code = Column(String(50), index=True, nullable=False, comment="公司唯一业务标识 (如 COM-BJ-01)")
     name = Column(String(200), nullable=False, comment="公司注册全称")
     short_name = Column(String(100), comment="公司简称")
-    tax_id = Column(String(50), unique=True, index=True, comment="统一社会信用代码/税号")
+    tax_id = Column(String(50), index=True, comment="统一社会信用代码/税号")
 
     # 财务与运营
     currency = Column(String(10), default="CNY", comment="本位币种 (CNY/USD)")

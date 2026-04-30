@@ -125,6 +125,11 @@ check-imports:
     @echo "Checking module imports..."
     {{EXEC_CMD}} python scripts/check_imports.py
 
+# [MANDATORY] 架构合规性审计 (Anti-Patterns Check)
+arch-audit:
+    @echo "Running Architecture & Anti-Pattern Audit..."
+    python scripts/arch_auditor.py
+
 # 运行单元测试
 test:
     {{EXEC_CMD}} pytest tests/unit/ -v

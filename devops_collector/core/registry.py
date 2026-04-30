@@ -21,6 +21,8 @@ import logging
 from collections.abc import Callable
 from typing import Any
 
+from devops_collector.core.base_plugin import BasePlugin
+
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +52,7 @@ class PluginRegistry:
     _clients: dict[str, type] = {}
     _workers: dict[str, type] = {}
     _configs: dict[str, Callable[[], dict[str, Any]]] = {}
+    _plugins: dict[str, BasePlugin] = {}
 
     @classmethod
     def register_client(cls, name: str, client_class: type) -> None:
@@ -126,23 +129,28 @@ class PluginRegistry:
         logger.debug(f"Registered config: {name}")
 
     @classmethod
-    def get_client(cls, name: str) -> type | None:
-        """获取已注册的客户端类。
+    def register_plugin(cls, plugin: BasePlugin) -> None:
+        """注册 2.0 插件对象。
 
         Args:
-            name: 数据源名称
-
-        Returns:
-            客户端类，如果未找到则返回 None
+            plugin: 插件实例 (继承自 BasePlugin)
         """
-        if name not in cls._clients:
-            logger.warning(f"Client not found: {name}")
-            return None
-        return cls._clients[name]
+        name = plugin.metadata.name
+        cls._plugins[name] = plugin
+
+        # 自动注册其配置函数
+        config_getter = plugin.get_config_getter()
+        if config_getter:
+            cls.register_config(name, config_getter)
+
+        logger.debug(f"Registered plugin object: {name} (SCD2/2.0 compatible)")
 
     @classmethod
     def get_worker(cls, name: str) -> type | None:
         """获取已注册的 Worker 类。
+
+        如果显式注册了类，则直接返回；
+        否则尝试从已注册的插件对象中延迟加载。
 
         Args:
             name: 数据源名称
@@ -150,10 +158,34 @@ class PluginRegistry:
         Returns:
             Worker 类，如果未找到则返回 None
         """
-        if name not in cls._workers:
-            logger.warning(f"Worker not found: {name}")
-            return None
-        return cls._workers[name]
+        if name in cls._workers:
+            return cls._workers[name]
+
+        # 尝试延迟加载
+        if name in cls._plugins:
+            worker_cls = cls._plugins[name].get_worker_class()
+            cls._workers[name] = worker_cls
+            return worker_cls
+
+        logger.warning(f"Worker not found: {name}")
+        return None
+
+    @classmethod
+    def get_client(cls, name: str) -> type | None:
+        """获取已注册的客户端类。
+
+        支持延迟加载逻辑。
+        """
+        if name in cls._clients:
+            return cls._clients[name]
+
+        if name in cls._plugins:
+            client_cls = cls._plugins[name].get_client_class()
+            cls._clients[name] = client_cls
+            return client_cls
+
+        logger.warning(f"Client not found: {name}")
+        return None
 
     @classmethod
     def get_config(cls, name: str) -> dict[str, Any] | None:
@@ -246,3 +278,4 @@ class PluginRegistry:
         cls._clients.clear()
         cls._workers.clear()
         cls._configs.clear()
+        cls._plugins.clear()

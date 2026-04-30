@@ -7,31 +7,31 @@
 
 ### 硬件建议
 
-* **CPU**: 2 Core+
-* **Memory**: 4GB+ (大型项目全量同步时内存消耗较大)
-* **Disk**: 50GB+ (取决于 Git 仓库数量和提交历史长度)
+- **CPU**: 2 Core+
+- **Memory**: 4GB+ (大型项目全量同步时内存消耗较大)
+- **Disk**: 50GB+ (取决于 Git 仓库数量和提交历史长度)
 
 ### 软件依赖
 
-* **OS**: Linux (Ubuntu 20.04+, CentOS 7+) / Windows Server
-* **Runtime**: Python 3.9+
-* **Database**: PostgreSQL 12+
-* **Message Queue**: RabbitMQ 3.8+ (必选，系统核心异步总线，用于支持海量数据采集与重试)
+- **OS**: Linux (Ubuntu 20.04+, CentOS 7+) / Windows Server
+- **Runtime**: Python 3.9+
+- **Database**: PostgreSQL 12+
+- **Message Queue**: RabbitMQ 3.8+ (必选，系统核心异步总线，用于支持海量数据采集与重试)
 
 ## 2. 容器化一键部署 (Docker Quick Start) 🚀
 
 如果您希望快速体验，推荐使用 **Docker + Make** 进行标准化部署：
 
 1. **环境准备**: `cp .env.example .env` 并填入数据库密码及各工具 Token。
-2. **一键启动**:
-    ```bash
-    # 方式 A: 自动化部署脚本
-    ./deploy.sh
-    
-    # 方式 B: Make 生产模式
-    make deploy-prod
-    ```
-3. **初始化**: 容器启动后会自动执行数据 Schema 迁移。首次运行建议执行 `make sync-all` 触发初始同步。
+1. **一键启动**:
+   ```bash
+   # 方式 A: 自动化部署脚本
+   ./deploy.sh
+
+   # 方式 B: Make 生产模式
+   just deploy-prod
+   ```
+1. **初始化**: 容器启动后会自动执行数据 Schema 迁移。首次运行建议执行 `just sync-all` 触发初始同步。
 
 ## 3. 手动安装步骤 (Manual Installation)
 
@@ -127,23 +127,23 @@ crontab -e
 
 ### Q: 初始化时报错 "FATAL: password authentication failed"
 
-* **原因**: 数据库密码错误或 pg_hba.conf 未允许连接。
-* **解决**: 检查 `.env` 中的 `DATABASE__URI` 或 `POSTGRES_PASSWORD` 配置，确保用户名密码正确且有建表权限。
+- **原因**: 数据库密码错误或 pg_hba.conf 未允许连接。
+- **解决**: 检查 `.env` 中的 `DATABASE__URI` 或 `POSTGRES_PASSWORD` 配置，确保用户名密码正确且有建表权限。
 
 ### Q: GitLab 同步极慢或卡住
 
-* **原因**: 某些项目 Commit 历史过长 (如 10w+)。
-* **解决**:
-    1. 检查日志查看卡在哪个 Project ID。
-    2. 系统会自动记录断点，杀掉进程重启后会从断点处继续，不要为了速度频繁重启。
-    3. 检查网络带宽。
+- **原因**: 某些项目 Commit 历史过长 (如 10w+)。
+- **解决**:
+  1. 检查日志查看卡在哪个 Project ID。
+  1. 系统会自动记录断点，杀掉进程重启后会从断点处继续，不要为了速度频繁重启。
+  1. 检查网络带宽。
 
 ### Q: SonarQube 数据为空
 
-* **原因**: 项目 Key 匹配失败。
-* **解决**:
-  * 默认匹配规则是 `GitLab Path With Namespace` == `Sonar Project Key`。
-  * 如果规则不同，需修改 `plugins/sonarqube/collector.py` 中的 `_resolve_project_key` 逻辑。
+- **原因**: 项目 Key 匹配失败。
+- **解决**:
+  - 默认匹配规则是 `GitLab Path With Namespace` == `Sonar Project Key`。
+  - 如果规则不同，需修改 `plugins/sonarqube/collector.py` 中的 `_resolve_project_key` 逻辑。
 
 ## 6. 升级维护 (Maintenance)
 

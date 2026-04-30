@@ -192,21 +192,11 @@ class PluginLoader:
 
     @classmethod
     def _register_v2_plugin(cls, plugin: BasePlugin) -> None:
-        """使用 2.0 协议注册插件。"""
-        name = plugin.metadata.name
+        """使用 2.0 协议注册插件。
 
-        # 注册 Client
-        client_cls = plugin.get_client_class()
-        PluginRegistry.register_client(name, client_cls)
-
-        # 注册 Worker
-        worker_cls = plugin.get_worker_class()
-        PluginRegistry.register_worker(name, worker_cls)
-
-        # 注册 Config
-        config_getter = plugin.get_config_getter()
-        if config_getter:
-            PluginRegistry.register_config(name, config_getter)
+        不再在此阶段调用 get_worker_class()，实现真正的延迟加载。
+        """
+        PluginRegistry.register_plugin(plugin)
 
         # 触发初始化钩子
         plugin.on_setup()
