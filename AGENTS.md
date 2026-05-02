@@ -9,7 +9,8 @@
 | :--- | :--- | :--- |
 | **`/task-kickoff`** | 处理新任务 | 任务定级 [L1-L4]、风险预判与逻辑切片 |
 | **`/evolve-skill`** | 产生新教训 | 将 `lessons-learned` 转化为自动化审计规则 (Arbiter) |
-| **`/session-handover`** | 关闭会话 | **[DoD]**：取证、日志落盘、状态对齐 |
+| **`/session-handover`** | 关闭会话 | **[DoD]**：取证、日志落盘 (session-history/lessons-learned)、状态对齐 (progress) |
+
 | **`/bug-triage`** | 处理缺陷 | 复现 -> 归因 -> TDD 修复 |
 | **`/doc-update`** | 逻辑变更/完工 | 更新 progress/contexts (SSOT) |
 | **`/rollback`** | 执行变更前 | 生成应急恢复清单与 Git Tag |
