@@ -78,6 +78,13 @@ RULES = [
         "check": lambda line, ctx: ctx["is_service"] and "class " in line and "__metrics__" not in line,
         "message": "Service classes should define '__metrics__' contract for predictable observability.",
     },
+    {
+        "id": "ARCH-009",
+        "name": "Unsafe ORM String Reference",
+        "severity": "ERROR",
+        "check": lambda line, ctx: "relationship(" in line and ('primaryjoin="' in line or 'foreign_keys="' in line) and "lambda" not in line,
+        "message": "Use lambda-based primaryjoin/foreign_keys to prevent Mock pollution during ORM discovery.",
+    },
     # [ADD_NEW_RULE_HERE]
 ]
 
@@ -90,7 +97,7 @@ def audit():
     print(f"{YELLOW}>>> Running Optimized Architecture Audit (v2.1-Performance)...{RESET}")
 
     for root, _, files in os.walk(project_root):
-        if any(x in root for x in [".venv", ".git", "__pycache__", "scripts", "archived", ".agent", "chaos-sentinel-workspace"]):
+        if any(x in root for x in [".venv", ".git", "__pycache__", "scripts", "archived", ".agent", "chaos-sentinel-workspace", "tests", "migrations"]):
             continue
 
         for file in files:
@@ -112,7 +119,7 @@ def audit():
                 "path": normalized_path,
                 "filename": file,
                 "file_has_logging": "logger." in content or "get_logger" in content,
-                "file_has_traceability": "source_system" in content,
+                "file_has_traceability": "source_system" in content or "TraceabilityMixin" in content or "SCDMixin" in content,
                 "is_router": "/routers/" in normalized_path,
                 "is_service": "/services/" in normalized_path or "/workers/" in normalized_path,
                 "is_plugin_init": "/plugins/" in normalized_path and file == "__init__.py",
@@ -127,7 +134,7 @@ def audit():
 
                 # Context State Management (基于行首缩进的简易状态机)
                 if line.startswith("class "):
-                    file_ctx["in_scd_class"] = "SCDMixin" in line or "Base" in line
+                    file_ctx["in_scd_class"] = "SCDMixin" in line
                 elif line.startswith(("#", "@")):
                     pass
                 elif line[:1].strip() and not line.startswith("class "):

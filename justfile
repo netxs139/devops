@@ -1,7 +1,7 @@
-# DevOps 平台指令集 (Justfile)
+# DevOps Platform 自动化运维与任务管理 (Justfile)
 # -----------------------------------------------------------
-# 基于 Just 的自动化运维方案，替代传统的 Makefile
-# 所有容器操作均在 api 容器内执行
+#  标准化本地开发、容器构建与 CI/CD 流程
+#  所有容器操作均默认在 api 容器内执行，确保环境一致性
 # -----------------------------------------------------------
 
 set dotenv-load := true
@@ -130,6 +130,15 @@ arch-audit:
     @echo "Running Architecture & Anti-Pattern Audit..."
     python scripts/arch_auditor.py
 
+# [MANDATORY] 核心卡点：代码合并前全量校验 (Lint -> Test -> Build)
+full-gate:
+    @echo "Launching Project Full Gate (Grader 3)..."
+    python scripts/gatekeeper.py --mode full
+
+# [L2/CI] 快速卡点：跳过容器构建阶段
+fast-gate:
+    python scripts/gatekeeper.py --mode fast
+
 # 运行单元测试
 test:
     {{EXEC_CMD}} pytest tests/unit/ -v
@@ -153,6 +162,16 @@ diag-db:
 # 消息队列专项诊断
 diag-mq:
     {{EXEC_CMD}} python scripts/diag_mq.py
+
+# [性能诊断] 数据库执行计划分析 (EXPLAIN ANALYZE)
+profile-db args="":
+    @echo "Running EXPLAIN ANALYZE profiling..."
+    {{EXEC_CMD}} python scripts/profile_db.py {{args}}
+
+# [性能诊断] Python 运行时采样 (py-spy)
+profile-code args="":
+    @echo "Running py-spy profiling..."
+    {{EXEC_CMD}} py-spy record -o profile.svg -- python {{args}}
 
 # 手动触发全量数据同步
 sync-all:

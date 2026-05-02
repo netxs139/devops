@@ -25,6 +25,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    and_,
     cast,
     select,
 )
@@ -34,13 +35,13 @@ from sqlalchemy.orm import backref, relationship
 from sqlalchemy.sql import func
 
 from devops_collector.config import settings
-from devops_collector.models.base_models import Base, Organization
+from devops_collector.models.base_models import Base, Organization, TimestampMixin, TraceabilityMixin, User
 
 
 Organization.gitlab_projects = relationship("GitLabProject", back_populates="organization")
 
 
-class GitLabGroup(Base):
+class GitLabGroup(Base, TimestampMixin, TraceabilityMixin):
     """GitLab 群组模型。
 
     代表 GitLab 中的顶级或子群组，支持树形嵌套结构。
@@ -86,7 +87,7 @@ class GitLabGroup(Base):
         return f"<GitLabGroup(id={self.id}, full_path='{self.full_path}')>"
 
 
-class GitLabGroupMember(Base):
+class GitLabGroupMember(Base, TimestampMixin, TraceabilityMixin):
     """GitLab 群组成员模型。
 
     维护用户与群组之间的多对多关联及权限信息。
@@ -115,13 +116,13 @@ class GitLabGroupMember(Base):
     joined_at = Column(DateTime(timezone=True))
     expires_at = Column(DateTime(timezone=True))
     group = relationship("GitLabGroup", back_populates="members")
-    user = relationship("User", primaryjoin="and_(User.global_user_id==GitLabGroupMember.user_id, User.is_current==True)")
+    user = relationship("User", primaryjoin=and_(User.global_user_id == user_id, User.is_current == True))
 
     def __repr__(self) -> str:
         return f"<GitLabGroupMember(group_id={self.group_id}, gitlab_uid={self.gitlab_uid})>"
 
 
-class GitLabProject(Base):
+class GitLabProject(Base, TimestampMixin, TraceabilityMixin):
     """GitLab 项目模型。
 
     存储 GitLab 中项目的元数据，并关联到组织架构。
@@ -181,7 +182,7 @@ class GitLabProject(Base):
     organization_id = Column(Integer, ForeignKey("mdm_organizations.id"))
     organization = relationship(
         "Organization",
-        primaryjoin="and_(Organization.id==GitLabProject.organization_id, Organization.is_current==True)",
+        primaryjoin=and_(Organization.id == organization_id, Organization.is_current == True),
         back_populates="gitlab_projects",
     )
     mdm_project_id = Column(Integer, ForeignKey("mdm_projects.id"), nullable=True)
@@ -282,7 +283,7 @@ class GitLabProject(Base):
         return f"<GitLabProject(id={self.id}, path='{self.path_with_namespace}')>"
 
 
-class GitLabProjectMember(Base):
+class GitLabProjectMember(Base, TimestampMixin, TraceabilityMixin):
     """GitLab 项目成员模型 (Project Level RBAC)。
 
     用于在更细粒度（项目级）控制用户权限。
@@ -317,7 +318,7 @@ class GitLabProjectMember(Base):
     project = relationship("GitLabProject", back_populates="members")
     user = relationship(
         "User",
-        primaryjoin="and_(User.global_user_id==GitLabProjectMember.user_id, User.is_current==True)",
+        primaryjoin=and_(User.global_user_id == user_id, User.is_current == True),
         back_populates="project_memberships",
     )
 
@@ -325,7 +326,7 @@ class GitLabProjectMember(Base):
         return f"<GitLabProjectMember(project_id={self.project_id}, user_id={self.user_id})>"
 
 
-class GitLabMergeRequest(Base):
+class GitLabMergeRequest(Base, TimestampMixin, TraceabilityMixin):
     """合并请求 (MR) 模型。
 
     存储代码合并请求的核心数据及其在 DevOps 生命周期中的协作元数据。
@@ -383,7 +384,7 @@ class GitLabMergeRequest(Base):
     raw_data = Column(JSON)
     deployments = relationship(
         "GitLabDeployment",
-        primaryjoin="and_(GitLabMergeRequest.merge_commit_sha==GitLabDeployment.sha, GitLabMergeRequest.project_id==GitLabDeployment.project_id)",
+        primaryjoin=lambda: and_(GitLabMergeRequest.merge_commit_sha == GitLabDeployment.sha, GitLabMergeRequest.project_id == GitLabDeployment.project_id),
         foreign_keys="[GitLabDeployment.sha, GitLabDeployment.project_id]",
         viewonly=True,
     )
@@ -432,7 +433,7 @@ class GitLabMergeRequest(Base):
     ai_summary = Column(Text)
     ai_confidence = Column(Float)
     author_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
-    author = relationship("User", primaryjoin="and_(User.global_user_id==GitLabMergeRequest.author_id, User.is_current==True)")
+    author = relationship("User", primaryjoin=and_(User.global_user_id == author_id, User.is_current == True))
     project = relationship("GitLabProject", back_populates="merge_requests")
 
     @hybrid_property
@@ -492,7 +493,7 @@ class GitLabMergeRequest(Base):
         return f"<GitLabMergeRequest(id={self.id}, iid={self.iid})>"
 
 
-class GitLabCommit(Base):
+class GitLabCommit(Base, TimestampMixin, TraceabilityMixin):
     """GitLab 提交模型。
 
     记录 Git 仓库的原子变更，并关联到项目和作者。
@@ -537,7 +538,7 @@ class GitLabCommit(Base):
     project = relationship("GitLabProject", back_populates="commits")
     raw_data = Column(JSON)
     gitlab_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    author = relationship("User", primaryjoin="and_(User.global_user_id==GitLabCommit.gitlab_user_id, User.is_current==True)")
+    author = relationship("User", primaryjoin=and_(User.global_user_id == gitlab_user_id, User.is_current == True))
 
     # [Advanced Metrics] - Added for Option A Architecture Alignment
     eloc_score = Column(Float, default=0.0, comment="有效代码行数得分")
@@ -553,7 +554,7 @@ class GitLabCommit(Base):
         return f"<GitLabCommit(id='{self.short_id}', project_id={self.project_id})>"
 
 
-class GitLabCommitFileStats(Base):
+class GitLabCommitFileStats(Base, TimestampMixin, TraceabilityMixin):
     """提交文件级别统计模型。
 
     用于细粒度分析每次提交中不同类型文件的代码量和注释率。
@@ -592,7 +593,7 @@ class GitLabCommitFileStats(Base):
         return f"<GitLabCommitFileStats(commit_id='{self.commit_id}', file_path='{self.file_path}')>"
 
 
-class GitLabIssue(Base):
+class GitLabIssue(Base, TimestampMixin, TraceabilityMixin):
     """议题 (Issue) 模型。
 
     代表项目中的任务、缺陷或需求。
@@ -647,7 +648,7 @@ class GitLabIssue(Base):
     milestone_id = Column(Integer, ForeignKey("gitlab_milestones.id"), nullable=True)
     raw_data = Column(JSON)
     author_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
-    author = relationship("User", primaryjoin="and_(User.global_user_id==GitLabIssue.author_id, User.is_current==True)")
+    author = relationship("User", primaryjoin=and_(User.global_user_id == author_id, User.is_current == True))
     project = relationship("GitLabProject", back_populates="issues")
     events = relationship("GitLabIssueEvent", back_populates="issue", cascade="all, delete-orphan")
     transitions = relationship("GitLabIssueStateTransition", back_populates="issue", cascade="all, delete-orphan")
@@ -655,7 +656,9 @@ class GitLabIssue(Base):
     milestone = relationship("GitLabMilestone", back_populates="issues")
     merge_requests = relationship(
         "GitLabMergeRequest",
-        primaryjoin="and_(cast(GitLabIssue.iid, String)==GitLabMergeRequest.external_issue_id, GitLabIssue.project_id==GitLabMergeRequest.project_id)",
+        primaryjoin=lambda: and_(
+            cast(GitLabIssue.iid, String) == GitLabMergeRequest.external_issue_id, GitLabIssue.project_id == GitLabMergeRequest.project_id
+        ),
         viewonly=True,
         foreign_keys="[GitLabMergeRequest.external_issue_id, GitLabMergeRequest.project_id]",
     )
@@ -815,7 +818,7 @@ class GitLabIssue(Base):
         return f"<GitLabIssue(id={self.id}, iid={self.iid}, title='{self.title}')>"
 
 
-class GitLabIssueEvent(Base):
+class GitLabIssueEvent(Base, TimestampMixin, TraceabilityMixin):
     """GitLab Issue 变更事件流。
 
     CALMS 扫描核心表，用于根据事件流重建 Issue 的状态演进过程（如前置时间计算）。
@@ -844,7 +847,7 @@ class GitLabIssueEvent(Base):
     meta_info = Column(JSON)
     created_at = Column(DateTime(timezone=True))
     issue = relationship("GitLabIssue", back_populates="events")
-    user = relationship("User")
+    user = relationship("User", foreign_keys=[user_id])
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
@@ -861,7 +864,7 @@ class GitLabIssueEvent(Base):
         return f"<GitLabIssueEvent(issue_id={self.issue_id}, type='{self.event_type}')>"
 
 
-class GitLabIssueStateTransition(Base):
+class GitLabIssueStateTransition(Base, TimestampMixin, TraceabilityMixin):
     """Issue 状态流转记录。
 
     用于计算 Cycle Time 和分析流动效率。
@@ -901,7 +904,7 @@ class GitLabIssueStateTransition(Base):
         return f"<GitLabIssueStateTransition(issue_id={self.issue_id}, to_state='{self.to_state}')>"
 
 
-class GitLabBlockage(Base):
+class GitLabBlockage(Base, TimestampMixin, TraceabilityMixin):
     """Issue 阻塞记录。
 
     用于分析阻碍流动的原因和时长 (Flow Efficiency)。
@@ -939,7 +942,7 @@ class GitLabBlockage(Base):
         return f"<GitLabBlockage(issue_id={self.issue_id}, reason='{self.reason}')>"
 
 
-class GitLabPipeline(Base):
+class GitLabPipeline(Base, TimestampMixin, TraceabilityMixin):
     """流水线 (CI/CD Pipeline) 模型。
 
     记录 CI/CD 执行的结果、时长和覆盖率等工程效能核心指标。
@@ -1051,7 +1054,7 @@ class GitLabPipeline(Base):
         return f"<GitLabPipeline(id={self.id}, project_id={self.project_id}, status='{self.status}')>"
 
 
-class GitLabDeployment(Base):
+class GitLabDeployment(Base, TimestampMixin, TraceabilityMixin):
     """部署记录模型。
 
     记录代码被部署到不同环境的执行结果及其追踪 SHA。
@@ -1132,7 +1135,7 @@ class GitLabDeployment(Base):
         return f"<GitLabDeployment(id={self.id}, env='{self.environment}', status='{self.status}')>"
 
 
-class GitLabNote(Base):
+class GitLabNote(Base, TimestampMixin, TraceabilityMixin):
     """评论/笔记模型。
 
     存储 Issue、MR 等对象下的讨论内容和系统通知。
@@ -1182,7 +1185,7 @@ class GitLabNote(Base):
         return f"<GitLabNote(id={self.id}, type='{self.noteable_type}')>"
 
 
-class GitLabTag(Base):
+class GitLabTag(Base, TimestampMixin, TraceabilityMixin):
     """标签/版本号模型。
 
     Attributes:
@@ -1220,7 +1223,7 @@ class GitLabTag(Base):
         return f"<GitLabTag(name='{self.name}', project_id={self.project_id})>"
 
 
-class GitLabBranch(Base):
+class GitLabBranch(Base, TimestampMixin, TraceabilityMixin):
     """分支模型。
 
     Attributes:
@@ -1266,7 +1269,7 @@ class GitLabBranch(Base):
         return f"<GitLabBranch(name='{self.name}', project_id={self.project_id})>"
 
 
-class GitLabMilestone(Base):
+class GitLabMilestone(Base, TimestampMixin, TraceabilityMixin):
     """里程碑模型。
 
     Attributes:
@@ -1335,7 +1338,7 @@ class GitLabMilestone(Base):
         return f"<GitLabMilestone(id={self.id}, title='{self.title}')>"
 
 
-class ReleaseMilestoneLink(Base):
+class ReleaseMilestoneLink(Base, TimestampMixin, TraceabilityMixin):
     """发布与里程碑的关联表。
 
     实现 Release 与 Milestone 的多对多关联。
@@ -1351,7 +1354,7 @@ class ReleaseMilestoneLink(Base):
     milestone_id = Column(Integer, ForeignKey("gitlab_milestones.id"), primary_key=True)
 
 
-class GitLabRelease(Base):
+class GitLabRelease(Base, TimestampMixin, TraceabilityMixin):
     """GitLab 发布记录模型。
 
     对应 GitLab 的 Release 对象。一个 Release 基于一个 Tag，可以关联多个 Milestone。
@@ -1399,7 +1402,7 @@ class GitLabRelease(Base):
         return f"<GitLabRelease(id={self.id}, tag='{self.tag_name}')>"
 
 
-class GitLabPackage(Base):
+class GitLabPackage(Base, TimestampMixin, TraceabilityMixin):
     """GitLab 制品库包模型。
 
     Attributes:
@@ -1445,7 +1448,7 @@ class GitLabPackage(Base):
         return f"<GitLabPackage(id={self.id}, name='{self.name}', version='{self.version}')>"
 
 
-class GitLabPackageFile(Base):
+class GitLabPackageFile(Base, TimestampMixin, TraceabilityMixin):
     """GitLab 包关联的文件模型。
 
     Attributes:
@@ -1487,7 +1490,7 @@ class GitLabPackageFile(Base):
         return f"<GitLabPackageFile(id={self.id}, name='{self.file_name}')>"
 
 
-class GitLabWikiLog(Base):
+class GitLabWikiLog(Base, TimestampMixin, TraceabilityMixin):
     """GitLab Wiki 变更日志模型。
 
     Attributes:
@@ -1515,7 +1518,7 @@ class GitLabWikiLog(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
     created_at = Column(DateTime(timezone=True))
     project = relationship("GitLabProject")
-    user = relationship("User")
+    user = relationship("User", foreign_keys=[user_id])
     raw_data = Column(JSON)
 
     def __repr__(self) -> str:
@@ -1533,7 +1536,7 @@ class GitLabWikiLog(Base):
         return f"<GitLabWikiLog(id={self.id}, action='{self.action}', title='{self.title}')>"
 
 
-class GitLabDependency(Base):
+class GitLabDependency(Base, TimestampMixin, TraceabilityMixin):
     """GitLab 项目依赖模型。
 
     Attributes:
@@ -1577,3 +1580,7 @@ from . import events
 
 
 events.register_events()
+
+
+# 动态挂载反向关联，规避 base_models 中的循环引用 NameError
+User.project_memberships = relationship("GitLabProjectMember", back_populates="user", primaryjoin=lambda: User.global_user_id == GitLabProjectMember.user_id)

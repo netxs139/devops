@@ -63,8 +63,15 @@ class TimestampMixin:
     )
 
 
-class SCDMixin:
-    """SCD Type 2 慢变维支持混入类。"""
+class TraceabilityMixin:
+    """数据追溯混入类，记录数据来源与同步批次。"""
+
+    source_system = Column(String(50), nullable=True, index=True, comment="数据来源系统标识 (如 gitlab-corp, zentao-tjhq)")
+    correlation_id = Column(String(100), nullable=True, index=True, comment="同步任务追踪 ID (用于批次审计与回滚)")
+
+
+class SCDMixin(TraceabilityMixin):
+    """SCD Type 2 慢变维支持混入类。继承追溯元数据。"""
 
     sync_version = Column(Integer, default=1, nullable=False)
     effective_from = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
@@ -108,8 +115,6 @@ class Organization(Base, TimestampMixin, SCDMixin):
     is_active = Column(Boolean, default=True, comment="是否启用")
     cost_center = Column(String(100), nullable=True, comment="成本中心编码")
     business_line = Column(String(50), nullable=True, comment="所属业务线/体系 (如 研发体系/交付体系/营销体系)")
-    source_system = Column(String(50), nullable=True, comment="创建/更新来源系统 (如 wecom/zentao)")
-    correlation_id = Column(String(100), index=True, nullable=True, comment="关联的同步任务追踪 ID")
 
     # Relationships
     parent = relationship(
@@ -121,7 +126,7 @@ class Organization(Base, TimestampMixin, SCDMixin):
     manager = relationship("User", foreign_keys=[manager_user_id], back_populates="managed_organizations")
     users = relationship(
         "User",
-        foreign_keys="User.department_id",
+        primaryjoin=lambda: Organization.id == User.department_id,
         back_populates="department",
     )
     products = relationship("Product", back_populates="owner_team")
@@ -156,25 +161,22 @@ class User(Base, TimestampMixin, SCDMixin):
         index=True,
         comment="常驻办公地点ID",
     )
-    source_system = Column(String(50), nullable=True, comment="创建/更新来源系统")
-    correlation_id = Column(String(100), index=True, nullable=True, comment="关联的同步任务追踪 ID")
     is_active = Column(Boolean, default=True, comment="是否在职")
 
     location = relationship("Location", foreign_keys=[location_id])
     is_survivor = Column(Boolean, default=False, comment="是否通过合并保留的账号")
     department = relationship("Organization", foreign_keys=[department_id], back_populates="users")
-    managed_organizations = relationship("Organization", foreign_keys="Organization.manager_user_id", back_populates="manager")
-    identities = relationship("IdentityMapping", back_populates="user", foreign_keys="IdentityMapping.global_user_id")
+    managed_organizations = relationship("Organization", primaryjoin=lambda: Organization.manager_user_id == User.global_user_id, back_populates="manager")
+    identities = relationship("IdentityMapping", back_populates="user", primaryjoin=lambda: IdentityMapping.global_user_id == User.global_user_id)
     # 指向新版 SysRole
-    roles = relationship("SysRole", secondary="sys_user_roles", backref="users")
-    test_cases = relationship("GTMTestCase", back_populates="author", foreign_keys="GTMTestCase.author_id")
-    requirements = relationship("GTMRequirement", back_populates="author", foreign_keys="GTMRequirement.author_id")
-    managed_products_as_pm = relationship("Product", back_populates="product_manager", foreign_keys="Product.product_manager_id")
-    managed_products_as_dev = relationship("Product", back_populates="dev_lead", foreign_keys="Product.dev_lead_id")
-    managed_products_as_qa = relationship("Product", back_populates="qa_lead", foreign_keys="Product.qa_lead_id")
-    managed_products_as_release = relationship("Product", back_populates="release_lead", foreign_keys="Product.release_lead_id")
-    project_memberships = relationship("GitLabProjectMember", back_populates="user", foreign_keys="GitLabProjectMember.user_id")
-    team_memberships = relationship("TeamMember", back_populates="user", foreign_keys="TeamMember.user_id")
+    roles = relationship(
+        "SysRole", secondary="sys_user_roles", primaryjoin=lambda: User.global_user_id == UserRole.user_id, secondaryjoin=lambda: SysRole.id == UserRole.role_id
+    )
+    managed_products_as_pm = relationship("Product", back_populates="product_manager", primaryjoin=lambda: User.global_user_id == Product.product_manager_id)
+    managed_products_as_dev = relationship("Product", back_populates="dev_lead", primaryjoin=lambda: User.global_user_id == Product.dev_lead_id)
+    managed_products_as_qa = relationship("Product", back_populates="qa_lead", primaryjoin=lambda: User.global_user_id == Product.qa_lead_id)
+    managed_products_as_release = relationship("Product", back_populates="release_lead", primaryjoin=lambda: User.global_user_id == Product.release_lead_id)
+    team_memberships = relationship("TeamMember", back_populates="user", primaryjoin=lambda: User.global_user_id == TeamMember.user_id)
 
     total_eloc = Column(Float, default=0.0, comment="累计有效代码行数")
     eloc_rank = Column(Integer, default=0, comment="ELOC排名")
@@ -379,7 +381,7 @@ class IdentityMapping(Base, TimestampMixin):
         UniqueConstraint("source_system", "global_user_id", name="uq_source_global_user"),
     )
 
-    user = relationship("User", back_populates="identities", foreign_keys=[global_user_id])
+    user = relationship("User", back_populates="identities", primaryjoin=lambda: IdentityMapping.global_user_id == User.global_user_id)
 
 
 class Team(Base, TimestampMixin, SCDMixin):

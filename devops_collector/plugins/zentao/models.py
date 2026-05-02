@@ -3,15 +3,13 @@
 定义禅道相关的 SQLAlchemy ORM 模型，支持产品、执行、需求、缺陷、用例、构建和发布。
 """
 
-from datetime import UTC, datetime
-
 from sqlalchemy import JSON, UUID, Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
-from devops_collector.models.base_models import Base
+from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin
 
 
-class ZenTaoProduct(Base):
+class ZenTaoProduct(Base, TimestampMixin, TraceabilityMixin):
     """禅道产品模型 (zentao_products)。
 
     Attributes:
@@ -40,14 +38,12 @@ class ZenTaoProduct(Base):
     gitlab_project_id = Column(Integer, ForeignKey("gitlab_projects.id"), nullable=True)
     last_synced_at = Column(DateTime(timezone=True))
     sync_status = Column(String(20), default="PENDING")
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    updated_at = Column(DateTime(timezone=True), onupdate=lambda: datetime.now(UTC))
     raw_data = Column(JSON)
     # MDM 关联字段
     mdm_product_id = Column(Integer, ForeignKey("mdm_products.id"), nullable=True, comment="关联的 MDM 产品 ID")
     executions = relationship("ZenTaoExecution", back_populates="product", cascade="all, delete-orphan")
     plans = relationship("ZenTaoProductPlan", back_populates="product", cascade="all, delete-orphan")
-    issues = relationship("ZenTaoIssue", back_populates="product", cascade="all, delete-orphan", foreign_keys="ZenTaoIssue.product_id")
+    issues = relationship("ZenTaoIssue", back_populates="product", cascade="all, delete-orphan", primaryjoin=lambda: ZenTaoProduct.id == ZenTaoIssue.product_id)
     test_cases = relationship("ZenTaoTestCase", back_populates="product", cascade="all, delete-orphan")
     builds = relationship("ZenTaoBuild", back_populates="product", cascade="all, delete-orphan")
     releases = relationship("ZenTaoRelease", back_populates="product", cascade="all, delete-orphan")
@@ -60,7 +56,7 @@ class ZenTaoProduct(Base):
         return f"<ZenTaoProduct(id={self.id}, name='{self.name}')>"
 
 
-class ZenTaoProductPlan(Base):
+class ZenTaoProductPlan(Base, TimestampMixin, TraceabilityMixin):
     """禅道产品计划模型 (zentao_product_plans)。
 
     用于规划产品的分阶段交付。需求和 Bug 通常关联到计划。
@@ -95,7 +91,7 @@ class ZenTaoProductPlan(Base):
         return f"<ZenTaoProductPlan(id={self.id}, title='{self.title}')>"
 
 
-class ZenTaoExecution(Base):
+class ZenTaoExecution(Base, TimestampMixin, TraceabilityMixin):
     """禅道执行模型 (zentao_executions)，即迭代/Sprint。
 
     Attributes:
@@ -133,7 +129,7 @@ class ZenTaoExecution(Base):
         return f"<ZenTaoExecution(id={self.id}, name='{self.name}')>"
 
 
-class ZenTaoIssue(Base):
+class ZenTaoIssue(Base, TimestampMixin, TraceabilityMixin):
     """禅道 Issue 模型 (zentao_issues)，包含需求 (Story)、缺陷 (Bug) 和 任务 (Task)。
 
     Attributes:
@@ -173,8 +169,6 @@ class ZenTaoIssue(Base):
     assigned_to = Column(String(100))
     opened_by_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
     assigned_to_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    created_at = Column(DateTime(timezone=True))
-    updated_at = Column(DateTime(timezone=True))
     closed_at = Column(DateTime(timezone=True))
     raw_data = Column(JSON)
     first_commit_sha = Column(String(100))
@@ -189,7 +183,7 @@ class ZenTaoIssue(Base):
         return f"<ZenTaoIssue(id={self.id}, type='{self.type}', title='{self.title[:20]}...')>"
 
 
-class ZenTaoTestCase(Base):
+class ZenTaoTestCase(Base, TimestampMixin, TraceabilityMixin):
     """禅道测试用例模型 (zentao_test_cases)。
 
     Attributes:
@@ -226,7 +220,7 @@ class ZenTaoTestCase(Base):
         return f"<ZenTaoTestCase(id={self.id}, title='{self.title}')>"
 
 
-class ZenTaoTestResult(Base):
+class ZenTaoTestResult(Base, TimestampMixin, TraceabilityMixin):
     """禅道测试执行结果模型 (zentao_test_results)。
 
     Attributes:
@@ -251,7 +245,7 @@ class ZenTaoTestResult(Base):
         return f"<ZenTaoTestResult(case_id={self.case_id}, result='{self.result}')>"
 
 
-class ZenTaoBuild(Base):
+class ZenTaoBuild(Base, TimestampMixin, TraceabilityMixin):
     """禅道版本/构建模型 (zentao_builds)。
 
     Attributes:
@@ -280,7 +274,7 @@ class ZenTaoBuild(Base):
         return f"<ZenTaoBuild(id={self.id}, name='{self.name}')>"
 
 
-class ZenTaoRelease(Base):
+class ZenTaoRelease(Base, TimestampMixin, TraceabilityMixin):
     """禅道发布记录模型 (zentao_releases)。
 
     Attributes:
@@ -312,7 +306,7 @@ class ZenTaoRelease(Base):
         return f"<ZenTaoRelease(id={self.id}, name='{self.name}')>"
 
 
-class ZenTaoAction(Base):
+class ZenTaoAction(Base, TimestampMixin, TraceabilityMixin):
     """禅道操作日志模型 (zentao_actions)。
 
     Attributes:

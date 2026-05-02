@@ -1,5 +1,5 @@
 name: DevOps Platform Full Gate
-# 此工作流确保云端 GitHub Actions 与本地 `make full-gate` 完全对齐，消除环境脱节。
+# 此工作流确保云端 GitHub Actions 与本地 `just full-gate` 完全对齐，消除环境脱节。
 # 关键依赖链：build (镜像) -> up (容器栈) -> gatekeeper.py (全门禁)
 
 on:
@@ -29,6 +29,9 @@ jobs:
           enable-cache: true
           cache-dependency-path: "uv.lock"
 
+      - name: Set up Just
+        uses: extractions/setup-just@v2
+
       - name: Set up Python 3.11
         run: uv python install 3.11
 
@@ -44,10 +47,10 @@ jobs:
 
       # ── 容器栈：先构建镜像，再启动服务 ─────────────────────
       - name: Build Docker Images
-        run: make build
+        run: just build
 
       - name: Start Container Stack (DB, MQ, API)
-        run: make up
+        run: just up
 
       # ── 全门禁执行 ────────────────────────────────────────
       - name: Launch Full Gate Check
@@ -56,4 +59,4 @@ jobs:
       # ── 清场 ──────────────────────────────────────────────
       - name: Cleanup Containers
         if: always()
-        run: make down
+        run: just down

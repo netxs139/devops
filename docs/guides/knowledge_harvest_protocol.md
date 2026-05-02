@@ -26,13 +26,13 @@
 - **触发条件**：用户确认 `[Draft Rule]`。
 - **动作**：
   1. 将准则写入 `contexts.md` 对应的章节（若为项目特有）或 `gemini.md`（若为架构通用）。
-  1. 若可能，编写一个轻量级的检测脚本或在 `make lint/check` 中增加校验逻辑。
+  1. 若可能，编写一个轻量级的检测脚本或在 `just verify` 中增加校验逻辑。
 
 ### 阶段 D：环境清理 (Sanitization) [NEW]
 
 - **触发条件**：完成阶段 C 或任务结束前。
 - **动作**：
-  1. 强制执行 `make clean`。
+  1. 强制执行 `just clean`。
   1. 检查并确保无新增未跟踪的临时文件出现在 `git status` 中。
   1. 在 `progress.txt` 记录中添加 `[Hygiene]: 已清理环境垃圾` 标签。
 

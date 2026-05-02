@@ -3,8 +3,6 @@
 定义 Jira 相关的 SQLAlchemy ORM 模型，包括项目、看板、Sprint 和 Issue。
 """
 
-from datetime import UTC, datetime
-
 from sqlalchemy import (
     JSON,
     BigInteger,
@@ -18,10 +16,10 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
-from devops_collector.models.base_models import Base
+from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin
 
 
-class JiraProject(Base):
+class JiraProject(Base, TimestampMixin, TraceabilityMixin):
     """Jira 项目模型 (jira_projects)。
 
     Attributes:
@@ -47,8 +45,6 @@ class JiraProject(Base):
     gitlab_project = relationship("GitLabProject", back_populates="jira_projects")
     last_synced_at = Column(DateTime(timezone=True))
     sync_status = Column(String(20), default="PENDING")
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    updated_at = Column(DateTime(timezone=True), onupdate=lambda: datetime.now(UTC))
     raw_data = Column(JSON)
     boards = relationship("JiraBoard", back_populates="project", cascade="all, delete-orphan")
     issues = relationship("JiraIssue", back_populates="project", cascade="all, delete-orphan")
@@ -68,7 +64,7 @@ class JiraProject(Base):
         return f"<JiraProject(key='{self.key}', name='{self.name}')>"
 
 
-class JiraBoard(Base):
+class JiraBoard(Base, TimestampMixin, TraceabilityMixin):
     """Jira 看板模型 (jira_boards)。
 
     Attributes:
@@ -104,7 +100,7 @@ class JiraBoard(Base):
         return f"<JiraBoard(id={self.id}, name='{self.name}')>"
 
 
-class JiraSprint(Base):
+class JiraSprint(Base, TimestampMixin, TraceabilityMixin):
     """Jira Sprint (迭代) 模型 (jira_sprints)。
 
     Attributes:
@@ -146,7 +142,7 @@ class JiraSprint(Base):
         return f"<JiraSprint(id={self.id}, name='{self.name}', state='{self.state}')>"
 
 
-class JiraIssue(Base):
+class JiraIssue(Base, TimestampMixin, TraceabilityMixin):
     """Jira Issue (问题/任务) 详情模型 (jira_issues)。
 
     Attributes:
@@ -187,8 +183,6 @@ class JiraIssue(Base):
     reporter_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
     creator_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
     user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    created_at = Column(DateTime(timezone=True))
-    updated_at = Column(DateTime(timezone=True))
     resolved_at = Column(DateTime(timezone=True))
     raw_data = Column(JSON)
     first_commit_sha = Column(String(100))
@@ -219,7 +213,7 @@ class JiraIssue(Base):
         return f"<JiraIssue(key='{self.key}', summary='{self.summary[:20]}...')>"
 
 
-class JiraIssueHistory(Base):
+class JiraIssueHistory(Base, TimestampMixin, TraceabilityMixin):
     """Jira 问题变更历史表 (jira_issue_histories)。
 
     Attributes:
@@ -235,7 +229,6 @@ class JiraIssueHistory(Base):
     id = Column(String(50), primary_key=True)
     issue_id = Column(Integer, ForeignKey("jira_issues.id"), nullable=False)
     author_name = Column(String(100))
-    created_at = Column(DateTime(timezone=True))
     field = Column(String(100))
     from_string = Column(Text)
     to_string = Column(Text)

@@ -95,9 +95,9 @@
   - **核心原则**: 严禁以“Windows 能跑通”作为提测标准。物理真实环境以 Docker 内的 Linux 表现为准。通过 `just test` 或 `docker-compose exec api pytest` 确保 100% 环境对齐。
 - **路径处理**: 强制使用 `pathlib` 确保跨平台路径兼容。
 - **Shell 方言约束 [MANDATORY]**:
-  - **宿主机 (Windows + PowerShell 5.1)**: 严禁在终端指令中使用 `&&`、`||`、`$(...)` 等 bash-only 语法。链式命令必须拆分为独立调用或使用 `;` 分号。
-  - **容器内 (Linux + bash)**: Makefile 中使用 `$(EXEC_CMD)` 前缀的命令在容器内执行，可自由使用 bash 语法。
-  - **Makefile 跨平台**: 涉及 OS 特有指令的 target 必须使用 `ifeq ($(OS),Windows_NT)` 环境嗅探并提供双分支实现，严禁硬编码单一 Shell。
+  - **宿主机 (Windows + PowerShell 5.1)**：严禁在终端指令中使用 `&&`、`||`、`$(...)` 等 bash-only 语法。链式命令必须拆分为独立调用或使用 `;` 分号。
+  - **容器内 (Linux + bash)**：`justfile` 中使用 `just test` 等指令在容器内执行时，可自由使用 bash 语法。
+  - **Justfile 跨平台**：涉及 OS 特有指令的 recipe 必须使用 `just` 的内建函数或 `if/else` 进行环境嗅探，确保在 Win/Linux 下表现一致。
 - **目录用途分工 [MANDATORY]**: 禁止在根目录散落临时文件。两个临时目录用途严格区分：
   - **`./tmp/`**：运行时生成的临时数据产物，如 CSV 导出、日志重定向、分析报告。CI 构建和镜像打包**不包含**此目录。
   - **`./scratch/`**：开发过程中的一次性调试脚本（如 `monitor_sync.py`、`force_sync.py`）。仅用于本地排查，**必须**在 `.dockerignore` 中排除，任务结束前**必须**清理或归档至 `docs/` 下。
@@ -105,7 +105,7 @@
 - **CI/CD 平台 (双引擎并行策略)**:
   - **GitHub Actions** (`ubuntu-latest`): 用于开源/外网代码库托管的防御，定义在 `.github/workflows/full-gate.yml`。
   - **GitLab CI** (私有化 Docker Runner): 用于内网企业级部署与验证，拥有直连私有 Nexus 与 DB 的优势，定义在 `.gitlab-ci.yml`。
-  - **核心防线解耦**: 两套 CI 仅仅是调度器，**核心卡点逻辑 100% 封装于 `scripts/gatekeeper.py` 与 `Makefile` 中**，确保“编写一次，到处/多引擎运行”。
+  - **核心防线解耦**: 两套 CI 仅仅是调度器，**核心卡点逻辑 100% 封装于 `scripts/gatekeeper.py` 与 `justfile` 中**，确保“编写一次，到处/多引擎运行”。
 - **CSV 编码**: 所有 CSV 文件的生成、读取及模版任务强制使用 `utf-8-sig` 编码，确保在 Windows Office/Excel 环境下打开不出现汉字乱码。
 - **语义分层规范 (Semantic Alignment)**:
   - **技术侧用英文**: 数据库字段名、API Schema、核心代码变量必须使用标准英文命名（如 `pm_user_id`）。
@@ -384,7 +384,7 @@
   - 所有容器必须定义 `healthcheck`。对于 RabbitMQ、Postgres 等启动较慢的基础设施，`retries` 必须设为不少于 **60** 次，且配置 `start_period`。
   - 针对低配环境，必须显式限制内存/磁盘水位（如 `RABBITMQ_VM_MEMORY_HIGH_WATERMARK_RELATIVE=0.7`），防止误报导致的重启风暴。
 - **内网/私服构建规范 (Private Registry Compatibility) [MANDATORY]**:
-  - 为适配离线或受限网络，Dockerfile 严禁硬编码外部公共镜像地址。核心工具（如 `uv`）必须利用 `COPY --from` 与 Makefile 中的本地打标机制从 **NEXUS 镜像仓库**提取。
+  - 为适配离线或受限网络，Dockerfile 严禁硬编码外部公共镜像地址。核心工具（如 `uv`）必须利用 `COPY --from` 与 justfile 中的本地打标机制从 **NEXUS 镜像仓库**提取。
   - **依赖拉取优先级 (Mirror Priority)**: 遵循 **内网 Nexus (192.168.5.64) > 互联网镜像 (Tsinghua) > 官方 PyPI** 的级联策略。
   - 镜像构建阶段必须通过 `ARG` 支持 `UV_IMAGE` 和 `PIP_INDEX_URL` 的注入。默认 Nexus 仓库地址为：`http://192.168.5.64:8082/repository/pypi-all/simple`。
   - 在 Docker 内部安装 Python 包时，必须配合 `--trusted-host 192.168.5.64` 解决内网 HTTP 私服的认证问题。

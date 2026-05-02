@@ -3,8 +3,6 @@
 定义 Jenkins 相关的 SQLAlchemy ORM 模型，包括 Job 和 Build 详情。
 """
 
-from datetime import UTC, datetime
-
 from sqlalchemy import (
     JSON,
     BigInteger,
@@ -19,10 +17,10 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
-from devops_collector.models.base_models import Base
+from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin
 
 
-class JenkinsJob(Base):
+class JenkinsJob(Base, TimestampMixin, TraceabilityMixin):
     """Jenkins 任务(Job)模型 (jenkins_jobs)。
 
     存储 Jenkins Job 的基本信息。
@@ -66,8 +64,6 @@ class JenkinsJob(Base):
 
     last_synced_at = Column(DateTime(timezone=True))
     sync_status = Column(String(20), default="PENDING")
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    updated_at = Column(DateTime(timezone=True), onupdate=lambda: datetime.now(UTC))
     raw_data = Column(JSON)
     builds = relationship("JenkinsBuild", back_populates="job", cascade="all, delete-orphan")
 
@@ -86,7 +82,7 @@ class JenkinsJob(Base):
         return f"<JenkinsJob(full_name='{self.full_name}')>"
 
 
-class JenkinsBuild(Base):
+class JenkinsBuild(Base, TimestampMixin, TraceabilityMixin):
     """Jenkins 构建(Build)详情模型 (jenkins_builds)。
 
     记录每次构建的具体信息。
@@ -129,7 +125,6 @@ class JenkinsBuild(Base):
     gitlab_mr_iid = Column(Integer)
     artifact_id = Column(String(200))
     artifact_type = Column(String(50))
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     job = relationship("JenkinsJob", back_populates="builds")
 
     def __repr__(self) -> str:

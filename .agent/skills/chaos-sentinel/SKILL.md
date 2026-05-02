@@ -32,7 +32,7 @@
 *   **目标**：验证客户端是否具备透明的 Token 刷新机制及防止重试死循环的逻辑。
 
 ### T5: 自动化指令审计 (Automation Command Audit)
-*   **动作 (Ref LL #122)**：对 `Makefile`、`Dockerfile`、`CI` 脚本中的 CLI 指令进行精准语法与参数兼容性审查。
+*   **动作 (Ref LL #122)**：对 `justfile`、`Dockerfile`、`CI` 脚本中的 CLI 指令进行精准语法与参数兼容性审查。
     *   **专项防御**：强制检查 `uv export` 是否误用了 `--without` (该参数仅限 `uv sync`)，应修正为 `--no-dev`。
 *   **目标**：防止由于 AI 幻觉或记忆漂移导致的自动化流水线崩溃。
 *   **操作要求**：**[MANDATORY]** 在建议或修改任何指令前，必须首先调用 `[command] --help` 进行物理真实性取证。
@@ -56,5 +56,5 @@
 
 ## 5. 绝对红线 (Redlines)
 *   **NO PROD**: 严禁在生产环境执行任何破坏性操作。
-*   **AUTO-CLEANUP**: 必须在任务结束前执行 `make clean` 移除注入的故障脚本。
+*   **AUTO-CLEANUP**: 必须在任务结束前执行 `just clean` 移除注入的故障脚本。
 *   **SAFE-EXIT**: 注入故障必须能在 5 分钟内自动恢复或手动一键恢复，严禁造成环境“永久死亡”。

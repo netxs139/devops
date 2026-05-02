@@ -3,17 +3,15 @@
 定义 SonarQube 相关的 SQLAlchemy ORM 模型。
 """
 
-from datetime import UTC, datetime
-
-from sqlalchemy import JSON, Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Column, DateTime, Float, ForeignKey, Integer, String, Text, and_, desc
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
-from devops_collector.models.base_models import Base
+from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin
 
 
-class SonarProject(Base):
+class SonarProject(Base, TimestampMixin, TraceabilityMixin):
     """SonarQube 项目模型 (sonar_projects)。
 
     存储 SonarQube 项目信息，支持与 GitLab 项目关联。
@@ -44,15 +42,13 @@ class SonarProject(Base):
     last_analysis_date = Column(DateTime(timezone=True))
     last_synced_at = Column(DateTime(timezone=True))
     sync_status = Column(String(20), default="PENDING")
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    updated_at = Column(DateTime(timezone=True), onupdate=lambda: datetime.now(UTC))
     gitlab_project = relationship("GitLabProject", back_populates="sonar_projects")
     measures = relationship("SonarMeasure", back_populates="project", cascade="all, delete-orphan")
     issues = relationship("SonarIssue", back_populates="project", cascade="all, delete-orphan")
     latest_measure = relationship(
         "SonarMeasure",
-        primaryjoin="and_(SonarProject.id==SonarMeasure.project_id)",
-        order_by="desc(SonarMeasure.analysis_date)",
+        primaryjoin=lambda: and_(SonarProject.id == SonarMeasure.project_id),
+        order_by=lambda: desc(SonarMeasure.analysis_date),
         viewonly=True,
         uselist=False,
     )
@@ -137,7 +133,7 @@ class SonarProject(Base):
         return f"<SonarProject(key='{self.key}', name='{self.name}')>"
 
 
-class SonarMeasure(Base):
+class SonarMeasure(Base, TimestampMixin, TraceabilityMixin):
     """SonarQube 指标快照模型 (sonar_measures)。
 
     每次代码分析后记录一条快照，用于追踪质量趋势。
@@ -208,7 +204,6 @@ class SonarMeasure(Base):
     new_reliability_rating = Column(String(1), comment="新增可靠性评级")
     new_security_rating = Column(String(1), comment="新增安全性评级")
     quality_gate_status = Column(String(10))
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     project = relationship("SonarProject", back_populates="measures")
 
     @hybrid_property
@@ -248,7 +243,7 @@ class SonarMeasure(Base):
         return f"<SonarMeasure(project_id={self.project_id}, date='{self.analysis_date}')>"
 
 
-class SonarIssue(Base):
+class SonarIssue(Base, TimestampMixin, TraceabilityMixin):
     """SonarQube 问题详情模型 (sonar_issues)。
 
     Attributes:

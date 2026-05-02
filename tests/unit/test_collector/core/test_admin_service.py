@@ -42,6 +42,10 @@ def test_link_product_to_project(admin_service, db_session):
     # 准备数据
     from devops_collector.models.base_models import Organization, ProjectMaster
 
+    print(f"\nDEBUG: Organization class type: {type(Organization)}")
+    print(f"\nDEBUG: Organization class name: {getattr(Organization, '__name__', 'N/A')}")
+    print(f"\nDEBUG: Organization class module: {getattr(Organization, '__module__', 'N/A')}")
+
     org = Organization(org_code="O1", org_name="Test Org")
     db_session.add(org)
     db_session.flush()
