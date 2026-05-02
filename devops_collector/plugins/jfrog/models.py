@@ -1,13 +1,13 @@
 """TODO: Add module description."""
 
-from sqlalchemy import JSON, BigInteger, Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import JSON, BigInteger, Column, DateTime, Float, ForeignKey, Integer, String, and_
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
-from devops_collector.models.base_models import Base
+from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin, User
 
 
-class JFrogArtifact(Base):
+class JFrogArtifact(Base, TimestampMixin, TraceabilityMixin):
     """JFrog 制品模型 (jfrog_artifacts)。
 
     存储从 Artifactory 采集的制品元数据，支持 SLSA 溯源。
@@ -66,10 +66,8 @@ class JFrogArtifact(Base):
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
     created_by_name = Column(String(100))
     product_id = Column(Integer, ForeignKey("mdm_products.id"))
-    created_by = relationship("User", primaryjoin="and_(User.global_user_id==JFrogArtifact.created_by_id, User.is_current==True)")
+    created_by = relationship("User", primaryjoin=and_(User.global_user_id == created_by_id, User.is_current == True))
     product = relationship("Product")
-    created_at = Column(DateTime(timezone=True))
-    updated_at = Column(DateTime(timezone=True))
     raw_data = Column(JSON)
 
     def __repr__(self) -> str:
@@ -87,7 +85,7 @@ class JFrogArtifact(Base):
         return f"<JFrogArtifact(name='{self.name}', version='{self.version}')>"
 
 
-class JFrogScan(Base):
+class JFrogScan(Base, TimestampMixin, TraceabilityMixin):
     """JFrog Xray 扫描结果模型。
 
     Attributes:
@@ -131,7 +129,7 @@ class JFrogScan(Base):
         return f"<JFrogScan(artifact_id={self.artifact_id}, compliant={self.is_compliant})>"
 
 
-class JFrogVulnerabilityDetail(Base):
+class JFrogVulnerabilityDetail(Base, TimestampMixin, TraceabilityMixin):
     """漏洞详情明细表。
 
     Attributes:
@@ -171,7 +169,7 @@ class JFrogVulnerabilityDetail(Base):
         return f"<JFrogVulnerabilityDetail(cve='{self.cve_id}', severity='{self.severity}')>"
 
 
-class JFrogDependency(Base):
+class JFrogDependency(Base, TimestampMixin, TraceabilityMixin):
     """制品依赖树模型 (SBoM)。
 
     Attributes:

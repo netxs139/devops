@@ -4,17 +4,17 @@
 遵循 GitLab 社区版二开建议书中的数据库设计原则。
 """
 
-from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, Text, and_
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import foreign, relationship
 from sqlalchemy.sql import func
 
-from devops_collector.models.base_models import Base, TimestampMixin
+from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin, User
 
 
-class GTMTestCase(Base, TimestampMixin):
+class GTMTestCase(Base, TimestampMixin, TraceabilityMixin):
     """GitLab 测试用例模型。
 
     存储测试用例的结构化信息，包括标题、描述（预置条件）和详细的执行步骤。
@@ -34,8 +34,9 @@ class GTMTestCase(Base, TimestampMixin):
 
     author = relationship(
         "User",
-        primaryjoin="and_(User.global_user_id==GTMTestCase.author_id, User.is_current==True)",
+        primaryjoin=and_(User.global_user_id == author_id, User.is_current == True),
         back_populates="test_cases",
+        overlaps="requirements,test_cases",
     )
     project = relationship("GitLabProject", back_populates="test_cases")
     linked_issues = relationship("GitLabIssue", secondary="gtm_test_case_issue_links", back_populates="associated_test_cases")
@@ -53,7 +54,7 @@ class GTMTestCase(Base, TimestampMixin):
 
     execution_records = relationship(
         "GTMTestExecutionRecord",
-        primaryjoin="foreign(GTMTestExecutionRecord.test_case_iid) == GTMTestCase.iid",
+        primaryjoin=lambda: foreign(GTMTestExecutionRecord.test_case_iid) == GTMTestCase.iid,
         viewonly=True,
         overlaps="project",
     )
@@ -90,8 +91,9 @@ class GTMRequirement(Base, TimestampMixin):
 
     author = relationship(
         "User",
-        primaryjoin="and_(User.global_user_id==GTMRequirement.author_id, User.is_current==True)",
+        primaryjoin=and_(User.global_user_id == author_id, User.is_current == True),
         back_populates="requirements",
+        overlaps="requirements,test_cases",
     )
     project = relationship("GitLabProject", back_populates="requirements")
     test_cases = relationship("GTMTestCase", secondary="gtm_requirement_test_case_links", back_populates="associated_requirements")
@@ -135,3 +137,8 @@ class GTMTestExecutionRecord(Base, TimestampMixin):
     def __repr__(self) -> str:
         """返回执行记录的字符串表示。"""
         return f"<GTMTestExecutionRecord(iid={self.test_case_iid}, result={self.result})>"
+
+
+# 动态挂载反向关联，规避 base_models 中的循环引用 NameError
+User.test_cases = relationship("GTMTestCase", back_populates="author", primaryjoin=lambda: User.global_user_id == GTMTestCase.author_id)
+User.requirements = relationship("GTMRequirement", back_populates="author", primaryjoin=lambda: User.global_user_id == GTMRequirement.author_id)

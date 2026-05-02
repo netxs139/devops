@@ -170,7 +170,8 @@ class JenkinsWorker(BaseWorker):
                     build.trigger_user = causes[0].get("userName")
                     if build.trigger_user:
                         u = IdentityManager.get_or_create_user(self.session, "jenkins", build.trigger_user, name=build.trigger_user)
-                        build.trigger_user_id = u.global_user_id
+                        if u:
+                            build.trigger_user_id = u.global_user_id
         build.raw_data = b_data
         if not build.building and build.result:
             self._sync_test_report(job, build)

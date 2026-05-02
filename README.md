@@ -100,11 +100,11 @@ cp .env.example .env
 
 ### 3. 多环境部署指南 (Deployment Modes)
 
-系统支持三种标准的构建与部署模式，均由跨平台 `Makefile` (支持 Windows/Linux) 统一调度：
+系统支持三种标准的构建与部署模式，均由跨平台 `justfile` (支持 Windows/Linux) 统一调度：
 
 | 模式 | 适用场景 | 配置文件 | 包含组件 |
 | :--- | :--- | :--- | :--- |
-| **A. 本地验证全门禁** | 提交代码前 | `Makefile` (fast-gate/full-gate) | API, DB, MQ, **Lint, Pytest, detect-secrets** |
+| **A. 本地验证全门禁** | 提交代码前 | `just` (fast-gate/full-gate) | API, DB, MQ, **Lint, Pytest, detect-secrets** |
 | **B. 开发环境** | 本地持续编码 | `docker-compose.yml` | API, DB, MQ (自动挂载本地代码卷) |
 | **C. CI/CD 流水线** | 远端合并/发布 | `.github/workflows` / `.gitlab-ci.yml` | 全量自动化验证与滚动部署 |
 
@@ -140,7 +140,7 @@ just package
   1. `devops-platform-datahub:latest`: 独立 DataHub 采集器镜像。
 
 **步骤 2: 上传至离线服务器并部署**
-将 `tar` 包、`Makefile`、`docker-compose.prod.yml` 和 `.env` 上传至服务器。
+将 `tar` 包、`justfile`、`docker-compose.prod.yml` 和 `.env` 上传至服务器。
 
 ```bash
 just deploy-offline
@@ -155,7 +155,7 @@ just deploy-offline
 
 ### 4. 常用运维命令
 
-所有操作均封装在 `Makefile` 中，自动在容器内执行，确保环境一致性。
+所有操作均封装在 `justfile` 中，自动在容器内执行，确保环境一致性。
 
 ```bash
 # 查看实时日志
