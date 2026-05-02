@@ -28,6 +28,8 @@
 1. **偏航必锚与计划外资产**: 偏离 Focus > 1 回合必须同步文档；临时优化标记为 `[Ad-hoc]` 并沉淀入 ADR。
 1. **中断恢复嗅探**: 启动/收尾强制 `git status -u`；发现未跟踪脚本必须汇报并整合进 `progress.txt`。
 1. **临时脚本隔离**: 严禁在业务目录排错，必须写入 `.agent/scratch/`。
+1. **SSOT 归档路径**: 严格遵循 `user_global` 归档律，本项目的归档路径固化为 `docs/history/progress_archive.md`。
+
 
 ## 3. 工程严谨性基准 (Engineering Rigor) [MANDATORY]
 
