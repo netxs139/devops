@@ -16,6 +16,7 @@
 | **辅助指令** | `/spike` (探针), `/plugin-init` (初始化), `/doc-audit` (查重), `/lint` (自查) |
 
 ### 1.1 语义映射与专家链
+
 - **意图映射**: `"下班"` ➜ `/session-handover` | `"开始"` ➜ `/session-handover (Bootstrap)`。
 - **专家链**: `模型变更` ➜ `mdm-integrity-arbiter` | `SQL评审` ➜ `dbt-pipeline-auditor` | `高危重构` ➜ `chaos-sentinel` | `严谨性` ➜ `engineering-rigor-arbiter`。
 - **技术锚点**: `编码`➜[#1.5](contexts.md#L15), `DB`➜[#5](contexts.md#L171), `UI`➜[#6](contexts.md#L251), `命名`➜[#11](contexts.md#L551)。
@@ -23,26 +24,26 @@
 ## 2. 软件生命周期红线 (Lifecycle Laws) [MANDATORY]
 
 1. **执行锁 (Execution Lock)**: 仅在显式信号（“OK/开始”）后修改代码；“？”判定为咨询态，禁止物理编码。
-2. **交接审计自进化**: [L2-L4] 离场 DoD 强制执行 `/evolve-skill`；严禁在未持久化日志时宣告完工。
-3. **偏航必锚与计划外资产**: 偏离 Focus > 1 回合必须同步文档；临时优化标记为 `[Ad-hoc]` 并沉淀入 ADR。
-4. **中断恢复嗅探**: 启动/收尾强制 `git status -u`；发现未跟踪脚本必须汇报并整合进 `progress.txt`。
-5. **临时脚本隔离**: 严禁在业务目录排错，必须写入 `.agent/scratch/`。
+1. **交接审计自进化**: [L2-L4] 离场 DoD 强制执行 `/evolve-skill`；严禁在未持久化日志时宣告完工。
+1. **偏航必锚与计划外资产**: 偏离 Focus > 1 回合必须同步文档；临时优化标记为 `[Ad-hoc]` 并沉淀入 ADR。
+1. **中断恢复嗅探**: 启动/收尾强制 `git status -u`；发现未跟踪脚本必须汇报并整合进 `progress.txt`。
+1. **临时脚本隔离**: 严禁在业务目录排错，必须写入 `.agent/scratch/`。
 
 ## 3. 工程严谨性基准 (Engineering Rigor) [MANDATORY]
 
 1. **物理验证**: L2+ 必须执行 `just verify` (覆盖率 >= 80%)；交付报告必须粘贴终端日志碎片。
-2. **环境安全**: 宿主机为 **Win+PS**，严禁使用 `&&/||` 或重定向操作符；涉及核心变更必须执行 `just security-audit`。
-3. **指令校验**: 修改 `justfile/CI` 前必须执行 `[command] --help`；离场前强制执行 `just clean`。
+1. **环境安全**: 宿主机为 **Win+PS**，严禁使用 `&&/||` 或重定向操作符；涉及核心变更必须执行 `just security-audit`。
+1. **指令校验**: 修改 `justfile/CI` 前必须执行 `[command] --help`；离场前强制执行 `just clean`。
 
 ## 4. 架构契约原则 (Architectural Contracts) [AI-NATIVE]
 
 1. **Schema-First**: 逻辑前必须输出 `Schema Proposal` 并获准；强制使用 Pydantic/SQLAlchemy 强类型。
-2. **幂等性与重放**: 变更逻辑必须幂等；单元测试必须包含连续调用两次的“重放断言”。
-3. **结构化观测**: 强制埋点 `correlation_id` 与关键指标；Schema 必须包含 `__metrics__` 元数据。
-4. **错误谱系**: 禁止模糊异常，必须基于 `ErrorSchema` 抛出结构化错误码。
-5. **状态机行为锁**: 状态流转必须定义 `VALID_TRANSITIONS` 并通过 `.transition_to()` 封装。
-6. **意图锚点 (ADR)**: 方案设计前必查 `docs/adr/`；技术妥协必须生成极简 ADR。
-7. **性能取证**: L3/L4 任务必须执行 `just profile-db/code`，交付需含“优化前后”对比数据。
+1. **幂等性与重放**: 变更逻辑必须幂等；单元测试必须包含连续调用两次的“重放断言”。
+1. **结构化观测**: 强制埋点 `correlation_id` 与关键指标；Schema 必须包含 `__metrics__` 元数据。
+1. **错误谱系**: 禁止模糊异常，必须基于 `ErrorSchema` 抛出结构化错误码。
+1. **状态机行为锁**: 状态流转必须定义 `VALID_TRANSITIONS` 并通过 `.transition_to()` 封装。
+1. **意图锚点 (ADR)**: 方案设计前必查 `docs/adr/`；技术妥协必须生成极简 ADR。
+1. **性能取证**: L3/L4 任务必须执行 `just profile-db/code`，交付需含“优化前后”对比数据。
 
 ______________________________________________________________________
 

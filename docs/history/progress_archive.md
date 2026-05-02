@@ -2,7 +2,27 @@
 
 > 从 `progress.txt` 归档的已完成任务。按时间倒序排列。
 
+## 归档批次：2026-05-02 (会话 4)
+
+### 1. [Testing] 全链路集成测试回归 (Grader 3) 通过
+- **记录**: 执行 `just test-int`，51 项集成测试全量通过；验证了 ORM lambda 化重构、RBAC 权限修复以及 Traceability 注入在真实 DB 环境下的稳定性。(2026-05-02)
+
+### 2. [Arch] WeCom 插件与全量模型歧义 FK 审计
+- **记录**: 1. 验证 `wecom` 插件直接复用 MDM 核心模型 (`User`/`Organization`)；2. 确认 `audit_fixer.py` 注入 Mixin 后未引入歧义 FK 冲突；3. 固化 `verify_orm_integrity.py` 为后续 ORM 变更审计工具；4. `arch_auditor.py` 保持 0 Error 0 Warning。(2026-05-02)
+
+### 3. [Toolchain] 彻底告别 Makefile，全面拥抱 Just
+- **记录**: 1. 完成全局 `Makefile` 引用清理；2. 同步更新 `full-gate.yml` 引入 `setup-just` 插件；3. `justfile` 补齐 `full-gate`/`fast-gate` 指令，实现 100% 功能对齐。(2026-05-02)
+
+### 4. [Constitution] 代码宪法 V2.2 与分层治理
+- **记录**: 升级 `AGENTS.md` 至 Ultra-Compact 模式；落地 `docs/LAWS_DETAIL.md`；100% 同步全局 `gemini.md`。(2026-05-01)
+
+### 5. [Content] AI 原生协作布道
+- **记录**: 完成并发布《AI 原生协作宪法》公众号技术文章。(2026-05-01)
+
+______________________________________________________________________
+
 ## 归档批次：2026-04-30 (自动归档)
+
 
 ### 1. [Perf] SCD2 数据库治理: 修复了唯一性冲突 Bug，实施了 PostgreSQL 部分索引 (Partial Index)。(2026-04-30)
 
