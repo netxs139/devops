@@ -9,6 +9,7 @@ import RptOverviewHandler from './rpt_overview.js';
 import SysUtilsHandler from './sys_utils.js';
 import AdmManageHandler from './adm_manage.js';
 import SecService from './sec_service.js';
+import QaRadarHandler from './qa_radar.js';
 
 
 const SysAppHandler = {
@@ -34,7 +35,8 @@ const SysAppHandler = {
                     { id: "nav-test-execution", label: "测试执行", href: "#test-execution", view: "test-execution", icon: "M13 2L3 14h9l-1 8 10-12h-9l1-8z" },
                     { id: "nav-defects", label: "缺陷管理", href: "#defects", view: "defects", icon: "circle cx=12 cy=12 r=10; line x1=12 y1=8 x2=12 y2=12; line x1=12 y1=16 x2=12.01 y2=16", badgeId: "badge-defects" },
                     { id: "nav-security", label: "安全扫描", href: "#security", view: "security", icon: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" },
-                    { id: "nav-matrix", label: "追溯矩阵", href: "#matrix", view: "matrix", icon: "M12 2v20M2 12h20; M17 7l-5 5-5-5" }
+                    { id: "nav-matrix", label: "追溯矩阵", href: "#matrix", view: "matrix", icon: "M12 2v20M2 12h20; M17 7l-5 5-5-5" },
+                    { id: "nav-radar", label: "血缘雷达", href: "#radar", view: "radar", icon: "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" }
                 ]
             },
             {
@@ -86,6 +88,7 @@ const SysAppHandler = {
         PmRequirementHandler.init();
         PmMatrixHandler.init();
         SecService.init();
+        QaRadarHandler.init();
 
         await this.initUser();
         NotificationSystem.startSSE();
@@ -468,14 +471,14 @@ const SysAppHandler = {
 
         const navItems = [
             'nav-dashboard', 'nav-tests', 'nav-test-execution', 'nav-defects', 'nav-reqs',
-            'nav-matrix', 'nav-reports', 'nav-governance', 'nav-pulse', 'nav-support',
+            'nav-matrix', 'nav-radar', 'nav-reports', 'nav-governance', 'nav-pulse', 'nav-support',
             'nav-security',
             'nav-sd-submit', 'nav-sd-my', 'nav-decision-hub', 'nav-admin-approvals',
             'nav-admin-products', 'nav-admin-okrs', 'nav-admin-projects', 'nav-admin-users', 'nav-admin-orgs'
         ];
 
         const viewItems = [
-            'qa-dashboard-view', 'qa-case-form-view', 'qa-test-results', 'qa-stats-grid', 'qa-execution-view', 'qa-defect-view', 'pm-matrix-view',
+            'qa-dashboard-view', 'qa-case-form-view', 'qa-test-results', 'qa-stats-grid', 'qa-execution-view', 'qa-defect-view', 'pm-matrix-view', 'qa-radar-view',
             'pm-requirements-view', 'pm-iteration-view', 'rpt-insights-view', 'sd-support-view',
             'qa-security-view',
             'sd-submit-view', 'sd-my-view', 'sd-portal-view', 'sys-decision-hub-view', 'sys-governance-view', 'sys-pulse-view',
@@ -596,6 +599,10 @@ const SysAppHandler = {
                 break;
             case 'matrix':
                 show('pm-matrix-view');
+                break;
+            case 'radar':
+                show('qa-radar-view');
+                QaRadarHandler.init();
                 break;
             case 'reports':
                 show('rpt-insights-view');

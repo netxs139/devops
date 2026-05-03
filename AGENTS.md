@@ -7,12 +7,12 @@
 
 | 指令 | 触发时机 | 动作目标 |
 | :--- | :--- | :--- |
-| **`/task-kickoff`** | 处理新任务 | 任务定级 [L1-L4]、风险预判与逻辑切片 |
+| **`/task-kickoff`** | 处理新任务 | 任务定级 [L1-L4]、风险预判、**文档影响分析**与逻辑切片 |
 | **`/evolve-skill`** | 产生新教训 | 将 `lessons-learned` 转化为自动化审计规则 (Arbiter) |
 | **`/session-handover`** | 关闭会话 | **[DoD]**：取证、日志落盘 (session-history/lessons-learned)、状态对齐 (progress) |
 
 | **`/bug-triage`** | 处理缺陷 | 复现 -> 归因 -> TDD 修复 |
-| **`/ai-solve`** | TDD 驱动编码 | 解析测试契约 -> 闭环执行微循环直至绿灯 |
+| **`/ai-solve`** | TDD 驱动编码 (v2.3) | **双轨制**：后端轨道（pytest + 方言检测 + 导入验证）+ 前端轨道（HTTP可达 + API契约对齐 + 容器高度冒烟）|
 | **`/codify-rule`**| 固化契约 | 读取 MD 文档的自然语言规则，自动提取并注入 `arch_auditor.py` |
 | **`/doc-update`** | 逻辑变更/完工 | 更新 progress/contexts (SSOT) |
 | **`/rollback`** | 执行变更前 | 生成应急恢复清单与 Git Tag |
@@ -23,6 +23,7 @@
 - **意图映射**: `"下班"` ➜ `/session-handover` | `"开始"` ➜ `/session-handover (Bootstrap)`。
 - **专家链**: `模型变更` ➜ `mdm-integrity-arbiter` | `SQL评审` ➜ `dbt-pipeline-auditor` | `高危重构` ➜ `chaos-sentinel` | `严谨性` ➜ `engineering-rigor-arbiter`。
 - **技术锚点**: `编码`➜[#1.5](contexts.md#L15), `DB`➜[#5](contexts.md#L171), `UI`➜[#6](contexts.md#L251), `命名`➜[#11](contexts.md#L551)。
+- **UI 开发强制前置** [MANDATORY]: 任何涉及 `devops_portal/static/` 的前端工作，**必须**先激活 `frontend-design` SKILL，执行 **Step 0（项目合规性预检）**，依次完成：Dashboard Map 注册核查 → 读取 `docs/frontend/CONVENTIONS.md` → 确认 API ResponseSchema 存在。
 
 ## 2. 软件生命周期红线 (Lifecycle Laws) [MANDATORY]
 
@@ -32,12 +33,14 @@
 1. **中断恢复嗅探**: 启动/收尾强制 `git status -u`；发现未跟踪脚本必须汇报并整合进 `progress.txt`。
 1. **临时脚本隔离**: 严禁在业务目录排错，必须写入 `.agent/scratch/`。
 1. **SSOT 归档路径**: 严格遵循 `user_global` 归档律，本项目的归档路径固化为 `docs/history/progress_archive.md`。
+1. **导入完整性与预飞行 (Import Integrity & Pre-flight)**: 任何 Model/Service 变更必须首先通过 `python -c "import ..."` 冒烟测试。严禁在宿主机环境未安装依赖时强行运行 `pytest`，必须使用沙箱模式。
+1. **文码同行律 (Code-Doc Co-evolution) [MANDATORY]**: 任何涉及业务逻辑、模型 Schema、指标口径或 UI 架构的变更，**必须**在提交代码的同时完成相关文档（如 `docs/`, `contexts.md`, `AGENTS.md`, `GLOSSARY.md`）的同步更新。严禁在文档滞后的情况下宣告完工。
 
 ## 3. 工程严谨性基准 (Engineering Rigor) [MANDATORY]
 
 1. **物理验证**: L2+ 必须执行 `just verify` (覆盖率 >= 80%)；交付报告必须粘贴终端日志碎片。
 1. **环境安全**: 宿主机为 **Win+PS**，严禁使用 `&&/||` 或重定向操作符；涉及核心变更必须执行 `just security-audit`；**[Sync-Only]** `git push` 仅限跨设备同步时显式执行，严禁自动推送。
-1. **指令校验**: 修改 `justfile/CI` 前必须执行 `[command] --help`；离场前强制执行 `just clean`。
+1. **指令校验**: 修改 `justfile/CI` 前必须执行 `[command] --help`；离场前强制执行 `just clean` 与 `just docs-verify` (若涉及模型变更)。
 1. **提交语言**: Commit Message 强制使用英文 Conventional Commits 格式，严禁使用中文。
 
 ## 4. 架构契约原则 (Architectural Contracts) [AI-NATIVE]
@@ -53,7 +56,11 @@
 ## 5. 交互与决策契约 (Interaction & Decision Contract) [MANDATORY]
 
 1. **结构化决策推荐**: 凡是提供 A/B/C 结构化选项时，必须显式包含 **“AI 视角推荐路径”** 及其 **“核心理由”**，旨在通过专家级预判降低人类决策损耗。
-1. **反向追问深度**: 若用户意图存在 20% 以上模糊，必须停止执行并提供至少 2 个具象化的逻辑切片供用户确认。
+2. **UI 集成决策锁**: 涉及 `devops_portal/static/` (Portal) 的新视图集成时，**必须**首先向用户呈报以下决策路径：
+    *   **方案 A: Streamlit 分析版 (Decision Hub)**: 适合**非高频、重分析、重度量**的决策需求（如：效能雷达、成本审计、质量趋势）。
+    *   **方案 B: Portal 操作版 (Operational)**: 适合**高频交互、低延迟、重流程**的操作需求（如：用例执行、缺陷处理、即时追溯）。
+    *   由用户决策后再行编码。
+3. **反向追问深度**: 若用户意图存在 20% 以上模糊，必须停止执行并提供至少 2 个具象化的逻辑切片供用户确认。
 
 ______________________________________________________________________
 

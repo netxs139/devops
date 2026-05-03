@@ -335,7 +335,7 @@ class SysRole(Base, TimestampMixin):
     depts = relationship("Organization", secondary="sys_role_dept", backref="roles")
 
 
-class SysRoleMenu(Base):
+class SysRoleMenu(Base, TimestampMixin):
     """角色和菜单关联表 (sys_role_menu)。"""
 
     __tablename__ = "sys_role_menu"
@@ -343,7 +343,7 @@ class SysRoleMenu(Base):
     menu_id = Column(Integer, ForeignKey("sys_menu.id"), primary_key=True)
 
 
-class SysRoleDept(Base):
+class SysRoleDept(Base, TimestampMixin):
     """角色和部门关联表 (sys_role_dept)，用于自定义数据权限。"""
 
     __tablename__ = "sys_role_dept"
@@ -351,7 +351,7 @@ class SysRoleDept(Base):
     dept_id = Column(Integer, ForeignKey("mdm_organizations.id"), primary_key=True)
 
 
-class UserRole(Base):
+class UserRole(Base, TimestampMixin):
     """用户与角色关联表 (sys_user_role)。"""
 
     __tablename__ = "sys_user_roles"

@@ -310,6 +310,77 @@
                 </div>
             </div>
 
+            <!-- Traceability Radar Dashboard View -->
+            <div id="qa-radar-view" class="u-hide u-p-24 u-h-full">
+                <div class="u-flex u-flex-between u-align-center u-mb-24">
+                    <div>
+                        <h2 class="u-text-h2 u-mb-8">Traceability Radar Dashboard</h2>
+                        <p class="u-text-dim">Actionable insights into flow efficiency, collaboration quality, and security posture.</p>
+                    </div>
+                    <div class="u-flex u-gap-15">
+                        <select id="radar-filter-days" class="form-control" style="width: 120px;">
+                            <option value="7">Last 7 Days</option>
+                            <option value="30" selected>Last 30 Days</option>
+                            <option value="90">Last 90 Days</option>
+                        </select>
+                        <button class="btn-primary js-btn-radar-refresh">Refresh Data</button>
+                    </div>
+                </div>
+
+                <!-- Product/Project Selector -->
+                <div class="u-mb-24">
+                    <adm-product-selector id="radar-project-selector"></adm-product-selector>
+                </div>
+
+                <!-- Metric Cards -->
+                <div class="stats-grid u-mb-32">
+                    <div class="stat-card u-p-24">
+                        <span class="stat-title">AVG WAIT TIME</span>
+                        <div class="stat-value u-text-warning" id="card-wait-time">--</div>
+                    </div>
+                    <div class="stat-card u-p-24">
+                        <span class="stat-title">RUBBER STAMP RATE</span>
+                        <div class="stat-value u-text-error" id="card-rubber-stamp">--</div>
+                    </div>
+                    <div class="stat-card u-p-24">
+                        <span class="stat-title">EFFECTIVE REVIEW</span>
+                        <div class="stat-value u-text-success" id="card-eff-review">--</div>
+                    </div>
+                    <div class="stat-card u-p-24">
+                        <span class="stat-title">ACTIVE VULNS</span>
+                        <div class="stat-value u-text-error" id="card-vuln-count">--</div>
+                        <div class="u-text-tiny u-text-dim u-mt-4" id="card-vuln-detail">--</div>
+                    </div>
+                </div>
+
+                <div class="u-grid-2 u-mb-32" style="grid-template-columns: 1fr 1fr; gap: 32px; height: 400px;">
+                    <!-- Radar Visualization -->
+                    <div class="g-glass-panel u-flex u-flex-center u-relative u-p-0">
+                        <div class="u-absolute u-inset-0 u-p-16">
+                            <span class="u-text-tiny u-weight-600 u-text-dim u-uppercase">Collaboration Multi-axis</span>
+                        </div>
+                        <svg id="radar-chart" width="400" height="400" viewBox="0 0 400 400"></svg>
+                    </div>
+
+                    <!-- ELOC Distribution -->
+                    <div class="g-glass-panel u-flex u-flex-column u-p-24">
+                        <span class="u-text-tiny u-weight-600 u-text-dim u-uppercase u-mb-16">ELOC Distribution (Top contributors)</span>
+                        <div class="u-flex-1">
+                            <canvas id="eloc-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VSM Timeline -->
+                <div class="g-glass-panel u-p-24">
+                    <span class="u-text-tiny u-weight-600 u-text-dim u-uppercase u-mb-16">Value Stream Timeline (Recent MRs)</span>
+                    <div id="vsm-container" class="u-mt-16" style="min-height: 200px;">
+                        <div class="u-text-center u-p-40 u-text-dim">Loading VSM data...</div>
+                    </div>
+                </div>
+                <qa-radar-drawer id="radar-detail-drawer"></qa-radar-drawer>
+            </div>
+
             <div id="qa-case-form-view" class="u-hide u-h-auto-fill u-p-40 u-scroll-y">
                 <!-- <qa-test-case-form> injected here -->
             </div>

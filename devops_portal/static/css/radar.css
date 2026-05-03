@@ -1,0 +1,204 @@
+/* 
+   Traceability Radar Core Design System (v1.0)
+   Aesthetic: Industrial Cyberpunk / Lab-Spec
+*/
+
+:root {
+    /* Color Palette - High Contrast Cyberpunk */
+    --bg-dark: #0B0C10;
+    --bg-card: #1F2833;
+    --accent-cyan: #66FCF1;
+    --accent-blue: #45A29E;
+    --accent-amber: #F7B733;
+    --accent-crimson: #FC4445;
+    --text-primary: #C5C6C7;
+    --text-bright: #FFFFFF;
+    --border-color: #45A29E44;
+    
+    /* Typography */
+    --font-mono: 'JetBrains Mono', 'Share Tech Mono', monospace;
+    --font-sans: 'Inter', system-ui, sans-serif;
+    
+    /* Spacing & Borders */
+    --spacing-unit: 8px;
+    --border-radius: 4px;
+    --glass-blur: blur(10px);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    overflow-x: hidden;
+    /* Noise texture overlay */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    background-attachment: fixed;
+    opacity: 0.98;
+}
+
+/* Dashboard Layout */
+.radar-container {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: auto auto 1fr auto;
+    gap: calc(var(--spacing-unit) * 3);
+    padding: calc(var(--spacing-unit) * 4);
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* Header & Status Bar */
+header {
+    grid-column: span 12;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: var(--spacing-unit);
+}
+
+.radar-logo {
+    font-family: var(--font-mono);
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--accent-cyan);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.status-pills {
+    display: flex;
+    gap: var(--spacing-unit);
+}
+
+.pill {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 4px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    background: rgba(69, 162, 158, 0.1);
+}
+
+/* Metric Cards */
+.metric-row {
+    grid-column: span 12;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: calc(var(--spacing-unit) * 2);
+}
+
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: calc(var(--spacing-unit) * 2);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    border-color: var(--accent-cyan);
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--accent-blue);
+}
+
+.card.warning::before { background: var(--accent-amber); }
+.card.danger::before { background: var(--accent-crimson); }
+
+.card-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--accent-blue);
+    text-transform: uppercase;
+}
+
+.card-value {
+    font-family: var(--font-mono);
+    font-size: 2rem;
+    color: var(--text-bright);
+    margin: 8px 0;
+}
+
+/* Visualization Blocks */
+.main-viz {
+    grid-column: span 6;
+    height: 450px;
+    background: rgba(31, 40, 51, 0.5);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.secondary-viz {
+    grid-column: span 6;
+    height: 450px;
+    background: rgba(31, 40, 51, 0.5);
+    border: 1px solid var(--border-color);
+    padding: 20px;
+}
+
+.vsm-timeline {
+    grid-column: span 12;
+    min-height: 200px;
+    background: rgba(31, 40, 51, 0.3);
+    border: 1px solid var(--border-color);
+    padding: 20px;
+}
+
+/* Animations */
+@keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(1000%); }
+}
+
+.radar-scan {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: rgba(102, 252, 241, 0.2);
+    box-shadow: 0 0 10px var(--accent-cyan);
+    animation: scanline 8s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+    animation: fadeUp 0.5s ease both;
+}
+.metric-row .card:nth-child(1) { animation-delay: 0.05s; }
+.metric-row .card:nth-child(2) { animation-delay: 0.15s; }
+.metric-row .card:nth-child(3) { animation-delay: 0.25s; }
+.metric-row .card:nth-child(4) { animation-delay: 0.35s; }
+
+@keyframes dangerPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(252, 68, 69, 0); }
+    50%       { box-shadow: 0 0 12px 4px rgba(252, 68, 69, 0.35); }
+}
+.card.danger {
+    animation: fadeUp 0.5s ease both, dangerPulse 2.5s ease-in-out 0.5s infinite;
+}
+

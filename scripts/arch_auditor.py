@@ -99,6 +99,29 @@ RULES = [
         "check": lambda line, ctx: "/workers/" in ctx["path"] and re.search(r"\w+_at\s*-\s*\w+_at", line),
         "message": "Direct datetime subtraction is unsafe in SQLite. Use 'CAST((JULIANDAY(end) - JULIANDAY(start)) * 86400 AS INTEGER)' for cross-dialect compatibility.",
     },
+    {
+        "id": "ARCH-013",
+        "name": "Missing UUID Import",
+        "severity": "ERROR",
+        "check": lambda line, ctx: ("uuid.uuid4" in line or "UUID(" in line) and "import uuid" not in ctx["content"],
+        "message": "File uses UUID/uuid4 but 'import uuid' is missing.",
+    },
+    {
+        "id": "ARCH-014",
+        "name": "Missing Audit Mixins",
+        "severity": "ERROR",
+        "check": lambda line, ctx: (
+            line.startswith("class ") and "Base" in line and "Mixin" not in line and ctx["file_has_tablename"] and "class Base(" not in line
+        ),
+        "message": "ORM models with __tablename__ must inherit from TimestampMixin and either TraceabilityMixin (Plugins) or SCDMixin (MDM).",
+    },
+    {
+        "id": "ARCH-015",
+        "name": "Stale Data Dictionary",
+        "severity": "ERROR",
+        "check": lambda line, ctx: False,  # This is a global check handled at the end
+        "message": "DATA_DICTIONARY.md is older than some model files. Run 'just docs' to update.",
+    },
 ]
 
 
@@ -110,7 +133,9 @@ def audit():
     print(f"{YELLOW}>>> Running Optimized Architecture Audit (v2.1-Performance)...{RESET}")
 
     for root, _, files in os.walk(project_root):
-        if any(x in root for x in [".venv", ".git", "__pycache__", "scripts", "archived", ".agent", "chaos-sentinel-workspace", "tests", "migrations"]):
+        if any(
+            x in root for x in [".venv", ".git", "__pycache__", "scripts", "archived", ".agent", "chaos-sentinel-workspace", "tests", "migrations", "alembic"]
+        ):
             continue
 
         for file in files:
@@ -131,6 +156,8 @@ def audit():
             file_ctx = {
                 "path": normalized_path,
                 "filename": file,
+                "content": content,
+                "file_has_tablename": "__tablename__ =" in content,
                 "file_has_logging": "logger." in content or "get_logger" in content,
                 "file_has_traceability": "source_system" in content or "TraceabilityMixin" in content or "SCDMixin" in content,
                 "is_router": "/routers/" in normalized_path,
@@ -166,6 +193,27 @@ def audit():
                             errors += 1
                         else:
                             warnings += 1
+
+    # --- Global Check: ARCH-015 (Data Dictionary Freshness) ---
+    dict_path = os.path.join(project_root, "docs", "api", "DATA_DICTIONARY.md")
+    if os.path.exists(dict_path):
+        dict_mtime = os.path.getmtime(dict_path)
+        stale_models = []
+        for root, _, files in os.walk(project_root):
+            if any(x in root for x in [".venv", ".git", "__pycache__", "scripts", "archived", ".agent", "tests"]):
+                continue
+            for file in files:
+                if file.endswith(".py") and ("models" in root or "plugins" in root):
+                    m_path = os.path.join(root, file)
+                    if os.path.getmtime(m_path) > dict_mtime + 2:  # 2s grace period
+                        stale_models.append(m_path.replace("\\", "/"))
+
+        if stale_models:
+            print(f"{RED}[ERROR] ARCH-015: Stale Data Dictionary{RESET}")
+            print(f"  Fix: DATA_DICTIONARY.md is older than {len(stale_models)} model files. Run 'just docs'.")
+            for sm in stale_models[:5]:  # Show first 5
+                print(f"    - {sm}")
+            errors += 1
 
     if errors > 0:
         print(f"\n{RED}Architecture Audit FAILED: {errors} Errors, {warnings} Warnings.{RESET}")

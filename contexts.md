@@ -250,6 +250,23 @@
   - 在 SQLite 内存数据库环境下，`Base.metadata.drop_all` 会因为无法静态计算删表顺序而失败。
   - **DoD 标准**: 集成测试夹具必须实现环境感知，在测试结束时采取「连接自动关闭销毁」或显式执行 `PRAGMA foreign_keys=OFF`，确保清理过程不因外键循环而报错。
 
+### 5.5 模型实现完整性规范 (Model Implementation Integrity) [NEW/MANDATORY]
+
+> **背景**: AI 在快速生成 ORM 模型时，极易漏掉 Python 基础导入（如 `uuid`, `datetime`）或通用的审计 Mixins，导致运行时出现 NameError 或数据链路断裂。
+
+- **1. 物理导入清单 (Physical Import Checklist)**:
+  - 凡是使用 `UUID(as_uuid=True)` 或 `default=uuid.uuid4` 的文件，**必须**包含 `import uuid`。
+  - 凡是包含日期时间字段的文件，**必须**包含 `from datetime import datetime`。
+  - 严禁依赖级联导入（即假设父模块已导入）。
+- **2. 强制审计头 (Mandatory Audit Headers)**:
+  - **Staging/插件表**: 必须继承 `TimestampMixin` 和 `TraceabilityMixin`。
+  - **MDM 核心表**: 必须继承 `TimestampMixin` 和 `SCDMixin`。
+  - 审计工具 `arch_auditor` (ARCH-014) 将强制校验类的继承列表，若发现 `Column` 定义但缺失审计 Mixin 则视为阻断级错误。
+- **3. 冒烟验证协议 (Smoke Test Protocol)**:
+  - AI 在修改 `models.py` 后，执行 TDD 循环前，**必须**执行一步“冒烟导入”：`python -c "from devops_collector.plugins.xxx.models import *"`。
+  - 只有冒烟导入通过（证明无 NameError），方可启动 `pytest`。
+  - **DoD 标准**: 集成测试夹具必须实现环境感知，在测试结束时采取「连接自动关闭销毁」或显式执行 `PRAGMA foreign_keys=OFF`，确保清理过程不因外键循环而报错。
+
 ## 6. 前端设计与组件化 (Frontend Design)
 
 > 🎨 **最高行动指令**：所有前端样式与组件开发，必须严格遵循 [`docs/frontend/CONVENTIONS.md`](docs/frontend/CONVENTIONS.md)。任何与该文档冲突的 UI 实现均视为 Bug。
@@ -295,6 +312,8 @@
 | 19 | Strategic_Executive_Cockpit | 决策/大屏 | 集团级核心指标聚合 (Executive Only) |
 | 20 | Nexus_FinOps | 治理/资产 | 制品库存储分布, 僵尸包回收建议 |
 | 21 | DORA_Refined | 效能/标准 | 变更前置时间 (分段), 部署频率 (V2) |
+| 22 | Code_Traceability | 效能/溯源 | 单项 Issue->Commit->MR 血缘追踪 |
+| 23 | Radar_Intelligence | 效能/聚合 | 流动效率, 协同质量, 安全态势雷达 |
 
 **[强制开发规程]**:
 
@@ -473,6 +492,10 @@
 1. **强制测试与运行 (Mandatory Test & Run)**：AI 代理在生成或修改逻辑代码后，**必须**自行编写对应的 `pytest` 测试用例并执行验证。
 1. **测试持久化 (Test Persistence)**：**严禁**仅使用 `tmp/` 下的一次性验证脚本作为终态交付。所有核心逻辑（如 Transformer, Service, Algorithms）的验证必须直接在 `tests/unit/` 或 `tests/integration/` 下创建永久性测试文件。
 1. **容器内验证 (Container-In Validation) [MANDATORY]**：所有测试执行**必须**在 Docker 容器内完成（使用 `just test` 或 `docker-compose exec api pytest`），**严禁**在宿主机环境（如 Windows）下进行单纯的 Python 逻辑验证，以确保在 Linux 环境下的完全兼容。
+1. **TDD 2.1 物理护栏 (TDD 2.1 Physical Guardrails) [NEW]**：调用 `/ai-solve` 时必须执行：
+   - **A. 静态扫描预检 (Pre-flight Check)**：在运行测试前强制执行 `ruff check`。严禁在存在 `NameError` 或 `ImportError` 时尝试运行测试。
+   - **B. 环境沙箱化 (Env Sandboxing)**：执行 pytest 时强制追加 `-o "addopts="` 以屏蔽 `pyproject.toml` 中可能因环境缺失导致的干扰参数。
+   - **C. 异常契约扩展 (Intent Expansion)**：意图定义阶段必须包含“异常分支”预期。针对“降级/补偿”逻辑，必须显式定义 `side_effect` 测试用例，确保代码韧性。
 1. **DoD 增强 (DoD Enhancement)**：在向用户汇报“任务完成”或“验证通过”前，AI 代理必须提供容器内 pytest 运行成功的日志明细，作为交付成果的一部分。
 
 ### 9.5 本地与容器化测试分工规范 (Local vs. Containerized Testing Guidelines) [NEW/MANDATORY]

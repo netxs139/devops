@@ -31,6 +31,7 @@ from devops_portal.routers import (
     security_router,
     service_desk_router,
     test_management_router,
+    traceability_router,
     webhook_router,
 )
 from devops_portal.state import NOTIFICATION_QUEUES
@@ -71,6 +72,7 @@ app.include_router(devex_pulse_router.router)
 app.include_router(security_router.router)
 app.include_router(webhook_router.router)
 app.include_router(plugin_router.router)
+app.include_router(traceability_router.router)
 
 
 @app.exception_handler(BusinessException)

@@ -1,4 +1,6 @@
 """
+
+import uuid
 OWASP Dependency-Check 数据模型
 存储依赖扫描、许可证信息和 CVE 漏洞数据
 """

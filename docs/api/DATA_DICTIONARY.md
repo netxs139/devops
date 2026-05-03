@@ -1,6 +1,6 @@
 # DevOps 效能平台 - 数据字典 (Data Dictionary)
 
-> **生成时间**: 2026-05-03 12:26:45
+> **生成时间**: 2026-05-03 14:48:15
 > **版本**: v2.2 (企业级标准版)
 > **状态**: 有效 (Active)
 
@@ -28,7 +28,7 @@ ______________________________________________________________________
 
 ## 数据表清单
 
-本系统共包含 **76 个数据表**，分为以下几个业务域：
+本系统共包含 **78 个数据表**，分为以下几个业务域：
 
 ### 核心主数据域
 
@@ -81,6 +81,7 @@ ______________________________________________________________________
 - `gitlab_jobs` - GitLabJob
 - `gitlab_merge_requests` - GitLabMergeRequest
 - `gitlab_milestones` - GitLabMilestone
+- `gitlab_mr_state_transitions` - GitLabMergeRequestStateTransition
 - `gitlab_notes` - GitLabNote
 - `gitlab_packages` - GitLabPackage
 - `gitlab_pipelines` - GitLabPipeline
@@ -88,6 +89,7 @@ ______________________________________________________________________
 - `gitlab_projects` - GitLabProject
 - `gitlab_releases` - GitLabRelease
 - `gitlab_tags` - GitLabTag
+- `gitlab_vulnerabilities` - GitLabVulnerability
 
 ### 认证与授权域
 
@@ -1552,11 +1554,18 @@ ______________________________________________________________________
 | `title` | String | - | 是 | - | - |
 | `description` | String | - | 是 | - | - |
 | `state` | String | INDEX | 是 | - | - |
+| `is_draft` | Boolean | - | 是 | False | 是否为草稿状态 |
 | `author_username` | String | - | 是 | - | - |
 | `created_at` | DateTime | INDEX | 是 | - | - |
 | `updated_at` | DateTime | - | 是 | - | - |
 | `merged_at` | DateTime | INDEX | 是 | - | - |
 | `closed_at` | DateTime | - | 是 | - | - |
+| `draft_at` | DateTime | - | 是 | - | 进入草稿状态的时间 |
+| `ready_at` | DateTime | - | 是 | - | 移出草稿状态（准备评审）的时间 |
+| `first_response_at` | DateTime | - | 是 | - | - |
+| `draft_duration` | BigInteger | - | 是 | - | 在草稿状态停留的总时长 |
+| `wait_time_to_review` | BigInteger | - | 是 | - | 从就绪到首次回复的等待时长 |
+| `review_touch_time` | BigInteger | - | 是 | - | 在评审阶段的实际处理时长（近似值） |
 | `reviewers` | JSON | - | 是 | - | - |
 | `changes_count` | String | - | 是 | - | - |
 | `diff_refs` | JSON | - | 是 | - | - |
@@ -1564,7 +1573,6 @@ ______________________________________________________________________
 | `raw_data` | JSON | - | 是 | - | - |
 | `external_issue_id` | String(100) | - | 是 | - | - |
 | `issue_source` | String(50) | - | 是 | - | - |
-| `first_response_at` | DateTime | - | 是 | - | - |
 | `review_cycles` | Integer | - | 是 | 1 | - |
 | `human_comment_count` | Integer | - | 是 | 0 | - |
 | `approval_count` | Integer | - | 是 | 0 | - |
@@ -1573,6 +1581,8 @@ ______________________________________________________________________
 | `ai_category` | String(50) | - | 是 | - | - |
 | `ai_summary` | Text | - | 是 | - | - |
 | `ai_confidence` | Numeric | - | 是 | - | - |
+| `effective_comment_count` | Integer | - | 是 | 0 | 触发了代码变更的有效评论数 |
+| `rubber_stamp` | Boolean | - | 是 | False | 是否被判定为秒批 (Rubber-stamping) |
 | `author_id` | UUID | FK | 是 | - | - |
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
@@ -1584,6 +1594,7 @@ ______________________________________________________________________
 - **deployments**: one-to-many -> `GitLabDeployment`
 - **author**: many-to-one -> `User`
 - **project**: many-to-one -> `GitLabProject`
+- **transitions**: one-to-many -> `GitLabMergeRequestStateTransition`
 
 ______________________________________________________________________
 
@@ -1616,6 +1627,33 @@ ______________________________________________________________________
 - **project**: many-to-one -> `GitLabProject`
 - **releases**: one-to-many -> `GitLabRelease`
 - **issues**: one-to-many -> `GitLabIssue`
+
+______________________________________________________________________
+
+### GitLabMergeRequestStateTransition (`gitlab_mr_state_transitions`)
+
+**业务描述**: 合并请求 (MR) 状态流转记录。 用于计算 VSM 指标（Wait Time vs Touch Time）。
+
+#### 字段定义
+
+| 字段名 | 数据类型 | 约束 | 可空 | 默认值 | 说明 |
+|:-------|:---------|:-----|:-----|:-------|:-----|
+| `id` | Integer | PK | 否 | - | - |
+| `mr_id` | Integer | FK | 否 | - | - |
+| `from_state` | String(50) | - | 是 | - | - |
+| `to_state` | String(50) | - | 否 | - | - |
+| `timestamp` | DateTime | - | 否 | - | - |
+| `duration_hours` | Numeric | - | 是 | - | - |
+| `created_at` | DateTime | - | 是 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 (如 gitlab-corp, zentao-tjhq) |
+| `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID (用于批次审计与回滚) |
+
+#### 关系映射
+
+- **mr**: many-to-one -> `GitLabMergeRequest`
 
 ______________________________________________________________________
 
@@ -1804,6 +1842,7 @@ ______________________________________________________________________
 - **test_execution_records**: one-to-many -> `GTMTestExecutionRecord`
 - **sonar_projects**: one-to-many -> `SonarProject`
 - **jira_projects**: one-to-many -> `JiraProject`
+- **vulnerabilities**: one-to-many -> `GitLabVulnerability`
 
 ______________________________________________________________________
 
@@ -1860,6 +1899,47 @@ ______________________________________________________________________
 #### 关系映射
 
 - **project**: many-to-one -> `GitLabProject`
+
+______________________________________________________________________
+
+### GitLabVulnerability (`gitlab_vulnerabilities`)
+
+**业务描述**: GitLab 漏洞模型 (Security Vulnerability/Finding)。 存储 SAST/DAST/Secret Detection 等扫描出的安全风险。
+
+#### 字段定义
+
+| 字段名 | 数据类型 | 约束 | 可空 | 默认值 | 说明 |
+|:-------|:---------|:-----|:-----|:-------|:-----|
+| `id` | UUID | PK | 否 | (auto) | - |
+| `project_id` | Integer | FK, INDEX | 是 | - | - |
+| `pipeline_id` | Integer | FK, INDEX | 是 | - | - |
+| `vulnerability_id` | Integer | - | 是 | - | GitLab 侧漏洞 ID (仅 Ultimate 版有效) |
+| `finding_id` | String(255) | - | 是 | - | GitLab Finding UUID/Fingerprint |
+| `name` | String(500) | - | 是 | - | - |
+| `description` | Text | - | 是 | - | - |
+| `severity` | String(20) | INDEX | 是 | - | Critical, High, Medium, Low, Info, Unknown |
+| `confidence` | String(20) | - | 是 | - | - |
+| `report_type` | String(50) | INDEX | 是 | - | sast, dast, secret_detection, container_scanning |
+| `state` | String(20) | INDEX | 是 | - | detected, confirmed, dismissed, resolved |
+| `location` | JSON | - | 是 | - | 包含文件、行号、类等详细位置 |
+| `cve` | String(50) | INDEX | 是 | - | - |
+| `identifiers` | JSON | - | 是 | - | 漏洞标识符列表 |
+| `detected_at` | DateTime | INDEX | 是 | - | - |
+| `fixed_at` | DateTime | - | 是 | - | - |
+| `dismissed_at` | DateTime | - | 是 | - | - |
+| `resolved_at` | DateTime | - | 是 | - | - |
+| `raw_data` | JSON | - | 是 | - | - |
+| `created_at` | DateTime | - | 是 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 (如 gitlab-corp, zentao-tjhq) |
+| `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID (用于批次审计与回滚) |
+
+#### 关系映射
+
+- **project**: many-to-one -> `GitLabProject`
+- **pipeline**: many-to-one -> `GitLabPipeline`
 
 ______________________________________________________________________
 
@@ -1920,6 +2000,10 @@ ______________________________________________________________________
 |:-------|:---------|:-----|:-----|:-------|:-----|
 | `user_id` | UUID | PK, FK | 否 | - | 用户ID |
 | `role_id` | Integer | PK, FK | 否 | - | 角色ID |
+| `created_at` | DateTime | - | 是 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 
 ______________________________________________________________________
 
@@ -2291,8 +2375,12 @@ ______________________________________________________________________
 | `requester_email` | String(100) | INDEX | 是 | - | - |
 | `bug_category` | String(50) | - | 是 | - | 缺陷分类 (code-error/configuration/performance等) |
 | `req_type` | String(50) | - | 是 | - | 需求类型 (feature/config/interface等) |
-| `created_at` | DateTime | - | 是 | - | - |
-| `updated_at` | DateTime | - | 是 | - | - |
+| `created_at` | DateTime | - | 是 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 (如 gitlab-corp, zentao-tjhq) |
+| `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID (用于批次审计与回滚) |
 
 ______________________________________________________________________
 
@@ -2479,6 +2567,10 @@ ______________________________________________________________________
 | `correlation_id` | String(100) | INDEX | 是 | - | 业务关联 ID (如同步任务ID) |
 | `status` | String(20) | INDEX | 是 | SUCCESS | 操作执行状态 (SUCCESS/FAILURE) |
 | `remark` | Text | - | 是 | - | 详细备注或报错信息堆栈 |
+| `created_at` | DateTime | - | 是 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 
 ______________________________________________________________________
 
@@ -2557,6 +2649,10 @@ ______________________________________________________________________
 |:-------|:---------|:-----|:-----|:-------|:-----|
 | `role_id` | Integer | PK, FK | 否 | - | - |
 | `dept_id` | Integer | PK, FK | 否 | - | - |
+| `created_at` | DateTime | - | 是 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 
 ______________________________________________________________________
 
@@ -2570,6 +2666,10 @@ ______________________________________________________________________
 |:-------|:---------|:-----|:-----|:-------|:-----|
 | `role_id` | Integer | PK, FK | 否 | - | - |
 | `menu_id` | Integer | PK, FK | 否 | - | - |
+| `created_at` | DateTime | - | 是 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 
 ______________________________________________________________________
 
