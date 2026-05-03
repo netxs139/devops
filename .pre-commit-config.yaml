@@ -10,7 +10,7 @@ repos:
         entry: uv sync --all-groups --all-extras --frozen
         language: system
         pass_filenames: false
-        always_run: true
+        files: '^(pyproject\.toml|uv\.lock)$'
 
       # 代码格式化与 Linting (Ruff)
       - id: ruff
@@ -34,21 +34,6 @@ repos:
         types: [text]
         exclude: '.*\.lock|tests/.*'
 
-      # SAST 静态安全扫描 (Bandit)
-      - id: bandit
-        name: Bandit Security Scan
-        entry: uv run bandit -ll -r devops_collector/ devops_portal/
-        language: system
-        types: [python]
-        pass_filenames: false
-
-      # 极速单元测试防线 (L1)
-      - id: pytest-unit
-        name: Fast Unit Tests
-        entry: uv run python -c "import subprocess, sys; r = subprocess.run(['pytest', 'tests/unit/', '--picked']); sys.exit(0 if r.returncode == 5 else r.returncode)"
-        language: system
-        types: [python]
-        pass_filenames: false
 
       # 数据字典新鲜度检查
       - id: check-data-dict
@@ -75,14 +60,6 @@ repos:
         types: [python]
         exclude: '^(tests/|archived/|scripts/)'
 
-      # 渐进式静态类型检查 (MyPy)
-      - id: mypy-check
-        name: MyPy Type Check (Core Domains)
-        entry: uv run mypy
-        language: system
-        types: [python]
-        files: 'devops_collector/(models|schemas|auth|plugins/.*?/models)\.py$'
-        pass_filenames: true
 
       # HTML/Jinja2 缩进规范 (djHTML)
       - id: djhtml

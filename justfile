@@ -100,8 +100,8 @@ shell:
 # 验证与测试 (Verification & Testing)
 # =============================================================================
 
-# [MANDATORY] 全量校验：Lint -> Imports -> Docs -> Test + Cov
-verify: lint check-imports docs-verify
+# [MANDATORY] 全量校验：Lint -> TypeCheck -> Imports -> Docs -> SAST -> Test + Cov
+verify: lint typecheck check-imports docs-verify scan-sast
     @echo "Running tests with coverage audit (Target: 80%)..."
     {{EXEC_CMD}} pytest tests/unit/ tests/integration/ --cov=devops_collector --cov=devops_portal --cov-report=term-missing --cov-fail-under=70
 
@@ -119,6 +119,11 @@ fmt:
 # 自动修复 Ruff 发现的逻辑问题
 ruff-fix:
     ruff check --fix devops_collector/ devops_portal/ tests/ scripts/
+
+# 静态类型检查 (MyPy)
+typecheck:
+    @echo "Running MyPy type checking..."
+    uv run mypy devops_collector/ devops_portal/
 
 # 检查核心模块导入依赖
 check-imports:
