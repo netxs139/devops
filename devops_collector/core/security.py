@@ -222,7 +222,7 @@ def get_user_permissions(db: Session, user: User) -> list[str]:
             role_menus = (
                 db.query(SysMenu.perms)
                 .join(SysRoleMenu, SysRoleMenu.menu_id == SysMenu.id)
-                .filter(SysRoleMenu.role_id == r.id, SysMenu.perms is not None, SysMenu.perms != "", SysMenu.status)
+                .filter(SysRoleMenu.role_id == r.id, SysMenu.perms.is_not(None), SysMenu.perms != "", SysMenu.status.is_(True))
                 .all()
             )
 
@@ -399,7 +399,7 @@ def get_user_data_scope_ids(user: User) -> list[str]:
     user_location = getattr(user, "location", None)
     if not user_location:
         return []
-    scope_ids = [user_location.location_id]
+    scope_ids = [user_location.id]
 
     def collect_children(loc) -> None:
         """递归收集所有子级地点的 ID。
@@ -408,7 +408,7 @@ def get_user_data_scope_ids(user: User) -> list[str]:
             loc: 当前地点对象。
         """
         for child in loc.children:
-            scope_ids.append(child.location_id)
+            scope_ids.append(child.id)
             collect_children(child)
 
     collect_children(user_location)
@@ -428,7 +428,7 @@ def filter_issues_by_province(db: Session, issues: list[dict], current_user: Use
     scope_loc_ids = get_user_data_scope_ids(current_user)
     from devops_collector.models.base_models import Location
 
-    scope_short_names = [loc.short_name for loc in db.query(Location.short_name).filter(Location.location_id.in_(scope_loc_ids)).all()]
+    scope_short_names = [loc.short_name for loc in db.query(Location.short_name).filter(Location.id.in_(scope_loc_ids)).all()]
 
     filtered = []
     for issue in issues:

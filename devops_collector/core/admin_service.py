@@ -653,7 +653,7 @@ class AdminService:
             owner_name = obj.owner.full_name if obj.owner else "Unknown"
 
             # 目标进度: 优先使用冗余字段，若为0则动态计算 KR 平均值
-            obj_progress = 0
+            obj_progress = 0.0
             if obj.progress:
                 obj_progress = round(obj.progress * 100, 2)
             elif obj.key_results:

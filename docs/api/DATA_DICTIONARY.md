@@ -1,6 +1,6 @@
 # DevOps 效能平台 - 数据字典 (Data Dictionary)
 
-> **生成时间**: 2026-05-03 14:46:56
+> **生成时间**: 2026-05-03 17:13:32
 > **版本**: v2.2 (企业级标准版)
 > **状态**: 有效 (Active)
 
@@ -217,6 +217,7 @@ ______________________________________________________________________
 | `is_deleted` | Boolean | - | 否 | False | - |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 
@@ -238,7 +239,7 @@ ______________________________________________________________________
 | `entity_id` | String(100) | INDEX | 是 | - | 关联实体ID (项目/服务) |
 | `status` | String | - | 是 | OPEN | 状态 (OPEN/IN_REVIEW/RESOLVED/ACCEPTED) |
 | `description` | String | - | 是 | - | 问题详情 |
-| `metadata_payload` | JSON | - | 否 | - | 额外元数据 (JSON) |
+| `metadata_payload` | JSON | - | 是 | - | 额外元数据 (JSON) |
 | `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
 | `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
@@ -320,7 +321,7 @@ ______________________________________________________________________
 | `element_type` | String(50) | - | 是 | source-code | 资源类型 (source-code/ci-pipeline/k8s-deployment/db-instance) |
 | `is_active` | Boolean | - | 是 | True | 关联是否有效 |
 | `last_verified_at` | DateTime | - | 是 | - | 最后一次验证连接有效的时间 |
-| `meta_info` | JSON | - | 否 | - | 额外元数据连接信息 (JSON, 如 webhook_id, bind_key) |
+| `meta_info` | JSON | - | 是 | - | 额外元数据连接信息 (JSON, 如 webhook_id, bind_key) |
 | `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
 | `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
@@ -332,6 +333,7 @@ ______________________________________________________________________
 | `is_deleted` | Boolean | - | 否 | False | - |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 
@@ -372,8 +374,8 @@ ______________________________________________________________________
 | `is_confidential` | Boolean | - | 是 | False | 是否机密 Epic |
 | `web_url` | String(255) | - | 是 | - | GitLab 原始链接 |
 | `external_id` | String(50) | - | 是 | - | 外部系统ID (如 GitLab Epic IID) |
-| `involved_teams` | JSON | - | 否 | - | 涉及团队列表 (JSON List) |
-| `tags` | JSON | - | 否 | - | 标签 (JSON List) |
+| `involved_teams` | JSON | - | 是 | - | 涉及团队列表 (JSON List) |
+| `tags` | JSON | - | 是 | - | 标签 (JSON List) |
 | `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
 | `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
@@ -421,6 +423,7 @@ ______________________________________________________________________
 | `is_deleted` | Boolean | - | 否 | False | - |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 
@@ -504,6 +507,7 @@ ______________________________________________________________________
 | `is_deleted` | Boolean | - | 否 | False | - |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 
@@ -597,6 +601,7 @@ ______________________________________________________________________
 | `is_deleted` | Boolean | - | 否 | False | - |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 
@@ -623,7 +628,7 @@ ______________________________________________________________________
 | `weight` | Numeric | - | 是 | 1.0 | 权重 |
 | `owner_id` | CHAR(32) | FK, INDEX | 是 | - | 负责人 |
 | `progress` | Numeric | - | 是 | 0.0 | 进度 (0.0-1.0) |
-| `linked_metrics_config` | JSON | - | 否 | - | 关联度量配置 (JSON) |
+| `linked_metrics_config` | JSON | - | 是 | - | 关联度量配置 (JSON) |
 | `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
 | `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
@@ -666,6 +671,7 @@ ______________________________________________________________________
 | `is_deleted` | Boolean | - | 否 | False | - |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 
@@ -707,6 +713,7 @@ ______________________________________________________________________
 | `is_deleted` | Boolean | - | 否 | False | - |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 
@@ -759,6 +766,7 @@ ______________________________________________________________________
 | `is_deleted` | Boolean | - | 否 | False | - |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 
@@ -814,7 +822,9 @@ ______________________________________________________________________
 | `effective_to` | DateTime | - | 是 | - | - |
 | `is_current` | Boolean | INDEX | 否 | True | - |
 | `is_deleted` | Boolean | - | 否 | False | - |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 
@@ -824,7 +834,7 @@ ______________________________________________________________________
 - **dev_lead**: many-to-one -> `User`
 - **qa_lead**: many-to-one -> `User`
 - **release_lead**: many-to-one -> `User`
-- **source_system**: many-to-one -> `SystemRegistry`
+- **source_system_ref**: many-to-one -> `SystemRegistry`
 - **gitlab_repos**: one-to-many -> `GitLabProject`
 - **product_relations**: one-to-many -> `ProjectProductRelation`
 
@@ -966,6 +976,7 @@ ______________________________________________________________________
 | `is_deleted` | Boolean | - | 否 | False | - |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 
@@ -1021,7 +1032,7 @@ ______________________________________________________________________
 | `api_version` | String | - | 是 | - | API 接口版本 (如 v4, api/v2) |
 | `auth_type` | String(50) | - | 是 | - | 认证方式 (OAuth2/Token/Basic) |
 | `credential_key` | String(100) | - | 是 | - | 凭证引用Key (指向Vault或Env Var) |
-| `plugin_config` | JSON | - | 否 | - | 插件特定配置 (JSON, 如过滤规则、超时设置) |
+| `plugin_config` | JSON | - | 是 | - | 插件特定配置 (JSON, 如过滤规则、超时设置) |
 | `sync_method` | String(50) | - | 是 | - | 同步方式 (CDC/Polling/Webhook) |
 | `update_cycle` | String(50) | - | 是 | - | 更新频率 (Realtime/Hourly/Daily) |
 | `enabled_plugins` | String(255) | - | 是 | - | 启用的采集插件列表 (逗号分隔) |
@@ -1043,6 +1054,7 @@ ______________________________________________________________________
 | `is_deleted` | Boolean | - | 否 | False | - |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 
@@ -1067,7 +1079,7 @@ ______________________________________________________________________
 | `target_type` | String(50) | - | 是 | - | 目标实体类型 (commit/merge_request/build) |
 | `target_id` | String(100) | INDEX | 是 | - | 目标实体ID |
 | `link_type` | String(50) | - | 是 | - | 链路类型 (implements/tests/deploys) |
-| `raw_data` | JSON | - | 否 | - | 原始关联数据 (JSON) |
+| `raw_data` | JSON | - | 是 | - | 原始关联数据 (JSON) |
 | `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
 | `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
@@ -1107,6 +1119,7 @@ ______________________________________________________________________
 | `is_deleted` | Boolean | - | 否 | False | - |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 ______________________________________________________________________
 
@@ -1160,7 +1173,7 @@ ______________________________________________________________________
 | `iid` | Integer | - | 否 | - | - |
 | `title` | String(255) | - | 否 | - | - |
 | `description` | Text | - | 是 | - | - |
-| `state` | String(20) | - | 是 | opened | - |
+| `state` | String(20) | - | 否 | opened | - |
 | `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
 | `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
@@ -1209,13 +1222,14 @@ ______________________________________________________________________
 | `test_type` | String(50) | - | 是 | - | - |
 | `pre_conditions` | Text | - | 是 | - | - |
 | `description` | Text | - | 是 | - | - |
-| `test_steps` | JSON | - | 是 | [] | - |
+| `test_steps` | JSON | - | 否 | [] | - |
 | `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
 | `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 
@@ -1239,7 +1253,7 @@ ______________________________________________________________________
 | `project_id` | Integer | FK | 否 | - | - |
 | `test_case_iid` | Integer | INDEX | 否 | - | - |
 | `result` | String(20) | - | 否 | - | - |
-| `executed_at` | DateTime | - | 是 | now() | - |
+| `executed_at` | DateTime | - | 否 | now() | - |
 | `executor_name` | String(100) | - | 是 | - | - |
 | `executor_uid` | UUID | - | 是 | - | - |
 | `comment` | Text | - | 是 | - | - |
@@ -1276,7 +1290,7 @@ ______________________________________________________________________
 | `skipped_count` | Integer | - | 是 | 0 | 跳过用例数 |
 | `pass_rate` | Numeric | - | 是 | 0.0 | 通过率 (%) |
 | `duration_ms` | Integer | - | 是 | 0 | 执行时长 (毫秒) |
-| `raw_data` | JSON | - | 否 | - | 原始测试报告 JSON |
+| `raw_data` | JSON | - | 是 | - | 原始测试报告 JSON |
 | `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
 | `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
@@ -1418,6 +1432,7 @@ ______________________________________________________________________
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 
@@ -1533,6 +1548,7 @@ ______________________________________________________________________
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 
@@ -1650,6 +1666,7 @@ ______________________________________________________________________
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 
@@ -1779,6 +1796,7 @@ ______________________________________________________________________
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 
@@ -1895,6 +1913,7 @@ ______________________________________________________________________
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 
@@ -2023,18 +2042,18 @@ ______________________________________________________________________
 | `package_name` | String(500) | - | 否 | - | - |
 | `package_version` | String(100) | - | 是 | - | - |
 | `package_manager` | String(50) | - | 是 | - | - |
-| `dependency_type` | String(20) | - | 是 | direct | - |
+| `dependency_type` | String(20) | - | 否 | direct | - |
 | `license_name` | String(200) | - | 是 | - | - |
 | `license_spdx_id` | String(100) | - | 是 | - | - |
 | `license_url` | Text | - | 是 | - | - |
 | `license_risk_level` | String(20) | - | 是 | - | - |
-| `has_vulnerabilities` | Boolean | - | 是 | False | - |
+| `has_vulnerabilities` | Boolean | - | 否 | False | - |
 | `highest_cvss_score` | Numeric | - | 是 | - | - |
-| `critical_cve_count` | Integer | - | 是 | 0 | - |
-| `high_cve_count` | Integer | - | 是 | 0 | - |
-| `medium_cve_count` | Integer | - | 是 | 0 | - |
-| `low_cve_count` | Integer | - | 是 | 0 | - |
-| `is_ignored` | Boolean | - | 是 | False | - |
+| `critical_cve_count` | Integer | - | 否 | 0 | - |
+| `high_cve_count` | Integer | - | 否 | 0 | - |
+| `medium_cve_count` | Integer | - | 否 | 0 | - |
+| `low_cve_count` | Integer | - | 否 | 0 | - |
+| `is_ignored` | Boolean | - | 否 | False | - |
 | `ignore_reason` | Text | - | 是 | - | - |
 | `ignore_by` | String(50) | - | 是 | - | - |
 | `ignore_at` | DateTime | - | 是 | - | - |
@@ -2075,7 +2094,7 @@ ______________________________________________________________________
 | `fixed_version` | String(100) | - | 是 | - | - |
 | `remediation` | Text | - | 是 | - | - |
 | `references` | JSON | - | 是 | - | - |
-| `is_ignored` | Boolean | - | 是 | False | - |
+| `is_ignored` | Boolean | - | 否 | False | - |
 | `ignore_reason` | Text | - | 是 | - | - |
 | `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
 | `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
@@ -2101,10 +2120,10 @@ ______________________________________________________________________
 | `scan_date` | DateTime | - | 否 | - | - |
 | `scanner_name` | String(50) | - | 否 | OWASP Dependency-Check | - |
 | `scanner_version` | String(20) | - | 是 | - | - |
-| `total_dependencies` | Integer | - | 是 | 0 | - |
-| `vulnerable_dependencies` | Integer | - | 是 | 0 | - |
-| `high_risk_licenses` | Integer | - | 是 | 0 | - |
-| `scan_status` | String(20) | - | 是 | completed | - |
+| `total_dependencies` | Integer | - | 否 | 0 | - |
+| `vulnerable_dependencies` | Integer | - | 否 | 0 | - |
+| `high_risk_licenses` | Integer | - | 否 | 0 | - |
+| `scan_status` | String(20) | - | 否 | completed | - |
 | `ci_job_id` | String(50) | - | 是 | - | CI Job ID |
 | `ci_job_url` | String(500) | - | 是 | - | CI Job URL |
 | `commit_sha` | String(40) | - | 是 | - | Commit SHA |
@@ -2112,9 +2131,9 @@ ______________________________________________________________________
 | `report_url` | String(500) | - | 是 | - | Report Storage URL |
 | `scan_duration_seconds` | Numeric | - | 是 | - | Scan Duration (Seconds) |
 | `raw_json` | JSON | - | 是 | - | - |
-| `created_by` | UUID | FK | 是 | - | 创建人 |
 | `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
 | `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 | `sync_version` | Integer | - | 否 | 1 | - |
 | `effective_from` | DateTime | - | 否 | (auto) | - |
@@ -2123,6 +2142,7 @@ ______________________________________________________________________
 | `is_deleted` | Boolean | - | 否 | False | - |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 
@@ -2282,14 +2302,14 @@ ______________________________________________________________________
 | `license_name` | String(200) | UNIQUE | 否 | - | - |
 | `license_spdx_id` | String(100) | - | 是 | - | - |
 | `risk_level` | String(20) | - | 否 | - | - |
-| `is_copyleft` | Boolean | - | 是 | False | - |
-| `commercial_use_allowed` | Boolean | - | 是 | True | - |
-| `modification_allowed` | Boolean | - | 是 | True | - |
-| `distribution_allowed` | Boolean | - | 是 | True | - |
-| `patent_grant` | Boolean | - | 是 | False | - |
+| `is_copyleft` | Boolean | - | 否 | False | - |
+| `commercial_use_allowed` | Boolean | - | 否 | True | - |
+| `modification_allowed` | Boolean | - | 否 | True | - |
+| `distribution_allowed` | Boolean | - | 否 | True | - |
+| `patent_grant` | Boolean | - | 否 | False | - |
 | `description` | Text | - | 是 | - | - |
 | `policy_notes` | Text | - | 是 | - | - |
-| `is_active` | Boolean | - | 是 | True | - |
+| `is_active` | Boolean | - | 否 | True | - |
 | `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
 | `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
@@ -2381,6 +2401,7 @@ ______________________________________________________________________
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 ______________________________________________________________________
 
@@ -2482,6 +2503,7 @@ ______________________________________________________________________
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 
@@ -2513,6 +2535,7 @@ ______________________________________________________________________
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 
@@ -2746,6 +2769,7 @@ ______________________________________________________________________
 | `is_deleted` | Boolean | - | 否 | False | - |
 | `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
 | `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
 
 #### 关系映射
 

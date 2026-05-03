@@ -95,7 +95,7 @@ def get_dynamic_permissions(db: Session, user_id: Any) -> set[str]:
         db.query(SysMenu.perms)
         .join(SysRoleMenu, SysRoleMenu.menu_id == SysMenu.id)
         .join(SysRole, SysRole.id == SysRoleMenu.role_id)
-        .filter(SysRole.role_key.in_(dynamic_roles), SysMenu.perms is not None, SysMenu.perms != "", SysMenu.status)
+        .filter(SysRole.role_key.in_(dynamic_roles), SysMenu.perms.is_not(None), SysMenu.perms != "", SysMenu.status.is_(True))
         .all()
     )
 

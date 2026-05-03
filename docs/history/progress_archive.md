@@ -1,5 +1,9 @@
 # DevOps 平台 - 进展归档 (Progress Archive)
 
+6. [Full-Stack] **Traceability Radar 仪表盘集成**: 1. 实现 `/traceability/radar` 后端聚合 API，支持 VSM/协作/安全多维指标；2. 完成 `index.html` 视图集成，替换旧拓扑图为效能看板；3. 接入 `adm-product-selector` 与时间窗筛选逻辑；4. 实现 Radar-SVG 与 ELOC-Chart.js 动态渲染；5. `just arch-audit` 满分通过。(2026-05-03)
+
+1. [Frontend] **Traceability Radar 原型上线**: 1. 创建工业赛博朋克主题设计系统 (`radar.css`)；2. 实现纯 SVG 雷达图 + Chart.js ELOC 柱状图 + VSM 甘特泳道图；3. 微动效：扫描线、fadeUp 入场、danger 脉冲；4. 页面已通过 HTTP 200 验证可访问。(2026-05-03)
+
 > 从 `progress.txt` 归档的已完成任务。按时间倒序排列。
 
 ## 归档批次：2026-05-03 (自动归档)

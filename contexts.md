@@ -267,6 +267,20 @@
   - 只有冒烟导入通过（证明无 NameError），方可启动 `pytest`。
   - **DoD 标准**: 集成测试夹具必须实现环境感知，在测试结束时采取「连接自动关闭销毁」或显式执行 `PRAGMA foreign_keys=OFF`，确保清理过程不因外键循环而报错。
 
+### 5.6 数据入库幂等性与外键顺序规范 (Data Ingestion & Idempotency) [NEW/MANDATORY]
+
+> **背景**: 2026-05-04 在 GitLab 插件硬化过程中发现，直接使用 `session.add()` 在重试场景下极易触发唯一键冲突，且子实体（Job）早于父实体（Pipeline）持久化会触发外键约束失效。
+
+- **1. 强制 Merge 范式 (Mandatory Merge Pattern)**:
+  - 凡是涉及插件采集实体的 Transform/Save 逻辑，**必须**优先使用 `session.merge(obj)`。
+  - **原因**: `merge` 会自动处理“已存在则更新，不存在则插入”的逻辑，是保证采集任务天然幂等的最高效手段。
+- **2. 外键前置持久化协议 (FK-Safe Persistence Order)**:
+  - 涉及父子关系的实体同步（如：Pipeline -> Job, Issue -> Note），**必须**先对父实体执行 `session.merge()`。
+  - **逻辑**: 必须确保父实体的 ID 在 Session 中已处于 Persistent 状态（或已 Flush 到数据库），方可处理子实体的外键赋值，严禁依赖级联自动处理复杂的分布式外键。
+- **3. 测试种子完备性 (Test Data Seeding)**:
+  - 任何涉及外键字段（如 `sha`, `pipeline_id`）的集成测试，**必须**在测试 Setup 阶段预先同步/创建其依赖的父级记录。
+  - **严禁**在 Mock 环境下通过伪造不存在的外键 ID 来进行“跳步测试”，这会导致生产环境下的物理约束崩溃。
+
 ## 6. 前端设计与组件化 (Frontend Design)
 
 > 🎨 **最高行动指令**：所有前端样式与组件开发，必须严格遵循 [`docs/frontend/CONVENTIONS.md`](docs/frontend/CONVENTIONS.md)。任何与该文档冲突的 UI 实现均视为 Bug。

@@ -196,7 +196,8 @@ class TestGitLabWorker(unittest.TestCase):
         self.assertIsNotNone(project)
         self.assertEqual(project.id, 1)
         self.assertEqual(project.name, "Test Repo")
-        self.assertEqual(self.session.add.call_count, 2)
+        # Expected: 3 adds (1 RawDataStaging + 1 GitLabProject + 1 GitLabGroup)
+        self.assertEqual(self.session.add.call_count, 3)
 
     def test_sync_project_failure(self):
         '''"""TODO: Add description.
@@ -309,8 +310,9 @@ class TestGitLabWorker(unittest.TestCase):
         ]
         self.session.query.return_value.filter.return_value.all.return_value = []
         self.worker._save_issues_batch(project, batch)
-        self.session.add.assert_called()
-        issue = self.session.add.call_args[0][0]
+        # Expected: merge() called for idempotency
+        self.session.merge.assert_called()
+        issue = self.session.merge.call_args[0][0]
         self.assertIsInstance(issue, GitLabIssue)
         self.assertEqual(issue.title, "Bug")
 
@@ -340,7 +342,8 @@ class TestGitLabWorker(unittest.TestCase):
         ]
         self.session.query.return_value.filter.return_value.all.return_value = []
         self.worker._save_mrs_batch(project, batch)
-        self.session.add.assert_called()
+        # Expected: merge() called for idempotency
+        self.session.merge.assert_called()
 
     def test_save_pipelines_batch(self):
         '''"""TODO: Add description.
@@ -359,7 +362,8 @@ class TestGitLabWorker(unittest.TestCase):
         batch = [{"id": 301, "status": "success", "created_at": "2023-01-01T12:00:00Z", "updated_at": "2023-01-01T12:00:00Z"}]
         self.session.query.return_value.filter.return_value.all.return_value = []
         self.worker._save_pipelines_batch(project, batch)
-        self.session.add.assert_called()
+        # Expected: merge() called for idempotency
+        self.session.merge.assert_called()
 
     def test_save_deployments_batch(self):
         '''"""TODO: Add description.

@@ -34,7 +34,7 @@ SENSITIVE_FIELDS_SET = {"password", "secret", "token", "access_key", "checksum",
 # ---------------------------------------------------------
 # 异步 MQ 投递器 (防止 pika BlockingConnection 并发抢占与阻塞 API)
 # ---------------------------------------------------------
-_audit_queue = queue.Queue(maxsize=10000)
+_audit_queue: queue.Queue[dict[str, Any]] = queue.Queue(maxsize=10000)
 _audit_thread = None
 
 

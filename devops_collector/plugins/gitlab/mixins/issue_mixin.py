@@ -61,14 +61,8 @@ class IssueMixin:
             project (GitLabProject): 关联的 GitLabProject 模型对象。
             batch (List[dict]): 包含多个 Issue 原始 JSON 数据的列表。
         """
-        ids = [item["id"] for item in batch]
-        existing = self.session.query(GitLabIssue).filter(GitLabIssue.id.in_(ids)).all()
-        existing_map = {i.id: i for i in existing}
         for data in batch:
-            issue = existing_map.get(data["id"])
-            if not issue:
-                issue = GitLabIssue(id=data["id"])
-                self.session.add(issue)
+            issue = GitLabIssue(id=data["id"])
             issue.project_id = project.id
             issue.iid = data["iid"]
             issue.title = data["title"]
@@ -88,6 +82,9 @@ class IssueMixin:
                 if self.user_resolver:
                     uid = self.user_resolver.resolve(data["author"]["id"])
                     issue.author_id = uid
+
+            # 使用 merge 确保幂等性且不抛出 Duplicate Key 错误
+            self.session.merge(issue)
             # if 'type::test' in issue.labels:
             #     self._sync_test_case_from_issue(project, issue, data)
             if self.enable_deep_analysis and "iid" in data and hasattr(self, "client"):

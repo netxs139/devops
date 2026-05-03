@@ -18,9 +18,9 @@ class AppException(Exception):
         self.status_code = status_code
         super().__init__(f"[{code.value}] {message}")
 
-    def to_contract(self, correlation_id: str = None) -> ErrorResponse:
+    def to_contract(self, correlation_id: str | None = None) -> ErrorResponse:
         """将异常转换为符合契约的响应对象"""
-        return ErrorResponse(code=self.code, message=self.message, detail=self.detail, correlation_id=correlation_id)
+        return ErrorResponse(code=self.code, message=self.message, detail=self.detail, correlation_id=correlation_id, source="devops-platform")
 
 
 class BusinessException(AppException):

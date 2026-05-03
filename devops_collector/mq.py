@@ -125,8 +125,8 @@ class MessageQueue:
             self.connect()
         self.channel.basic_qos(prefetch_count=batch_size)
 
-        batch = []
-        delivery_tags = []
+        batch: list[dict] = []
+        delivery_tags: list[int] = []
 
         logger.info(f"Waiting for tasks in batches on {queue_name}...")
         try:

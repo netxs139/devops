@@ -212,15 +212,30 @@ class TestGitLabWorkerIdempotency(unittest.TestCase):
         self.client.get_project_commits.return_value = []
         self.client.get_project_merge_requests.return_value = []
         project = self.worker._sync_project(999)
+        # 必须先同步 Commit，否则 Pipeline 的 sha 外键会触发 IntegrityError
+        mock_commits = [
+            {
+                "id": "hash222",
+                "short_id": "h222",
+                "title": "T",
+                "author_name": "A",
+                "authored_date": "2024-01-01T10:00:00Z",
+                "committed_date": "2024-01-01T10:00:00Z",
+            }
+        ]
+        self.client.get_project_commits.return_value = mock_commits
+        self.worker._sync_commits(project, None)
         self.worker._sync_pipelines(project)
         self.session.commit()
         count_1 = self.session.query(Pipeline).count()
         self.assertEqual(count_1, 1)
         project = self.worker._sync_project(999)
+        # 再次同步，保持幂等
+        self.worker._sync_commits(project, None)
         self.worker._sync_pipelines(project)
         self.session.commit()
         count_2 = self.session.query(Pipeline).count()
-        self.assertEqual(count_2, count_1, "Pipeline rows duplicated!")
+        self.assertEqual(count_2, count_1, f"Pipeline rows duplicated! count={count_2}")
 
 
 if __name__ == "__main__":

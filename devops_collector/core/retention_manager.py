@@ -76,7 +76,7 @@ class RetentionManager:
                 logger.info(f"Cleaned up {deleted_count} stale raw data records older than {threshold_date}")
             else:
                 logger.info("No stale raw data records found to clean up.")
-            return deleted_count
+            return int(deleted_count or 0)
         except Exception as e:
             logger.error(f"Failed to cleanup stale raw data: {e}")
             session.rollback()

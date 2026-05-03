@@ -78,7 +78,7 @@ class WeComBot(BaseBot):
         """'''
         try:
             res = requests.post(self.webhook_url, json=data, timeout=10)
-            return res.json().get("errcode") == 0
+            return bool(res.json().get("errcode") == 0)
         except Exception as e:
             logger.error(f"WeCom post error: {e}")
             return False
@@ -121,7 +121,8 @@ class FeishuBot(BaseBot):
         }
         try:
             res = requests.post(self.webhook_url, json=data, timeout=10)
-            return res.json().get("code") == 0 or res.json().get("StatusCode") == 0
+            json_data = res.json()
+            return bool(json_data.get("code") == 0 or json_data.get("StatusCode") == 0)
         except Exception as e:
             logger.error(f"Feishu post error: {e}")
             return False
@@ -152,7 +153,7 @@ class DingTalkBot(BaseBot):
         data = {"msgtype": "markdown", "markdown": {"title": title, "text": md_text}}
         try:
             res = requests.post(self.webhook_url, json=data, timeout=10)
-            return res.json().get("errcode") == 0
+            return bool(res.json().get("errcode") == 0)
         except Exception as e:
             logger.error(f"DingTalk post error: {e}")
             return False

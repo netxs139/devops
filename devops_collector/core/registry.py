@@ -19,7 +19,7 @@ Typical usage:
 
 import logging
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 from devops_collector.core.base_plugin import BasePlugin
 
@@ -251,7 +251,7 @@ class PluginRegistry:
         client_cls = cls.get_client(name)
         if not client_cls:
             return None
-        return client_cls(**kwargs)
+        return cast(object, client_cls(**kwargs))
 
     @classmethod
     def get_worker_instance(cls, name: str, session: object, client: object, correlation_id: str = "unknown-cid", **kwargs) -> object | None:
@@ -270,7 +270,7 @@ class PluginRegistry:
         worker_cls = cls.get_worker(name)
         if not worker_cls:
             return None
-        return worker_cls(session, client, correlation_id=correlation_id, **kwargs)
+        return cast(object, worker_cls(session, client, correlation_id=correlation_id, **kwargs))
 
     @classmethod
     def clear(cls) -> None:
