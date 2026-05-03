@@ -20,7 +20,7 @@
 
 ### 1.1 语义映射与专家链
 
-- **意图映射**: `"下班"` ➜ `/session-handover` | `"开始"` ➜ `/session-handover (Bootstrap)` | `"复杂/未知需求"` ➜ `/task-kickoff (SPIKE-FIRST Evaluation)`。
+- **意图映射**: `"下班" / "吃饭" / "休息"` ➜ `/session-handover` | `"开始"` ➜ `/session-handover (Bootstrap)` | `"复杂/未知需求"` ➜ `/task-kickoff (SPIKE-FIRST Evaluation)`。
 - **专家链**: `模型变更` ➜ `mdm-integrity-arbiter` | `SQL评审` ➜ `dbt-pipeline-auditor` | `高危重构` ➜ `chaos-sentinel` | `严谨性` ➜ `engineering-rigor-arbiter`。
 - **技术锚点**: `编码`➜[#1.5](contexts.md#L15), `DB`➜[#5](contexts.md#L171), `UI`➜[#6](contexts.md#L251), `命名`➜[#11](contexts.md#L551)。
 - **UI 开发强制前置** \[MANDATORY\]: 任何涉及 `devops_portal/static/` 的前端工作，**必须**先激活 `frontend-design` SKILL，执行 **Step 0（项目合规性预检）**，依次完成：Dashboard Map 注册核查 → 读取 `docs/frontend/CONVENTIONS.md` → 确认 API ResponseSchema 存在。
