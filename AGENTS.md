@@ -31,12 +31,12 @@
 1. **临时脚本隔离**: 严禁在业务目录排错，必须写入 `.agent/scratch/`。
 1. **SSOT 归档路径**: 严格遵循 `user_global` 归档律，本项目的归档路径固化为 `docs/history/progress_archive.md`。
 
-
 ## 3. 工程严谨性基准 (Engineering Rigor) [MANDATORY]
 
 1. **物理验证**: L2+ 必须执行 `just verify` (覆盖率 >= 80%)；交付报告必须粘贴终端日志碎片。
-1. **环境安全**: 宿主机为 **Win+PS**，严禁使用 `&&/||` 或重定向操作符；涉及核心变更必须执行 `just security-audit`。
+1. **环境安全**: 宿主机为 **Win+PS**，严禁使用 `&&/||` 或重定向操作符；涉及核心变更必须执行 `just security-audit`；**[Sync-Only]** `git push` 仅限跨设备同步时显式执行，严禁自动推送。
 1. **指令校验**: 修改 `justfile/CI` 前必须执行 `[command] --help`；离场前强制执行 `just clean`。
+1. **提交语言**: Commit Message 强制使用英文 Conventional Commits 格式，严禁使用中文。
 
 ## 4. 架构契约原则 (Architectural Contracts) [AI-NATIVE]
 

@@ -16,7 +16,9 @@ RESET = "\033[0m"
 def run_command_captured(command, description):
     start_time = time.time()
     try:
-        process = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", check=False)
+        process = subprocess.run(
+            command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", check=False
+        )
         duration = time.time() - start_time
         success = process.returncode == 0
         return success, process.stdout, duration, description, process.returncode
@@ -72,7 +74,7 @@ def main():
     # Stage 1: Fast & Core Checks (Parallel)
     stage1_tasks = [
         ("just security-audit", "L1: Security Audit (Secrets, SAST, Deps)"),
-        ("just verify", "L2: Total Verification (Lint, Imports, Cov >= 80%)"),
+        ("just verify", "L2: Total Verification (Lint, Imports, Cov >= 70%)"),
         ("just arch-audit", "L1.5: Architecture & Anti-Pattern Audit"),
     ]
 

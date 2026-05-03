@@ -20,10 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class SonarQubeWorker(BaseWorker):
-    """SonarQube 数据采集 Worker。
-
-    支持传统 REST API 客户端 (SonarQubeClient) 和现代 PyAirbyte 客户端 (AirbyteSonarQubeClient)。
-    """
+    """SonarQube 数据采集 Worker。"""
 
     SCHEMA_VERSION = "1.1"
 

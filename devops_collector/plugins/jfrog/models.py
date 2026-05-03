@@ -66,7 +66,7 @@ class JFrogArtifact(Base, TimestampMixin, TraceabilityMixin):
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
     created_by_name = Column(String(100))
     product_id = Column(Integer, ForeignKey("mdm_products.id"))
-    created_by = relationship("User", primaryjoin=and_(User.global_user_id == created_by_id, User.is_current == True))
+    created_by = relationship("User", primaryjoin=and_(User.global_user_id == created_by_id, User.is_current.is_(True)))
     product = relationship("Product")
     raw_data = Column(JSON)
 

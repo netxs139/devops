@@ -34,7 +34,7 @@ class GTMTestCase(Base, TimestampMixin, TraceabilityMixin):
 
     author = relationship(
         "User",
-        primaryjoin=and_(User.global_user_id == author_id, User.is_current == True),
+        primaryjoin=and_(User.global_user_id == author_id, User.is_current.is_(True)),
         back_populates="test_cases",
         overlaps="requirements,test_cases",
     )
@@ -91,7 +91,7 @@ class GTMRequirement(Base, TimestampMixin):
 
     author = relationship(
         "User",
-        primaryjoin=and_(User.global_user_id == author_id, User.is_current == True),
+        primaryjoin=and_(User.global_user_id == author_id, User.is_current.is_(True)),
         back_populates="requirements",
         overlaps="requirements,test_cases",
     )

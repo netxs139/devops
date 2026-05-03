@@ -24,10 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class GitLabWorker(BaseWorker, BaseMixin, TraceabilityMixin, CommitMixin, IssueMixin, MergeRequestMixin, PipelineMixin, AssetMixin):
-    """GitLab 数据采集 Worker。
-
-    支持传统 REST API 客户端 (GitLabClient) 和现代 PyAirbyte 客户端 (AirbyteGitLabClient)。
-    """
+    """GitLab 数据采集 Worker。"""
 
     SCHEMA_VERSION = "1.2"
 

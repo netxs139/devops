@@ -27,11 +27,9 @@ class SonarQubePlugin(BasePlugin):
         return SonarQubeWorker
 
     def get_client_class(self) -> type:
-        if os.getenv("USE_PYAIRBYTE", "false").lower() == "true":
-            from .airbyte_client import AirbyteSonarQubeClient as Client
-        else:
-            from .client import SonarQubeClient as Client
-        return Client
+        from .client import SonarQubeClient
+
+        return SonarQubeClient
 
 
 # 实例化插件
