@@ -77,6 +77,7 @@ try:
         GitLabGroup,
         GitLabGroupMember,
         GitLabIssue,
+        GitLabJob,
         GitLabMergeRequest,
         GitLabMilestone,
         GitLabNote,

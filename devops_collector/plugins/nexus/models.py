@@ -1,6 +1,6 @@
 """Nexus 插件数据模型。"""
 
-from sqlalchemy import JSON, BigInteger, Column, DateTime, ForeignKey, Index, Integer, String
+from sqlalchemy import JSON, BigInteger, Column, DateTime, Float, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import relationship
 
 from devops_collector.models.base_models import (
@@ -34,7 +34,15 @@ class NexusComponent(Base, TimestampMixin, SCDMixin, OwnableMixin):
     name = Column(String(255), nullable=False)
     version = Column(String(100))
     product_id = Column(Integer, ForeignKey("mdm_products.id"), nullable=True)
-    commit_sha = Column(String(100), index=True)  # 新增：直接存储 Git Commit SHA，提升 DORA 关联性能
+    commit_sha = Column(String(100), index=True)  # 直接存储 Git Commit SHA，提升 DORA 关联性能
+    build_pipeline_id = Column(String(100))  # 新增：构建流水线 ID (CI Context)
+    build_url = Column(String(500))  # 新增：流水线 URL
+    uploader_account = Column(String(100))  # 新增：原始上传者账号名 (Identity Context)
+
+    # 新增：组件安全漏洞与合规数据 (DevSecOps)
+    highest_cve_score = Column(Float)  # 最高 CVE 漏洞评分 (如 9.8)
+    policy_status = Column(String(50))  # 安全门禁状态 (如 Pass, Fail, Warn)
+    license_type = Column(String(100))  # 传染性开源协议分析结果 (如 GPLv3, MIT)
 
     # 索引优化：为常用的查询组合建立联合索引
     __table_args__ = (Index("ix_nexus_components_lookup", "repository", "group", "name"),)
@@ -72,6 +80,7 @@ class NexusAsset(Base, TimestampMixin, SCDMixin):
 
     last_modified = Column(DateTime)
     last_downloaded = Column(DateTime)
+    download_count = Column(Integer, default=0)  # 新增：真实下载/使用频率 (FinOps & Lifecycle)
 
     component = relationship("NexusComponent", back_populates="assets")
     raw_data = Column(JSON)

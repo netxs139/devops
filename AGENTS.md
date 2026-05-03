@@ -12,6 +12,8 @@
 | **`/session-handover`** | 关闭会话 | **[DoD]**：取证、日志落盘 (session-history/lessons-learned)、状态对齐 (progress) |
 
 | **`/bug-triage`** | 处理缺陷 | 复现 -> 归因 -> TDD 修复 |
+| **`/ai-solve`** | TDD 驱动编码 | 解析测试契约 -> 闭环执行微循环直至绿灯 |
+| **`/codify-rule`**| 固化契约 | 读取 MD 文档的自然语言规则，自动提取并注入 `arch_auditor.py` |
 | **`/doc-update`** | 逻辑变更/完工 | 更新 progress/contexts (SSOT) |
 | **`/rollback`** | 执行变更前 | 生成应急恢复清单与 Git Tag |
 | **辅助指令** | `/spike` (探针), `/plugin-init` (初始化), `/doc-audit` (查重), `/lint` (自查) |
@@ -47,6 +49,11 @@
 1. **状态机行为锁**: 状态流转必须定义 `VALID_TRANSITIONS` 并通过 `.transition_to()` 封装。
 1. **意图锚点 (ADR)**: 方案设计前必查 `docs/adr/`；技术妥协必须生成极简 ADR。
 1. **性能取证**: L3/L4 任务必须执行 `just profile-db/code`，交付需含“优化前后”对比数据。
+
+## 5. 交互与决策契约 (Interaction & Decision Contract) [MANDATORY]
+
+1. **结构化决策推荐**: 凡是提供 A/B/C 结构化选项时，必须显式包含 **“AI 视角推荐路径”** 及其 **“核心理由”**，旨在通过专家级预判降低人类决策损耗。
+1. **反向追问深度**: 若用户意图存在 20% 以上模糊，必须停止执行并提供至少 2 个具象化的逻辑切片供用户确认。
 
 ______________________________________________________________________
 
