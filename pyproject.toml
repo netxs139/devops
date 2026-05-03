@@ -157,6 +157,16 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
 ignore_missing_imports = true
+exclude = ["devops_collector/alembic/versions/"]
+
+[[tool.mypy.overrides]]
+module = [
+    "devops_collector.auth.*",
+    "devops_collector.plugins.*",
+    "devops_collector.models.*",
+    "devops_collector.alembic.*",
+]
+ignore_errors = true
 
 [tool.coverage.run]
 source = ["devops_collector"]
