@@ -7,7 +7,7 @@ import logging
 
 from devops_collector.core.utils import parse_iso8601
 
-from ..models import GitLabDeployment, GitLabPipeline, GitLabProject
+from ..models import GitLabDeployment, GitLabJob, GitLabPipeline, GitLabProject
 
 
 logger = logging.getLogger(__name__)
@@ -67,6 +67,29 @@ class PipelineMixin:
             p.created_at = parse_iso8601(data.get("created_at"))
             p.updated_at = parse_iso8601(data.get("updated_at"))
             p.coverage = data.get("coverage")
+
+            # FinOps 深度数据补充
+            if data["status"] in ["success", "failed", "canceled"]:
+                # 如果是列表 API 返回的精简数据，则拉取详情以获取 duration 等核心指标
+                if "duration" not in data or data.get("duration") is None:
+                    try:
+                        full_data = self.client.get_pipeline_details(project.id, p.id)
+                        data.update(full_data)
+                    except Exception as e:
+                        logger.warning(f"Failed to fetch pipeline details for {p.id}: {e}")
+
+                p.duration = data.get("duration")
+                p.queued_duration = data.get("queued_duration")
+                p.started_at = parse_iso8601(data.get("started_at"))
+                p.finished_at = parse_iso8601(data.get("finished_at"))
+                p.web_url = data.get("web_url")
+
+                # 关联触发者
+                if data.get("user") and "id" in data["user"]:
+                    p.user_id = self.user_resolver.resolve(data["user"]["id"])
+
+                # 同步颗粒度 Job 数据
+                self._sync_pipeline_jobs(project, p)
 
     def _sync_deployments(self, project: GitLabProject) -> int:
         """同步部署记录。
@@ -134,3 +157,50 @@ class PipelineMixin:
                 from datetime import datetime
 
                 d.promoted_at = datetime.now()
+
+    def _sync_pipeline_jobs(self, project: GitLabProject, pipeline: GitLabPipeline) -> int:
+        """同步流水线关联的所有 Job 记录。
+
+        Args:
+            project (GitLabProject): 关联的项目实体。
+            pipeline (GitLabPipeline): 关联的流水线实体。
+
+        Returns:
+            int: 处理的 Job 总数。
+        """
+        return self._process_generator(self.client.get_pipeline_jobs(project.id, pipeline.id), lambda batch: self._save_jobs_batch(pipeline, batch))
+
+    def _save_jobs_batch(self, pipeline: GitLabPipeline, batch: list[dict]) -> None:
+        """批量保存 Job 数据。"""
+        self.bulk_save_to_staging("gitlab", "job", batch)
+        self._transform_jobs_batch(pipeline, batch)
+
+    def _transform_jobs_batch(self, pipeline: GitLabPipeline, batch: list[dict]) -> None:
+        """转换并加载 Job 实体。"""
+        ids = [item["id"] for item in batch]
+        existing = self.session.query(GitLabJob).filter(GitLabJob.id.in_(ids)).all()
+        existing_map = {j.id: j for j in existing}
+
+        for data in batch:
+            j = existing_map.get(data["id"])
+            if not j:
+                j = GitLabJob(id=data["id"])
+                self.session.add(j)
+
+            j.pipeline_id = pipeline.id
+            j.name = data.get("name")
+            j.stage = data.get("stage")
+            j.status = data.get("status")
+            j.created_at = parse_iso8601(data.get("created_at"))
+            j.started_at = parse_iso8601(data.get("started_at"))
+            j.finished_at = parse_iso8601(data.get("finished_at"))
+            j.duration = data.get("duration")
+            j.queued_duration = data.get("queued_duration")
+
+            runner = data.get("runner")
+            if runner:
+                j.runner_id = runner.get("id")
+                j.runner_description = runner.get("description")
+                # GitLab Job API 响应中 runner 对象通常不直接包含 type，
+                # 这里根据 description 或其他启发式方法简单填充，后续可根据需要增强
+                j.runner_type = "shared" if runner.get("is_shared") else "specific"

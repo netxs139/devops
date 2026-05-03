@@ -969,15 +969,30 @@ class GitLabPipeline(Base, TimestampMixin, TraceabilityMixin):
     project_id = Column(Integer, ForeignKey("gitlab_projects.id"), index=True)
     status = Column(String)
     ref = Column(String)
-    sha = Column(String)
+    sha = Column(String, ForeignKey("gitlab_commits.id"), nullable=True, index=True)
     source = Column(String)
-    duration = Column(Integer)
+
+    # 时间追踪 (FinOps)
     created_at = Column(DateTime(timezone=True), index=True)
     updated_at = Column(DateTime(timezone=True))
-    coverage = Column(String)
+    started_at = Column(DateTime(timezone=True))
+    finished_at = Column(DateTime(timezone=True))
+
+    # 算力耗时追踪 (FinOps)
+    duration = Column(Integer, comment="纯算力执行耗时(秒)")
+    queued_duration = Column(Integer, comment="排队等待耗时(秒)")
+
+    coverage = Column(Float, nullable=True, comment="测试覆盖率")
     failure_reason = Column(String)
+    web_url = Column(String(500))
+    user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
     raw_data = Column(JSON)
+
+    # 关联映射
     project = relationship("GitLabProject", back_populates="pipelines")
+    commit = relationship("GitLabCommit")
+    trigger_user = relationship("User", primaryjoin=lambda: and_(User.global_user_id == GitLabPipeline.user_id, User.is_current.is_(True)))
+    jobs = relationship("GitLabJob", back_populates="pipeline", cascade="all, delete-orphan")
 
     @hybrid_property
     def is_success(self):
@@ -1574,6 +1589,38 @@ class GitLabDependency(Base, TimestampMixin, TraceabilityMixin):
             TODO
         """'''
         return f"<GitLabDependency(id={self.id}, name='{self.name}', version='{self.version}')>"
+
+
+class GitLabJob(Base, TimestampMixin, TraceabilityMixin):
+    """GitLab Job 模型 (算力颗粒度追踪)。
+
+    细粒度追踪每一步构建任务的宿主机(Runner)分配与执行瓶颈。
+    """
+
+    __tablename__ = "gitlab_jobs"
+    __table_args__ = {"extend_existing": True}
+
+    id = Column(Integer, primary_key=True)
+    pipeline_id = Column(Integer, ForeignKey("gitlab_pipelines.id"), index=True)
+    name = Column(String(255))
+    stage = Column(String(100))
+    status = Column(String(50))
+
+    created_at = Column(DateTime(timezone=True))
+    started_at = Column(DateTime(timezone=True))
+    finished_at = Column(DateTime(timezone=True))
+
+    duration = Column(Float, comment="该步骤实际占用 Runner 的执行秒数")
+    queued_duration = Column(Float, comment="等待可用 Runner 的排队秒数")
+
+    runner_id = Column(Integer, nullable=True)
+    runner_type = Column(String(50), nullable=True, comment="shared, specific, group")
+    runner_description = Column(String(255), nullable=True)
+
+    pipeline = relationship("GitLabPipeline", back_populates="jobs")
+
+    def __repr__(self) -> str:
+        return f"<GitLabJob(id={self.id}, name='{self.name}')>"
 
 
 from . import events

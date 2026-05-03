@@ -297,9 +297,10 @@ clean:
     @echo "Cleaning temporary files (Windows)..."
     powershell -Command " \
         Get-ChildItem -Path . -Include __pycache__ -Recurse -Directory | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; \
-        Get-ChildItem -Path . -Include *.pyc,*.pyo,.coverage,*.tmp,traceback.txt -File -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue; \
+        Get-ChildItem -Path . -Include *.pyc,*.pyo,.coverage,*.tmp,traceback.txt,pytest_out.txt -File -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue; \
         if (Test-Path .pytest_cache) { Remove-Item -Path .pytest_cache -Recurse -Force }; \
         if (Test-Path .ruff_cache) { Remove-Item -Path .ruff_cache -Recurse -Force }; \
+        if (Test-Path .agent\scratch) { Get-ChildItem .agent\scratch | Remove-Item -Force }; \
     "
 
 # [Linux] 清理临时文件

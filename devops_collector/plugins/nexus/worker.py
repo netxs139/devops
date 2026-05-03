@@ -5,6 +5,7 @@ import re
 from datetime import datetime
 
 from devops_collector.core.base_worker import BaseWorker
+from devops_collector.core.identity_manager import IdentityManager
 
 # from .client import NexusClient
 from devops_collector.models.base_models import Product
@@ -151,6 +152,13 @@ class NexusWorker(BaseWorker):
                 comp.name = data["name"]
                 comp.version = data.get("version")
 
+            # DevSecOps: Parse security metadata
+            security_data = data.get("security", {})
+            if security_data:
+                comp.highest_cve_score = security_data.get("highest_cve_score")
+                comp.policy_status = security_data.get("policy_status")
+                comp.license_type = security_data.get("license_type")
+
             self.save_to_staging(
                 source="nexus",
                 entity_type="component",
@@ -177,11 +185,15 @@ class NexusWorker(BaseWorker):
 
     def _sync_assets(self, component: NexusComponent, assets_data: list[dict]) -> None:
         """同步组件关联的资产。"""
-        existing_ids = {a.id for a in component.assets}
+        existing_assets = {a.id: a for a in component.assets}
         for asset_data in assets_data:
             a_id = asset_data["id"]
-            if a_id in existing_ids:
-                continue
+
+            # Nexus API lastModified example: '2022-09-08T12:00:00.000+00:00'
+            last_modified_str = asset_data.get("lastModified")
+            if not _is_after_cutoff(last_modified_str):
+                continue  # 如果文件本身是在 2024年1月1日之前修改/创建的，跳过入库
+
             self.save_to_staging(
                 source="nexus",
                 entity_type="asset",
@@ -189,19 +201,28 @@ class NexusWorker(BaseWorker):
                 payload=asset_data,
                 schema_version=self.SCHEMA_VERSION,
             )
+
+            if a_id in existing_assets:
+                asset = existing_assets[a_id]
+                asset.download_count = asset_data.get("downloadCount", asset.download_count)
+                asset.raw_data = asset_data
+                # Update checksums if needed
+                checksums = asset_data.get("checksum", {})
+                if checksums:
+                    asset.checksum_sha1 = checksums.get("sha1", asset.checksum_sha1)
+                    asset.checksum_sha256 = checksums.get("sha256", asset.checksum_sha256)
+                    asset.checksum_md5 = checksums.get("md5", asset.checksum_md5)
+                continue
+
             asset = NexusAsset(
                 id=a_id,
                 component_id=component.id,
                 path=asset_data["path"],
                 download_url=asset_data.get("downloadUrl"),
                 size_bytes=asset_data.get("fileSize"),
+                download_count=asset_data.get("downloadCount", 0),  # FinOps: Usage metrics
                 raw_data=asset_data,
             )
-
-            # Nexus API lastModified example: '2022-09-08T12:00:00.000+00:00'
-            last_modified_str = asset_data.get("lastModified")
-            if not _is_after_cutoff(last_modified_str):
-                continue  # 如果文件本身是在 2024年1月1日之前修改/创建的，跳过入库
 
             checksums = asset_data.get("checksum", {})
             asset.checksum_sha1 = checksums.get("sha1")
@@ -229,19 +250,33 @@ class NexusWorker(BaseWorker):
                     props[k.strip()] = v.strip()
 
             commit_sha = props.get("commit_sha")
+            build_pipeline_id = props.get("build_pipeline_id")
+            build_url = props.get("build_url")
+            uploader = props.get("uploader")
+
+            # 1. 直接填入“专座”（物理列）
             if commit_sha:
-                # 1. 直接填入“专座”（物理列）
                 component.commit_sha = commit_sha
+            if build_pipeline_id:
+                component.build_pipeline_id = build_pipeline_id
+            if build_url:
+                component.build_url = build_url
+            if uploader:
+                component.uploader_account = uploader
+                # 身份对齐：将上传者原始账号转换为 global_user_id
+                global_id = IdentityManager.get_global_id(self.session, uploader, "nexus")
+                if global_id:
+                    component.owner_id = global_id
 
-                # 2. 同时也保留在元数据大合集里备用
-                if not component.raw_data:
-                    component.raw_data = {}
+            # 2. 同时也保留在元数据大合集里备用
+            if not component.raw_data:
+                component.raw_data = {}
 
-                if "ext_info" not in component.raw_data:
-                    component.raw_data["ext_info"] = {}
+            if "ext_info" not in component.raw_data:
+                component.raw_data["ext_info"] = {}
 
-                component.raw_data["ext_info"]["commit_sha"] = commit_sha
-                logger.info(f"Successfully linked component {component.name} to commit {commit_sha}")
+            component.raw_data["ext_info"].update(props)
+            logger.info(f"Successfully processed trace file for {component.name}")
 
         except Exception as e:
             logger.warning(f"Failed to parse trace file {trace_asset.path}: {e}")

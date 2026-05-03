@@ -5,24 +5,28 @@
 ## 归档批次：2026-05-02 (会话 4)
 
 ### 1. [Testing] 全链路集成测试回归 (Grader 3) 通过
+
 - **记录**: 执行 `just test-int`，51 项集成测试全量通过；验证了 ORM lambda 化重构、RBAC 权限修复以及 Traceability 注入在真实 DB 环境下的稳定性。(2026-05-02)
 
 ### 2. [Arch] WeCom 插件与全量模型歧义 FK 审计
+
 - **记录**: 1. 验证 `wecom` 插件直接复用 MDM 核心模型 (`User`/`Organization`)；2. 确认 `audit_fixer.py` 注入 Mixin 后未引入歧义 FK 冲突；3. 固化 `verify_orm_integrity.py` 为后续 ORM 变更审计工具；4. `arch_auditor.py` 保持 0 Error 0 Warning。(2026-05-02)
 
 ### 3. [Toolchain] 彻底告别 Makefile，全面拥抱 Just
+
 - **记录**: 1. 完成全局 `Makefile` 引用清理；2. 同步更新 `full-gate.yml` 引入 `setup-just` 插件；3. `justfile` 补齐 `full-gate`/`fast-gate` 指令，实现 100% 功能对齐。(2026-05-02)
 
 ### 4. [Constitution] 代码宪法 V2.2 与分层治理
+
 - **记录**: 升级 `AGENTS.md` 至 Ultra-Compact 模式；落地 `docs/LAWS_DETAIL.md`；100% 同步全局 `gemini.md`。(2026-05-01)
 
 ### 5. [Content] AI 原生协作布道
+
 - **记录**: 完成并发布《AI 原生协作宪法》公众号技术文章。(2026-05-01)
 
 ______________________________________________________________________
 
 ## 归档批次：2026-04-30 (自动归档)
-
 
 ### 1. [Perf] SCD2 数据库治理: 修复了唯一性冲突 Bug，实施了 PostgreSQL 部分索引 (Partial Index)。(2026-04-30)
 
@@ -317,5 +321,10 @@ ______________________________________________________________________
 
 ### 6. [L3][Process] 人机协同开发流程体系化建设 (2026-03-13)
 
+- [RBAC/ORM] **修复 User.roles viewonly Bug 与全量架构合规化**: 1. 确认 User.roles 的 iewonly=True 是 403 Forbidden 根因（写操作被 SQLAlchemy 悄无声息丢弃）；2. 移除后集成测试全量通过（51 passed）；3. 引入 TraceabilityMixin，将 775 个 ARCH-007 违规**清零**；4. 修复 ARCH-002 / ARCH-007 审计器误判逻辑，使 just arch-audit 首次达到 0 Error 0 Warning；5. 发现并修复 GitLabIssueEvent.user 歧义 FK 问题；6. 固化 **PowerShell 编码陷阱** 物理红线（见 lessons-learned）。(2026-05-01)
+
+- [ORM] **SQLAlchemy 稳定性重构与去字符串化**: 完成全量跨模块 relationship lambda 化重构，根治 Mock 污染与 NameError；修复 User.roles 权限降级 Bug；进化 rch_auditor.py 引入 ARCH-009 门禁。(2026-05-01)
+
 - 结果：建立 L1-L4+S 五级分类体系，新建 4 个专项 Workflow。
+
 - 验证：全量流程文档已上线。

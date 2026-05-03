@@ -185,6 +185,30 @@ class GitLabClient(BaseClient):
             yield from data
             page += 1
 
+    def get_pipeline_details(self, project_id: int, pipeline_id: int) -> dict:
+        """获取单个流水线的详细信息 (包含 duration, coverage 等)。
+
+        Args:
+            project_id (int): GitLab 项目 ID。
+            pipeline_id (int): 流水线 ID。
+
+        Returns:
+            dict: 流水线详情字典。
+        """
+        return self._get(f"projects/{project_id}/pipelines/{pipeline_id}").json()
+
+    def get_pipeline_jobs(self, project_id: int, pipeline_id: int) -> Generator[dict, None, None]:
+        """获取流水线关联的所有 Job 列表。
+
+        Args:
+            project_id (int): GitLab 项目 ID。
+            pipeline_id (int): 流水线 ID。
+
+        Yields:
+            dict: 单个 Job 的字典数据。
+        """
+        return self._get_paged_data(f"projects/{project_id}/pipelines/{pipeline_id}/jobs")
+
     def get_project_deployments(self, project_id: int, start_page: int = 1, per_page: int = 100) -> Generator[dict, None, None]:
         """获取项目的部署记录列表。
 

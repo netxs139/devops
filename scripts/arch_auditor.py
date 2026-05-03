@@ -85,7 +85,20 @@ RULES = [
         "check": lambda line, ctx: "relationship(" in line and ('primaryjoin="' in line or 'foreign_keys="' in line) and "lambda" not in line,
         "message": "Use lambda-based primaryjoin/foreign_keys to prevent Mock pollution during ORM discovery.",
     },
-    # [ADD_NEW_RULE_HERE]
+    {
+        "id": "ARCH-011",
+        "name": "Silent Exception Swallowing",
+        "severity": "ERROR",
+        "check": lambda line, ctx: re.search(r"except\s*(\w+)?\s*:\s*pass", line) is not None,
+        "message": "Do not silently swallow exceptions. Use logger.warning/error to record context.",
+    },
+    {
+        "id": "ARCH-012",
+        "name": "Unsafe SQLite Duration Calculation",
+        "severity": "WARNING",
+        "check": lambda line, ctx: "/workers/" in ctx["path"] and re.search(r"\w+_at\s*-\s*\w+_at", line),
+        "message": "Direct datetime subtraction is unsafe in SQLite. Use 'CAST((JULIANDAY(end) - JULIANDAY(start)) * 86400 AS INTEGER)' for cross-dialect compatibility.",
+    },
 ]
 
 

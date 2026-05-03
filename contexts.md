@@ -686,6 +686,7 @@
 ### 14.1 需求工程与追踪 (Requirements Engineering)
 
 - **状态流转**: 需求必须经历 `Draft` (草稿) -> `Review` (评审) -> `Approved` (批准) -> `In Progress` (开发中) -> `Verified` (已验证) -> `Closed` (关闭) 的完整生命周期。
+- **意图驱动 (TDD 2.0)**: 鼓励人类开发者通过编写“期望失败的单元测试 (Failing Tests)”或精确的 Schema 来定义需求意图，替代模糊的自然语言。随后调用 `/ai-solve` 交由机器人完成闭环。
 - **可追溯性 (Traceability)**: 所有代码提交 (Commit) 必须在 Message 中关联需求 ID (如 `Ref: #123`)；测试用例必须在注释或装饰器中标注对应的需求点。
 
 ### 14.2 设计决策门禁 (Design Gates)
@@ -717,6 +718,9 @@
 - **代码层面**: 通过所有 Lint 检查，无死代码，注释清晰且无拼写错误。
 - **验证自动化闭环 (Mandatory Automation)**:
   - **后端任务**: 必须通过所有对应的 `pytest` 单元测试与集成测试，确保逻辑覆盖率。
+    - **[MANDATORY - 单元存根]**: 严禁在测试代码中使用原生 `unittest.mock` (如 `with patch(...)`)。必须统一使用 `pytest-mock` 提供的扁平化 `mocker` fixture 进行存根与劫持，彻底杜绝 Mock 状态泄漏与缩进地狱。
+    - **[MANDATORY - 外部集成]**: 涉及请求第三方 API（如 Nexus, GitLab）的测试，严禁手动拼造 JSON 返回值。必须统一使用 `@pytest.mark.vcr` (`pytest-recording` / `vcrpy`) 录制真实的 HTTP 响应，确保接口契约演进时的绝对真实性。
+    - **[RECOMMENDED - 数据工厂]**: 涉及数据库复杂外键关系的数据准备工作，强烈推荐使用 `factory_boy` 定义工厂模型，避免手动实例化冗长且脆弱的 ORM 对象。
   - **数据转换任务 [NEW]**: 涉及 Schema 变更或 dbt 模型重构时，**强制执行 `just dbt-build`**。严禁仅凭数据库入库成功即交付，必须通过 dbt 血缘审计。
   - **前端/UI 任务**: 涉及到 UI 重构或交互逻辑变更，**强制开展 E2E 测试** (Playwright)，确保护核心业务链路正常。
 - **文档层面对齐 (Document Sync Matrix)**:
@@ -883,7 +887,7 @@
 ### 19.2 快速失败 (Fail Fast)
 
 - 一旦检测到前置条件不满足（如必填参数为空、数据库连接断开），**立即抛出明确异常并终止**。
-- **严禁**使用 `except Exception: pass` 或 `except: pass` 吞掉错误继续执行。所有 `except` 块必须至少包含 `logger.warning` 或 `logger.error` 记录。
+- **严禁**使用 `except Exception: pass` 或 `except: pass` 吞掉错误继续执行。所有 `except` 块必须至少包含 `logger.warning` 或 `logger.error` 记录。 <!-- [Codified: ARCH-011] -->
 - 配置缺失时（如 `WECOM__CORP_ID` 为空），插件初始化阶段必须抛出 `ValueError`，严禁在运行时才发现配置问题。
 
 ### 19.3 原子性操作 (Atomicity)
