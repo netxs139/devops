@@ -83,9 +83,9 @@ def sync_aligned_entities_to_mdm(session: Session) -> int:
     for row in results:
         repo_id = str(row["gitlab_project_id"])
         entity_id = row["master_entity_id"]
-        target = session.query(EntityTopology).filter_by(entity_id=entity_id, is_current=True).first()
-        if target and (not target.internal_id):
-            new_data = {"internal_id": repo_id, "sync_version": target.sync_version}
+        target = session.query(EntityTopology).filter_by(external_resource_id=repo_id, is_current=True).first()
+        if target:
+            new_data = {"external_resource_id": repo_id, "sync_version": target.sync_version}
             try:
                 close_current_and_insert_new(session, EntityTopology, {"entity_id": entity_id}, new_data)
                 updated_count += 1

@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 
+from sqlalchemy import inspect
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
 
@@ -59,14 +60,14 @@ def close_current_and_insert_new(session: Session, model_cls: type[Base], natura
         ConcurrencyError: 当记录不存在或乐观锁冲突时抛出。
     """
     try:
-        current = session.query(model_cls).filter_by(**natural_key, is_current=True).one()
+        current: Any = session.query(model_cls).filter_by(**natural_key, is_current=True).one()
     except NoResultFound as exc:
         raise ConcurrencyError(f"未找到 {model_cls.__name__}（键 {natural_key}）的当前有效记录") from exc
     expected_version = new_data.get("sync_version")
     if expected_version is None:
         raise ConcurrencyError("new_data 必须包含 sync_version 用于乐观锁校验")
-    if current.sync_version != expected_version:
-        raise ConcurrencyError(f"乐观锁冲突：当前版本 {current.sync_version} 与期望 {expected_version} 不匹配")
+    if cast(Any, current).sync_version != expected_version:
+        raise ConcurrencyError(f"乐观锁冲突：当前版本 {cast(Any, current).sync_version} 与期望 {expected_version} 不匹配")
     now = datetime.now(UTC)
     current.is_current = False
     current.effective_to = now
@@ -76,7 +77,7 @@ def close_current_and_insert_new(session: Session, model_cls: type[Base], natura
     insert_kwargs.update(new_data_clean)
     insert_kwargs.update(
         {
-            "sync_version": current.sync_version + 1,
+            "sync_version": cast(Any, current).sync_version + 1,
             "effective_from": now,
             "effective_to": None,
             "is_current": True,
@@ -91,8 +92,8 @@ def close_current_and_insert_new(session: Session, model_cls: type[Base], natura
         model_cls.__name__,
         natural_key,
         insert_kwargs,
-        current.sync_version,
-        new_obj.sync_version,
+        cast(Any, current).sync_version,
+        cast(Any, new_obj).sync_version,
     )
     return new_obj
 
@@ -131,12 +132,13 @@ def batch_upsert_scd2(session: Session, model_cls: type[Base], natural_key_names
     keys = [d[key_name] for d in batch_data]
 
     # 2. 批量拉取数据库中的当前版本
-    existing_records = session.query(model_cls).filter(getattr(model_cls, key_name).in_(keys), model_cls.is_current).all()
+    existing_records = session.query(model_cls).filter(getattr(model_cls, key_name).in_(keys), cast(Any, model_cls).is_current).all()
 
     current_map = {getattr(r, key_name): r for r in existing_records}
 
     # 动态获取主键名称 (处理 User.global_user_id 与 其他模型 .id 的差异)
-    pk_name = model_cls.__table__.primary_key.columns.keys()[0]
+    mapper = inspect(model_cls)
+    pk_name = mapper.primary_key[0].name
 
     updates_to_close = []
     new_inserts = []
@@ -148,8 +150,8 @@ def batch_upsert_scd2(session: Session, model_cls: type[Base], natural_key_names
         if current:
             # 乐观锁校验
             expected_version = item.get("sync_version")
-            if expected_version is not None and current.sync_version != expected_version:
-                log.warning("跳过记录 %s: 乐观锁冲突 (DB:%s, Batch:%s)", key_val, current.sync_version, expected_version)
+            if expected_version is not None and cast(Any, current).sync_version != expected_version:
+                log.warning("跳过记录 %s: 乐观锁冲突 (DB:%s, Batch:%s)", key_val, cast(Any, current).sync_version, expected_version)
                 continue
 
             # 标记旧记录失效
@@ -158,7 +160,7 @@ def batch_upsert_scd2(session: Session, model_cls: type[Base], natural_key_names
             # 准备新记录数据
             new_record_data = {**item}
             new_record_data.update(
-                {"sync_version": current.sync_version + 1, "effective_from": now, "effective_to": None, "is_current": True, "is_deleted": False}
+                {"sync_version": cast(Any, current).sync_version + 1, "effective_from": now, "effective_to": None, "is_current": True, "is_deleted": False}
             )
             new_inserts.append(new_record_data)
         else:
@@ -169,10 +171,10 @@ def batch_upsert_scd2(session: Session, model_cls: type[Base], natural_key_names
 
     # 3. 批量执行
     if updates_to_close:
-        session.bulk_update_mappings(model_cls, updates_to_close)
+        session.bulk_update_mappings(cast(Any, model_cls), updates_to_close)
 
     if new_inserts:
-        session.bulk_insert_mappings(model_cls, new_inserts)
+        session.bulk_insert_mappings(cast(Any, model_cls), new_inserts)
 
     session.flush()
     log.info("SCD2 批量更新完成: %s (关闭 %d, 插入 %d)", model_cls.__name__, len(updates_to_close), len(new_inserts))

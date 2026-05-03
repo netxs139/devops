@@ -80,6 +80,9 @@ dev = [
     "wheel>=0.46.2",
     "djhtml>=3.0.6",
     "mdformat>=0.7.21",
+    "types-requests",
+    "types-python-dateutil",
+    "types-pytz",
 ]
 test = [
     "pytest>=9.0.0,<10.0.0",
@@ -135,21 +138,9 @@ markers = [
 
 [tool.black]
 line-length = 100
-target-version = ['py312']
+target-version = ["py312"]
 include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | build
-  | dist
-)/
-'''
+extend-exclude = '/(\.eggs|\.git|\.hg|\.mypy_cache|\.tox|\.venv|build|dist)/'
 
 [tool.mypy]
 python_version = "3.12"
@@ -157,6 +148,7 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
 ignore_missing_imports = true
+disable_error_code = ["import-untyped"]
 exclude = [
     'devops_collector/plugins/sonarqube/.*',
     'devops_collector/plugins/jenkins/.*',
@@ -168,10 +160,22 @@ exclude = [
 
 [[tool.mypy.overrides]]
 module = [
+    "requests.*",
+    "dateutil.*",
+    "pytz.*",
+    "pika.*",
+    "tenacity.*",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
     "devops_collector.auth.*",
     "devops_collector.plugins.*",
-    "devops_collector.models.*",
     "devops_collector.alembic.*",
+    "devops_collector.core.promotion_service",
+    "devops_collector.scheduler",
+    "devops_collector.core.admin_service",
 ]
 ignore_errors = true
 

@@ -109,7 +109,7 @@ class OrganizationService:
 
             # 策略 3: 邮箱
             if not global_user_id and "@" in str(raw_id):
-                user = self.session.query(User).filter_by(primary_email=raw_id.lower(), is_current=True).first()
+                user = self.session.query(User).filter_by(primary_email=str(raw_id).lower(), is_current=True).first()
                 if user:
                     global_user_id = user.global_user_id
 

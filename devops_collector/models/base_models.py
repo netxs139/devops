@@ -78,6 +78,7 @@ class TraceabilityMixin:
 
     source_system: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True, comment="数据来源系统标识")
     correlation_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True, comment="同步任务追踪 ID")
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON, nullable=True, comment="原始元数据暂存")
 
 
 class SCDMixin(TraceabilityMixin):
@@ -435,7 +436,7 @@ class TeamMember(Base, TimestampMixin):
 
     @property
     def full_name(self) -> str:
-        return self.user.full_name if self.user else "Unknown"
+        return self.user.full_name if self.user and self.user.full_name else "Unknown"
 
     def __repr__(self) -> str:
         return f"<TeamMember(team_id={self.team_id}, user_id={self.user_id}, role={self.role_code})>"
@@ -548,7 +549,7 @@ class Service(Base, TimestampMixin, SCDMixin):
 
     @property
     def total_cost(self) -> float:
-        return sum(c.amount for c in self.costs)
+        return float(sum(c.amount or 0.0 for c in self.costs))
 
     @property
     def investment_roi(self) -> float:
@@ -636,7 +637,7 @@ class SystemRegistry(Base, TimestampMixin, SCDMixin):
     api_version: Mapped[str | None] = mapped_column(comment="API 接口版本 (如 v4, api/v2)")
     auth_type: Mapped[str_50 | None] = mapped_column(comment="认证方式 (OAuth2/Token/Basic)")
     credential_key: Mapped[str_100 | None] = mapped_column(comment="凭证引用Key (指向Vault或Env Var)")
-    plugin_config: Mapped[json_dict] = mapped_column(comment="插件特定配置 (JSON, 如过滤规则、超时设置)")
+    plugin_config: Mapped[json_dict | None] = mapped_column(comment="插件特定配置 (JSON, 如过滤规则、超时设置)")
 
     # 数据同步策略
     sync_method: Mapped[str_50 | None] = mapped_column(comment="同步方式 (CDC/Polling/Webhook)")
@@ -655,7 +656,7 @@ class SystemRegistry(Base, TimestampMixin, SCDMixin):
     remarks: Mapped[str | None] = mapped_column(comment="备注说明")
 
     technical_owner: Mapped[User | None] = relationship("User", foreign_keys=[technical_owner_id])
-    projects: Mapped[list[ProjectMaster]] = relationship("ProjectMaster", back_populates="source_system")
+    projects: Mapped[list[ProjectMaster]] = relationship("ProjectMaster", back_populates="source_system_ref")
 
 
 class EntityTopology(Base, TimestampMixin, SCDMixin):
@@ -693,7 +694,7 @@ class EntityTopology(Base, TimestampMixin, SCDMixin):
     # 4. 状态与元数据
     is_active: Mapped[bool | None] = mapped_column(default=True, comment="关联是否有效")
     last_verified_at: Mapped[datetime | None] = mapped_column(comment="最后一次验证连接有效的时间")
-    meta_info: Mapped[json_dict] = mapped_column(comment="额外元数据连接信息 (JSON, 如 webhook_id, bind_key)")
+    meta_info: Mapped[json_dict | None] = mapped_column(comment="额外元数据连接信息 (JSON, 如 webhook_id, bind_key)")
 
     # Relationships
     service: Mapped[Service | None] = relationship("Service", back_populates="resources")
@@ -812,7 +813,7 @@ class OKRKeyResult(Base, TimestampMixin):
     weight: Mapped[float | None] = mapped_column(default=1.0, comment="权重")
     owner_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mdm_identities.global_user_id"), index=True, comment="负责人")
     progress: Mapped[float | None] = mapped_column(default=0.0, comment="进度 (0.0-1.0)")
-    linked_metrics_config: Mapped[json_dict] = mapped_column(comment="关联度量配置 (JSON)")
+    linked_metrics_config: Mapped[json_dict | None] = mapped_column(comment="关联度量配置 (JSON)")
 
     objective: Mapped[OKRObjective | None] = relationship("OKRObjective", back_populates="key_results")
     owner: Mapped[User | None] = relationship("User", foreign_keys=[owner_id])
@@ -830,7 +831,7 @@ class TraceabilityLink(Base, TimestampMixin):
     target_type: Mapped[str_50 | None] = mapped_column(comment="目标实体类型 (commit/merge_request/build)")
     target_id: Mapped[str_100 | None] = mapped_column(index=True, comment="目标实体ID")
     link_type: Mapped[str_50 | None] = mapped_column(comment="链路类型 (implements/tests/deploys)")
-    raw_data: Mapped[json_dict] = mapped_column(comment="原始关联数据 (JSON)")
+    raw_data: Mapped[json_dict | None] = mapped_column(comment="原始关联数据 (JSON)")
 
     __table_args__ = (UniqueConstraint("source_id", "target_id", "link_type", name="uq_traceability_link"),)
 
@@ -861,7 +862,7 @@ class JenkinsTestExecution(Base, TimestampMixin):
     duration_ms: Mapped[int | None] = mapped_column(default=0, comment="执行时长 (毫秒)")
 
     # 原始数据
-    raw_data: Mapped[json_dict] = mapped_column(comment="原始测试报告 JSON")
+    raw_data: Mapped[json_dict | None] = mapped_column(comment="原始测试报告 JSON")
 
     # 唯一约束: 同一项目、同一构建、同一测试层级只能有一条记录
     __table_args__ = (UniqueConstraint("project_id", "build_id", "test_level", name="uq_jenkins_test_execution"),)
@@ -985,7 +986,7 @@ class ProjectMaster(Base, TimestampMixin, SCDMixin, OwnableMixin):
     dev_lead: Mapped[User | None] = relationship("User", foreign_keys=[dev_lead_id])
     qa_lead: Mapped[User | None] = relationship("User", foreign_keys=[qa_lead_id])
     release_lead: Mapped[User | None] = relationship("User", foreign_keys=[release_lead_id])
-    source_system: Mapped[SystemRegistry | None] = relationship("SystemRegistry", back_populates="projects")
+    source_system_ref: Mapped[SystemRegistry | None] = relationship("SystemRegistry", back_populates="projects")
     gitlab_repos: Mapped[list[GitLabProject]] = relationship("GitLabProject", back_populates="mdm_project")
     product_relations: Mapped[list[ProjectProductRelation]] = relationship("ProjectProductRelation", back_populates="project")
 
@@ -1208,8 +1209,8 @@ class EpicMaster(Base, TimestampMixin):
     external_id: Mapped[str_50 | None] = mapped_column(comment="外部系统ID (如 GitLab Epic IID)")
 
     # 协作信息
-    involved_teams: Mapped[json_dict] = mapped_column(comment="涉及团队列表 (JSON List)")
-    tags: Mapped[json_dict] = mapped_column(comment="标签 (JSON List)")
+    involved_teams: Mapped[json_dict | None] = mapped_column(comment="涉及团队列表 (JSON List)")
+    tags: Mapped[json_dict | None] = mapped_column(comment="标签 (JSON List)")
 
     # Relationships
     owner: Mapped[User | None] = relationship("User", foreign_keys=[owner_id])
@@ -1229,7 +1230,7 @@ class ComplianceIssue(Base, TimestampMixin):
     entity_id: Mapped[str_100 | None] = mapped_column(index=True, comment="关联实体ID (项目/服务)")
     status: Mapped[str | None] = mapped_column(default="OPEN", comment="状态 (OPEN/IN_REVIEW/RESOLVED/ACCEPTED)")
     description: Mapped[str | None] = mapped_column(comment="问题详情")
-    metadata_payload: Mapped[json_dict] = mapped_column(comment="额外元数据 (JSON)")
+    metadata_payload: Mapped[json_dict | None] = mapped_column(comment="额外元数据 (JSON)")
 
 
 class RawDataMixin:

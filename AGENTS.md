@@ -9,7 +9,7 @@
 | :--- | :--- | :--- |
 | **`/task-kickoff`** | 处理新任务 | 任务定级 [L1-L4]、风险预判、**环境健康度检查**、**文档影响分析**与逻辑切片 |
 | **`/evolve-skill`** | 产生新教训 | 将 `lessons-learned` 转化为自动化审计规则 (Arbiter) |
-| **`/session-handover`** | 关闭会话 | **[DoD]**：取证、日志落盘 (session-history/lessons-learned)、状态对齐 (progress) |
+| **`/session-handover`** | 关闭会话 | **[DoD]**：取证、日志落盘 (session-history/lessons-learned)、状态对齐 (`just progress-add/done`) |
 
 | **`/bug-triage`** | 处理缺陷 | 复现 -> 归因 -> TDD 修复 |
 | **`/ai-solve`** | TDD 驱动编码 (v2.3) | **双轨制**：后端轨道（pytest + 方言检测 + 导入验证）+ 前端轨道（HTTP可达 + API契约对齐 + 容器高度冒烟）|
@@ -55,7 +55,9 @@
 
 ## 5. 交互与决策契约 (Interaction & Decision Contract) [MANDATORY]
 
-1. **结构化决策推荐**: 凡是提供 A/B/C 结构化选项时，必须显式包含 **“AI 视角推荐路径”** 及其 **“核心理由”**，旨在通过专家级预判降低人类决策损耗。
+1. **结构化决策推荐与语义锚点 [MANDATORY]**: 凡是提供 A/B/C 结构化选项时，必须显式包含 **“AI 视角推荐路径”** 及其 **“核心理由”**。一旦用户做出决策：
+   - 被选中的方案必须立即通过 `just progress-focus` 更新到 `progress.txt` 的 **Current Focus**。
+   - 未被选中或被推迟 (Deferred) 的方案必须通过 `just progress-mirror` 镜像到 **Tasks** 列表，确保意图不丢失。
 1. **UI 集成决策锁**: 涉及 `devops_portal/static/` (Portal) 的新视图集成时，**必须**首先向用户呈报以下决策路径：
    - **方案 A: Streamlit 分析版 (Decision Hub)**: 适合**非高频、重分析、重度量**的决策需求（如：效能雷达、成本审计、质量趋势）。
    - **方案 B: Portal 操作版 (Operational)**: 适合**高频交互、低延迟、重流程**的操作需求（如：用例执行、缺陷处理、即时追溯）。

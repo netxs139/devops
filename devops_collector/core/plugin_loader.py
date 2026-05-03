@@ -35,7 +35,7 @@ class PluginLoader:
     _loaded_plugins: list[str] = []
 
     @classmethod
-    def autodiscover(cls, plugins_dir: str = None) -> list[str]:
+    def autodiscover(cls, plugins_dir: str | None = None) -> list[str]:
         """自动发现并加载所有插件。
 
         Args:
@@ -51,19 +51,19 @@ class PluginLoader:
         if plugins_dir is None:
             # 默认插件目录
             current_dir = Path(__file__).parent.parent
-            plugins_dir = current_dir / "plugins"
+            resolved_dir = current_dir / "plugins"
         else:
-            plugins_dir = Path(plugins_dir)
+            resolved_dir = Path(plugins_dir)
 
-        if not plugins_dir.exists():
-            logger.error(f"Plugins directory not found: {plugins_dir}")
+        if not resolved_dir.exists():
+            logger.error(f"Plugins directory not found: {resolved_dir}")
             return []
 
-        logger.info(f"Autodiscovering plugins from: {plugins_dir}")
+        logger.info(f"Autodiscovering plugins from: {resolved_dir}")
         loaded = []
 
         # 遍历插件目录
-        for item in plugins_dir.iterdir():
+        for item in resolved_dir.iterdir():
             if not item.is_dir():
                 continue
 

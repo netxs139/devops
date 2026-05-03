@@ -51,14 +51,8 @@ class PipelineMixin:
             project (GitLabProject): 关联的项目实体。
             batch (List[dict]): 流水线原始数据列表。
         """
-        ids = [item["id"] for item in batch]
-        existing = self.session.query(GitLabPipeline).filter(GitLabPipeline.id.in_(ids)).all()
-        existing_map = {p.id: p for p in existing}
         for data in batch:
-            p = existing_map.get(data["id"])
-            if not p:
-                p = GitLabPipeline(id=data["id"])
-                self.session.add(p)
+            p = GitLabPipeline(id=data["id"])
             p.project_id = project.id
             p.status = data["status"]
             p.ref = data.get("ref")
@@ -67,6 +61,9 @@ class PipelineMixin:
             p.created_at = parse_iso8601(data.get("created_at"))
             p.updated_at = parse_iso8601(data.get("updated_at"))
             p.coverage = data.get("coverage")
+
+            # 必须先 merge 确保 Pipeline 存在，以便后续同步 Job 时满足外键约束
+            p = self.session.merge(p)
 
             # FinOps 深度数据补充
             if data["status"] in ["success", "failed", "canceled"]:

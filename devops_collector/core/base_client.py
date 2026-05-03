@@ -70,7 +70,7 @@ class RateLimiter:
             time.sleep(0.1)
 
 
-def is_retryable_exception(exception: Exception) -> bool:
+def is_retryable_exception(exception: BaseException) -> bool:
     """判断异常是否值得重试。
 
     401 (Unauthorized) 和 403 (Forbidden) 通常表示配置错误，重试无意义。

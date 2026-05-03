@@ -32,10 +32,11 @@ class AgileMetrics:
         end_time = None
         sorted_histories = sorted(histories, key=lambda x: x["created_at"])
         for h in sorted_histories:
+            h_created_at: datetime = h["created_at"]
             if h.get("to_string") == start_status and start_time is None:
-                start_time = h["created_at"]
+                start_time = h_created_at
             if h.get("to_string") == end_status:
-                end_time = h["created_at"]
+                end_time = h_created_at
         if start_time and end_time and (end_time > start_time):
             duration = end_time - start_time
             return duration.total_seconds() / 3600.0
@@ -92,14 +93,14 @@ class AgileMetrics:
         Args:
             incidents: Incident 对象列表，需具有 occurred_at 和 resolved_at 属性。
         """
-        durations = []
+        durations: list[float] = []
         for inc in incidents:
             if hasattr(inc, "resolved_at") and hasattr(inc, "occurred_at") and inc.resolved_at and inc.occurred_at:
                 durations.append((inc.resolved_at - inc.occurred_at).total_seconds() / 3600.0)
 
         if not durations:
             return None
-        return sum(durations) / len(durations)
+        return float(sum(durations) / len(durations))
 
 
 class CodeMetrics:

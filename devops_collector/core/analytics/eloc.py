@@ -7,7 +7,10 @@ changes and calculate weighted contribution scores.
 
 import os
 import re
+from datetime import datetime
 
+import pytz
+from dateutil import parser
 from pydantic import BaseModel
 
 
@@ -89,11 +92,6 @@ class ELOCAnalyzer:
         # New: Legacy Detection (> 6 months / 180 days approx)
         if file_last_modified_date:
             try:
-                from datetime import datetime
-
-                import pytz
-                from dateutil import parser
-
                 # Parse and ensure UTC
                 last_mod = parser.isoparse(str(file_last_modified_date))
                 if not last_mod.tzinfo:

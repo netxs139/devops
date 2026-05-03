@@ -320,3 +320,27 @@ clean:
 docs:
     @echo "Generating Data Dictionary..."
     {{EXEC_CMD}} python scripts/generate_data_dictionary.py
+
+# =============================================================================
+# 进度管理 (Progress Management)
+# =============================================================================
+
+# 添加新任务到进度表
+progress-add task:
+    @python scripts/progress_manager.py --add "{{task}}"
+
+# 标记任务为已完成 (输入任务编号)
+progress-done id:
+    @python scripts/progress_manager.py --done {{id}}
+
+# 更新当前重点 (Focus)
+progress-focus content:
+    @python scripts/progress_manager.py --update-focus "{{content}}"
+
+# 镜像未选选项到任务列表 (用分号分隔多个任务)
+progress-mirror tasks:
+    @python scripts/progress_manager.py --mirror-tasks "{{tasks}}"
+
+# 归档超过 5 条的已完成任务
+progress-archive:
+    @python scripts/progress_manager.py --archive

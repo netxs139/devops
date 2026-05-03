@@ -9,7 +9,7 @@
 import logging
 from abc import ABC, abstractmethod
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 
 from sqlalchemy.orm import Session
 
@@ -117,7 +117,8 @@ class BaseWorker(ABC):
             "collected_at": datetime.now(UTC),
         }
 
-        dialect = self.session.bind.dialect.name
+        bind = self.session.bind
+        dialect = bind.dialect.name if bind else "unknown"
         if dialect == "postgresql":
             from sqlalchemy.dialects.postgresql import insert
 
@@ -164,7 +165,8 @@ class BaseWorker(ABC):
 
         # 判断数据库方言。非 PostgreSQL 环境（如集成测试中的 SQLite）不支持 COPY FROM 和特定的 JSONB 转换。
         # 此时降级到逐条 save_to_staging，虽然性能略低但能保证集成测试通过。
-        dialect = self.session.bind.dialect.name
+        bind = self.session.bind
+        dialect = bind.dialect.name if bind else "unknown"
         if dialect != "postgresql":
             self.logger.debug(f"Non-PostgreSQL dialect ({dialect}) detected, using graceful fallback for bulk_save_to_staging")
             for item in items:
@@ -175,7 +177,7 @@ class BaseWorker(ABC):
         # 获取底层 psycopg 的连接对象
         raw_conn = self.session.connection().connection
         if hasattr(raw_conn, "dbapi_connection"):
-            raw_conn = raw_conn.dbapi_connection
+            raw_conn = cast(Any, raw_conn).dbapi_connection
 
         csv_file = io.StringIO()
         # 注意: 包含复杂的 JSON 数据，因此使用严格的引用策略
