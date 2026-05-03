@@ -20,9 +20,19 @@
    - **L3 (核心)**: 跨表、跨组件、改动基础 API。
    - **L4 (高危)**: 引入新依赖、重构、变更部署流水线。
 
+1. **不确定性评估 (Uncertainty Assessment) [NEW]**:
+   在切片前，必须判定是否存在以下“探针触发点”：
+
+   - **API 盲区**: 涉及从未在该项目中使用过的第三方 API/SDK。
+   - **架构高危**: 涉及 `base_models.py` 的破坏性变更或全局 Auth 逻辑重构。
+   - **逻辑黑盒**: 核心算法实现路径不明确。
+   - **动作**: 若命中，必须将该任务标记为 `[SPIKE-FIRST]`。
+
 1. **意图先导切片法 (TDD 2.0 Slicing Logic)**:
    所有 L2 及以上的任务，强制按以下模式划分子任务：
 
+   - **[PRE-TASK] 切片 0: [Spike 调研] (仅当标记为 [SPIKE-FIRST] 时)**
+     - 调用 `/spike` 完成技术验证，并在 `docs/spikes/` 沉淀结论。
    - **切片 A: [建模与契约对齐]** (Schema-First)
      - 确定数据模型 (Pydantic/SQLAlchemy) 与接口输入输出。
    - **切片 B: [编写失败的意图测试]** (Red Test)
@@ -55,8 +65,8 @@ AI 将向用户输出以下卡片，等待放行信号：
 ```text
 [Kickoff Complete] 
 - Level: L{x} 
-- Branch: {当前分支} 
-- TDD Intent: 已明确 (需优先构建 XX 测试契约)
+- Strategy: [Normal] / [SPIKE-FIRST]
+- TDD Intent: 已明确 (需优先构建 XX 测试契约/探针)
 - Target Skill: {需要调用的 Skill}
 
 > [!IMPORTANT]

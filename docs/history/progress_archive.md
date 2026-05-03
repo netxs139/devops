@@ -2,6 +2,20 @@
 
 > 从 `progress.txt` 归档的已完成任务。按时间倒序排列。
 
+## 归档批次：2026-05-03 (自动归档)
+
+### 1. [Data/ELOC] GitLab 协同质量与代码审查深度评估
+
+- **记录**: 1. 实现 `effective_comment_count` 自动提取，关联人工评论与后续代码变更；2. 建立 `rubber_stamp` (秒批) 识别机制，基于评审时长与互动频率判定质量风险；3. 优化 `MergeRequestMixin` 分析链路，确保 VSM 与协作指标协同计算；4. 通过 `test_gitlab_review_quality.py` 完成逻辑验证。(2026-05-03)
+
+### 2. [Data/VSM] GitLab 价值流与交付瓶颈切片分析 (VSM)
+
+- **记录**: 1. 完成 `GitLabMergeRequestStateTransition` 模型设计，支持全生命周期状态追踪；2. 实现从 System Notes 自动提取 Draft->Ready 转换点；3. 区分并计算 Draft Duration, Wait Time to Review 等核心效能指标；4. 通过 `test_gitlab_vsm.py` 验证 VSM 指标计算准确性。(2026-05-03)
+
+### 3. [Data/DevSecOps] GitLab 安全漏洞与合规采集
+
+- **记录**: 1. 强化 `GitLabVulnerability` 模型，新增 `pipeline_id` 追踪以支持 Shift-Left 追溯；2. 将漏洞同步提升为 Worker 默认标准任务（不再局限于深度分析模式）；3. 完善 `VulnerabilityMixin` 的 Fallback 逻辑，兼容 Ultimate 与 Findings API；4. 同步更新 `DATA_DICTIONARY.md` 与指标采集规格。(2026-05-03)
+
 ## 归档批次：2026-05-03 (会话 5)
 
 ### 1. [Data/FinOps] GitLab 研发算力与成本采集 (B路线)
