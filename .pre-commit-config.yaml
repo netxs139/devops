@@ -4,6 +4,14 @@
 repos:
   - repo: local
     hooks:
+      # 环境自动补齐 (Self-Healing Environment)
+      - id: env-autopilot
+        name: Environment Autopilot (Sync Extras)
+        entry: uv sync --all-groups --all-extras --frozen
+        language: system
+        pass_filenames: false
+        always_run: true
+
       # 代码格式化与 Linting (Ruff)
       - id: ruff
         name: Ruff Lint

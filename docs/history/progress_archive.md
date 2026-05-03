@@ -5,12 +5,15 @@
 ## 归档批次：2026-05-03 (会话 5)
 
 ### 1. [Data/FinOps] GitLab 研发算力与成本采集 (B路线)
+
 - **记录**: 1. 完成 GitLabPipeline 与 GitLabJob 物理模型设计；2. 扩展 GitLabClient 实现 Pipeline 详情与 Job 分页采集；3. 修复 BaseWorker 的 SQLite 兼容性并完成 test_gitlab_pipeline_sync.py 验证。(2026-05-03)
 
 ### 2. [Governance/TDD] “活宪法”闭环与 TDD 2.0 落地
+
 - **记录**: 1. 新增 /codify-rule 工作流；2. 升级 /ai-solve v2.1 实现意图驱动测试 (TDD 2.0)；3. 确立 pytest-mock 为强制存根标准。(2026-05-03)
 
 ### 3. [Data] Nexus 插件补齐 CI 与安全成本数据
+
 - **记录**: 1. NexusComponent 新增 DevOps/安全指标；2. NexusAsset 新增增量同步；3. 通过 IdentityManager 完成制品上传者的全局身份对齐。(2026-05-03)
 
 ______________________________________________________________________

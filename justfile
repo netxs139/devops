@@ -62,11 +62,11 @@ init-dev:
     powershell -Command " \
         for ($i=1; $i -le 3; $i++) { \
             Write-Host \"[Attempt $i/3] Trying Nexus (8081)...\" -ForegroundColor Yellow; \
-            uv sync --all-groups --index-url {{NEXUS_PYPI_URL}} --trusted-host 192.168.5.64; \
+            uv sync --all-groups --all-extras --index-url {{NEXUS_PYPI_URL}} --trusted-host 192.168.5.64; \
             if ($?) { Write-Host \"Local environment successfully synced!\" -ForegroundColor Cyan; exit 0 } \
             Start-Sleep -Seconds 1; \
         } \
-        uv sync --all-groups --extra-index-url https://pypi.tuna.tsinghua.edu.cn/simple; \
+        uv sync --all-groups --all-extras --extra-index-url https://pypi.tuna.tsinghua.edu.cn/simple; \
     "
 
 # =============================================================================

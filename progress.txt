@@ -7,7 +7,10 @@
 ## 🛠️ 任务清单 (Tasks)
 1. [Data/E] **AI 效能归因**: 集成 LLM 对异常指标（如高秒批率）进行自动归因并给出改进建议。⏳ 待实现
 2. [UI/F] **暗色模式适配**: 优化仪表盘在不同主题下的视觉通透度。⏳ 待实现
+3. [Infrastructure] **MyPy 增量治理 (Phase 2)**: 引入 `mypy-baseline` 机制，实现“只对增量报错”，逐步消化 700+ 存量债务。⏳ 待实现
+4. [Infrastructure] **SQLAlchemy 2.0 强类型迁移**: 将 `base_models.py` 迁移至 `Mapped` 模式，彻底消除模型层类型推断错误。⏳ 待实现
 ## 📋 最近完成 (Recently Completed)
+1. [Infrastructure] **MyPy 存量债务治理 (Phase 1)**: 1. 诊断发现 700+ 存量错误，主因是 `pre-commit` 开启了核心域强制检查；2. **短期解法**: 通过 `pyproject.toml` 排除 `alembic` 目录并对 `auth`、`plugins`、`models` 等高债务模块设置 `ignore_errors = true` 实现快速解耦；3. **长期方案**: 引入 Baseline 机制并计划逐步完成 SQLAlchemy 2.0 强类型迁移。(2026-05-03)
 1. [Full-Stack] **效能下钻详情 (Drill-down)**: 1. 实现 `/traceability/detail` 接口，支持秒批/等待/ELOC/漏洞四类下钻逻辑；2. **Streamlit 侧**: 增加交互式详情表与状态追踪；3. **Portal 侧**: 实现 `qa-radar-drawer` 组件并完成事件绑定；4. **同步文档**: 更新了 `TRACEABILITY_API.md` 与 `COMPONENTS.md`。(2026-05-03)
 1. [Full-Stack] **Traceability Radar 仪表盘集成**: 1. 实现 `/traceability/radar` 后端聚合 API，支持 VSM/协作/安全多维指标；2. 完成 `index.html` 视图集成，替换旧拓扑图为效能看板；3. 接入 `adm-product-selector` 与时间窗筛选逻辑；4. 实现 Radar-SVG 与 ELOC-Chart.js 动态渲染；5. `just arch-audit` 满分通过。(2026-05-03)
 2. [Frontend] **Traceability Radar 原型上线**: 1. 创建工业赛博朋克主题设计系统 (`radar.css`)；2. 实现纯 SVG 雷达图 + Chart.js ELOC 柱状图 + VSM 甘特泳道图；3. 微动效：扫描线、fadeUp 入场、danger 脉冲；4. 页面已通过 HTTP 200 验证可访问。(2026-05-03)

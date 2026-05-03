@@ -7,7 +7,7 @@
 
 | 指令 | 触发时机 | 动作目标 |
 | :--- | :--- | :--- |
-| **`/task-kickoff`** | 处理新任务 | 任务定级 [L1-L4]、风险预判、**文档影响分析**与逻辑切片 |
+| **`/task-kickoff`** | 处理新任务 | 任务定级 [L1-L4]、风险预判、**环境健康度检查**、**文档影响分析**与逻辑切片 |
 | **`/evolve-skill`** | 产生新教训 | 将 `lessons-learned` 转化为自动化审计规则 (Arbiter) |
 | **`/session-handover`** | 关闭会话 | **[DoD]**：取证、日志落盘 (session-history/lessons-learned)、状态对齐 (progress) |
 
@@ -23,7 +23,7 @@
 - **意图映射**: `"下班"` ➜ `/session-handover` | `"开始"` ➜ `/session-handover (Bootstrap)`。
 - **专家链**: `模型变更` ➜ `mdm-integrity-arbiter` | `SQL评审` ➜ `dbt-pipeline-auditor` | `高危重构` ➜ `chaos-sentinel` | `严谨性` ➜ `engineering-rigor-arbiter`。
 - **技术锚点**: `编码`➜[#1.5](contexts.md#L15), `DB`➜[#5](contexts.md#L171), `UI`➜[#6](contexts.md#L251), `命名`➜[#11](contexts.md#L551)。
-- **UI 开发强制前置** [MANDATORY]: 任何涉及 `devops_portal/static/` 的前端工作，**必须**先激活 `frontend-design` SKILL，执行 **Step 0（项目合规性预检）**，依次完成：Dashboard Map 注册核查 → 读取 `docs/frontend/CONVENTIONS.md` → 确认 API ResponseSchema 存在。
+- **UI 开发强制前置** \[MANDATORY\]: 任何涉及 `devops_portal/static/` 的前端工作，**必须**先激活 `frontend-design` SKILL，执行 **Step 0（项目合规性预检）**，依次完成：Dashboard Map 注册核查 → 读取 `docs/frontend/CONVENTIONS.md` → 确认 API ResponseSchema 存在。
 
 ## 2. 软件生命周期红线 (Lifecycle Laws) [MANDATORY]
 
@@ -56,11 +56,11 @@
 ## 5. 交互与决策契约 (Interaction & Decision Contract) [MANDATORY]
 
 1. **结构化决策推荐**: 凡是提供 A/B/C 结构化选项时，必须显式包含 **“AI 视角推荐路径”** 及其 **“核心理由”**，旨在通过专家级预判降低人类决策损耗。
-2. **UI 集成决策锁**: 涉及 `devops_portal/static/` (Portal) 的新视图集成时，**必须**首先向用户呈报以下决策路径：
-    *   **方案 A: Streamlit 分析版 (Decision Hub)**: 适合**非高频、重分析、重度量**的决策需求（如：效能雷达、成本审计、质量趋势）。
-    *   **方案 B: Portal 操作版 (Operational)**: 适合**高频交互、低延迟、重流程**的操作需求（如：用例执行、缺陷处理、即时追溯）。
-    *   由用户决策后再行编码。
-3. **反向追问深度**: 若用户意图存在 20% 以上模糊，必须停止执行并提供至少 2 个具象化的逻辑切片供用户确认。
+1. **UI 集成决策锁**: 涉及 `devops_portal/static/` (Portal) 的新视图集成时，**必须**首先向用户呈报以下决策路径：
+   - **方案 A: Streamlit 分析版 (Decision Hub)**: 适合**非高频、重分析、重度量**的决策需求（如：效能雷达、成本审计、质量趋势）。
+   - **方案 B: Portal 操作版 (Operational)**: 适合**高频交互、低延迟、重流程**的操作需求（如：用例执行、缺陷处理、即时追溯）。
+   - 由用户决策后再行编码。
+1. **反向追问深度**: 若用户意图存在 20% 以上模糊，必须停止执行并提供至少 2 个具象化的逻辑切片供用户确认。
 
 ______________________________________________________________________
 
