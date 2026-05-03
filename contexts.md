@@ -117,6 +117,8 @@
 
 ## 4. 核心架构与插件开发 (Architecture)
 
+- **`docs/architecture-alignment.md` (架构对齐契约) [MANDATORY]**：详述 MDM 主数据建模、SCD2 策略及身份对齐等核心设计协议。所有模型变更必须符合该契约，它是 `arch-auditor` 工具执行的物理准则。
+
 ### 4.0 业务逻辑拓扑地图 (Logical Directory Topology) [NEW]
 
 为避免 AI 与开发者在庞大的代码库中迷失，以下是平台核心职责的语义导航地图（非全量物理树，仅标定关键业务锚点）：
@@ -654,7 +656,7 @@
 - **提交质量**:
 
   - **原子提交**: 每次 Commit 仅包含一个逻辑变动。
-  - **语义化信息**: 提交消息必须包含业务域和动作（例: `feat(sd): 实现工单异步导出`）。
+  - **语义化信息**: 提交消息必须包含业务域和动作，且**强制使用英文**（例: `feat(sd): implement async ticket export`）。
 
 - **合并前检查清单 (Pre-merge Checklist)**:
 

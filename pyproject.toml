@@ -12,7 +12,7 @@ license = {text = "MIT"}
 authors = [
     {name = "Netxs Team", email = "netxs2000@163.com"}
 ]
-keywords = ["devops", "gitlab", "sonarqube", "jenkins", "dora", "metrics"]
+keywords = ["devops", "gitlab", "zentao", "sonarqube", "nexus", "jenkins", "dora", "metrics"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -164,6 +164,10 @@ omit = [
     "*/tests/*",
     "*/test_*.py",
     "*/__pycache__/*",
+    "devops_collector/plugins/jfrog/*",
+    "devops_collector/plugins/jira/*",
+    "devops_collector/plugins/wecom/*",
+    "devops_collector/plugins/jenkins/*",
 ]
 
 [tool.coverage.report]

@@ -12,7 +12,7 @@
 ### 全链路流转逻辑：
 
 1. **编排层 (Orchestration Layer)**: 由 **Dagster** 统一管理任务调度，通过 SDA (Software Defined Assets) 实现数据血缘驱动的自动化更新。
-1. **采集层 (Collection Layer)**: 插件化适配器 (`BaseWorker`)，基于 Airbyte/Custom Plugin 执行外部 API 高保真同步。
+1. **采集层 (Collection Layer)**: 插件化适配器 (`BaseWorker`)，基于统一插件工厂模式执行外部 API 高保真同步。
 1. **转换层 (Transformation Layer)**: 利用 **dbt** 构建五层数仓模型，实现逻辑封装与分析逻辑下沉。
 1. **治理层 (Governance & Metadata)**: 集成 **DataHub** 和 **Great Expectations**。提供自动化全链路血缘视图与数据质量实时监控。
 1. **交互层 (Presentation Layer)**:

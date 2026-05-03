@@ -84,6 +84,7 @@ class TestNexusWorker(unittest.TestCase):
                 "group": "com.tjhq.devops",
                 "name": "core",
                 "version": "1.0.0",
+                "assets": [],
             }
         ]
 
@@ -96,3 +97,42 @@ class TestNexusWorker(unittest.TestCase):
         self.assertIsInstance(comp, NexusComponent)
         self.assertEqual(comp.product_id, "devops")
         self.session.commit.assert_called_once()
+
+    def test_sync_components_paging(self):
+        """测试组件同步的分页处理。"""
+        self.client.list_components.return_value = iter([{"id": "c1", "name": "n1"}, {"id": "c2", "name": "n2"}])
+        with patch.object(self.worker, "_save_batch") as mock_save:
+            count = self.worker._sync_components("repo1")
+            self.assertEqual(count, 2)
+            mock_save.assert_called_once()
+
+    @patch("devops_collector.plugins.nexus.worker._is_after_cutoff", return_value=True)
+    @patch("devops_collector.core.base_worker.BaseWorker.save_to_staging")
+    def test_sync_assets(self, mock_staging, mock_cutoff):
+        """测试资产同步逻辑。"""
+        comp = NexusComponent(id="c1", name="n1")
+        comp.assets = []
+        assets_data = [{"id": "a1", "path": "path/to/a1", "downloadUrl": "http://url1", "fileSize": 100, "lastModified": "2024-05-01T00:00:00Z"}]
+        self.worker._sync_assets(comp, assets_data)
+        self.assertEqual(len(self.session.add.call_args_list), 1)
+        asset = self.session.add.call_args_list[0][0][0]
+        self.assertEqual(asset.id, "a1")
+        self.assertEqual(asset.download_url, "http://url1")
+
+    def test_try_parse_traceability_success(self):
+        """测试从 properties 文件解析追溯信息。"""
+        # 1. 模拟组件和资产
+        comp = MagicMock(spec=NexusComponent)
+        comp.name = "test-comp"
+        comp.assets = [MagicMock(path="release/devops-trace.properties", download_url="http://trace-url")]
+        comp.raw_data = {}
+
+        # 2. 模拟下载内容
+        self.client.download_asset_content.return_value = "commit_sha=abcdef123456\nbuild_id=999"
+
+        # 3. 执行
+        self.worker._try_parse_traceability(comp)
+
+        # 4. 验证
+        self.assertEqual(comp.commit_sha, "abcdef123456")
+        self.assertEqual(comp.raw_data["ext_info"]["commit_sha"], "abcdef123456")

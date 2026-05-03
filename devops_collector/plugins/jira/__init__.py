@@ -27,11 +27,9 @@ class JiraPlugin(BasePlugin):
         return JiraWorker
 
     def get_client_class(self) -> type:
-        if os.getenv("USE_PYAIRBYTE", "false").lower() == "true":
-            from .airbyte_client import AirbyteJiraClient as Client
-        else:
-            from .client import JiraClient as Client
-        return Client
+        from .client import JiraClient
+
+        return JiraClient
 
 
 # 实例化插件

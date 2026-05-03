@@ -28,12 +28,9 @@ class GitLabPlugin(BasePlugin):
         return GitLabWorker
 
     def get_client_class(self) -> type:
-        # 延迟导入并根据环境选择实现
-        if os.getenv("USE_PYAIRBYTE", "false").lower() == "true":
-            from .airbyte_client import AirbyteGitLabClient as Client
-        else:
-            from .gitlab_client import GitLabClient as Client
-        return Client
+        from .gitlab_client import GitLabClient
+
+        return GitLabClient
 
 
 # 实例化插件对象，供 PluginLoader 发现

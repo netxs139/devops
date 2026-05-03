@@ -27,11 +27,9 @@ class JenkinsPlugin(BasePlugin):
         return JenkinsWorker
 
     def get_client_class(self) -> type:
-        if os.getenv("USE_PYAIRBYTE", "false").lower() == "true":
-            from .airbyte_client import AirbyteJenkinsClient as Client
-        else:
-            from .client import JenkinsClient as Client
-        return Client
+        from .client import JenkinsClient
+
+        return JenkinsClient
 
 
 # 实例化插件

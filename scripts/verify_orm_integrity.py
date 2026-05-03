@@ -1,3 +1,4 @@
+# ruff: noqa: F403
 import sys
 
 from devops_collector.models.base_models import Base

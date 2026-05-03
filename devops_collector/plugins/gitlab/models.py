@@ -116,7 +116,7 @@ class GitLabGroupMember(Base, TimestampMixin, TraceabilityMixin):
     joined_at = Column(DateTime(timezone=True))
     expires_at = Column(DateTime(timezone=True))
     group = relationship("GitLabGroup", back_populates="members")
-    user = relationship("User", primaryjoin=and_(User.global_user_id == user_id, User.is_current == True))
+    user = relationship("User", primaryjoin=and_(User.global_user_id == user_id, User.is_current.is_(True)))
 
     def __repr__(self) -> str:
         return f"<GitLabGroupMember(group_id={self.group_id}, gitlab_uid={self.gitlab_uid})>"
@@ -182,7 +182,7 @@ class GitLabProject(Base, TimestampMixin, TraceabilityMixin):
     organization_id = Column(Integer, ForeignKey("mdm_organizations.id"))
     organization = relationship(
         "Organization",
-        primaryjoin=and_(Organization.id == organization_id, Organization.is_current == True),
+        primaryjoin=and_(Organization.id == organization_id, Organization.is_current.is_(True)),
         back_populates="gitlab_projects",
     )
     mdm_project_id = Column(Integer, ForeignKey("mdm_projects.id"), nullable=True)
@@ -318,7 +318,7 @@ class GitLabProjectMember(Base, TimestampMixin, TraceabilityMixin):
     project = relationship("GitLabProject", back_populates="members")
     user = relationship(
         "User",
-        primaryjoin=and_(User.global_user_id == user_id, User.is_current == True),
+        primaryjoin=and_(User.global_user_id == user_id, User.is_current.is_(True)),
         back_populates="project_memberships",
     )
 
@@ -433,7 +433,7 @@ class GitLabMergeRequest(Base, TimestampMixin, TraceabilityMixin):
     ai_summary = Column(Text)
     ai_confidence = Column(Float)
     author_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
-    author = relationship("User", primaryjoin=and_(User.global_user_id == author_id, User.is_current == True))
+    author = relationship("User", primaryjoin=and_(User.global_user_id == author_id, User.is_current.is_(True)))
     project = relationship("GitLabProject", back_populates="merge_requests")
 
     @hybrid_property
@@ -538,7 +538,7 @@ class GitLabCommit(Base, TimestampMixin, TraceabilityMixin):
     project = relationship("GitLabProject", back_populates="commits")
     raw_data = Column(JSON)
     gitlab_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    author = relationship("User", primaryjoin=and_(User.global_user_id == gitlab_user_id, User.is_current == True))
+    author = relationship("User", primaryjoin=and_(User.global_user_id == gitlab_user_id, User.is_current.is_(True)))
 
     # [Advanced Metrics] - Added for Option A Architecture Alignment
     eloc_score = Column(Float, default=0.0, comment="有效代码行数得分")
@@ -648,7 +648,7 @@ class GitLabIssue(Base, TimestampMixin, TraceabilityMixin):
     milestone_id = Column(Integer, ForeignKey("gitlab_milestones.id"), nullable=True)
     raw_data = Column(JSON)
     author_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
-    author = relationship("User", primaryjoin=and_(User.global_user_id == author_id, User.is_current == True))
+    author = relationship("User", primaryjoin=and_(User.global_user_id == author_id, User.is_current.is_(True)))
     project = relationship("GitLabProject", back_populates="issues")
     events = relationship("GitLabIssueEvent", back_populates="issue", cascade="all, delete-orphan")
     transitions = relationship("GitLabIssueStateTransition", back_populates="issue", cascade="all, delete-orphan")
