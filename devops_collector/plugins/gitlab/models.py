@@ -11,6 +11,7 @@
     >>> session.query(GitLabGroup).filter(GitLabGroup.path == 'my-group').first()
 """
 
+import uuid
 from datetime import UTC, datetime
 
 import sqlalchemy as sa
@@ -205,6 +206,7 @@ class GitLabProject(Base, TimestampMixin, TraceabilityMixin):
     test_execution_records = relationship("GTMTestExecutionRecord", back_populates="project", cascade="all, delete-orphan")
     sonar_projects = relationship("SonarProject", back_populates="gitlab_project")
     jira_projects = relationship("JiraProject", back_populates="gitlab_project")
+    vulnerabilities = relationship("GitLabVulnerability", back_populates="project", cascade="all, delete-orphan")
 
     @hybrid_property
     def visibility(self):
@@ -361,6 +363,7 @@ class GitLabMergeRequest(Base, TimestampMixin, TraceabilityMixin):
         author_id (UUID): 关联的系统内部用户 ID (mdm_identities.global_user_id)。
         author (User): 关联的 User 对象。
         project (Project): 关联的 Project 对象。
+        transitions (List[GitLabMergeRequestStateTransition]): 状态流转历史集合。
         raw_data (dict): 原始 JSON 镜像存档。
     """
 
@@ -372,11 +375,22 @@ class GitLabMergeRequest(Base, TimestampMixin, TraceabilityMixin):
     title = Column(String)
     description = Column(String)
     state = Column(String, index=True)
+    is_draft = Column(Boolean, default=False, comment="是否为草稿状态")
     author_username = Column(String)
     created_at = Column(DateTime(timezone=True), index=True)
     updated_at = Column(DateTime(timezone=True))
     merged_at = Column(DateTime(timezone=True), index=True)
     closed_at = Column(DateTime(timezone=True))
+
+    # VSM (Value Stream Mapping) 核心指标字段
+    draft_at = Column(DateTime(timezone=True), comment="进入草稿状态的时间")
+    ready_at = Column(DateTime(timezone=True), comment="移出草稿状态（准备评审）的时间")
+    first_response_at = Column(DateTime(timezone=True), comment="首次评审回复时间")
+
+    # 衍生时长指标 (秒)
+    draft_duration = Column(BigInteger, comment="在草稿状态停留的总时长")
+    wait_time_to_review = Column(BigInteger, comment="从就绪到首次回复的等待时长")
+    review_touch_time = Column(BigInteger, comment="在评审阶段的实际处理时长（近似值）")
     reviewers = Column(JSON)
     changes_count = Column(String)
     diff_refs = Column(JSON)
@@ -432,9 +446,12 @@ class GitLabMergeRequest(Base, TimestampMixin, TraceabilityMixin):
     ai_category = Column(String(50))
     ai_summary = Column(Text)
     ai_confidence = Column(Float)
+    effective_comment_count = Column(Integer, default=0, comment="触发了代码变更的有效评论数")
+    rubber_stamp = Column(Boolean, default=False, comment="是否被判定为秒批 (Rubber-stamping)")
     author_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
     author = relationship("User", primaryjoin=and_(User.global_user_id == author_id, User.is_current.is_(True)))
     project = relationship("GitLabProject", back_populates="merge_requests")
+    transitions = relationship("GitLabMergeRequestStateTransition", back_populates="mr", cascade="all, delete-orphan")
 
     @hybrid_property
     def cycle_time(self):
@@ -451,13 +468,6 @@ class GitLabMergeRequest(Base, TimestampMixin, TraceabilityMixin):
     def cycle_time(cls):
         """支持 SQL 过滤的周期时长表达式。"""
         return func.coalesce(cls.merged_at - cls.created_at, None)
-
-    @hybrid_property
-    def is_draft(self):
-        """判断是否为草稿状态。"""
-        if not self.raw_data:
-            return False
-        return self.raw_data.get("draft", False) or self.raw_data.get("work_in_progress", False)
 
     @hybrid_property
     def source_branch(self):
@@ -890,18 +900,35 @@ class GitLabIssueStateTransition(Base, TimestampMixin, TraceabilityMixin):
     issue = relationship("GitLabIssue", back_populates="transitions")
 
     def __repr__(self) -> str:
-        '''"""TODO: Add description.
-
-        Args:
-            self: TODO
-
-        Returns:
-            TODO
-
-        Raises:
-            TODO
-        """'''
         return f"<GitLabIssueStateTransition(issue_id={self.issue_id}, to_state='{self.to_state}')>"
+
+
+class GitLabMergeRequestStateTransition(Base, TimestampMixin, TraceabilityMixin):
+    """合并请求 (MR) 状态流转记录。
+
+    用于计算 VSM 指标（Wait Time vs Touch Time）。
+
+    Attributes:
+        id (int): 自增主键。
+        mr_id (int): 关联的 MR 内部 ID。
+        from_state (str): 变更前状态。
+        to_state (str): 变更后状态。
+        timestamp (datetime): 状态变更时间。
+        duration_hours (float): 在上一状态停留的时长 (小时)。
+    """
+
+    __tablename__ = "gitlab_mr_state_transitions"
+    __table_args__ = {"extend_existing": True}
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    mr_id = Column(Integer, ForeignKey("gitlab_merge_requests.id"), nullable=False)
+    from_state = Column(String(50))
+    to_state = Column(String(50), nullable=False)
+    timestamp = Column(DateTime(timezone=True), nullable=False)
+    duration_hours = Column(Float)
+    mr = relationship("GitLabMergeRequest", back_populates="transitions")
+
+    def __repr__(self) -> str:
+        return f"<GitLabMergeRequestStateTransition(mr_id={self.mr_id}, to_state='{self.to_state}')>"
 
 
 class GitLabBlockage(Base, TimestampMixin, TraceabilityMixin):
@@ -1621,6 +1648,46 @@ class GitLabJob(Base, TimestampMixin, TraceabilityMixin):
 
     def __repr__(self) -> str:
         return f"<GitLabJob(id={self.id}, name='{self.name}')>"
+
+
+class GitLabVulnerability(Base, TimestampMixin, TraceabilityMixin):
+    """GitLab 漏洞模型 (Security Vulnerability/Finding)。
+
+    存储 SAST/DAST/Secret Detection 等扫描出的安全风险。
+    """
+
+    __tablename__ = "gitlab_vulnerabilities"
+    __table_args__ = {"extend_existing": True}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(Integer, ForeignKey("gitlab_projects.id"), index=True)
+    pipeline_id = Column(Integer, ForeignKey("gitlab_pipelines.id"), nullable=True, index=True)
+    vulnerability_id = Column(Integer, nullable=True, comment="GitLab 侧漏洞 ID (仅 Ultimate 版有效)")
+    finding_id = Column(String(255), nullable=True, comment="GitLab Finding UUID/Fingerprint")
+
+    name = Column(String(500))
+    description = Column(Text)
+    severity = Column(String(20), index=True, comment="Critical, High, Medium, Low, Info, Unknown")
+    confidence = Column(String(20))
+    report_type = Column(String(50), index=True, comment="sast, dast, secret_detection, container_scanning")
+    state = Column(String(20), index=True, comment="detected, confirmed, dismissed, resolved")
+
+    location = Column(JSON, comment="包含文件、行号、类等详细位置")
+    cve = Column(String(50), index=True)
+    identifiers = Column(JSON, comment="漏洞标识符列表")
+
+    detected_at = Column(DateTime(timezone=True), index=True)
+    fixed_at = Column(DateTime(timezone=True))
+    dismissed_at = Column(DateTime(timezone=True))
+    resolved_at = Column(DateTime(timezone=True))
+
+    raw_data = Column(JSON)
+
+    project = relationship("GitLabProject", back_populates="vulnerabilities")
+    pipeline = relationship("GitLabPipeline")
+
+    def __repr__(self) -> str:
+        return f"<GitLabVulnerability(name='{self.name[:30]}...', severity='{self.severity}')>"
 
 
 from . import events

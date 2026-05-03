@@ -107,9 +107,8 @@ def main():
         print("Or add the generated file to your commit:")
         print("  git add docs/api/DATA_DICTIONARY.md")
         print("")
-        # 返回 0 以不阻塞提交，仅作为警告
-        # 如果需要强制更新，改为 sys.exit(1)
-        return 0
+        # 返回 1 以阻塞提交/校验，强制更新
+        return 1
 
     # 检查数据字典年龄
     age = get_data_dict_age()

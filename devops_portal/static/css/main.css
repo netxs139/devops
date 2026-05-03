@@ -1951,3 +1951,43 @@ body.is-dual-pane .sys-main-content {
     color: var(--status-error);
     border: 1px solid rgba(var(--status-error-rgb), 0.2);
 }
+
+/* --- Traceability Radar Styles --- */
+.radar-container {
+    cursor: grab;
+    user-select: none;
+    border: 1px solid var(--sys-border-subtle);
+    border-radius: var(--g-radius-lg);
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.2);
+}
+
+.radar-container:active {
+    cursor: grabbing;
+}
+
+#radar-canvas {
+    display: block;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-crisp-edges;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.u-bg-dark-alpha {
+    background: rgba(15, 23, 42, 0.8) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top-color: var(--sys-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

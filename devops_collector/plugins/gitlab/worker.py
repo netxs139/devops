@@ -17,13 +17,14 @@ from .mixins.issue_mixin import IssueMixin
 from .mixins.mr_mixin import MergeRequestMixin
 from .mixins.pipeline_mixin import PipelineMixin
 from .mixins.traceability_mixin import TraceabilityMixin
+from .mixins.vulnerability_mixin import VulnerabilityMixin
 from .models import GitLabGroup, GitLabProject
 
 
 logger = logging.getLogger(__name__)
 
 
-class GitLabWorker(BaseWorker, BaseMixin, TraceabilityMixin, CommitMixin, IssueMixin, MergeRequestMixin, PipelineMixin, AssetMixin):
+class GitLabWorker(BaseWorker, BaseMixin, TraceabilityMixin, CommitMixin, IssueMixin, MergeRequestMixin, PipelineMixin, AssetMixin, VulnerabilityMixin):
     """GitLab 数据采集 Worker。"""
 
     SCHEMA_VERSION = "1.2"
@@ -90,6 +91,7 @@ class GitLabWorker(BaseWorker, BaseMixin, TraceabilityMixin, CommitMixin, IssueM
                 ("_sync_branches", "branches"),
                 ("_sync_milestones", "milestones"),
                 ("_sync_packages", "packages"),
+                ("_sync_vulnerabilities", "vulnerabilities"),
             ]
             for meth_name, label in secondary_syncs:
                 try:

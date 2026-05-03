@@ -11,10 +11,10 @@ from sqlalchemy import JSON, Column, DateTime, Integer, String, Text
 from sqlalchemy import UUID as UUID_TYPE
 from sqlalchemy.dialects.postgresql import JSONB
 
-from devops_collector.models.base_models import Base
+from devops_collector.models.base_models import Base, TimestampMixin
 
 
-class AuditLog(Base):
+class AuditLog(Base, TimestampMixin):
     """系统合规审计日志表。"""
 
     __tablename__ = "sys_audit_logs"

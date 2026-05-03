@@ -100,8 +100,8 @@ shell:
 # 验证与测试 (Verification & Testing)
 # =============================================================================
 
-# [MANDATORY] 全量校验：Lint -> Imports -> Test + Cov
-verify: lint check-imports
+# [MANDATORY] 全量校验：Lint -> Imports -> Docs -> Test + Cov
+verify: lint check-imports docs-verify
     @echo "Running tests with coverage audit (Target: 80%)..."
     {{EXEC_CMD}} pytest tests/unit/ tests/integration/ --cov=devops_collector --cov=devops_portal --cov-report=term-missing --cov-fail-under=70
 
@@ -129,6 +129,11 @@ check-imports:
 arch-audit:
     @echo "Running Architecture & Anti-Pattern Audit..."
     python scripts/arch_auditor.py
+
+# 数据字典一致性校验
+docs-verify:
+    @echo "Verifying Data Dictionary freshness..."
+    {{EXEC_CMD}} python scripts/check_data_dict_freshness.py
 
 # [MANDATORY] 核心卡点：代码合并前全量校验 (Lint -> Test -> Build)
 full-gate:

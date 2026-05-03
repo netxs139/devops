@@ -514,6 +514,18 @@ class GitLabClient(BaseClient):
         """
         return self._get_paged_data(f"projects/{project_id}/issues/{issue_iid}/resource_state_events")
 
+    def get_merge_request_state_events(self, project_id: int, mr_iid: int) -> Generator[dict, None, None]:
+        """获取合并请求 (MR) 的状态变更事件。
+
+        Args:
+            project_id (int): 项目 ID。
+            mr_iid (int): MR 的 IID。
+
+        Yields:
+            dict: 单个状态变更事件字典。
+        """
+        return self._get_paged_data(f"projects/{project_id}/merge_requests/{mr_iid}/resource_state_events")
+
     def get_issue_label_events(self, project_id: int, issue_iid: int) -> Generator[dict, None, None]:
         """获取 Issue 的标签变更事件。
 
@@ -713,3 +725,73 @@ class GitLabClient(BaseClient):
             return None
         except Exception:
             return None
+
+    def get_project_vulnerabilities(
+        self, project_id: int, state: str | None = None, severity: str | None = None, start_page: int = 1, per_page: int = 100
+    ) -> Generator[dict, None, None]:
+        """获取项目的漏洞列表 (Vulnerabilities)。
+
+        注意：此接口通常仅在 GitLab Ultimate 版本中可用。
+
+        Args:
+            project_id (int): GitLab 项目 ID。
+            state (Optional[str]): 漏洞状态 (detected, confirmed, dismissed, resolved)。
+            severity (Optional[str]): 严重等级。
+            start_page (int): 起始页码。
+            per_page (int): 每页数量。
+
+        Yields:
+            dict: 漏洞详情。
+        """
+        page = start_page
+        while True:
+            params = {"per_page": per_page, "page": page}
+            if state:
+                params["state"] = state
+            if severity:
+                params["severity"] = severity
+            response = self._get(f"projects/{project_id}/vulnerabilities", params=params)
+            data = response.json()
+            if not data:
+                break
+            yield from data
+            page += 1
+
+    def get_project_vulnerability_findings(
+        self,
+        project_id: int,
+        pipeline_id: int | None = None,
+        report_type: list[str] | None = None,
+        severity: list[str] | None = None,
+        start_page: int = 1,
+        per_page: int = 100,
+    ) -> Generator[dict, None, None]:
+        """获取项目的漏洞发现列表 (Vulnerability Findings)。
+
+        Args:
+            project_id (int): GitLab 项目 ID。
+            pipeline_id (Optional[int]): 关联的流水线 ID。
+            report_type (Optional[List[str]]): 报告类型列表 (sast, dast, etc.)。
+            severity (Optional[List[str]]): 严重等级列表。
+            start_page (int): 起始页码。
+            per_page (int): 每页数量。
+
+        Yields:
+            dict: 漏洞发现详情。
+        """
+        page = start_page
+        while True:
+            params = {"per_page": per_page, "page": page}
+            if pipeline_id:
+                params["pipeline_id"] = pipeline_id
+            if report_type:
+                params["report_type[]"] = report_type
+            if severity:
+                params["severity[]"] = severity
+
+            response = self._get(f"projects/{project_id}/vulnerability_findings", params=params)
+            data = response.json()
+            if not data:
+                break
+            yield from data
+            page += 1

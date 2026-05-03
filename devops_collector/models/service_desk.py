@@ -3,13 +3,12 @@
 实现工单的持久化存储，支持跨部门标签审计与状态追溯。
 """
 
-from sqlalchemy import UUID, Column, DateTime, ForeignKey, Index, Integer, String, Text
-from sqlalchemy.sql import func
+from sqlalchemy import UUID, Column, ForeignKey, Index, Integer, String, Text
 
-from devops_collector.models.base_models import Base
+from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin
 
 
-class ServiceDeskTicket(Base):
+class ServiceDeskTicket(Base, TimestampMixin, TraceabilityMixin):
     """服务台工单表 (service_desk_tickets)。
 
     实现工单的持久化存储，支持跨部门标签审计与状态追溯。
@@ -48,8 +47,7 @@ class ServiceDeskTicket(Base):
     requester_email = Column(String(100), index=True)
     bug_category = Column(String(50), comment="缺陷分类 (code-error/configuration/performance等)")
     req_type = Column(String(50), comment="需求类型 (feature/config/interface等)")
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now())
+
     __table_args__ = (
         Index("idx_ticket_isolation", "target_dept_id", "status"),
         Index("idx_my_tickets", "requester_email"),

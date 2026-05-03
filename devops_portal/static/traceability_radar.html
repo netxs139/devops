@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traceability Radar | DevOps 效能探测雷达</title>
+    <link rel="stylesheet" href="css/radar.css">
+    <!-- Google Fonts: Monospace for technical data -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="radar-scan"></div>
+    
+    <div class="radar-container">
+        <!-- Dashboard Header -->
+        <header>
+            <div class="radar-logo">Traceability Radar <span style="font-weight: 300; font-size: 0.8rem; vertical-align: middle;">v1.0</span></div>
+            <div class="status-pills">
+                <div class="pill">PROJECT: DEVOPS_CORE</div>
+                <div class="pill">CORRELATION_ID: TR-8829-X</div>
+                <div class="pill" style="color: var(--accent-cyan);">● SYSTEM_ONLINE</div>
+            </div>
+        </header>
+
+        <!-- High Level Metrics -->
+        <section class="metric-row">
+            <div class="card">
+                <div class="card-label">Avg Wait Time</div>
+                <div class="card-value"><span id="card-wait-time">--</span></div>
+                <div class="card-footer" style="font-size: 0.6rem; color: var(--accent-amber);">↑ vs last period</div>
+            </div>
+            <div class="card warning">
+                <div class="card-label">Rubber-stamp Risk</div>
+                <div class="card-value"><span id="card-rubber-stamp">--</span></div>
+                <div class="card-footer" style="font-size: 0.6rem;">Target: &lt; 5%</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Effective Review</div>
+                <div class="card-value"><span id="card-eff-review">--</span></div>
+                <div class="card-footer" style="font-size: 0.6rem;">High Depth Activity</div>
+            </div>
+            <div class="card danger">
+                <div class="card-label">Active Vulnerabilities</div>
+                <div class="card-value"><span id="card-vuln-count">--</span></div>
+                <div class="card-footer" style="font-size: 0.6rem; color: var(--accent-crimson);"><span id="card-vuln-detail">-- CRITICAL / -- HIGH</span></div>
+            </div>
+        </section>
+
+
+        <!-- Visualization Sections -->
+        <section class="main-viz">
+            <h3 style="font-family: var(--font-mono); font-size: 0.9rem; margin-bottom: 20px; color: var(--accent-cyan);">[01] COLLABORATION QUALITY RADAR</h3>
+            <div id="radar-chart-container" style="flex-grow: 1; display: flex; justify-content: center; align-items: center;">
+                <!-- SVG Radar Chart Placeholder -->
+                <svg id="radar-chart" width="350" height="350" viewBox="0 0 400 400"></svg>
+            </div>
+        </section>
+
+        <section class="secondary-viz" style="display:flex; flex-direction:column;">
+            <h3 style="font-family: var(--font-mono); font-size: 0.9rem; margin-bottom: 20px; color: var(--accent-cyan);">[02] ELOC DISTRIBUTION (TOP CONTRIBUTORS)</h3>
+            <div id="eloc-chart-container" style="flex: 1; position: relative; min-height: 300px;">
+                <canvas id="eloc-chart"></canvas>
+            </div>
+        </section>
+
+        <!-- VSM Timeline -->
+        <section class="vsm-timeline">
+            <h3 style="font-family: var(--font-mono); font-size: 0.9rem; margin-bottom: 20px; color: var(--accent-cyan);">[03] VALUE STREAM MAPPING (LAST 10 MRs)</h3>
+            <div id="vsm-container">
+                <!-- VSM Gantt Chart Placeholder -->
+            </div>
+        </section>
+
+        <footer style="grid-column: span 12; text-align: center; font-family: var(--font-mono); font-size: 0.6rem; color: var(--accent-blue); padding: 20px;">
+            TERMINAL_AUTH_SUCCESS // ENCRYPTED_DATA_LINK_ESTABLISHED // (C) 2026 ANTIGRAVITY-CORE
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/radar-viz.js"></script>
+</body>
+</html>

@@ -79,6 +79,7 @@ try:
         GitLabIssue,
         GitLabJob,
         GitLabMergeRequest,
+        GitLabMergeRequestStateTransition,
         GitLabMilestone,
         GitLabNote,
         GitLabPackage,
@@ -87,6 +88,7 @@ try:
         GitLabProjectMember,
         GitLabRelease,
         GitLabTag,
+        GitLabVulnerability,
     )
     from devops_collector.plugins.sonarqube.models import SonarIssue, SonarMeasure, SonarProject
 
