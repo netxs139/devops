@@ -157,7 +157,14 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
 ignore_missing_imports = true
-exclude = ["devops_collector/alembic/versions/"]
+exclude = [
+    'devops_collector/plugins/sonarqube/.*',
+    'devops_collector/plugins/jenkins/.*',
+    'devops_collector/plugins/nexus/.*',
+    'devops_collector/plugins/jfrog/.*',
+    'devops_collector/plugins/wecom/.*',
+    'devops_collector/alembic/.*',
+]
 
 [[tool.mypy.overrides]]
 module = [

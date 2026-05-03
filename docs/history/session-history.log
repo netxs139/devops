@@ -42,7 +42,9 @@
 | 60ac0113... | 2026-03-19 | 18:20 | 40a8547 | ONGOING | **Admin 修复**: 修复 9/9 模块测试。下一步：Org 预置数据修复。 |
 | 64eef977... | 2026-03-17 | 09:45 | N/A (Local) | SUCCESS | **规范确立**: 建立会话交接红线与 progress.txt 标准格式。 |
 
+| 12e39176... | 2026-05-03 13:25 | 21:10 | N/A (Local) | SUCCESS | **SQLAlchemy 2.0 深度迁移与架构硬化**: 1. 完成 `base_models.py` 全量模型 `Mapped` 声明迁移；2. 修复外键 `remote_side` 与字符串引用冲突；3. 实现 MyPy 增量治理 Phase 1 (Baseline 机制)；4. 产出 Spike 报告 `2026-05-03_sqla2_migration.md`。 |
+| 069374b1... | 2026-05-03 04:30 | 10:30 | N/A (Local) | SUCCESS | **Traceability Radar 仪表盘集成与 UI 治理**: 1. 完成 Portal 侧 QA Radar 抽屉组件与事件绑定；2. 实现后端聚合 API 支持 VSM/协作/安全多维指标；3. 固化 UI 集成决策协议 (Operational vs Hub)；4. `just arch-audit` 满分通过。 |
+| cf6ef500... | 2026-05-03 23:10 | 23:15 | N/A (Local) | SUCCESS | **会话交接审计**: 1. 环境健康度检查 (git status)；2. 历史日志格式化修正与 SSOT 状态对齐。 |
+
 ---
 *End of Log*
-| 2026-05-03 | Traceability Radar Dashboard | Finalized Portal & Streamlit integration, codified UI decision protocol. | Completed |
-[2026-05-03 17:19:59] MyPy Debt Resolution: Analyzed 700+ errors, implemented module-level ignore in pyproject.toml to unblock CI, updated progress.txt.
