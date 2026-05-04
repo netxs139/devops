@@ -19,7 +19,6 @@ from sqlalchemy import (
     JSON,
     BigInteger,
     Boolean,
-    Column,
     DateTime,
     Float,
     ForeignKey,
@@ -32,11 +31,11 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import backref, relationship
+from sqlalchemy.orm import Mapped, backref, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from devops_collector.config import settings
-from devops_collector.models.base_models import Base, Organization, TimestampMixin, TraceabilityMixin, User
+from devops_collector.models.base_models import Base, Organization, TimestampMixin, TraceabilityMixin, User, int_pk, json_dict
 
 
 Organization.gitlab_projects = relationship("GitLabProject", back_populates="organization")
@@ -67,21 +66,21 @@ class GitLabGroup(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_groups"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True)
-    name = Column(String(255))
-    path = Column(String(255))
-    full_path = Column(String(500), unique=True)
-    description = Column(Text)
-    parent_id = Column(Integer, ForeignKey("gitlab_groups.id"))
-    visibility = Column(String(20))
-    avatar_url = Column(String(500))
-    web_url = Column(String(500))
-    created_at = Column(DateTime(timezone=True))
-    updated_at = Column(DateTime(timezone=True))
-    children = relationship("GitLabGroup", backref=backref("parent", remote_side="GitLabGroup.id", foreign_keys=[parent_id]))
-    projects = relationship("GitLabProject", back_populates="group")
-    raw_data = Column(JSON)
-    members = relationship("GitLabGroupMember", back_populates="group", cascade="all, delete-orphan")
+    id: Mapped[int_pk]
+    name: Mapped[str | None] = mapped_column(String(255))
+    path: Mapped[str | None] = mapped_column(String(255))
+    full_path: Mapped[str | None] = mapped_column(String(500), unique=True)
+    description: Mapped[str | None] = mapped_column(Text)
+    parent_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_groups.id"))
+    visibility: Mapped[str | None] = mapped_column(String(20))
+    avatar_url: Mapped[str | None] = mapped_column(String(500))
+    web_url: Mapped[str | None] = mapped_column(String(500))
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    children: Mapped[list["GitLabGroup"]] = relationship("GitLabGroup", backref=backref("parent", remote_side="GitLabGroup.id", foreign_keys=[parent_id]))  # noqa: F821
+    projects: Mapped[list["GitLabProject"]] = relationship("GitLabProject", back_populates="group")  # noqa: F821
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
+    members: Mapped[list["GitLabGroupMember"]] = relationship("GitLabGroupMember", back_populates="group", cascade="all, delete-orphan")  # noqa: F821
 
     def __repr__(self) -> str:
         """GitLabGroup 字符串表示。"""
@@ -108,16 +107,16 @@ class GitLabGroupMember(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_group_members"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    group_id = Column(Integer, ForeignKey("gitlab_groups.id"))
-    user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
-    gitlab_uid = Column(Integer)
-    access_level = Column(Integer)
-    state = Column(String(20))
-    joined_at = Column(DateTime(timezone=True))
-    expires_at = Column(DateTime(timezone=True))
-    group = relationship("GitLabGroup", back_populates="members")
-    user = relationship("User", primaryjoin=and_(User.global_user_id == user_id, User.is_current.is_(True)))
+    id: Mapped[int_pk]
+    group_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_groups.id"))
+    user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
+    gitlab_uid: Mapped[int | None] = mapped_column(Integer)
+    access_level: Mapped[int | None] = mapped_column(Integer)
+    state: Mapped[str | None] = mapped_column(String(20))
+    joined_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    group: Mapped["GitLabGroup | None"] = relationship("GitLabGroup", back_populates="members")  # noqa: F821
+    user: Mapped["User | None"] = relationship("User", primaryjoin=and_(User.global_user_id == user_id, User.is_current.is_(True)))  # noqa: F821
 
     def __repr__(self) -> str:
         return f"<GitLabGroupMember(group_id={self.group_id}, gitlab_uid={self.gitlab_uid})>"
@@ -160,53 +159,55 @@ class GitLabProject(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_projects"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    path_with_namespace = Column(String)
-    description = Column(String)
-    department = Column(String)
-    group_id = Column(Integer, ForeignKey("gitlab_groups.id"))
-    group = relationship("GitLabGroup", back_populates="projects")
-    created_at = Column(DateTime(timezone=True))
-    last_activity_at = Column(DateTime(timezone=True))
-    last_synced_at = Column(DateTime(timezone=True))
-    sync_status = Column(String, default="PENDING", index=True)
-    raw_data = Column(JSON)
-    sync_state = Column(JSON, default={})
-    storage_size = Column(BigInteger)
-    star_count = Column(Integer)
-    forks_count = Column(Integer)
-    open_issues_count = Column(Integer)
-    commit_count = Column(Integer)
-    tags_count = Column(Integer)
-    branches_count = Column(Integer)
-    organization_id = Column(Integer, ForeignKey("mdm_organizations.id"))
+    id: Mapped[int_pk]
+    name: Mapped[str | None] = mapped_column(String)
+    path_with_namespace: Mapped[str | None] = mapped_column(String)
+    description: Mapped[str | None] = mapped_column(String)
+    department: Mapped[str | None] = mapped_column(String)
+    group_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_groups.id"))
+    group: Mapped["GitLabGroup | None"] = relationship("GitLabGroup", back_populates="projects")  # noqa: F821
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_activity_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    sync_status: Mapped[str | None] = mapped_column(String, default="PENDING", index=True)
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
+    sync_state: Mapped[json_dict | None] = mapped_column(JSON, default={})
+    storage_size: Mapped[int | None] = mapped_column(BigInteger)
+    star_count: Mapped[int | None] = mapped_column(Integer)
+    forks_count: Mapped[int | None] = mapped_column(Integer)
+    open_issues_count: Mapped[int | None] = mapped_column(Integer)
+    commit_count: Mapped[int | None] = mapped_column(Integer)
+    tags_count: Mapped[int | None] = mapped_column(Integer)
+    branches_count: Mapped[int | None] = mapped_column(Integer)
+    organization_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("mdm_organizations.id"))
     organization = relationship(
         "Organization",
         primaryjoin=and_(Organization.id == organization_id, Organization.is_current.is_(True)),
         back_populates="gitlab_projects",
     )
-    mdm_project_id = Column(Integer, ForeignKey("mdm_projects.id"), nullable=True)
+    mdm_project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("mdm_projects.id"), nullable=True)
     from devops_collector.models.base_models import ProjectMaster
 
-    mdm_project = relationship("ProjectMaster", back_populates="gitlab_repos")
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    dependency_scans = relationship("DependencyScan", back_populates="project", cascade="all, delete-orphan")
-    dependencies = relationship("Dependency", back_populates="project", cascade="all, delete-orphan")
-    milestones = relationship("GitLabMilestone", back_populates="project", cascade="all, delete-orphan")
-    members = relationship("GitLabProjectMember", back_populates="project", cascade="all, delete-orphan")
-    commits = relationship("GitLabCommit", back_populates="project", cascade="all, delete-orphan")
-    merge_requests = relationship("GitLabMergeRequest", back_populates="project", cascade="all, delete-orphan")
-    issues = relationship("GitLabIssue", back_populates="project", cascade="all, delete-orphan")
-    pipelines = relationship("GitLabPipeline", back_populates="project", cascade="all, delete-orphan")
-    deployments = relationship("GitLabDeployment", back_populates="project", cascade="all, delete-orphan")
+    mdm_project: Mapped["ProjectMaster | None"] = relationship("ProjectMaster", back_populates="gitlab_repos")  # noqa: F821
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), onupdate=func.now())
+    dependency_scans: Mapped[list["DependencyScan"]] = relationship("DependencyScan", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
+    dependencies: Mapped[list["Dependency"]] = relationship("Dependency", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
+    milestones: Mapped[list["GitLabMilestone"]] = relationship("GitLabMilestone", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
+    members: Mapped[list["GitLabProjectMember"]] = relationship("GitLabProjectMember", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
+    commits: Mapped[list["GitLabCommit"]] = relationship("GitLabCommit", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
+    merge_requests: Mapped[list["GitLabMergeRequest"]] = relationship("GitLabMergeRequest", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
+    issues: Mapped[list["GitLabIssue"]] = relationship("GitLabIssue", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
+    pipelines: Mapped[list["GitLabPipeline"]] = relationship("GitLabPipeline", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
+    deployments: Mapped[list["GitLabDeployment"]] = relationship("GitLabDeployment", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
     # Add relationships for other modules and plugins
-    test_cases = relationship("GTMTestCase", back_populates="project", cascade="all, delete-orphan")
-    requirements = relationship("GTMRequirement", back_populates="project", cascade="all, delete-orphan")
-    test_execution_records = relationship("GTMTestExecutionRecord", back_populates="project", cascade="all, delete-orphan")
-    sonar_projects = relationship("SonarProject", back_populates="gitlab_project")
-    jira_projects = relationship("JiraProject", back_populates="gitlab_project")
-    vulnerabilities = relationship("GitLabVulnerability", back_populates="project", cascade="all, delete-orphan")
+    test_cases: Mapped[list["GTMTestCase"]] = relationship("GTMTestCase", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
+    requirements: Mapped[list["GTMRequirement"]] = relationship("GTMRequirement", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
+    test_execution_records: Mapped[list["GTMTestExecutionRecord"]] = relationship(  # noqa: F821
+        "GTMTestExecutionRecord", back_populates="project", cascade="all, delete-orphan"
+    )
+    sonar_projects: Mapped[list["SonarProject"]] = relationship("SonarProject", back_populates="gitlab_project")  # noqa: F821
+    jira_projects: Mapped[list["JiraProject"]] = relationship("JiraProject", back_populates="gitlab_project")  # noqa: F821
+    vulnerabilities: Mapped[list["GitLabVulnerability"]] = relationship("GitLabVulnerability", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
 
     @hybrid_property
     def visibility(self):
@@ -307,17 +308,17 @@ class GitLabProjectMember(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_project_members"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    project_id = Column(Integer, ForeignKey("gitlab_projects.id"))
-    user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
-    gitlab_uid = Column(Integer)
-    access_level = Column(Integer)
-    role_id = Column(Integer, ForeignKey("sys_role.id"), nullable=True)
-    role = relationship("SysRole")
-    job_title = Column(String(100))
-    joined_at = Column(DateTime(timezone=True))
-    expires_at = Column(DateTime(timezone=True))
-    project = relationship("GitLabProject", back_populates="members")
+    id: Mapped[int_pk]
+    project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_projects.id"))
+    user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
+    gitlab_uid: Mapped[int | None] = mapped_column(Integer)
+    access_level: Mapped[int | None] = mapped_column(Integer)
+    role_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("sys_role.id"), nullable=True)
+    role: Mapped["SysRole | None"] = relationship("SysRole")  # noqa: F821
+    job_title: Mapped[str | None] = mapped_column(String(100))
+    joined_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    project: Mapped["GitLabProject | None"] = relationship("GitLabProject", back_populates="members")  # noqa: F821
     user = relationship(
         "User",
         primaryjoin=and_(User.global_user_id == user_id, User.is_current.is_(True)),
@@ -369,33 +370,33 @@ class GitLabMergeRequest(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_merge_requests"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True)
-    iid = Column(Integer)
-    project_id = Column(Integer, ForeignKey("gitlab_projects.id"), index=True)
-    title = Column(String)
-    description = Column(String)
-    state = Column(String, index=True)
-    is_draft = Column(Boolean, default=False, comment="是否为草稿状态")
-    author_username = Column(String)
-    created_at = Column(DateTime(timezone=True), index=True)
-    updated_at = Column(DateTime(timezone=True))
-    merged_at = Column(DateTime(timezone=True), index=True)
-    closed_at = Column(DateTime(timezone=True))
+    id: Mapped[int_pk]
+    iid: Mapped[int | None] = mapped_column(Integer)
+    project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_projects.id"), index=True)
+    title: Mapped[str | None] = mapped_column(String)
+    description: Mapped[str | None] = mapped_column(String)
+    state: Mapped[str | None] = mapped_column(String, index=True)
+    is_draft: Mapped[bool] = mapped_column(Boolean, default=False, comment="是否为草稿状态")
+    author_username: Mapped[str | None] = mapped_column(String)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    merged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     # VSM (Value Stream Mapping) 核心指标字段
-    draft_at = Column(DateTime(timezone=True), comment="进入草稿状态的时间")
-    ready_at = Column(DateTime(timezone=True), comment="移出草稿状态（准备评审）的时间")
-    first_response_at = Column(DateTime(timezone=True), comment="首次评审回复时间")
+    draft_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), comment="进入草稿状态的时间")
+    ready_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), comment="移出草稿状态（准备评审）的时间")
+    first_response_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), comment="首次评审回复时间")
 
     # 衍生时长指标 (秒)
-    draft_duration = Column(BigInteger, comment="在草稿状态停留的总时长")
-    wait_time_to_review = Column(BigInteger, comment="从就绪到首次回复的等待时长")
-    review_touch_time = Column(BigInteger, comment="在评审阶段的实际处理时长（近似值）")
-    reviewers = Column(JSON)
-    changes_count = Column(String)
-    diff_refs = Column(JSON)
-    merge_commit_sha = Column(String)
-    raw_data = Column(JSON)
+    draft_duration: Mapped[int | None] = mapped_column(BigInteger, comment="在草稿状态停留的总时长")
+    wait_time_to_review: Mapped[int | None] = mapped_column(BigInteger, comment="从就绪到首次回复的等待时长")
+    review_touch_time: Mapped[int | None] = mapped_column(BigInteger, comment="在评审阶段的实际处理时长（近似值）")
+    reviewers: Mapped[json_dict | None] = mapped_column(JSON)
+    changes_count: Mapped[str | None] = mapped_column(String)
+    diff_refs: Mapped[json_dict | None] = mapped_column(JSON)
+    merge_commit_sha: Mapped[str | None] = mapped_column(String)
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
     deployments = relationship(
         "GitLabDeployment",
         primaryjoin=lambda: and_(GitLabMergeRequest.merge_commit_sha == GitLabDeployment.sha, GitLabMergeRequest.project_id == GitLabDeployment.project_id),
@@ -435,23 +436,25 @@ class GitLabMergeRequest(Base, TimestampMixin, TraceabilityMixin):
         # LL #24: Explicitly cast to numeric for PostgreSQL round() support
         return min(sa.func.round(sa.cast(score, sa.Numeric), 1), 100.0)
 
-    external_issue_id = Column(String(100))
-    issue_source = Column(String(50))
-    first_response_at = Column(DateTime(timezone=True))
-    review_cycles = Column(Integer, default=1)
-    human_comment_count = Column(Integer, default=0)
-    approval_count = Column(Integer, default=0)
-    review_time_total = Column(BigInteger)
-    quality_gate_status = Column(String(20))
-    ai_category = Column(String(50))
-    ai_summary = Column(Text)
-    ai_confidence = Column(Float)
-    effective_comment_count = Column(Integer, default=0, comment="触发了代码变更的有效评论数")
-    rubber_stamp = Column(Boolean, default=False, comment="是否被判定为秒批 (Rubber-stamping)")
-    author_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
-    author = relationship("User", primaryjoin=and_(User.global_user_id == author_id, User.is_current.is_(True)))
-    project = relationship("GitLabProject", back_populates="merge_requests")
-    transitions = relationship("GitLabMergeRequestStateTransition", back_populates="mr", cascade="all, delete-orphan")
+    external_issue_id: Mapped[str | None] = mapped_column(String(100))
+    issue_source: Mapped[str | None] = mapped_column(String(50))
+    first_response_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    review_cycles: Mapped[int | None] = mapped_column(Integer, default=1)
+    human_comment_count: Mapped[int | None] = mapped_column(Integer, default=0)
+    approval_count: Mapped[int | None] = mapped_column(Integer, default=0)
+    review_time_total: Mapped[int | None] = mapped_column(BigInteger)
+    quality_gate_status: Mapped[str | None] = mapped_column(String(20))
+    ai_category: Mapped[str | None] = mapped_column(String(50))
+    ai_summary: Mapped[str | None] = mapped_column(Text)
+    ai_confidence: Mapped[float | None] = mapped_column(Float)
+    effective_comment_count: Mapped[int | None] = mapped_column(Integer, default=0, comment="触发了代码变更的有效评论数")
+    rubber_stamp: Mapped[bool] = mapped_column(Boolean, default=False, comment="是否被判定为秒批 (Rubber-stamping)")
+    author_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
+    author: Mapped["User | None"] = relationship("User", primaryjoin=and_(User.global_user_id == author_id, User.is_current.is_(True)))  # noqa: F821
+    project: Mapped["GitLabProject | None"] = relationship("GitLabProject", back_populates="merge_requests")  # noqa: F821
+    transitions: Mapped[list["GitLabMergeRequestStateTransition"]] = relationship(
+        "GitLabMergeRequestStateTransition", back_populates="mr", cascade="all, delete-orphan"
+    )  # noqa: F821
 
     @hybrid_property
     def cycle_time(self):
@@ -530,35 +533,35 @@ class GitLabCommit(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_commits"
     __table_args__ = {"extend_existing": True}
-    id = Column(String, primary_key=True)
-    project_id = Column(Integer, ForeignKey("gitlab_projects.id"), index=True)
-    short_id = Column(String)
-    title = Column(String)
-    author_name = Column(String)
-    author_email = Column(String)
-    message = Column(Text)
-    authored_date = Column(DateTime(timezone=True))
-    committed_date = Column(DateTime(timezone=True), index=True)
-    additions = Column(Integer, default=0)
-    deletions = Column(Integer, default=0)
-    total = Column(Integer, default=0)
-    is_off_hours = Column(Boolean, default=False)
-    linked_issue_ids = Column(JSON)
-    issue_source = Column(String(50))
-    project = relationship("GitLabProject", back_populates="commits")
-    raw_data = Column(JSON)
-    gitlab_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    author = relationship("User", primaryjoin=and_(User.global_user_id == gitlab_user_id, User.is_current.is_(True)))
+    id: Mapped[str] = mapped_column(primary_key=True)
+    project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_projects.id"), index=True)
+    short_id: Mapped[str | None] = mapped_column(String)
+    title: Mapped[str | None] = mapped_column(String)
+    author_name: Mapped[str | None] = mapped_column(String)
+    author_email: Mapped[str | None] = mapped_column(String)
+    message: Mapped[str | None] = mapped_column(Text)
+    authored_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    committed_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    additions: Mapped[int | None] = mapped_column(Integer, default=0)
+    deletions: Mapped[int | None] = mapped_column(Integer, default=0)
+    total: Mapped[int | None] = mapped_column(Integer, default=0)
+    is_off_hours: Mapped[bool] = mapped_column(Boolean, default=False)
+    linked_issue_ids: Mapped[json_dict | None] = mapped_column(JSON)
+    issue_source: Mapped[str | None] = mapped_column(String(50))
+    project: Mapped["GitLabProject | None"] = relationship("GitLabProject", back_populates="commits")  # noqa: F821
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
+    gitlab_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    author: Mapped["User | None"] = relationship("User", primaryjoin=and_(User.global_user_id == gitlab_user_id, User.is_current.is_(True)))  # noqa: F821
 
     # [Advanced Metrics] - Added for Option A Architecture Alignment
-    eloc_score = Column(Float, default=0.0, comment="有效代码行数得分")
-    impact_score = Column(Float, default=0.0, comment="代码影响力得分")
-    churn_lines = Column(Integer, default=0, comment="代码翻动行数")
-    file_count = Column(Integer, default=0, comment="涉及文件数")
-    test_lines = Column(Integer, default=0, comment="测试代码行数")
-    comment_lines = Column(Integer, default=0, comment="注释行数")
-    refactor_ratio = Column(Float, default=0.0, comment="重构代码占比")
-    promoted_at = Column(DateTime(timezone=True), nullable=True, comment="上架到主数据的时间")
+    eloc_score: Mapped[float | None] = mapped_column(Float, default=0.0, comment="有效代码行数得分")
+    impact_score: Mapped[float | None] = mapped_column(Float, default=0.0, comment="代码影响力得分")
+    churn_lines: Mapped[int | None] = mapped_column(Integer, default=0, comment="代码翻动行数")
+    file_count: Mapped[int | None] = mapped_column(Integer, default=0, comment="涉及文件数")
+    test_lines: Mapped[int | None] = mapped_column(Integer, default=0, comment="测试代码行数")
+    comment_lines: Mapped[int | None] = mapped_column(Integer, default=0, comment="注释行数")
+    refactor_ratio: Mapped[float | None] = mapped_column(Float, default=0.0, comment="重构代码占比")
+    promoted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="上架到主数据的时间")
 
     def __repr__(self) -> str:
         return f"<GitLabCommit(id='{self.short_id}', project_id={self.project_id})>"
@@ -586,18 +589,18 @@ class GitLabCommitFileStats(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_commit_file_stats"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True)
-    commit_id = Column(String, ForeignKey("gitlab_commits.id"), index=True)
-    file_path = Column(String)
-    language = Column(String)
-    file_type_category = Column(String(50))
-    code_added = Column(Integer, default=0)
-    code_deleted = Column(Integer, default=0)
-    comment_added = Column(Integer, default=0)
-    comment_deleted = Column(Integer, default=0)
-    blank_added = Column(Integer, default=0)
-    blank_deleted = Column(Integer, default=0)
-    commit = relationship("GitLabCommit")
+    id: Mapped[int_pk]
+    commit_id: Mapped[str | None] = mapped_column(String, ForeignKey("gitlab_commits.id"), index=True)
+    file_path: Mapped[str | None] = mapped_column(String)
+    language: Mapped[str | None] = mapped_column(String)
+    file_type_category: Mapped[str | None] = mapped_column(String(50))
+    code_added: Mapped[int | None] = mapped_column(Integer, default=0)
+    code_deleted: Mapped[int | None] = mapped_column(Integer, default=0)
+    comment_added: Mapped[int | None] = mapped_column(Integer, default=0)
+    comment_deleted: Mapped[int | None] = mapped_column(Integer, default=0)
+    blank_added: Mapped[int | None] = mapped_column(Integer, default=0)
+    blank_deleted: Mapped[int | None] = mapped_column(Integer, default=0)
+    commit: Mapped["GitLabCommit | None"] = relationship("GitLabCommit")  # noqa: F821
 
     def __repr__(self) -> str:
         return f"<GitLabCommitFileStats(commit_id='{self.commit_id}', file_path='{self.file_path}')>"
@@ -637,33 +640,33 @@ class GitLabIssue(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_issues"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True)
-    iid = Column(Integer)
-    project_id = Column(Integer, ForeignKey("gitlab_projects.id"), index=True)
-    title = Column(String)
-    description = Column(String)
-    state = Column(String, index=True)
-    created_at = Column(DateTime(timezone=True), index=True)
-    updated_at = Column(DateTime(timezone=True))
-    closed_at = Column(DateTime(timezone=True))
-    time_estimate = Column(Integer)
-    total_time_spent = Column(Integer)
-    weight = Column(Integer)
-    work_item_type = Column(String(50))
-    ai_category = Column(String(50))
-    ai_summary = Column(Text)
-    ai_confidence = Column(Float)
-    labels = Column(JSON)
-    first_response_at = Column(DateTime(timezone=True))
-    milestone_id = Column(Integer, ForeignKey("gitlab_milestones.id"), nullable=True)
-    raw_data = Column(JSON)
-    author_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
-    author = relationship("User", primaryjoin=and_(User.global_user_id == author_id, User.is_current.is_(True)))
-    project = relationship("GitLabProject", back_populates="issues")
-    events = relationship("GitLabIssueEvent", back_populates="issue", cascade="all, delete-orphan")
-    transitions = relationship("GitLabIssueStateTransition", back_populates="issue", cascade="all, delete-orphan")
-    blockages = relationship("GitLabBlockage", back_populates="issue", cascade="all, delete-orphan")
-    milestone = relationship("GitLabMilestone", back_populates="issues")
+    id: Mapped[int_pk]
+    iid: Mapped[int | None] = mapped_column(Integer)
+    project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_projects.id"), index=True)
+    title: Mapped[str | None] = mapped_column(String)
+    description: Mapped[str | None] = mapped_column(String)
+    state: Mapped[str | None] = mapped_column(String, index=True)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    time_estimate: Mapped[int | None] = mapped_column(Integer)
+    total_time_spent: Mapped[int | None] = mapped_column(Integer)
+    weight: Mapped[int | None] = mapped_column(Integer)
+    work_item_type: Mapped[str | None] = mapped_column(String(50))
+    ai_category: Mapped[str | None] = mapped_column(String(50))
+    ai_summary: Mapped[str | None] = mapped_column(Text)
+    ai_confidence: Mapped[float | None] = mapped_column(Float)
+    labels: Mapped[json_dict | None] = mapped_column(JSON)
+    first_response_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    milestone_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_milestones.id"), nullable=True)
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
+    author_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
+    author: Mapped["User | None"] = relationship("User", primaryjoin=and_(User.global_user_id == author_id, User.is_current.is_(True)))  # noqa: F821
+    project: Mapped["GitLabProject | None"] = relationship("GitLabProject", back_populates="issues")  # noqa: F821
+    events: Mapped[list["GitLabIssueEvent"]] = relationship("GitLabIssueEvent", back_populates="issue", cascade="all, delete-orphan")  # noqa: F821
+    transitions: Mapped[list["GitLabIssueStateTransition"]] = relationship("GitLabIssueStateTransition", back_populates="issue", cascade="all, delete-orphan")  # noqa: F821
+    blockages: Mapped[list["GitLabBlockage"]] = relationship("GitLabBlockage", back_populates="issue", cascade="all, delete-orphan")  # noqa: F821
+    milestone: Mapped["GitLabMilestone | None"] = relationship("GitLabMilestone", back_populates="issues")  # noqa: F821
     merge_requests = relationship(
         "GitLabMergeRequest",
         primaryjoin=lambda: and_(
@@ -690,7 +693,7 @@ class GitLabIssue(Base, TimestampMixin, TraceabilityMixin):
                     envs.add(d.environment)
         return list(envs)
 
-    associated_test_cases = relationship("GTMTestCase", secondary="gtm_test_case_issue_links", back_populates="linked_issues")
+    associated_test_cases: Mapped[list["GTMTestCase"]] = relationship("GTMTestCase", secondary="gtm_test_case_issue_links", back_populates="linked_issues")  # noqa: F821
 
     @hybrid_property
     def resolution_time(self):
@@ -848,16 +851,16 @@ class GitLabIssueEvent(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_issue_events"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    issue_id = Column(Integer, ForeignKey("gitlab_issues.id"))
-    user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
-    event_type = Column(String(50))
-    action = Column(String(50))
-    external_event_id = Column(Integer)
-    meta_info = Column(JSON)
-    created_at = Column(DateTime(timezone=True))
-    issue = relationship("GitLabIssue", back_populates="events")
-    user = relationship("User", foreign_keys=[user_id])
+    id: Mapped[int_pk]
+    issue_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_issues.id"))
+    user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
+    event_type: Mapped[str | None] = mapped_column(String(50))
+    action: Mapped[str | None] = mapped_column(String(50))
+    external_event_id: Mapped[int | None] = mapped_column(Integer)
+    meta_info: Mapped[json_dict | None] = mapped_column(JSON)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    issue: Mapped["GitLabIssue | None"] = relationship("GitLabIssue", back_populates="events")  # noqa: F821
+    user: Mapped["User | None"] = relationship("User", foreign_keys=[user_id])  # noqa: F821
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
@@ -891,13 +894,13 @@ class GitLabIssueStateTransition(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_issue_state_transitions"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    issue_id = Column(Integer, ForeignKey("gitlab_issues.id"), nullable=False)
-    from_state = Column(String(50))
-    to_state = Column(String(50), nullable=False)
-    timestamp = Column(DateTime(timezone=True), nullable=False)
-    duration_hours = Column(Float)
-    issue = relationship("GitLabIssue", back_populates="transitions")
+    id: Mapped[int_pk]
+    issue_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_issues.id"), nullable=False)
+    from_state: Mapped[str | None] = mapped_column(String(50))
+    to_state: Mapped[str | None] = mapped_column(String(50), nullable=False)
+    timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=False)
+    duration_hours: Mapped[float | None] = mapped_column(Float)
+    issue: Mapped["GitLabIssue | None"] = relationship("GitLabIssue", back_populates="transitions")  # noqa: F821
 
     def __repr__(self) -> str:
         return f"<GitLabIssueStateTransition(issue_id={self.issue_id}, to_state='{self.to_state}')>"
@@ -919,13 +922,13 @@ class GitLabMergeRequestStateTransition(Base, TimestampMixin, TraceabilityMixin)
 
     __tablename__ = "gitlab_mr_state_transitions"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    mr_id = Column(Integer, ForeignKey("gitlab_merge_requests.id"), nullable=False)
-    from_state = Column(String(50))
-    to_state = Column(String(50), nullable=False)
-    timestamp = Column(DateTime(timezone=True), nullable=False)
-    duration_hours = Column(Float)
-    mr = relationship("GitLabMergeRequest", back_populates="transitions")
+    id: Mapped[int_pk]
+    mr_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_merge_requests.id"), nullable=False)
+    from_state: Mapped[str | None] = mapped_column(String(50))
+    to_state: Mapped[str | None] = mapped_column(String(50), nullable=False)
+    timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=False)
+    duration_hours: Mapped[float | None] = mapped_column(Float)
+    mr: Mapped["GitLabMergeRequest | None"] = relationship("GitLabMergeRequest", back_populates="transitions")  # noqa: F821
 
     def __repr__(self) -> str:
         return f"<GitLabMergeRequestStateTransition(mr_id={self.mr_id}, to_state='{self.to_state}')>"
@@ -947,12 +950,12 @@ class GitLabBlockage(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_issue_blockages"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    issue_id = Column(Integer, ForeignKey("gitlab_issues.id"), nullable=False)
-    reason = Column(String(200))
-    start_time = Column(DateTime(timezone=True), nullable=False)
-    end_time = Column(DateTime(timezone=True))
-    issue = relationship("GitLabIssue", back_populates="blockages")
+    id: Mapped[int_pk]
+    issue_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_issues.id"), nullable=False)
+    reason: Mapped[str | None] = mapped_column(String(200))
+    start_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=False)
+    end_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    issue: Mapped["GitLabIssue | None"] = relationship("GitLabIssue", back_populates="blockages")  # noqa: F821
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
@@ -992,34 +995,36 @@ class GitLabPipeline(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_pipelines"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True)
-    project_id = Column(Integer, ForeignKey("gitlab_projects.id"), index=True)
-    status = Column(String)
-    ref = Column(String)
-    sha = Column(String, ForeignKey("gitlab_commits.id"), nullable=True, index=True)
-    source = Column(String)
+    id: Mapped[int_pk]
+    project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_projects.id"), index=True)
+    status: Mapped[str | None] = mapped_column(String)
+    ref: Mapped[str | None] = mapped_column(String)
+    sha: Mapped[str | None] = mapped_column(String, ForeignKey("gitlab_commits.id"), nullable=True, index=True)
+    source: Mapped[str | None] = mapped_column(String)
 
     # 时间追踪 (FinOps)
-    created_at = Column(DateTime(timezone=True), index=True)
-    updated_at = Column(DateTime(timezone=True))
-    started_at = Column(DateTime(timezone=True))
-    finished_at = Column(DateTime(timezone=True))
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     # 算力耗时追踪 (FinOps)
-    duration = Column(Integer, comment="纯算力执行耗时(秒)")
-    queued_duration = Column(Integer, comment="排队等待耗时(秒)")
+    duration: Mapped[int | None] = mapped_column(Integer, comment="纯算力执行耗时(秒)")
+    queued_duration: Mapped[int | None] = mapped_column(Integer, comment="排队等待耗时(秒)")
 
-    coverage = Column(Float, nullable=True, comment="测试覆盖率")
-    failure_reason = Column(String)
-    web_url = Column(String(500))
-    user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    raw_data = Column(JSON)
+    coverage: Mapped[float | None] = mapped_column(Float, nullable=True, comment="测试覆盖率")
+    failure_reason: Mapped[str | None] = mapped_column(String)
+    web_url: Mapped[str | None] = mapped_column(String(500))
+    user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
     # 关联映射
-    project = relationship("GitLabProject", back_populates="pipelines")
-    commit = relationship("GitLabCommit")
-    trigger_user = relationship("User", primaryjoin=lambda: and_(User.global_user_id == GitLabPipeline.user_id, User.is_current.is_(True)))
-    jobs = relationship("GitLabJob", back_populates="pipeline", cascade="all, delete-orphan")
+    project: Mapped["GitLabProject | None"] = relationship("GitLabProject", back_populates="pipelines")  # noqa: F821
+    commit: Mapped["GitLabCommit | None"] = relationship("GitLabCommit")  # noqa: F821
+    trigger_user: Mapped["User | None"] = relationship(
+        "User", primaryjoin=lambda: and_(User.global_user_id == GitLabPipeline.user_id, User.is_current.is_(True))
+    )  # noqa: F821
+    jobs: Mapped[list["GitLabJob"]] = relationship("GitLabJob", back_populates="pipeline", cascade="all, delete-orphan")  # noqa: F821
 
     @hybrid_property
     def is_success(self):
@@ -1117,20 +1122,20 @@ class GitLabDeployment(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_deployments"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True)
-    iid = Column(Integer)
-    project_id = Column(Integer, ForeignKey("gitlab_projects.id"), index=True)
-    status = Column(String)
-    created_at = Column(DateTime(timezone=True), index=True)
-    updated_at = Column(DateTime(timezone=True))
-    ref = Column(String)
-    sha = Column(String)
-    environment = Column(String)
-    raw_data = Column(JSON)
-    mdm_project_id = Column(Integer, ForeignKey("mdm_projects.id"), nullable=True, index=True, comment="关联的 MDM 项目 ID")
-    is_production = Column(Boolean, default=False, index=True, comment="是否为生产环境部署")
-    promoted_at = Column(DateTime(timezone=True), nullable=True, comment="上架时间")
-    project = relationship("GitLabProject", back_populates="deployments")
+    id: Mapped[int_pk]
+    iid: Mapped[int | None] = mapped_column(Integer)
+    project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_projects.id"), index=True)
+    status: Mapped[str | None] = mapped_column(String)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ref: Mapped[str | None] = mapped_column(String)
+    sha: Mapped[str | None] = mapped_column(String)
+    environment: Mapped[str | None] = mapped_column(String)
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
+    mdm_project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("mdm_projects.id"), nullable=True, index=True, comment="关联的 MDM 项目 ID")
+    is_production: Mapped[bool] = mapped_column(Boolean, default=False, index=True, comment="是否为生产环境部署")
+    promoted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="上架时间")
+    project: Mapped["GitLabProject | None"] = relationship("GitLabProject", back_populates="deployments")  # noqa: F821
 
     @hybrid_property
     def is_success(self):
@@ -1199,18 +1204,18 @@ class GitLabNote(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_notes"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True)
-    project_id = Column(Integer, ForeignKey("gitlab_projects.id"))
-    noteable_type = Column(String)
-    noteable_iid = Column(Integer)
-    body = Column(String)
-    author_id = Column(UUID(as_uuid=True))
-    created_at = Column(DateTime(timezone=True))
-    updated_at = Column(DateTime(timezone=True))
-    system = Column(Boolean)
-    resolvable = Column(Boolean)
-    raw_data = Column(JSON)
-    project = relationship("GitLabProject")
+    id: Mapped[int_pk]
+    project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_projects.id"))
+    noteable_type: Mapped[str | None] = mapped_column(String)
+    noteable_iid: Mapped[int | None] = mapped_column(Integer)
+    body: Mapped[str | None] = mapped_column(String)
+    author_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    system: Mapped[bool | None] = mapped_column(Boolean)
+    resolvable: Mapped[bool | None] = mapped_column(Boolean)
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
+    project: Mapped["GitLabProject | None"] = relationship("GitLabProject")  # noqa: F821
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
@@ -1242,13 +1247,13 @@ class GitLabTag(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_tags"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    project_id = Column(Integer, ForeignKey("gitlab_projects.id"))
-    name = Column(String)
-    message = Column(String)
-    commit_sha = Column(String)
-    created_at = Column(DateTime(timezone=True))
-    project = relationship("GitLabProject")
+    id: Mapped[int_pk]
+    project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_projects.id"))
+    name: Mapped[str | None] = mapped_column(String)
+    message: Mapped[str | None] = mapped_column(String)
+    commit_sha: Mapped[str | None] = mapped_column(String)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    project: Mapped["GitLabProject | None"] = relationship("GitLabProject")  # noqa: F821
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
@@ -1284,17 +1289,17 @@ class GitLabBranch(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_branches"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    project_id = Column(Integer, ForeignKey("gitlab_projects.id"))
-    name = Column(String)
-    last_commit_sha = Column(String)
-    last_commit_date = Column(DateTime(timezone=True))
-    last_committer_name = Column(String)
-    is_merged = Column(Boolean)
-    is_protected = Column(Boolean)
-    is_default = Column(Boolean)
-    raw_data = Column(JSON)
-    project = relationship("GitLabProject")
+    id: Mapped[int_pk]
+    project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_projects.id"))
+    name: Mapped[str | None] = mapped_column(String)
+    last_commit_sha: Mapped[str | None] = mapped_column(String)
+    last_commit_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_committer_name: Mapped[str | None] = mapped_column(String)
+    is_merged: Mapped[bool | None] = mapped_column(Boolean)
+    is_protected: Mapped[bool | None] = mapped_column(Boolean)
+    is_default: Mapped[bool | None] = mapped_column(Boolean)
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
+    project: Mapped["GitLabProject | None"] = relationship("GitLabProject")  # noqa: F821
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
@@ -1332,20 +1337,20 @@ class GitLabMilestone(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_milestones"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True)
-    iid = Column(Integer)
-    project_id = Column(Integer, ForeignKey("gitlab_projects.id"))
-    title = Column(String)
-    description = Column(String)
-    state = Column(String)
-    due_date = Column(DateTime(timezone=True))
-    start_date = Column(DateTime(timezone=True))
-    created_at = Column(DateTime(timezone=True))
-    updated_at = Column(DateTime(timezone=True))
-    raw_data = Column(JSON)
-    project = relationship("GitLabProject", back_populates="milestones")
-    releases = relationship("GitLabRelease", secondary="release_milestone_links", back_populates="milestones")
-    issues = relationship("GitLabIssue", back_populates="milestone")
+    id: Mapped[int_pk]
+    iid: Mapped[int | None] = mapped_column(Integer)
+    project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_projects.id"))
+    title: Mapped[str | None] = mapped_column(String)
+    description: Mapped[str | None] = mapped_column(String)
+    state: Mapped[str | None] = mapped_column(String)
+    due_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    start_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
+    project: Mapped["GitLabProject | None"] = relationship("GitLabProject", back_populates="milestones")  # noqa: F821
+    releases: Mapped[list["GitLabRelease"]] = relationship("GitLabRelease", secondary="release_milestone_links", back_populates="milestones")  # noqa: F821
+    issues: Mapped[list["GitLabIssue"]] = relationship("GitLabIssue", back_populates="milestone")  # noqa: F821
 
     @hybrid_property
     def progress(self):
@@ -1392,8 +1397,8 @@ class ReleaseMilestoneLink(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "release_milestone_links"
     __table_args__ = {"extend_existing": True}
-    release_id = Column(Integer, ForeignKey("gitlab_releases.id"), primary_key=True)
-    milestone_id = Column(Integer, ForeignKey("gitlab_milestones.id"), primary_key=True)
+    release_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_releases.id"), primary_key=True)
+    milestone_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_milestones.id"), primary_key=True)
 
 
 class GitLabRelease(Base, TimestampMixin, TraceabilityMixin):
@@ -1417,17 +1422,17 @@ class GitLabRelease(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_releases"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    project_id = Column(Integer, ForeignKey("gitlab_projects.id"), nullable=False)
-    tag_name = Column(String(255), nullable=False)
-    name = Column(String(255))
-    description = Column(Text)
-    created_at = Column(DateTime(timezone=True))
-    released_at = Column(DateTime(timezone=True))
-    author_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
-    raw_data = Column(JSON)
-    project = relationship("GitLabProject")
-    milestones = relationship("GitLabMilestone", secondary="release_milestone_links", back_populates="releases")
+    id: Mapped[int_pk]
+    project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_projects.id"), nullable=False)
+    tag_name: Mapped[str | None] = mapped_column(String(255), nullable=False)
+    name: Mapped[str | None] = mapped_column(String(255))
+    description: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    released_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    author_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
+    project: Mapped["GitLabProject | None"] = relationship("GitLabProject")  # noqa: F821
+    milestones: Mapped[list["GitLabMilestone"]] = relationship("GitLabMilestone", secondary="release_milestone_links", back_populates="releases")  # noqa: F821
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
@@ -1463,17 +1468,17 @@ class GitLabPackage(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_packages"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True)
-    project_id = Column(Integer, ForeignKey("gitlab_projects.id"))
-    name = Column(String(255), nullable=False)
-    version = Column(String(100))
-    package_type = Column(String(50))
-    status = Column(String(50))
-    created_at = Column(DateTime(timezone=True))
-    web_url = Column(String(500))
-    project = relationship("GitLabProject")
-    files = relationship("GitLabPackageFile", back_populates="package", cascade="all, delete-orphan")
-    raw_data = Column(JSON)
+    id: Mapped[int_pk]
+    project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_projects.id"))
+    name: Mapped[str | None] = mapped_column(String(255), nullable=False)
+    version: Mapped[str | None] = mapped_column(String(100))
+    package_type: Mapped[str | None] = mapped_column(String(50))
+    status: Mapped[str | None] = mapped_column(String(50))
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    web_url: Mapped[str | None] = mapped_column(String(500))
+    project: Mapped["GitLabProject | None"] = relationship("GitLabProject")  # noqa: F821
+    files: Mapped[list["GitLabPackageFile"]] = relationship("GitLabPackageFile", back_populates="package", cascade="all, delete-orphan")  # noqa: F821
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
@@ -1507,15 +1512,15 @@ class GitLabPackageFile(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_package_files"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True)
-    package_id = Column(Integer, ForeignKey("gitlab_packages.id"))
-    file_name = Column(String(255), nullable=False)
-    size = Column(BigInteger)
-    file_sha1 = Column(String(40))
-    file_sha256 = Column(String(64))
-    created_at = Column(DateTime(timezone=True))
-    package = relationship("GitLabPackage", back_populates="files")
-    raw_data = Column(JSON)
+    id: Mapped[int_pk]
+    package_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_packages.id"))
+    file_name: Mapped[str | None] = mapped_column(String(255), nullable=False)
+    size: Mapped[int | None] = mapped_column(BigInteger)
+    file_sha1: Mapped[str | None] = mapped_column(String(40))
+    file_sha256: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    package: Mapped["GitLabPackage | None"] = relationship("GitLabPackage", back_populates="files")  # noqa: F821
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
@@ -1551,17 +1556,17 @@ class GitLabWikiLog(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_wiki_logs"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    project_id = Column(Integer, ForeignKey("gitlab_projects.id"))
-    title = Column(String(255))
-    slug = Column(String(255))
-    format = Column(String(20))
-    action = Column(String(50))
-    user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
-    created_at = Column(DateTime(timezone=True))
-    project = relationship("GitLabProject")
-    user = relationship("User", foreign_keys=[user_id])
-    raw_data = Column(JSON)
+    id: Mapped[int_pk]
+    project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_projects.id"))
+    title: Mapped[str | None] = mapped_column(String(255))
+    slug: Mapped[str | None] = mapped_column(String(255))
+    format: Mapped[str | None] = mapped_column(String(20))
+    action: Mapped[str | None] = mapped_column(String(50))
+    user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    project: Mapped["GitLabProject | None"] = relationship("GitLabProject")  # noqa: F821
+    user: Mapped["User | None"] = relationship("User", foreign_keys=[user_id])  # noqa: F821
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
@@ -1594,14 +1599,14 @@ class GitLabDependency(Base, TimestampMixin, TraceabilityMixin):
 
     __tablename__ = "gitlab_dependencies"
     __table_args__ = {"extend_existing": True}
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    project_id = Column(Integer, ForeignKey("gitlab_projects.id"))
-    name = Column(String(255), nullable=False)
-    version = Column(String(100))
-    package_manager = Column(String(50))
-    dependency_type = Column(String(50))
-    project = relationship("GitLabProject")
-    raw_data = Column(JSON)
+    id: Mapped[int_pk]
+    project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_projects.id"))
+    name: Mapped[str | None] = mapped_column(String(255), nullable=False)
+    version: Mapped[str | None] = mapped_column(String(100))
+    package_manager: Mapped[str | None] = mapped_column(String(50))
+    dependency_type: Mapped[str | None] = mapped_column(String(50))
+    project: Mapped["GitLabProject | None"] = relationship("GitLabProject")  # noqa: F821
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
@@ -1627,24 +1632,24 @@ class GitLabJob(Base, TimestampMixin, TraceabilityMixin):
     __tablename__ = "gitlab_jobs"
     __table_args__ = {"extend_existing": True}
 
-    id = Column(Integer, primary_key=True)
-    pipeline_id = Column(Integer, ForeignKey("gitlab_pipelines.id"), index=True)
-    name = Column(String(255))
-    stage = Column(String(100))
-    status = Column(String(50))
+    id: Mapped[int_pk]
+    pipeline_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_pipelines.id"), index=True)
+    name: Mapped[str | None] = mapped_column(String(255))
+    stage: Mapped[str | None] = mapped_column(String(100))
+    status: Mapped[str | None] = mapped_column(String(50))
 
-    created_at = Column(DateTime(timezone=True))
-    started_at = Column(DateTime(timezone=True))
-    finished_at = Column(DateTime(timezone=True))
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
-    duration = Column(Float, comment="该步骤实际占用 Runner 的执行秒数")
-    queued_duration = Column(Float, comment="等待可用 Runner 的排队秒数")
+    duration: Mapped[float | None] = mapped_column(Float, comment="该步骤实际占用 Runner 的执行秒数")
+    queued_duration: Mapped[float | None] = mapped_column(Float, comment="等待可用 Runner 的排队秒数")
 
-    runner_id = Column(Integer, nullable=True)
-    runner_type = Column(String(50), nullable=True, comment="shared, specific, group")
-    runner_description = Column(String(255), nullable=True)
+    runner_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    runner_type: Mapped[str | None] = mapped_column(String(50), nullable=True, comment="shared, specific, group")
+    runner_description: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
-    pipeline = relationship("GitLabPipeline", back_populates="jobs")
+    pipeline: Mapped["GitLabPipeline | None"] = relationship("GitLabPipeline", back_populates="jobs")  # noqa: F821
 
     def __repr__(self) -> str:
         return f"<GitLabJob(id={self.id}, name='{self.name}')>"
@@ -1659,32 +1664,32 @@ class GitLabVulnerability(Base, TimestampMixin, TraceabilityMixin):
     __tablename__ = "gitlab_vulnerabilities"
     __table_args__ = {"extend_existing": True}
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(Integer, ForeignKey("gitlab_projects.id"), index=True)
-    pipeline_id = Column(Integer, ForeignKey("gitlab_pipelines.id"), nullable=True, index=True)
-    vulnerability_id = Column(Integer, nullable=True, comment="GitLab 侧漏洞 ID (仅 Ultimate 版有效)")
-    finding_id = Column(String(255), nullable=True, comment="GitLab Finding UUID/Fingerprint")
+    id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_projects.id"), index=True)
+    pipeline_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_pipelines.id"), nullable=True, index=True)
+    vulnerability_id: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="GitLab 侧漏洞 ID (仅 Ultimate 版有效)")
+    finding_id: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="GitLab Finding UUID/Fingerprint")
 
-    name = Column(String(500))
-    description = Column(Text)
-    severity = Column(String(20), index=True, comment="Critical, High, Medium, Low, Info, Unknown")
-    confidence = Column(String(20))
-    report_type = Column(String(50), index=True, comment="sast, dast, secret_detection, container_scanning")
-    state = Column(String(20), index=True, comment="detected, confirmed, dismissed, resolved")
+    name: Mapped[str | None] = mapped_column(String(500))
+    description: Mapped[str | None] = mapped_column(Text)
+    severity: Mapped[str | None] = mapped_column(String(20), index=True, comment="Critical, High, Medium, Low, Info, Unknown")
+    confidence: Mapped[str | None] = mapped_column(String(20))
+    report_type: Mapped[str | None] = mapped_column(String(50), index=True, comment="sast, dast, secret_detection, container_scanning")
+    state: Mapped[str | None] = mapped_column(String(20), index=True, comment="detected, confirmed, dismissed, resolved")
 
-    location = Column(JSON, comment="包含文件、行号、类等详细位置")
-    cve = Column(String(50), index=True)
-    identifiers = Column(JSON, comment="漏洞标识符列表")
+    location: Mapped[json_dict | None] = mapped_column(JSON, comment="包含文件、行号、类等详细位置")
+    cve: Mapped[str | None] = mapped_column(String(50), index=True)
+    identifiers: Mapped[json_dict | None] = mapped_column(JSON, comment="漏洞标识符列表")
 
-    detected_at = Column(DateTime(timezone=True), index=True)
-    fixed_at = Column(DateTime(timezone=True))
-    dismissed_at = Column(DateTime(timezone=True))
-    resolved_at = Column(DateTime(timezone=True))
+    detected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    fixed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    dismissed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
-    raw_data = Column(JSON)
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
-    project = relationship("GitLabProject", back_populates="vulnerabilities")
-    pipeline = relationship("GitLabPipeline")
+    project: Mapped["GitLabProject | None"] = relationship("GitLabProject", back_populates="vulnerabilities")  # noqa: F821
+    pipeline: Mapped["GitLabPipeline | None"] = relationship("GitLabPipeline")  # noqa: F821
 
     def __repr__(self) -> str:
         return f"<GitLabVulnerability(name='{self.name[:30]}...', severity='{self.severity}')>"

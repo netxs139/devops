@@ -1,12 +1,16 @@
+import uuid
+from datetime import datetime
+
+
 """禅道 (ZenTao) 全量数据模型
 
 定义禅道相关的 SQLAlchemy ORM 模型，支持产品、执行、需求、缺陷、用例、构建和发布。
 """
 
-from sqlalchemy import JSON, UUID, Boolean, Column, DateTime, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import relationship
+from sqlalchemy import JSON, UUID, Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin
+from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin, int_pk, json_dict
 
 
 class ZenTaoProduct(Base, TimestampMixin, TraceabilityMixin):
@@ -30,26 +34,28 @@ class ZenTaoProduct(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "zentao_products"
-    id = Column(Integer, primary_key=True)
-    name = Column(String(255), nullable=False)
-    code = Column(String(100))
-    description = Column(Text)
-    status = Column(String(20))
-    gitlab_project_id = Column(Integer, ForeignKey("gitlab_projects.id"), nullable=True)
-    last_synced_at = Column(DateTime(timezone=True))
-    sync_status = Column(String(20), default="PENDING")
-    raw_data = Column(JSON)
+    id: Mapped[int_pk]
+    name: Mapped[str | None] = mapped_column(String(255), nullable=False)
+    code: Mapped[str | None] = mapped_column(String(100))
+    description: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str | None] = mapped_column(String(20))
+    gitlab_project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_projects.id"), nullable=True)
+    last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    sync_status: Mapped[str | None] = mapped_column(String(20), default="PENDING")
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
     # MDM 关联字段
-    mdm_product_id = Column(Integer, ForeignKey("mdm_products.id"), nullable=True, comment="关联的 MDM 产品 ID")
-    executions = relationship("ZenTaoExecution", back_populates="product", cascade="all, delete-orphan")
-    plans = relationship("ZenTaoProductPlan", back_populates="product", cascade="all, delete-orphan")
-    issues = relationship("ZenTaoIssue", back_populates="product", cascade="all, delete-orphan", primaryjoin=lambda: ZenTaoProduct.id == ZenTaoIssue.product_id)
-    test_cases = relationship("ZenTaoTestCase", back_populates="product", cascade="all, delete-orphan")
-    builds = relationship("ZenTaoBuild", back_populates="product", cascade="all, delete-orphan")
-    releases = relationship("ZenTaoRelease", back_populates="product", cascade="all, delete-orphan")
-    actions = relationship("ZenTaoAction", back_populates="product", cascade="all, delete-orphan")
+    mdm_product_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("mdm_products.id"), nullable=True, comment="关联的 MDM 产品 ID")
+    executions: Mapped[list["ZenTaoExecution"]] = relationship("ZenTaoExecution", back_populates="product", cascade="all, delete-orphan")  # noqa: F821
+    plans: Mapped[list["ZenTaoProductPlan"]] = relationship("ZenTaoProductPlan", back_populates="product", cascade="all, delete-orphan")  # noqa: F821
+    issues: Mapped[list["ZenTaoIssue"]] = relationship(
+        "ZenTaoIssue", back_populates="product", cascade="all, delete-orphan", primaryjoin=lambda: ZenTaoProduct.id == ZenTaoIssue.product_id
+    )  # noqa: F821
+    test_cases: Mapped[list["ZenTaoTestCase"]] = relationship("ZenTaoTestCase", back_populates="product", cascade="all, delete-orphan")  # noqa: F821
+    builds: Mapped[list["ZenTaoBuild"]] = relationship("ZenTaoBuild", back_populates="product", cascade="all, delete-orphan")  # noqa: F821
+    releases: Mapped[list["ZenTaoRelease"]] = relationship("ZenTaoRelease", back_populates="product", cascade="all, delete-orphan")  # noqa: F821
+    actions: Mapped[list["ZenTaoAction"]] = relationship("ZenTaoAction", back_populates="product", cascade="all, delete-orphan")  # noqa: F821
 
-    promoted_at = Column(DateTime(timezone=True), nullable=True, comment="上架到主数据的时间")
+    promoted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="上架到主数据的时间")
 
     def __repr__(self) -> str:
         """返回禅道产品的字符串表示。"""
@@ -72,19 +78,19 @@ class ZenTaoProductPlan(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "zentao_product_plans"
-    id = Column(Integer, primary_key=True)
-    product_id = Column(Integer, ForeignKey("zentao_products.id"), nullable=False)
-    title = Column(String(255))
-    begin = Column(DateTime)
-    end = Column(DateTime)
-    desc = Column(Text)
-    status = Column(String(20))
-    opened_by = Column(String(100))
-    opened_by_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    opened_date = Column(DateTime)
-    product = relationship("ZenTaoProduct", back_populates="plans")
-    issues = relationship("ZenTaoIssue", back_populates="plan")
-    raw_data = Column(JSON)
+    id: Mapped[int_pk]
+    product_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("zentao_products.id"), nullable=False)
+    title: Mapped[str | None] = mapped_column(String(255))
+    begin: Mapped[datetime | None] = mapped_column(DateTime)
+    end: Mapped[datetime | None] = mapped_column(DateTime)
+    desc: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str | None] = mapped_column(String(20))
+    opened_by: Mapped[str | None] = mapped_column(String(100))
+    opened_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    opened_date: Mapped[datetime | None] = mapped_column(DateTime)
+    product: Mapped["ZenTaoProduct | None"] = relationship("ZenTaoProduct", back_populates="plans")  # noqa: F821
+    issues: Mapped[list["ZenTaoIssue"]] = relationship("ZenTaoIssue", back_populates="plan")  # noqa: F821
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
     def __repr__(self) -> str:
         """返回产品计划的字符串表示。"""
@@ -105,24 +111,24 @@ class ZenTaoExecution(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "zentao_executions"
-    id = Column(Integer, primary_key=True)
-    product_id = Column(Integer, ForeignKey("zentao_products.id"), nullable=True, index=True)
-    name = Column(String(255))
-    code = Column(String(100))
-    type = Column(String(20), comment="实体类型: program, project, execution")
-    status = Column(String(20))
-    parent_id = Column(Integer, comment="父级节点 ID (zt_project.parent)")
-    path = Column(String(255), comment="层级路径 (zt_project.path)")
-    begin = Column(DateTime)
-    end = Column(DateTime)
-    real_began = Column(DateTime)
-    real_end = Column(DateTime)
+    id: Mapped[int_pk]
+    product_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("zentao_products.id"), nullable=True, index=True)
+    name: Mapped[str | None] = mapped_column(String(255))
+    code: Mapped[str | None] = mapped_column(String(100))
+    type: Mapped[str | None] = mapped_column(String(20), comment="实体类型: program, project, execution")
+    status: Mapped[str | None] = mapped_column(String(20))
+    parent_id: Mapped[int | None] = mapped_column(Integer, comment="父级节点 ID (zt_project.parent)")
+    path: Mapped[str | None] = mapped_column(String(255), comment="层级路径 (zt_project.path)")
+    begin: Mapped[datetime | None] = mapped_column(DateTime)
+    end: Mapped[datetime | None] = mapped_column(DateTime)
+    real_began: Mapped[datetime | None] = mapped_column(DateTime)
+    real_end: Mapped[datetime | None] = mapped_column(DateTime)
     # MDM 关联字段
-    mdm_project_id = Column(Integer, ForeignKey("mdm_projects.id"), nullable=True, comment="关联的 MDM 项目 ID")
-    product = relationship("ZenTaoProduct", back_populates="executions")
-    raw_data = Column(JSON)
+    mdm_project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("mdm_projects.id"), nullable=True, comment="关联的 MDM 项目 ID")
+    product: Mapped["ZenTaoProduct | None"] = relationship("ZenTaoProduct", back_populates="executions")  # noqa: F821
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
-    promoted_at = Column(DateTime(timezone=True), nullable=True, comment="上架到主数据的时间")
+    promoted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="上架到主数据的时间")
 
     def __repr__(self) -> str:
         """返回迭代执行的字符串表示。"""
@@ -151,32 +157,32 @@ class ZenTaoIssue(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "zentao_issues"
-    id = Column(Integer, primary_key=True, autoincrement=False)
-    type = Column(String(50), primary_key=True)  # feature, bug, task
-    product_id = Column(Integer, ForeignKey("zentao_products.id"), nullable=False, index=True)
-    execution_id = Column(Integer, ForeignKey("zentao_executions.id"), nullable=True)
-    plan_id = Column(Integer, ForeignKey("zentao_product_plans.id"), nullable=True)
-    title = Column(String(500), nullable=False)
-    status = Column(String(50))
-    priority = Column(Integer)
+    id: Mapped[int | None] = mapped_column(Integer, primary_key=True, autoincrement=False)
+    type: Mapped[str | None] = mapped_column(String(50), primary_key=True)  # feature, bug, task
+    product_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("zentao_products.id"), nullable=False, index=True)
+    execution_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("zentao_executions.id"), nullable=True)
+    plan_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("zentao_product_plans.id"), nullable=True)
+    title: Mapped[str | None] = mapped_column(String(500), nullable=False)
+    status: Mapped[str | None] = mapped_column(String(50))
+    priority: Mapped[int | None] = mapped_column(Integer)
     # 工时数据 (支持 FinOps)
-    estimate = Column(JSON)  # Story 可能有多个阶段预计，Task 是单值，统一存 JSON 或使用 Float
-    consumed = Column(JSON)
-    left = Column(JSON)
+    estimate: Mapped[json_dict | None] = mapped_column(JSON)  # Story 可能有多个阶段预计，Task 是单值，统一存 JSON 或使用 Float
+    consumed: Mapped[json_dict | None] = mapped_column(JSON)
+    left: Mapped[json_dict | None] = mapped_column(JSON)
     # 辅助字段
-    task_type = Column(String(50))  # devel, test, design 等
-    opened_by = Column(String(100))
-    assigned_to = Column(String(100))
-    opened_by_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    assigned_to_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    closed_at = Column(DateTime(timezone=True))
-    raw_data = Column(JSON)
-    first_commit_sha = Column(String(100))
-    standard_status = Column(String(50), index=True, comment="平台标准状态 (Backlog, InProgress, Testing, Completed, Cancelled)")
-    promoted_at = Column(DateTime(timezone=True), nullable=True, comment="上架到主数据的时间")
-    first_fix_date = Column(DateTime(timezone=True))
-    product = relationship("ZenTaoProduct", back_populates="issues", foreign_keys=[product_id])
-    plan = relationship("ZenTaoProductPlan", back_populates="issues", foreign_keys=[plan_id])
+    task_type: Mapped[str | None] = mapped_column(String(50))  # devel, test, design 等
+    opened_by: Mapped[str | None] = mapped_column(String(100))
+    assigned_to: Mapped[str | None] = mapped_column(String(100))
+    opened_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    assigned_to_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
+    first_commit_sha: Mapped[str | None] = mapped_column(String(100))
+    standard_status: Mapped[str | None] = mapped_column(String(50), index=True, comment="平台标准状态 (Backlog, InProgress, Testing, Completed, Cancelled)")
+    promoted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="上架到主数据的时间")
+    first_fix_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    product: Mapped["ZenTaoProduct | None"] = relationship("ZenTaoProduct", back_populates="issues", foreign_keys=[product_id])  # noqa: F821
+    plan: Mapped["ZenTaoProductPlan | None"] = relationship("ZenTaoProductPlan", back_populates="issues", foreign_keys=[plan_id])  # noqa: F821
 
     def __repr__(self) -> str:
         """返回问题的字符串表示。"""
@@ -196,24 +202,24 @@ class ZenTaoTestCase(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "zentao_test_cases"
-    id = Column(Integer, primary_key=True)
-    product_id = Column(Integer, ForeignKey("zentao_products.id"), nullable=False)
-    story_id = Column(Integer, comment="关联的需求 (Story) ID")
-    title = Column(String(500))
-    type = Column(String(50))
-    status = Column(String(20))
-    opened_by = Column(String(100))
-    opened_by_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    opened_date = Column(DateTime)
-    last_run_result = Column(String(20))
-    is_automated = Column(Boolean, default=False)
-    automation_type = Column(String(50))
-    script_path = Column(String(500))
-    product = relationship("ZenTaoProduct", back_populates="test_cases")
-    results = relationship("ZenTaoTestResult", back_populates="test_case", cascade="all, delete-orphan")
-    raw_data = Column(JSON)
+    id: Mapped[int_pk]
+    product_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("zentao_products.id"), nullable=False)
+    story_id: Mapped[int | None] = mapped_column(Integer, comment="关联的需求 (Story) ID")
+    title: Mapped[str | None] = mapped_column(String(500))
+    type: Mapped[str | None] = mapped_column(String(50))
+    status: Mapped[str | None] = mapped_column(String(20))
+    opened_by: Mapped[str | None] = mapped_column(String(100))
+    opened_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    opened_date: Mapped[datetime | None] = mapped_column(DateTime)
+    last_run_result: Mapped[str | None] = mapped_column(String(20))
+    is_automated: Mapped[bool] = mapped_column(Boolean, default=False)
+    automation_type: Mapped[str | None] = mapped_column(String(50))
+    script_path: Mapped[str | None] = mapped_column(String(500))
+    product: Mapped["ZenTaoProduct | None"] = relationship("ZenTaoProduct", back_populates="test_cases")  # noqa: F821
+    results: Mapped[list["ZenTaoTestResult"]] = relationship("ZenTaoTestResult", back_populates="test_case", cascade="all, delete-orphan")  # noqa: F821
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
-    promoted_at = Column(DateTime(timezone=True), nullable=True, comment="上架到主数据的时间")
+    promoted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="上架到主数据的时间")
 
     def __repr__(self) -> str:
         """返回测试用例的字符串表示。"""
@@ -231,14 +237,14 @@ class ZenTaoTestResult(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "zentao_test_results"
-    id = Column(Integer, primary_key=True)
-    case_id = Column(Integer, ForeignKey("zentao_test_cases.id"), nullable=False)
-    build_id = Column(Integer, nullable=True)
-    result = Column(String(20))
-    date = Column(DateTime)
-    last_run_by = Column(String(100))
-    test_case = relationship("ZenTaoTestCase", back_populates="results")
-    raw_data = Column(JSON)
+    id: Mapped[int_pk]
+    case_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("zentao_test_cases.id"), nullable=False)
+    build_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    result: Mapped[str | None] = mapped_column(String(20))
+    date: Mapped[datetime | None] = mapped_column(DateTime)
+    last_run_by: Mapped[str | None] = mapped_column(String(100))
+    test_case: Mapped["ZenTaoTestCase | None"] = relationship("ZenTaoTestCase", back_populates="results")  # noqa: F821
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
     def __repr__(self) -> str:
         """返回测试结果的字符串表示。"""
@@ -257,17 +263,17 @@ class ZenTaoBuild(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "zentao_builds"
-    id = Column(Integer, primary_key=True)
-    product_id = Column(Integer, ForeignKey("zentao_products.id"), nullable=False)
-    execution_id = Column(Integer, ForeignKey("zentao_executions.id"), nullable=True)
-    name = Column(String(255))
-    builder = Column(String(100))
-    builder_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    date = Column(DateTime)
-    product = relationship("ZenTaoProduct", back_populates="builds")
-    raw_data = Column(JSON)
+    id: Mapped[int_pk]
+    product_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("zentao_products.id"), nullable=False)
+    execution_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("zentao_executions.id"), nullable=True)
+    name: Mapped[str | None] = mapped_column(String(255))
+    builder: Mapped[str | None] = mapped_column(String(100))
+    builder_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    date: Mapped[datetime | None] = mapped_column(DateTime)
+    product: Mapped["ZenTaoProduct | None"] = relationship("ZenTaoProduct", back_populates="builds")  # noqa: F821
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
-    promoted_at = Column(DateTime(timezone=True), nullable=True, comment="上架到主数据的时间")
+    promoted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="上架到主数据的时间")
 
     def __repr__(self) -> str:
         """返回构建版本的字符串表示。"""
@@ -287,19 +293,19 @@ class ZenTaoRelease(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "zentao_releases"
-    id = Column(Integer, primary_key=True)
-    product_id = Column(Integer, ForeignKey("zentao_products.id"), nullable=False)
-    build_id = Column(Integer, ForeignKey("zentao_builds.id"), nullable=True)
-    plan_id = Column(Integer, ForeignKey("zentao_product_plans.id"), nullable=True, comment="自动探测关联的产品计划 ID")
-    name = Column(String(255))
-    date = Column(DateTime)
-    status = Column(String(50))
-    opened_by = Column(String(100))
-    opened_by_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    product = relationship("ZenTaoProduct", back_populates="releases")
-    raw_data = Column(JSON)
+    id: Mapped[int_pk]
+    product_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("zentao_products.id"), nullable=False)
+    build_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("zentao_builds.id"), nullable=True)
+    plan_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("zentao_product_plans.id"), nullable=True, comment="自动探测关联的产品计划 ID")
+    name: Mapped[str | None] = mapped_column(String(255))
+    date: Mapped[datetime | None] = mapped_column(DateTime)
+    status: Mapped[str | None] = mapped_column(String(50))
+    opened_by: Mapped[str | None] = mapped_column(String(100))
+    opened_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    product: Mapped["ZenTaoProduct | None"] = relationship("ZenTaoProduct", back_populates="releases")  # noqa: F821
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
-    promoted_at = Column(DateTime(timezone=True), nullable=True, comment="上架到主数据的时间")
+    promoted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="上架到主数据的时间")
 
     def __repr__(self) -> str:
         """返回发布记录的字符串表示。"""
@@ -319,19 +325,19 @@ class ZenTaoAction(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "zentao_actions"
-    id = Column(Integer, primary_key=True)
-    product_id = Column(Integer, ForeignKey("zentao_products.id"), nullable=False)
-    object_type = Column(String(50))
-    object_id = Column(Integer)
-    actor = Column(String(100))
-    actor_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    action = Column(String(100))
-    date = Column(DateTime, index=True)
-    comment = Column(Text)
-    product = relationship("ZenTaoProduct", back_populates="actions")
-    raw_data = Column(JSON)
+    id: Mapped[int_pk]
+    product_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("zentao_products.id"), nullable=False)
+    object_type: Mapped[str | None] = mapped_column(String(50))
+    object_id: Mapped[int | None] = mapped_column(Integer)
+    actor: Mapped[str | None] = mapped_column(String(100))
+    actor_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    action: Mapped[str | None] = mapped_column(String(100))
+    date: Mapped[datetime | None] = mapped_column(DateTime, index=True)
+    comment: Mapped[str | None] = mapped_column(Text)
+    product: Mapped["ZenTaoProduct | None"] = relationship("ZenTaoProduct", back_populates="actions")  # noqa: F821
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
-    promoted_at = Column(DateTime(timezone=True), nullable=True, comment="上架到主数据的时间")
+    promoted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="上架到主数据的时间")
 
     def __repr__(self) -> str:
         """返回操作日志的字符串表示。"""

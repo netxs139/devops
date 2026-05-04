@@ -56,7 +56,7 @@ class AdminService:
         self.session = session
         self.org_service = OrganizationService(session)
 
-    def get_user_full_profile(self, user_id: uuid.UUID) -> schemas.UserFullProfile:
+    def get_user_full_profile(self, user_id: uuid.UUID) -> schemas.UserFullProfile | None:
         """获取用户全景画像。"""
         user = self.session.query(User).filter(User.global_user_id == user_id).first()
         if not user:
@@ -82,9 +82,9 @@ class AdminService:
 
         return schemas.UserFullProfile(
             global_user_id=user.global_user_id,
-            full_name=user.full_name,
+            full_name=user.full_name or "Unknown",
             username=user.username,
-            primary_email=user.primary_email,
+            primary_email=user.primary_email or "Unknown",
             employee_id=user.employee_id,
             department_name=user.department.org_name if user.department else None,
             is_active=user.is_active,
@@ -126,7 +126,7 @@ class AdminService:
         self.session.commit()
         return True
 
-    def update_identity_mapping_status(self, mapping_id: int, status: str) -> str:
+    def update_identity_mapping_status(self, mapping_id: int, status: str) -> str | None:
         """更新身份映射的状态。"""
         mapping = self.session.query(IdentityMapping).filter(IdentityMapping.id == mapping_id).first()
         if not mapping:
@@ -158,8 +158,8 @@ class AdminService:
         """添加团队成员。"""
         existing = self.session.query(TeamMember).filter(TeamMember.team_id == team_id, TeamMember.user_id == data.user_id).first()
         if existing:
-            existing.role_code = data.role_code
-            existing.allocation_ratio = data.allocation_ratio
+            existing.role_code = data.role_code or "MEMBER"
+            existing.allocation_ratio = data.allocation_ratio or 1.0
         else:
             new_member = TeamMember(team_id=team_id, user_id=data.user_id, role_code=data.role_code, allocation_ratio=data.allocation_ratio)
             self.session.add(new_member)
@@ -347,7 +347,7 @@ class AdminService:
         writer = csv.writer(output)
         writer.writerow(["org_code", "org_name", "org_level", "parent_org_id", "负责人"])
         for o in orgs:
-            writer.writerow([o.org_code, o.org_name, o.org_level, o.parent_org_id, o.manager.full_name if o.manager else ""])
+            writer.writerow([o.org_code, o.org_name, o.org_level, o.parent_id, o.manager.full_name if o.manager else ""])
 
         return output.getvalue()
 
@@ -378,7 +378,7 @@ class AdminService:
                 if user:
                     user.full_name = name
                     user.primary_email = email
-                    user.department_id = dept_id
+                    user.department_id = int(dept_id) if dept_id else None
                     user.hr_relationship = hr_rel
                     user.updated_at = datetime.now(UTC)
                 else:
@@ -510,7 +510,7 @@ class AdminService:
                     if phase == 1:
                         # 基础信息 Upsert
                         pm_email = row.get("pm_email")
-                        pm_uid = user_map.get(pm_email).global_user_id if pm_email and pm_email in user_map else None
+                        pm_uid = user_map[pm_email].global_user_id if pm_email and pm_email in user_map else None
 
                         if not product:
                             product = Product(product_code=pid)
@@ -520,7 +520,7 @@ class AdminService:
                         product.node_type = row.get("node_type", "APP")
                         product.category = row.get("category")
                         product.version_schema = row.get("version_schema", "SemVer")
-                        product.owner_team_id = row.get("owner_team_id")
+                        product.owner_team_id = int(str(row.get("owner_team_id"))) if row.get("owner_team_id") else None
                         product.product_manager_id = pm_uid
                         product.updated_at = datetime.now(UTC)
 
@@ -530,7 +530,7 @@ class AdminService:
                         if parent_id:
                             # 校验父节点是否存在
                             if self.session.query(Product).filter(Product.product_code == parent_id).count() > 0:
-                                product.parent_product_id = parent_id
+                                product.parent_product_id = int(parent_id) if parent_id else None
 
                 except Exception as e:
                     if phase == 1:
@@ -606,7 +606,7 @@ class AdminService:
 
                 rel.relation_type = row.get("relation_type", "PRIMARY")
                 rel.allocation_ratio = float(row.get("allocation_ratio", 1.0))
-                rel.org_id = project.org_id  # 继承项目组织
+                rel.org_id = project.org_id or 0  # 继承项目组织
 
                 summary.success_count += 1
             except Exception as e:

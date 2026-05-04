@@ -1,3 +1,7 @@
+import uuid
+from datetime import datetime
+
+
 """Jira 数据模型
 
 定义 Jira 相关的 SQLAlchemy ORM 模型，包括项目、看板、Sprint 和 Issue。
@@ -6,7 +10,6 @@
 from sqlalchemy import (
     JSON,
     BigInteger,
-    Column,
     DateTime,
     ForeignKey,
     Integer,
@@ -14,9 +17,9 @@ from sqlalchemy import (
     Text,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin
+from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin, int_pk, json_dict
 
 
 class JiraProject(Base, TimestampMixin, TraceabilityMixin):
@@ -36,18 +39,18 @@ class JiraProject(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "jira_projects"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    key = Column(String(50), unique=True, nullable=False)
-    name = Column(String(255), nullable=False)
-    description = Column(Text)
-    lead_name = Column(String(255))
-    gitlab_project_id = Column(Integer, ForeignKey("gitlab_projects.id"), nullable=True)
-    gitlab_project = relationship("GitLabProject", back_populates="jira_projects")
-    last_synced_at = Column(DateTime(timezone=True))
-    sync_status = Column(String(20), default="PENDING")
-    raw_data = Column(JSON)
-    boards = relationship("JiraBoard", back_populates="project", cascade="all, delete-orphan")
-    issues = relationship("JiraIssue", back_populates="project", cascade="all, delete-orphan")
+    id: Mapped[int_pk]
+    key: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=False)
+    name: Mapped[str | None] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    lead_name: Mapped[str | None] = mapped_column(String(255))
+    gitlab_project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_projects.id"), nullable=True)
+    gitlab_project: Mapped["GitLabProject | None"] = relationship("GitLabProject", back_populates="jira_projects")  # noqa: F821
+    last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    sync_status: Mapped[str | None] = mapped_column(String(20), default="PENDING")
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
+    boards: Mapped[list["JiraBoard"]] = relationship("JiraBoard", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
+    issues: Mapped[list["JiraIssue"]] = relationship("JiraIssue", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
@@ -77,13 +80,13 @@ class JiraBoard(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "jira_boards"
-    id = Column(Integer, primary_key=True)
-    project_id = Column(Integer, ForeignKey("jira_projects.id"), nullable=False)
-    name = Column(String(255))
-    type = Column(String(50))
-    project = relationship("JiraProject", back_populates="boards")
-    sprints = relationship("JiraSprint", back_populates="board", cascade="all, delete-orphan")
-    raw_data = Column(JSON)
+    id: Mapped[int_pk]
+    project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("jira_projects.id"), nullable=False)
+    name: Mapped[str | None] = mapped_column(String(255))
+    type: Mapped[str | None] = mapped_column(String(50))
+    project: Mapped["JiraProject | None"] = relationship("JiraProject", back_populates="boards")  # noqa: F821
+    sprints: Mapped[list["JiraSprint"]] = relationship("JiraSprint", back_populates="board", cascade="all, delete-orphan")  # noqa: F821
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
@@ -116,16 +119,16 @@ class JiraSprint(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "jira_sprints"
-    id = Column(Integer, primary_key=True)
-    board_id = Column(Integer, ForeignKey("jira_boards.id"), nullable=False)
-    name = Column(String(255))
-    state = Column(String(20))
-    start_date = Column(DateTime(timezone=True))
-    end_date = Column(DateTime(timezone=True))
-    complete_date = Column(DateTime(timezone=True))
-    board = relationship("JiraBoard", back_populates="sprints")
-    issues = relationship("JiraIssue", back_populates="sprint")
-    raw_data = Column(JSON)
+    id: Mapped[int_pk]
+    board_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("jira_boards.id"), nullable=False)
+    name: Mapped[str | None] = mapped_column(String(255))
+    state: Mapped[str | None] = mapped_column(String(20))
+    start_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    end_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    complete_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    board: Mapped["JiraBoard | None"] = relationship("JiraBoard", back_populates="sprints")  # noqa: F821
+    issues: Mapped[list["JiraIssue"]] = relationship("JiraIssue", back_populates="sprint")  # noqa: F821
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
@@ -167,36 +170,36 @@ class JiraIssue(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "jira_issues"
-    id = Column(Integer, primary_key=True)
-    key = Column(String(50), unique=True, nullable=False)
-    project_id = Column(Integer, ForeignKey("jira_projects.id"), nullable=False)
-    sprint_id = Column(Integer, ForeignKey("jira_sprints.id"), nullable=True)
-    summary = Column(String(500))
-    description = Column(Text)
-    status = Column(String(50))
-    priority = Column(String(50))
-    issue_type = Column(String(50))
-    assignee_name = Column(String(255))
-    reporter_name = Column(String(255))
-    creator_name = Column(String(255))
-    assignee_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    reporter_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    creator_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    resolved_at = Column(DateTime(timezone=True))
-    raw_data = Column(JSON)
-    first_commit_sha = Column(String(100))
-    first_fix_date = Column(DateTime(timezone=True))
-    reopening_count = Column(Integer, default=0)
-    time_to_first_response = Column(BigInteger)
-    original_estimate = Column(BigInteger)
-    time_spent = Column(BigInteger)
-    remaining_estimate = Column(BigInteger)
-    labels = Column(JSON)
-    fix_versions = Column(JSON)
-    project = relationship("JiraProject", back_populates="issues")
-    history = relationship("JiraIssueHistory", back_populates="issue", cascade="all, delete-orphan")
-    sprint = relationship("JiraSprint", back_populates="issues")
+    id: Mapped[int_pk]
+    key: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=False)
+    project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("jira_projects.id"), nullable=False)
+    sprint_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("jira_sprints.id"), nullable=True)
+    summary: Mapped[str | None] = mapped_column(String(500))
+    description: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str | None] = mapped_column(String(50))
+    priority: Mapped[str | None] = mapped_column(String(50))
+    issue_type: Mapped[str | None] = mapped_column(String(50))
+    assignee_name: Mapped[str | None] = mapped_column(String(255))
+    reporter_name: Mapped[str | None] = mapped_column(String(255))
+    creator_name: Mapped[str | None] = mapped_column(String(255))
+    assignee_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    reporter_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    creator_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
+    first_commit_sha: Mapped[str | None] = mapped_column(String(100))
+    first_fix_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reopening_count: Mapped[int | None] = mapped_column(Integer, default=0)
+    time_to_first_response: Mapped[int | None] = mapped_column(BigInteger)
+    original_estimate: Mapped[int | None] = mapped_column(BigInteger)
+    time_spent: Mapped[int | None] = mapped_column(BigInteger)
+    remaining_estimate: Mapped[int | None] = mapped_column(BigInteger)
+    labels: Mapped[json_dict | None] = mapped_column(JSON)
+    fix_versions: Mapped[json_dict | None] = mapped_column(JSON)
+    project: Mapped["JiraProject | None"] = relationship("JiraProject", back_populates="issues")  # noqa: F821
+    history: Mapped[list["JiraIssueHistory"]] = relationship("JiraIssueHistory", back_populates="issue", cascade="all, delete-orphan")  # noqa: F821
+    sprint: Mapped["JiraSprint | None"] = relationship("JiraSprint", back_populates="issues")  # noqa: F821
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
@@ -226,14 +229,14 @@ class JiraIssueHistory(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "jira_issue_histories"
-    id = Column(String(50), primary_key=True)
-    issue_id = Column(Integer, ForeignKey("jira_issues.id"), nullable=False)
-    author_name = Column(String(100))
-    field = Column(String(100))
-    from_string = Column(Text)
-    to_string = Column(Text)
-    issue = relationship("JiraIssue", back_populates="history")
-    raw_data = Column(JSON)
+    id: Mapped[str] = mapped_column(primary_key=True)
+    issue_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("jira_issues.id"), nullable=False)
+    author_name: Mapped[str | None] = mapped_column(String(100))
+    field: Mapped[str | None] = mapped_column(String(100))
+    from_string: Mapped[str | None] = mapped_column(Text)
+    to_string: Mapped[str | None] = mapped_column(Text)
+    issue: Mapped["JiraIssue | None"] = relationship("JiraIssue", back_populates="history")  # noqa: F821
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
