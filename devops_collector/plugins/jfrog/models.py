@@ -1,10 +1,14 @@
+import uuid
+from datetime import datetime
+
+
 """TODO: Add module description."""
 
-from sqlalchemy import JSON, BigInteger, Column, DateTime, Float, ForeignKey, Integer, String, and_
+from sqlalchemy import JSON, BigInteger, DateTime, Float, ForeignKey, Integer, String, and_
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin, User
+from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin, User, int_pk, json_dict
 
 
 class JFrogArtifact(Base, TimestampMixin, TraceabilityMixin):
@@ -40,35 +44,35 @@ class JFrogArtifact(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "jfrog_artifacts"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    repo = Column(String(100), nullable=False)
-    path = Column(String(500), nullable=False)
-    name = Column(String(200), nullable=False)
-    version = Column(String(100))
-    package_type = Column(String(50))
-    size_bytes = Column(BigInteger)
-    sha256 = Column(String(64))
-    download_count = Column(Integer, default=0)
-    last_downloaded_at = Column(DateTime(timezone=True))
-    build_name = Column(String(200))
-    build_number = Column(String(50))
-    build_url = Column(String(500))
-    vcs_url = Column(String(500))
-    vcs_revision = Column(String(100))
-    builder_id = Column(String(200))
-    build_type = Column(String(100))
-    is_signed = Column(Integer, default=0)
-    external_parameters = Column(JSON)
-    build_started_at = Column(DateTime(timezone=True))
-    build_ended_at = Column(DateTime(timezone=True))
-    promotion_status = Column(String(50))
-    properties = Column(JSON)
-    created_by_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
-    created_by_name = Column(String(100))
-    product_id = Column(Integer, ForeignKey("mdm_products.id"))
-    created_by = relationship("User", primaryjoin=and_(User.global_user_id == created_by_id, User.is_current.is_(True)))
-    product = relationship("Product")
-    raw_data = Column(JSON)
+    id: Mapped[int_pk]
+    repo: Mapped[str | None] = mapped_column(String(100), nullable=False)
+    path: Mapped[str | None] = mapped_column(String(500), nullable=False)
+    name: Mapped[str | None] = mapped_column(String(200), nullable=False)
+    version: Mapped[str | None] = mapped_column(String(100))
+    package_type: Mapped[str | None] = mapped_column(String(50))
+    size_bytes: Mapped[int | None] = mapped_column(BigInteger)
+    sha256: Mapped[str | None] = mapped_column(String(64))
+    download_count: Mapped[int | None] = mapped_column(Integer, default=0)
+    last_downloaded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    build_name: Mapped[str | None] = mapped_column(String(200))
+    build_number: Mapped[str | None] = mapped_column(String(50))
+    build_url: Mapped[str | None] = mapped_column(String(500))
+    vcs_url: Mapped[str | None] = mapped_column(String(500))
+    vcs_revision: Mapped[str | None] = mapped_column(String(100))
+    builder_id: Mapped[str | None] = mapped_column(String(200))
+    build_type: Mapped[str | None] = mapped_column(String(100))
+    is_signed: Mapped[int | None] = mapped_column(Integer, default=0)
+    external_parameters: Mapped[json_dict | None] = mapped_column(JSON)
+    build_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    build_ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    promotion_status: Mapped[str | None] = mapped_column(String(50))
+    properties: Mapped[json_dict | None] = mapped_column(JSON)
+    created_by_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
+    created_by_name: Mapped[str | None] = mapped_column(String(100))
+    product_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("mdm_products.id"))
+    created_by: Mapped["User | None"] = relationship("User", primaryjoin=and_(User.global_user_id == created_by_id, User.is_current.is_(True)))  # noqa: F821
+    product: Mapped["Product | None"] = relationship("Product")  # noqa: F821
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
@@ -102,17 +106,17 @@ class JFrogScan(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "jfrog_scans"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    artifact_id = Column(Integer, ForeignKey("jfrog_artifacts.id"))
-    critical_count = Column(Integer, default=0)
-    high_count = Column(Integer, default=0)
-    medium_count = Column(Integer, default=0)
-    low_count = Column(Integer, default=0)
-    violation_count = Column(Integer, default=0)
-    is_compliant = Column(Integer)
-    scan_time = Column(DateTime(timezone=True))
-    raw_data = Column(JSON)
-    artifact = relationship("JFrogArtifact")
+    id: Mapped[int_pk]
+    artifact_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("jfrog_artifacts.id"))
+    critical_count: Mapped[int | None] = mapped_column(Integer, default=0)
+    high_count: Mapped[int | None] = mapped_column(Integer, default=0)
+    medium_count: Mapped[int | None] = mapped_column(Integer, default=0)
+    low_count: Mapped[int | None] = mapped_column(Integer, default=0)
+    violation_count: Mapped[int | None] = mapped_column(Integer, default=0)
+    is_compliant: Mapped[int | None] = mapped_column(Integer)
+    scan_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
+    artifact: Mapped["JFrogArtifact | None"] = relationship("JFrogArtifact")  # noqa: F821
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
@@ -144,15 +148,15 @@ class JFrogVulnerabilityDetail(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "jfrog_vulnerability_details"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    artifact_id = Column(Integer, ForeignKey("jfrog_artifacts.id"))
-    cve_id = Column(String(50), index=True)
-    severity = Column(String(20))
-    cvss_score = Column(Float)
-    component = Column(String(200))
-    fixed_version = Column(String(100))
-    description = Column(String)
-    artifact = relationship("JFrogArtifact")
+    id: Mapped[int_pk]
+    artifact_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("jfrog_artifacts.id"))
+    cve_id: Mapped[str | None] = mapped_column(String(50), index=True)
+    severity: Mapped[str | None] = mapped_column(String(20))
+    cvss_score: Mapped[float | None] = mapped_column(Float)
+    component: Mapped[str | None] = mapped_column(String(200))
+    fixed_version: Mapped[str | None] = mapped_column(String(100))
+    description: Mapped[str | None] = mapped_column(String)
+    artifact: Mapped["JFrogArtifact | None"] = relationship("JFrogArtifact")  # noqa: F821
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
@@ -182,13 +186,13 @@ class JFrogDependency(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "jfrog_dependencies"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    artifact_id = Column(Integer, ForeignKey("jfrog_artifacts.id"))
-    name = Column(String(200), nullable=False)
-    version = Column(String(100))
-    package_type = Column(String(50))
-    scope = Column(String(50))
-    artifact = relationship("JFrogArtifact")
+    id: Mapped[int_pk]
+    artifact_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("jfrog_artifacts.id"))
+    name: Mapped[str | None] = mapped_column(String(200), nullable=False)
+    version: Mapped[str | None] = mapped_column(String(100))
+    package_type: Mapped[str | None] = mapped_column(String(50))
+    scope: Mapped[str | None] = mapped_column(String(50))
+    artifact: Mapped["JFrogArtifact | None"] = relationship("JFrogArtifact")  # noqa: F821
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.

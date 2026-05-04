@@ -173,9 +173,6 @@ module = [
     "devops_collector.auth.*",
     "devops_collector.plugins.*",
     "devops_collector.alembic.*",
-    "devops_collector.core.promotion_service",
-    "devops_collector.scheduler",
-    "devops_collector.core.admin_service",
 ]
 ignore_errors = true
 

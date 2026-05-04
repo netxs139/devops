@@ -71,20 +71,20 @@ class PromotionService:
                     metrics = CommitMetrics(commit_sha=gc.id)
 
                 metrics.project_id = mdm_project_id
-                metrics.author_email = gc.author_email
+                metrics.author_email = gc.author_email or "Unknown"
                 metrics.author_user_id = user.global_user_id if user else None
-                metrics.committed_at = gc.committed_date
-                metrics.raw_additions = gc.additions
-                metrics.raw_deletions = gc.deletions
+                metrics.committed_at = gc.committed_date or datetime.now(UTC)
+                metrics.raw_additions = gc.additions or 0
+                metrics.raw_deletions = gc.deletions or 0
 
                 # 复制插件层计算出的高级指标
-                metrics.eloc_score = gc.eloc_score
-                metrics.impact_score = gc.impact_score
-                metrics.churn_lines = gc.churn_lines
-                metrics.comment_lines = gc.comment_lines
-                metrics.test_lines = gc.test_lines
-                metrics.file_count = gc.file_count
-                metrics.refactor_ratio = gc.refactor_ratio
+                metrics.eloc_score = gc.eloc_score or 0.0
+                metrics.impact_score = gc.impact_score or 0.0
+                metrics.churn_lines = gc.churn_lines or 0
+                metrics.comment_lines = gc.comment_lines or 0
+                metrics.test_lines = gc.test_lines or 0
+                metrics.file_count = gc.file_count or 0
+                metrics.refactor_ratio = gc.refactor_ratio or 0.0
 
                 session.add(metrics)
 

@@ -1,14 +1,18 @@
+import uuid
+from datetime import datetime
+
+
 """SonarQube 数据模型
 
 定义 SonarQube 相关的 SQLAlchemy ORM 模型。
 """
 
-from sqlalchemy import JSON, Column, DateTime, Float, ForeignKey, Integer, String, Text, and_, desc
+from sqlalchemy import JSON, DateTime, Float, ForeignKey, Integer, String, Text, and_, desc
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin
+from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin, int_pk, json_dict
 
 
 class SonarProject(Base, TimestampMixin, TraceabilityMixin):
@@ -30,21 +34,21 @@ class SonarProject(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "sonar_projects"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    key = Column(String(500), unique=True, nullable=False)
-    name = Column(String(255))
-    qualifier = Column(String(10))
-    gitlab_project_id = Column(Integer, ForeignKey("gitlab_projects.id"), nullable=True)
+    id: Mapped[int_pk]
+    key: Mapped[str | None] = mapped_column(String(500), unique=True, nullable=False)
+    name: Mapped[str | None] = mapped_column(String(255))
+    qualifier: Mapped[str | None] = mapped_column(String(10))
+    gitlab_project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_projects.id"), nullable=True)
     # MDM 拓扑关联
-    mdm_project_id = Column(Integer, ForeignKey("mdm_projects.id"), nullable=True, comment="关联的 MDM 项目 ID")
-    mdm_product_id = Column(Integer, ForeignKey("mdm_products.id"), nullable=True, comment="关联的 MDM 产品 ID")
+    mdm_project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("mdm_projects.id"), nullable=True, comment="关联的 MDM 项目 ID")
+    mdm_product_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("mdm_products.id"), nullable=True, comment="关联的 MDM 产品 ID")
 
-    last_analysis_date = Column(DateTime(timezone=True))
-    last_synced_at = Column(DateTime(timezone=True))
-    sync_status = Column(String(20), default="PENDING")
-    gitlab_project = relationship("GitLabProject", back_populates="sonar_projects")
-    measures = relationship("SonarMeasure", back_populates="project", cascade="all, delete-orphan")
-    issues = relationship("SonarIssue", back_populates="project", cascade="all, delete-orphan")
+    last_analysis_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    sync_status: Mapped[str | None] = mapped_column(String(20), default="PENDING")
+    gitlab_project: Mapped["GitLabProject | None"] = relationship("GitLabProject", back_populates="sonar_projects")  # noqa: F821
+    measures: Mapped[list["SonarMeasure"]] = relationship("SonarMeasure", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
+    issues: Mapped[list["SonarIssue"]] = relationship("SonarIssue", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
     latest_measure = relationship(
         "SonarMeasure",
         primaryjoin=lambda: and_(SonarProject.id == SonarMeasure.project_id),
@@ -160,51 +164,51 @@ class SonarMeasure(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "sonar_measures"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    project_id = Column(Integer, ForeignKey("sonar_projects.id"), nullable=False)
-    analysis_date = Column(DateTime(timezone=True), nullable=False)
-    files = Column(Integer)
-    lines = Column(Integer)
-    ncloc = Column(Integer)
-    classes = Column(Integer)
-    functions = Column(Integer)
-    statements = Column(Integer)
-    coverage = Column(Float)
-    bugs = Column(Integer)
-    bugs_blocker = Column(Integer, default=0)
-    bugs_critical = Column(Integer, default=0)
-    bugs_major = Column(Integer, default=0)
-    bugs_minor = Column(Integer, default=0)
-    bugs_info = Column(Integer, default=0)
-    vulnerabilities = Column(Integer)
-    vulnerabilities_blocker = Column(Integer, default=0)
-    vulnerabilities_critical = Column(Integer, default=0)
-    vulnerabilities_major = Column(Integer, default=0)
-    vulnerabilities_minor = Column(Integer, default=0)
-    vulnerabilities_info = Column(Integer, default=0)
-    security_hotspots = Column(Integer)
-    security_hotspots_high = Column(Integer, default=0)
-    security_hotspots_medium = Column(Integer, default=0)
-    security_hotspots_low = Column(Integer, default=0)
-    code_smells = Column(Integer)
-    comment_lines_density = Column(Float)
-    duplicated_lines_density = Column(Float)
-    sqale_index = Column(Integer)
-    sqale_debt_ratio = Column(Float)
-    complexity = Column(Integer)
-    cognitive_complexity = Column(Integer)
-    reliability_rating = Column(String(1))
-    security_rating = Column(String(1))
-    sqale_rating = Column(String(1))
+    id: Mapped[int_pk]
+    project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("sonar_projects.id"), nullable=False)
+    analysis_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=False)
+    files: Mapped[int | None] = mapped_column(Integer)
+    lines: Mapped[int | None] = mapped_column(Integer)
+    ncloc: Mapped[int | None] = mapped_column(Integer)
+    classes: Mapped[int | None] = mapped_column(Integer)
+    functions: Mapped[int | None] = mapped_column(Integer)
+    statements: Mapped[int | None] = mapped_column(Integer)
+    coverage: Mapped[float | None] = mapped_column(Float)
+    bugs: Mapped[int | None] = mapped_column(Integer)
+    bugs_blocker: Mapped[int | None] = mapped_column(Integer, default=0)
+    bugs_critical: Mapped[int | None] = mapped_column(Integer, default=0)
+    bugs_major: Mapped[int | None] = mapped_column(Integer, default=0)
+    bugs_minor: Mapped[int | None] = mapped_column(Integer, default=0)
+    bugs_info: Mapped[int | None] = mapped_column(Integer, default=0)
+    vulnerabilities: Mapped[int | None] = mapped_column(Integer)
+    vulnerabilities_blocker: Mapped[int | None] = mapped_column(Integer, default=0)
+    vulnerabilities_critical: Mapped[int | None] = mapped_column(Integer, default=0)
+    vulnerabilities_major: Mapped[int | None] = mapped_column(Integer, default=0)
+    vulnerabilities_minor: Mapped[int | None] = mapped_column(Integer, default=0)
+    vulnerabilities_info: Mapped[int | None] = mapped_column(Integer, default=0)
+    security_hotspots: Mapped[int | None] = mapped_column(Integer)
+    security_hotspots_high: Mapped[int | None] = mapped_column(Integer, default=0)
+    security_hotspots_medium: Mapped[int | None] = mapped_column(Integer, default=0)
+    security_hotspots_low: Mapped[int | None] = mapped_column(Integer, default=0)
+    code_smells: Mapped[int | None] = mapped_column(Integer)
+    comment_lines_density: Mapped[float | None] = mapped_column(Float)
+    duplicated_lines_density: Mapped[float | None] = mapped_column(Float)
+    sqale_index: Mapped[int | None] = mapped_column(Integer)
+    sqale_debt_ratio: Mapped[float | None] = mapped_column(Float)
+    complexity: Mapped[int | None] = mapped_column(Integer)
+    cognitive_complexity: Mapped[int | None] = mapped_column(Integer)
+    reliability_rating: Mapped[str | None] = mapped_column(String(1))
+    security_rating: Mapped[str | None] = mapped_column(String(1))
+    sqale_rating: Mapped[str | None] = mapped_column(String(1))
 
     # --- 增量代码 (New Code) 指标，用于流水线质量门禁 ---
-    new_coverage = Column(Float, comment="新增代码覆盖率")
-    new_bugs = Column(Integer, comment="新增 Bug 数")
-    new_vulnerabilities = Column(Integer, comment="新增漏洞数")
-    new_reliability_rating = Column(String(1), comment="新增可靠性评级")
-    new_security_rating = Column(String(1), comment="新增安全性评级")
-    quality_gate_status = Column(String(10))
-    project = relationship("SonarProject", back_populates="measures")
+    new_coverage: Mapped[float | None] = mapped_column(Float, comment="新增代码覆盖率")
+    new_bugs: Mapped[int | None] = mapped_column(Integer, comment="新增 Bug 数")
+    new_vulnerabilities: Mapped[int | None] = mapped_column(Integer, comment="新增漏洞数")
+    new_reliability_rating: Mapped[str | None] = mapped_column(String(1), comment="新增可靠性评级")
+    new_security_rating: Mapped[str | None] = mapped_column(String(1), comment="新增安全性评级")
+    quality_gate_status: Mapped[str | None] = mapped_column(String(10))
+    project: Mapped["SonarProject | None"] = relationship("SonarProject", back_populates="measures")  # noqa: F821
 
     @hybrid_property
     def dev_cost(self) -> int:
@@ -262,28 +266,28 @@ class SonarIssue(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "sonar_issues"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    issue_key = Column(String(50), unique=True, nullable=False)
-    project_id = Column(Integer, ForeignKey("sonar_projects.id"), nullable=False)
-    type = Column(String(20))
-    severity = Column(String(20))
-    status = Column(String(20))
-    resolution = Column(String(20))
-    rule = Column(String(200))
-    message = Column(Text)
-    component = Column(String(500))
-    line = Column(Integer)
-    effort = Column(String(20))
-    debt = Column(String(20))
-    creation_date = Column(DateTime(timezone=True))
-    update_date = Column(DateTime(timezone=True))
-    close_date = Column(DateTime(timezone=True))
-    assignee = Column(String(100))
-    author = Column(String(100))
-    assignee_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    author_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    raw_data = Column(JSON)
-    project = relationship("SonarProject", back_populates="issues")
+    id: Mapped[int_pk]
+    issue_key: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=False)
+    project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("sonar_projects.id"), nullable=False)
+    type: Mapped[str | None] = mapped_column(String(20))
+    severity: Mapped[str | None] = mapped_column(String(20))
+    status: Mapped[str | None] = mapped_column(String(20))
+    resolution: Mapped[str | None] = mapped_column(String(20))
+    rule: Mapped[str | None] = mapped_column(String(200))
+    message: Mapped[str | None] = mapped_column(Text)
+    component: Mapped[str | None] = mapped_column(String(500))
+    line: Mapped[int | None] = mapped_column(Integer)
+    effort: Mapped[str | None] = mapped_column(String(20))
+    debt: Mapped[str | None] = mapped_column(String(20))
+    creation_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    update_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    close_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    assignee: Mapped[str | None] = mapped_column(String(100))
+    author: Mapped[str | None] = mapped_column(String(100))
+    assignee_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    author_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
+    project: Mapped["SonarProject | None"] = relationship("SonarProject", back_populates="issues")  # noqa: F821
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.

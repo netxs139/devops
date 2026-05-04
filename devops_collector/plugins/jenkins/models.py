@@ -1,3 +1,7 @@
+import uuid
+from datetime import datetime
+
+
 """Jenkins 数据模型
 
 定义 Jenkins 相关的 SQLAlchemy ORM 模型，包括 Job 和 Build 详情。
@@ -15,9 +19,9 @@ from sqlalchemy import (
     Text,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin
+from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin, int_pk, json_dict
 
 
 class JenkinsJob(Base, TimestampMixin, TraceabilityMixin):
@@ -38,13 +42,13 @@ class JenkinsJob(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "jenkins_jobs"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(255), nullable=False)
-    full_name = Column(String(500), unique=True, nullable=False)
-    url = Column(String(500))
-    description = Column(Text)
-    color = Column(String(50))
-    gitlab_project_id = Column(Integer, ForeignKey("gitlab_projects.id"), nullable=True)
+    id: Mapped[int_pk]
+    name: Mapped[str | None] = mapped_column(String(255), nullable=False)
+    full_name: Mapped[str | None] = mapped_column(String(500), unique=True, nullable=False)
+    url: Mapped[str | None] = mapped_column(String(500))
+    description: Mapped[str | None] = mapped_column(Text)
+    color: Mapped[str | None] = mapped_column(String(50))
+    gitlab_project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_projects.id"), nullable=True)
 
     # MDM 拓扑关联与部署属性
     mdm_project_id = Column(
@@ -59,13 +63,13 @@ class JenkinsJob(Base, TimestampMixin, TraceabilityMixin):
         nullable=True,
         comment="关联的 MDM 产品 ID",
     )
-    is_deployment = Column(Boolean, default=False, comment="是否为生产/测试环境部署 Job")
-    deployment_env = Column(String(50), comment="部署环境标识 (prod/test/staging)")
+    is_deployment: Mapped[bool] = mapped_column(Boolean, default=False, comment="是否为生产/测试环境部署 Job")
+    deployment_env: Mapped[str | None] = mapped_column(String(50), comment="部署环境标识 (prod/test/staging)")
 
-    last_synced_at = Column(DateTime(timezone=True))
-    sync_status = Column(String(20), default="PENDING")
-    raw_data = Column(JSON)
-    builds = relationship("JenkinsBuild", back_populates="job", cascade="all, delete-orphan")
+    last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    sync_status: Mapped[str | None] = mapped_column(String(20), default="PENDING")
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
+    builds: Mapped[list["JenkinsBuild"]] = relationship("JenkinsBuild", back_populates="job", cascade="all, delete-orphan")  # noqa: F821
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
@@ -107,25 +111,25 @@ class JenkinsBuild(Base, TimestampMixin, TraceabilityMixin):
     """
 
     __tablename__ = "jenkins_builds"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    job_id = Column(Integer, ForeignKey("jenkins_jobs.id"), nullable=False)
-    number = Column(Integer, nullable=False)
-    queue_id = Column(BigInteger)
-    url = Column(String(500))
-    result = Column(String(20))
-    duration = Column(BigInteger)
-    timestamp = Column(DateTime(timezone=True))
-    building = Column(Boolean, default=False)
-    executor = Column(String(255))
-    trigger_type = Column(String(50))
-    trigger_user = Column(String(100))
-    trigger_user_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    commit_sha = Column(String(100))
-    raw_data = Column(JSON)
-    gitlab_mr_iid = Column(Integer)
-    artifact_id = Column(String(200))
-    artifact_type = Column(String(50))
-    job = relationship("JenkinsJob", back_populates="builds")
+    id: Mapped[int_pk]
+    job_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("jenkins_jobs.id"), nullable=False)
+    number: Mapped[int | None] = mapped_column(Integer, nullable=False)
+    queue_id: Mapped[int | None] = mapped_column(BigInteger)
+    url: Mapped[str | None] = mapped_column(String(500))
+    result: Mapped[str | None] = mapped_column(String(20))
+    duration: Mapped[int | None] = mapped_column(BigInteger)
+    timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    building: Mapped[bool] = mapped_column(Boolean, default=False)
+    executor: Mapped[str | None] = mapped_column(String(255))
+    trigger_type: Mapped[str | None] = mapped_column(String(50))
+    trigger_user: Mapped[str | None] = mapped_column(String(100))
+    trigger_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    commit_sha: Mapped[str | None] = mapped_column(String(100))
+    raw_data: Mapped[json_dict | None] = mapped_column(JSON)
+    gitlab_mr_iid: Mapped[int | None] = mapped_column(Integer)
+    artifact_id: Mapped[str | None] = mapped_column(String(200))
+    artifact_type: Mapped[str | None] = mapped_column(String(50))
+    job: Mapped["JenkinsJob | None"] = relationship("JenkinsJob", back_populates="builds")  # noqa: F821
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
