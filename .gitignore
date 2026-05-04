@@ -108,9 +108,7 @@ profiles.yml
 dbt_project/profiles.yml
 
 # --- SENSITIVE BUSINESS DATA (EXPLICIT) ---
-docs/employees.csv
-docs/gitlab-user.csv
-docs/zentao-user.csv
+assets/
 *.csv
 
 # --- SECURITY GATE REPORTS (V-GATE) ---
