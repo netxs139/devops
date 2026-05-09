@@ -2,6 +2,7 @@
 
 ## 归档批次：2026-05-09 (SSOT & Infrastructure Convergence)
 
+- [Architecture] **API 网关统一入口 (Traefik Integration)**: 彻底消灭裸奔端口，引入 Traefik 统筹 FastAPI 和 Streamlit 流量。完成 Phase 1 & 2 (基础设施织网与中间件装配)，实现基于 Labels 的无侵入路径级路由并消灭了跨域；完成 Phase 3 (集中鉴权与安全加固)，为前端看板挂载 BasicAuth 防火墙，实现了前端认证体系向基础设施层的降维剥离。 (2026-05-09)
 - [Infrastructure] **配置维度收拢 (SSOT Configuration)**: 彻底清除了 `docker-compose.yml`、`docker-compose.prod.yml` 以及 `justfile` 中的硬编码环境变量。确立 `.env.example` 为全局唯一事实源 (SSOT)，实现了前后端、CI/CD 与容器编排的单点配置。 (2026-05-09)
 - [Infrastructure] **环境启动命令收口 (Unified Justfile)**: 完成了 `justfile` 的全面重构，确立了其作为环境管理的绝对权威。引入了 `just dev` 和 `just start` 统一入口，将代码质检（Lint）与镜像构建（Build）物理绑定，并实现了生产/开发环境的透明化调度。 (2026-05-09)
 - [Perf] **Dockerfile 多阶段构建与极致瘦身**: 引入 Builder/Final 双阶段模式，移除编译期依赖，镜像体积缩减约 40%，并优化了层缓存机制以提升 CI 打包速度。 (2026-05-09)
