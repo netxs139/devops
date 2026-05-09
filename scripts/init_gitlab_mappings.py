@@ -1,14 +1,6 @@
 """初始化 GitLab 身份映射 (Identity Mapping) 数据。
 
-本脚本读取 docs/gitlab-user.csv，将 GitLab 用户严格按员工主数据对齐。
-
-对齐策略 (Initial Link):
-    1. Email 精确匹配 (最高优先级) - 置信度 1.0
-    2. 姓名唯一匹配 (降级策略) - 置信度 0.8, 仅在无重名时使用
-    3. 无法匹配则跳过，不创建临时用户
-
-执行方式:
-    python scripts/init_gitlab_mappings.py
+支持 CLI Phase 2 (Deep Integration) 调用。
 """
 
 import csv
@@ -16,39 +8,31 @@ import logging
 import os
 import sys
 from collections import defaultdict
+from pathlib import Path
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
 
 
 # 添加项目根目录到路径
 sys.path.append(os.getcwd())
-
-from devops_collector.config import settings
 from devops_collector.models import IdentityMapping, User
 
 
-# 日志配置
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-logger = logging.getLogger("InitGitLabMapping")
+logger = logging.getLogger(__name__)
 
-CSV_FILE = "docs/gitlab-user.csv"
+# 统一资源路径 (Zero Hardcoding Principle)
+SAMPLE_DATA_DIR = Path(__file__).parent.parent / "docs" / "assets" / "sample_data"
+CSV_FILE = SAMPLE_DATA_DIR / "gitlab-user.csv"
 
 
-def init_gitlab_mappings():
-    """解析 CSV 并创建身份映射，严格按员工主数据 Email 对齐。"""
-    engine = create_engine(settings.database.uri)
-    SessionLocal = sessionmaker(bind=engine)
-    session = SessionLocal()
+def execute_command(session: Session, **kwargs) -> bool:
+    """[Phase 2 改造] 初始化 GitLab 身份映射数据。"""
+    if not CSV_FILE.exists():
+        logger.error(f"找不到 GitLab 用户 CSV 文件: {CSV_FILE}")
+        return False
 
-    # 统计信息
     stats = defaultdict(int)
-
     try:
-        if not os.path.exists(CSV_FILE):
-            logger.error(f"找不到 GitLab 用户 CSV 文件: {CSV_FILE}")
-            return
-
         logger.info("=" * 60)
         logger.info("开始 GitLab 身份映射初始化 (Email 优先策略)")
         logger.info("=" * 60)
@@ -81,53 +65,36 @@ def init_gitlab_mappings():
                 user = None
                 match_method = None
 
-                # ========================================
-                # 策略 1: Email 精确匹配 (最高优先级)
-                # ========================================
+                # 策略 1: Email 精确匹配
                 if email and email in email_index:
                     user = email_index[email]
                     match_method = "EMAIL"
                     stats["matched_by_email"] += 1
 
-                # ========================================
-                # 策略 2: 姓名唯一匹配 (降级策略)
-                # ========================================
+                # 策略 2: 姓名唯一匹配
                 if not user and full_name:
                     candidates = name_index.get(full_name, [])
                     if len(candidates) == 1:
                         user = candidates[0]
                         match_method = "NAME"
                         stats["matched_by_name"] += 1
-                        logger.warning(f"[降级] GitLab用户 '{full_name}' Email({email}) 不在主数据中, 通过姓名唯一匹配到 {user.primary_email}")
                     elif len(candidates) > 1:
                         stats["skipped_duplicate_name"] += 1
-                        logger.error(f"[跳过] GitLab用户 '{full_name}' ({email}) 存在 {len(candidates)} 个重名员工，无法确定映射")
                         continue
 
-                # ========================================
-                # 策略 3: 无法匹配，跳过
-                # ========================================
+                # 策略 3: 无法匹配
                 if not user:
                     stats["skipped_no_match"] += 1
-                    logger.info(f"[跳过] GitLab用户 '{full_name}' ({email}) 无法匹配主数据")
                     continue
 
-                # ========================================
                 # 创建或更新 IdentityMapping
-                # ========================================
-
-                # 检查此 external_user_id 是否已有映射
                 mapping = session.query(IdentityMapping).filter_by(source_system="gitlab", external_user_id=str(gitlab_id)).first()
-
                 confidence = 1.0 if match_method == "EMAIL" else 0.8
 
-                # 检查此 global_user_id 是否已经绑定了其他的 gitlab_id (防止违反 uq_source_global_user)
+                # 检查此 global_user_id 是否已经绑定了其他的 gitlab_id
                 other_mapping = session.query(IdentityMapping).filter_by(source_system="gitlab", global_user_id=user.global_user_id).first()
 
                 if other_mapping and (not mapping or other_mapping.id != mapping.id):
-                    logger.error(
-                        f"[跳过] 员工 {user.full_name}({user.employee_id}) 已绑定 GitLab ID: {other_mapping.external_user_id}, 无法再次绑定新 ID: {gitlab_id}"
-                    )
                     stats["skipped_duplicate_user"] += 1
                     continue
 
@@ -143,11 +110,7 @@ def init_gitlab_mappings():
                     )
                     session.add(mapping)
                     stats["created"] += 1
-                    logger.info(f"[新建] {user.full_name}({user.employee_id}) -> GitLab:{username} [{match_method}]")
                 else:
-                    # 更新现有映射
-                    if mapping.global_user_id != user.global_user_id:
-                        logger.warning(f"[更新] GitLab用户 {username} 重新关联: {mapping.global_user_id} -> {user.global_user_id}")
                     mapping.global_user_id = user.global_user_id
                     mapping.external_username = username
                     mapping.external_email = email if email else mapping.external_email
@@ -155,30 +118,40 @@ def init_gitlab_mappings():
                     mapping.confidence_score = confidence
                     stats["updated"] += 1
 
-            session.commit()
+        session.flush()
 
-            # 输出统计报告
-            logger.info("=" * 60)
-            logger.info("GitLab 身份映射初始化完成!")
-            logger.info("=" * 60)
-            logger.info(f"总处理记录: {stats['total']}")
-            logger.info(f"  - Email匹配: {stats['matched_by_email']}")
-            logger.info(f"  - 姓名匹配: {stats['matched_by_name']}")
-            logger.info(f"  - 新建映射: {stats['created']}")
-            logger.info(f"  - 更新映射: {stats['updated']}")
-            logger.info("跳过记录:")
-            logger.info(f"  - 无法匹配: {stats['skipped_no_match']}")
-            logger.info(f"  - 重名冲突: {stats['skipped_duplicate_name']}")
-            logger.info(f"  - 账号冲突: {stats['skipped_duplicate_user']}")
-            logger.info(f"  - 无效数据: {stats['skipped_invalid']}")
+        # 输出统计报告
+        logger.info("=" * 60)
+        logger.info("GitLab 身份映射初始化完成!")
+        logger.info("=" * 60)
+        logger.info(f"总处理记录: {stats['total']}")
+        logger.info(f"  - Email匹配: {stats['matched_by_email']}")
+        logger.info(f"  - 姓名匹配: {stats['matched_by_name']}")
+        logger.info(f"  - 新建映射: {stats['created']}")
+        logger.info(f"  - 更新映射: {stats['updated']}")
+        logger.info("跳过记录:")
+        logger.info(f"  - 无法匹配: {stats['skipped_no_match']}")
+        logger.info(f"  - 重名冲突: {stats['skipped_duplicate_name']}")
+        logger.info(f"  - 账号冲突: {stats['skipped_duplicate_user']}")
+        logger.info(f"  - 无效数据: {stats['skipped_invalid']}")
 
+        return True
     except Exception as e:
-        session.rollback()
         logger.error(f"GitLab 映射初始化失败: {e}")
-        raise
-    finally:
-        session.close()
+        return False
+
+
+def main():
+    from sqlalchemy import create_engine
+
+    from devops_collector.config import settings
+
+    engine = create_engine(settings.database.uri)
+    with Session(engine) as session:
+        if execute_command(session):
+            session.commit()
 
 
 if __name__ == "__main__":
-    init_gitlab_mappings()
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    main()

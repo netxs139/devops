@@ -1,6 +1,6 @@
 """采购合同 (Purchase Contract) 初始化脚本。
 
-重构说明：已移除硬编码 SAMPLE_PURCHASE_CONTRACTS，改为从 docs/assets/sample_data/purchase_contracts.csv 加载。
+支持 CLI Phase 2 (Deep Integration) 调用。
 """
 
 import csv
@@ -8,52 +8,55 @@ import logging
 import os
 import sys
 from datetime import datetime
+from pathlib import Path
+
+from sqlalchemy.orm import Session
 
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-from devops_collector.config import settings
-from devops_collector.models.base_models import Base, CostCode, PurchaseContract, ResourceCost
+# 添加项目根目录到路径
+sys.path.append(os.getcwd())
+from devops_collector.models.base_models import CostCode, PurchaseContract, ResourceCost
 
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-CSV_FILE = os.path.join("docs", "purchase_contracts.csv")
+# 统一资源路径 (Zero Hardcoding Principle)
+SAMPLE_DATA_DIR = Path(__file__).parent.parent / "docs" / "assets" / "sample_data"
+CSV_FILE = SAMPLE_DATA_DIR / "purchase_contracts.csv"
 
 
-def init_purchase_contracts():
-    db_uri = settings.database.uri
-    engine = create_engine(db_uri)
-    Base.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine)
-    session = Session()
+def execute_command(session: Session, **kwargs) -> bool:
+    """[Phase 2 改造] 初始化采购合同数据。"""
+    if not CSV_FILE.exists():
+        logger.warning(f"跳过采购合同初始化：未找到 {CSV_FILE}")
+        return True
 
     try:
-        if not os.path.exists(CSV_FILE):
-            logger.warning(f"跳过采购合同初始化：未找到 {CSV_FILE}")
-            return
-
         logger.info(f"开始从 {CSV_FILE} 录入采购合同数据...")
 
         with open(CSV_FILE, encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                contract_no = row["合同编号"].strip()
-                title = row["合同标题"].strip()
-                vendor = row["供应商名称"].strip()
-                vendor_id = row["供应商ID"].strip()
-                total = float(row["总金额"])
-                start_date = datetime.strptime(row["开始日期"].strip(), "%Y-%m-%d")
-                end_date = datetime.strptime(row["结束日期"].strip(), "%Y-%m-%d")
-                cost_code = row["科目代码"].strip()
-                capex_opex = row["支出类型"].strip()
+                contract_no = row.get("合同编号", "").strip()
+                title = row.get("合同标题", "").strip()
+                vendor = row.get("供应商名称", "").strip()
+                vendor_id = row.get("供应商ID", "").strip()
+                total_str = row.get("总金额", "0")
+                start_date_str = row.get("开始日期", "").strip()
+                end_date_str = row.get("结束日期", "").strip()
+                cost_code = row.get("科目代码", "").strip()
+                capex_opex = row.get("支出类型", "").strip()
+
+                if not contract_no or not title:
+                    continue
+
+                total = float(total_str)
+                start_date = datetime.strptime(start_date_str, "%Y-%m-%d") if start_date_str else datetime.now()
+                end_date = datetime.strptime(end_date_str, "%Y-%m-%d") if end_date_str else datetime.now()
 
                 cc = session.query(CostCode).filter(CostCode.code == cost_code).first()
                 if not cc:
-                    logger.warning(f"找不到科目代码 {cost_code}，请先初始化科目。")
+                    logger.warning(f"找不到科目代码 {cost_code}，跳过合同 {contract_no}")
                     continue
 
                 pc = session.query(PurchaseContract).filter(PurchaseContract.contract_no == contract_no).first()
@@ -83,23 +86,33 @@ def init_purchase_contracts():
                         cost_type=cc.category,
                         cost_item=pc.title,
                         amount=monthly_amount,
-                        currency=pc.currency,
+                        currency=pc.currency or "CNY",
                         capex_opex_flag=pc.capex_opex_flag,
                         vendor_name=pc.vendor_name,
                         cost_code_id=cc.id,
                         source_system="contract_system_init",
                     )
                     session.add(cost_record)
-                    logger.info(f"  -> 已生成 {period} 摊销流水: {monthly_amount:.2f}")
 
-        session.commit()
+        session.flush()
+        logger.info("✅ 采购合同初始化完成。")
+        return True
     except Exception as e:
-        session.rollback()
-        logger.error(f"录入失败: {e}")
-        raise
-    finally:
-        session.close()
+        logger.error(f"采购合同初始化失败: {e}")
+        return False
+
+
+def main():
+    from sqlalchemy import create_engine
+
+    from devops_collector.config import settings
+
+    engine = create_engine(settings.database.uri)
+    with Session(engine) as session:
+        if execute_command(session):
+            session.commit()
 
 
 if __name__ == "__main__":
-    init_purchase_contracts()
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    main()

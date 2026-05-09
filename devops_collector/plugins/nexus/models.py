@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 
 
 """Nexus 插件数据模型。"""

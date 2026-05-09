@@ -1,46 +1,36 @@
 """初始化禅道 (ZenTao) 身份映射 (Identity Mapping) 数据。
 
-本脚本读取 docs/zentao-user.csv，并将禅道账号对齐到 MDM 系统中的 User。
-由于禅道 CSV 包含工号，对齐准确度极高。
-
-执行方式:
-    python scripts/init_zentao_mappings.py
+支持 CLI Phase 2 (Deep Integration) 调用。
 """
 
 import csv
 import logging
 import os
 import sys
+from pathlib import Path
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
 
 
 # 添加项目根目录到路径
 sys.path.append(os.getcwd())
-
-from devops_collector.config import settings
 from devops_collector.models import IdentityMapping, User
 
 
-# 日志配置
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-logger = logging.getLogger("InitZenTaoMapping")
+logger = logging.getLogger(__name__)
 
-CSV_FILE = "docs/zentao-user.csv"
+# 统一资源路径 (Zero Hardcoding Principle)
+SAMPLE_DATA_DIR = Path(__file__).parent.parent / "docs" / "assets" / "sample_data"
+CSV_FILE = SAMPLE_DATA_DIR / "zentao-user.csv"
 
 
-def init_zentao_mappings():
-    """解析 CSV 并创建身份映射。"""
-    engine = create_engine(settings.database.uri)
-    SessionLocal = sessionmaker(bind=engine)
-    session = SessionLocal()
+def execute_command(session: Session, **kwargs) -> bool:
+    """[Phase 2 改造] 初始化禅道身份映射数据。"""
+    if not CSV_FILE.exists():
+        logger.error(f"找不到禅道用户 CSV 文件: {CSV_FILE}")
+        return False
 
     try:
-        if not os.path.exists(CSV_FILE):
-            logger.error(f"找不到禅道用户 CSV 文件: {CSV_FILE}")
-            return
-
         logger.info("开始同步禅道身份映射数据...")
 
         with open(CSV_FILE, encoding="utf-8-sig") as f:
@@ -51,40 +41,25 @@ def init_zentao_mappings():
                 employee_id = row.get("工号", "").strip()
                 full_name = row.get("姓名", "").strip()
                 email = row.get("邮箱", "").strip()
-                account = email.split("@")[0] if email else None  # 禅道账号通常是邮箱前缀
+                account = email.split("@")[0] if email else None
 
                 if not employee_id and not email:
                     continue
 
                 user = None
-                match_method = None
-
-                # 1. 优先通过工号匹配 (最高优先级)
+                # 1. 优先通过工号匹配
                 if employee_id:
                     user = session.query(User).filter(User.employee_id == employee_id, User.is_current).first()
-                    if user:
-                        match_method = "EMPLOYEE_ID"
-                        # 验证邮箱是否一致
-                        if email and user.primary_email and email.lower() != user.primary_email:
-                            logger.warning(f"禅道用户 '{full_name}'({employee_id}) 邮箱不一致: 禅道={email}, 主数据={user.primary_email}")
 
                 # 2. 其次通过 Email 匹配
                 if not user and email:
                     user = session.query(User).filter(User.primary_email == email.lower(), User.is_current).first()
-                    if user:
-                        match_method = "EMAIL"
-                        # 验证工号是否一致
-                        if employee_id and user.employee_id and employee_id != user.employee_id:
-                            logger.warning(f"禅道用户 '{full_name}' 工号不一致: 禅道={employee_id}, 主数据={user.employee_id}")
 
                 if not user:
-                    logger.warning(f"无法为禅道用户 '{full_name}' ({employee_id}) 找到对应主数据，跳过。")
                     continue
 
                 # 3. 创建映射记录
-                # 禅道中外部系统账号通常标识为邮箱前缀
                 external_id = account or email.lower()
-
                 mapping = session.query(IdentityMapping).filter_by(source_system="zentao", external_user_id=external_id).first()
 
                 if not mapping:
@@ -98,23 +73,31 @@ def init_zentao_mappings():
                         confidence_score=1.0,
                     )
                     session.add(mapping)
-                    logger.info(f"建立禅道关联 [{match_method}]: {user.full_name}({user.employee_id}) -> {external_id}")
                     count += 1
                 else:
                     mapping.global_user_id = user.global_user_id
                     mapping.mapping_status = "VERIFIED"
                     mapping.confidence_score = 1.0
 
-            session.commit()
-            logger.info(f"禅道身份映射初始化完成! 共建立/更新 {count} 条关联。")
-
+        session.flush()
+        logger.info(f"禅道身份映射初始化完成! 共建立/更新 {count} 条关联。")
+        return True
     except Exception as e:
-        session.rollback()
         logger.error(f"禅道映射初始化失败: {e}")
-        raise
-    finally:
-        session.close()
+        return False
+
+
+def main():
+    from sqlalchemy import create_engine
+
+    from devops_collector.config import settings
+
+    engine = create_engine(settings.database.uri)
+    with Session(engine) as session:
+        if execute_command(session):
+            session.commit()
 
 
 if __name__ == "__main__":
-    init_zentao_mappings()
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    main()

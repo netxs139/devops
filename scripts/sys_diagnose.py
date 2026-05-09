@@ -1,84 +1,91 @@
+"""系统综合诊断主调度脚本。
+
+作为“仪表盘”，协调并调用各专项诊断脚本。
+支持 CLI Phase 2 (Native Mode) 协议。
+"""
+
 import asyncio
-import os
+import logging
 import sys
+from pathlib import Path
 
 import httpx
+from sqlalchemy.orm import Session
 
 
-# 将当前目录添加到系统路径
-sys.path.insert(0, os.getcwd())
+# 将项目根目录添加到系统路径
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# 导入各专项诊断模块
+from scripts import diag_db, diag_mq, diag_zentao
+from scripts.utils import DiagHelper
 
 
-async def diagnose():
-    """系统综合诊断脚本。
+logger = logging.getLogger(__name__)
 
-    检查项目：
-    1. API 连通性 (Health Check)
-    2. 数据库连接 & 基础数据 (Identity Check)
-    3. GitLab OAuth 配置校验
-    """
+
+async def check_api_health():
+    """检查 API 服务是否在线。"""
     base_url = "http://localhost:8000"
-
-    print("=" * 60)
-    print("DevOps Platform 系统综合诊断")
-    print("=" * 60)
-
-    # 1. 检查 API 连通性
-    print("\n[1/3] 检查 API 连通性...")
     async with httpx.AsyncClient() as client:
         try:
-            resp = await client.get(f"{base_url}/health", timeout=5)
+            resp = await client.get(f"{base_url}/health", timeout=3)
             if resp.status_code == 200:
-                print(f"   ✓ API 服务运行正常: {resp.json()}")
-            else:
-                print(f"   ✗ API 服务返回异常状态码: {resp.status_code}")
+                DiagHelper.log_success(f"后端 API 服务运行正常: {resp.json()}")
+                return True
+            DiagHelper.log_failure(f"后端 API 返回异常状态: {resp.status_code}")
+            return False
         except Exception as e:
-            print(f"   ✗ 无法连接到 API 服务 (请确保已运行 just up): {e}")
+            DiagHelper.log_warning(f"无法连接到后端 API (可能未启动): {e}")
+            return False
 
-    # 2. 检查数据库和管理员账户
-    print("\n[2/3] 检查数据库与角色...")
+
+def execute_command(session: Session, **kwargs) -> bool:
+    """[Phase 2 改造] 系统综合诊断主入口。"""
+    DiagHelper.print_header("DevOps 平台全项体检")
+
+    # 1. 基础 API 检查 (异步)
+    print("\n[1/4] 正在检查 API 服务状态...")
     try:
-        from devops_collector.auth.auth_database import AuthSessionLocal
-        from devops_collector.models.base_models import SysRole, User
-
-        db = AuthSessionLocal()
-        user_count = db.query(User).filter_by(is_current=True).count()
-        role_count = db.query(SysRole).filter_by(del_flag=False).count()
-        admin_user = db.query(User).filter_by(primary_email="admin@tjhq.com", is_current=True).first()
-
-        print("   ✓ 数据库连接正常")
-        print(f"   ✓ 当前用户数: {user_count}")
-        print(f"   ✓ 系统角色数: {role_count}")
-
-        if admin_user:
-            print(f"   ✓ 管理员账户存在: {admin_user.full_name} (Active: {admin_user.is_active})")
-        else:
-            print("   ⚠ 管理员账户 (admin@tjhq.com) 未找到")
-        db.close()
+        asyncio.run(check_api_health())
     except Exception as e:
-        print(f"   ✗ 数据库检查失败: {e}")
+        logger.error(f"API 检查过程异常: {e}")
 
-    # 3. 检查 GitLab 配置
-    print("\n[3/3] 检查 GitLab OAuth 配置...")
-    try:
-        from devops_collector.config import settings
+    # 2. 调用数据库专项诊断
+    print("\n[2/4] 启动数据库专项检查...")
+    db_ok = diag_db.execute_command(session)
 
-        gl = settings.gitlab
-        print(f"   GitLab URL: {gl.url}")
-        if gl.client_id and gl.client_secret and gl.redirect_uri:
-            print(f"   ✓ OAuth 配置项已填写 (ID: {gl.client_id[:5]}***)")
-        else:
-            print("   ⚠ OAuth 配置不完整，GitLab 登录功能将不可用")
+    # 3. 调用消息队列专项诊断
+    print("\n[3/4] 启动消息队列专项检查...")
+    mq_ok = diag_mq.execute_command()
 
-        if not gl.verify_ssl:
-            print("   ⚠ 已禁用 SSL 验证 (verify_ssl=False)")
-    except Exception as e:
-        print(f"   ✗ 配置检查失败: {e}")
+    # 4. 调用集成插件专项诊断 (以禅道为例)
+    print("\n[4/4] 启动三方集成专项检查 (ZenTao)...")
+    plugins_ok = diag_zentao.execute_command(session)
 
-    print("\n" + "=" * 60)
-    print("诊断完成")
-    print("=" * 60)
+    DiagHelper.print_header("体检报告汇总")
+
+    overall_success = db_ok and mq_ok and plugins_ok
+    if overall_success:
+        DiagHelper.log_success("所有核心链路均已接通。")
+    else:
+        DiagHelper.log_warning("部分链路存在异常，请查看上方详细日志。")
+
+    DiagHelper.print_footer()
+    return True
+
+
+def main():
+    from sqlalchemy import create_engine
+
+    from devops_collector.config import settings
+
+    engine = create_engine(settings.database.uri)
+    with Session(engine) as session:
+        execute_command(session)
 
 
 if __name__ == "__main__":
-    asyncio.run(diagnose())
+    # 强制将日志级别设置为 INFO 以确保输出可见
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    main()

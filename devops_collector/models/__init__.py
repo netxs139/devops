@@ -68,7 +68,9 @@ from .test_management import (
 )
 
 
-# 核心插件模型导入 (用于模型注册)
+# --- 插件模型导入 (用于 SQLAlchemy 模型注册) ---
+
+# GitLab
 try:
     from devops_collector.plugins.gitlab.models import (
         GitLabBranch,
@@ -90,19 +92,65 @@ try:
         GitLabTag,
         GitLabVulnerability,
     )
-    from devops_collector.plugins.sonarqube.models import SonarIssue, SonarMeasure, SonarProject
-
-    try:
-        from devops_collector.plugins.jira.models import (
-            JiraBoard,
-            JiraIssue,
-            JiraProject,
-            JiraSprint,
-        )
-    except ImportError:
-        pass
 except ImportError:
     pass
+
+# SonarQube
+try:
+    from devops_collector.plugins.sonarqube.models import SonarIssue, SonarMeasure, SonarProject
+except ImportError:
+    pass
+
+# ZenTao
+try:
+    from devops_collector.plugins.zentao.models import (
+        ZenTaoAction,
+        ZenTaoBuild,
+        ZenTaoExecution,
+        ZenTaoIssue,
+        ZenTaoProduct,
+        ZenTaoProductPlan,
+        ZenTaoRelease,
+        ZenTaoTestCase,
+        ZenTaoTestResult,
+    )
+except ImportError:
+    pass
+
+# Jira
+try:
+    from devops_collector.plugins.jira.models import (
+        JiraBoard,
+        JiraIssue,
+        JiraProject,
+        JiraSprint,
+    )
+except ImportError:
+    pass
+
+# Nexus
+try:
+    from devops_collector.plugins.nexus.models import NexusAsset, NexusComponent
+except ImportError:
+    pass
+
+# Jenkins
+try:
+    from devops_collector.plugins.jenkins.models import JenkinsBuild, JenkinsJob
+except ImportError:
+    pass
+
+# JFrog
+try:
+    from devops_collector.plugins.jfrog.models import (
+        JFrogArtifact,
+        JFrogDependency,
+        JFrogScan,
+        JFrogVulnerabilityDetail,
+    )
+except ImportError:
+    pass
+
 
 __all__ = [
     "Base",

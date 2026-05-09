@@ -32,7 +32,8 @@
 1. **偏航必锚与计划外资产**: 偏离 Focus > 1 回合必须同步文档；临时优化标记为 `[Ad-hoc]` 并沉淀入 ADR。
 1. **中断恢复嗅探**: 启动/收尾强制 `git status -u`；发现未跟踪脚本必须汇报并整合进 `progress.txt`。
 1. **临时脚本隔离**: 严禁在业务目录排错，必须写入 `.agent/scratch/`。
-1. **SSOT 归档路径**: 严格遵循 `user_global` 归档律，本项目的归档路径固化为 `docs/history/progress_archive.md`。
+1. **统一运维入口 (CLI Mandate)**: **绝对严禁**直接执行 `python scripts/xxx.py`。所有运维任务、初始化、诊断及数据导出操作，必须通过 `uv run scripts/cli.py <group> --module <name>` 触发，以确保日志轨迹、数据库连接池及事务的一致性。
+1. **归档资产一致性协议 (Archive Integrity) [MANDATORY]**: 归档路径固化为 `docs/history/progress_archive.md`。**严禁**使用 `Overwrite=true`；必须执行 `Read-Merge-Write` 且新批次强制 **Prepend (置顶)**。
 1. **导入完整性与预飞行 (Import Integrity & Pre-flight)**: 任何 Model/Service 变更必须首先通过 `python -c "import ..."` 冒烟测试。严禁在宿主机环境未安装依赖时强行运行 `pytest`，必须使用沙箱模式。
 1. **文码同行律 (Code-Doc Co-evolution) [MANDATORY]**: 任何涉及业务逻辑、模型 Schema、指标口径或 UI 架构的变更，**必须**在提交代码的同时完成相关文档（如 `docs/`, `contexts.md`, `AGENTS.md`, `GLOSSARY.md`）的同步更新。严禁在文档滞后的情况下宣告完工。
 
@@ -55,9 +56,11 @@
 
 ## 5. 交互与决策契约 (Interaction & Decision Contract) [MANDATORY]
 
-1. **结构化决策推荐与语义锚点 [MANDATORY]**: 凡是提供 A/B/C 结构化选项时，必须显式包含 **“AI 视角推荐路径”** 及其 **“核心理由”**。一旦用户做出决策：
-   - 被选中的方案必须立即通过 `just progress-focus` 更新到 `progress.txt` 的 **Current Focus**。
-   - 未被选中或被推迟 (Deferred) 的方案必须通过 `just progress-mirror` 镜像到 **Tasks** 列表，确保意图不丢失。
+1. **交互前置审计锁 (The Inquiry Lock) [MANDATORY]**:
+   - **问号拦截 (The Question-Mark Gate)**: 若用户请求以“？”结尾或包含疑问语气，AI 必须进入“方案呈报模式”。在该模式下，**严禁调用任何物理写操作工具**。
+   - **方案呈报**: 必须提供 A/B 方案及其推荐理由。凡是提供 A/B/C 结构化选项时，必须显式包含 **“AI 视角推荐路径”**。一旦用户做出决策：
+     - 被选中的方案必须立即通过 `just progress-focus` 更新到 `progress.txt` 的 **Current Focus**。
+     - 未被选中或被推迟 (Deferred) 的方案必须通过 `just progress-mirror` 镜像到 **Tasks** 列表，确保意图不丢失。
 1. **UI 集成决策锁**: 涉及 `devops_portal/static/` (Portal) 的新视图集成时，**必须**首先向用户呈报以下决策路径：
    - **方案 A: Streamlit 分析版 (Decision Hub)**: 适合**非高频、重分析、重度量**的决策需求（如：效能雷达、成本审计、质量趋势）。
    - **方案 B: Portal 操作版 (Operational)**: 适合**高频交互、低延迟、重流程**的操作需求（如：用例执行、缺陷处理、即时追溯）。

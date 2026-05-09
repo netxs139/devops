@@ -153,23 +153,16 @@ just deploy-offline
 - **API 服务**: <http://localhost:8000>
 - **RabbitMQ 管理后台**: <http://localhost:15672> (用户/密码: guest/guest)
 
-### 4. 常用运维命令
+| 指令 | 说明 | 对应底层命令 |
+| :--- | :--- | :--- |
+| `just logs` | 查看实时容器日志 | `docker-compose logs -f` |
+| `just test` | 运行容器内单元测试 | `pytest tests/unit/` |
+| `just verify` | 执行全量门禁检查 | `scripts/gatekeeper.py` |
+| `just sync-all` | 触发全量数据同步 | `scripts/cli.py run --module sync_zentao` |
+| `just diagnose` | 执行系统综合诊断 | `scripts/cli.py diag --module sys` |
+| `just init --all` | 重置并初始化基础数据 | `scripts/cli.py init --all` |
 
-所有操作均封装在 `justfile` 中，自动在容器内执行，确保环境一致性。
-
-```bash
-# 查看实时日志
-just logs
-
-# 运行测试用例
-just test
-
-# 手动触发全量同步
-just sync-all
-
-# 停止服务
-just down
-```
+> 💡 **进阶提示**: 您可以直接运行 `uv run scripts/cli.py --help` 查看更多精细化指令（如单独诊断数据库、导出特定报表等）。
 
 ### 5. 部署分析视图
 

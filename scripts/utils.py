@@ -1,7 +1,10 @@
 """初始化脚本共享工具函数。"""
 
 import logging
+import time
 from collections import defaultdict
+from collections.abc import Callable
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -54,3 +57,44 @@ def resolve_user(value, email_idx, name_idx, field_label=""):
         elif len(candidates) > 1:
             logger.warning(f"[{field_label}] 姓名 '{value}' 存在 {len(candidates)} 个重名，跳过")
     return None
+
+
+class DiagHelper:
+    """诊断助手类，用于标准化诊断输出。"""
+
+    @staticmethod
+    def print_header(title: str):
+        print("=" * 60)
+        print(f"{title:^60}")
+        print("=" * 60)
+
+    @staticmethod
+    def print_footer():
+        print("=" * 60)
+        print("\n")
+
+    @staticmethod
+    def log_success(msg: str):
+        print(f"   ✓ {msg}")
+
+    @staticmethod
+    def log_failure(msg: str):
+        print(f"   ✗ {msg}")
+
+    @staticmethod
+    def log_warning(msg: str):
+        print(f"   ⚠ {msg}")
+
+    @staticmethod
+    def run_check(label: str, check_func: Callable[[], Any]):
+        """运行一个检查项并打印结果。"""
+        print(f"\n[{label}] 正在检查...")
+        start_time = time.time()
+        try:
+            result = check_func()
+            elapsed = time.time() - start_time
+            return result, elapsed
+        except Exception as e:
+            elapsed = time.time() - start_time
+            DiagHelper.log_failure(f"{label} 失败: {e}")
+            return None, elapsed

@@ -20,7 +20,7 @@
 - **模型命名原则**: 为了避免与测试框架（如 pytest）发生自动收集冲突，所有测试管理相关的核心模型必须加 `GTM` 前缀（例如：`GTMTestCase`、`GTMRequirement`）。
 - **调试友好性**: 所有 ORM 模型类必须实现结构化的 `__repr__` 方法，包含关键识别字段。
 - **高内聚，低耦合**: 代码应以模块化方式生成，实现高内聚，低耦合；功能逻辑应尽量下沉至 Service 或 Utility 层。
-- **配置外部化**: API 地址、Token 及公共参数必须通过配置文件（如 `config.ini`）获取，严禁硬编码。
+- **零硬编码原则 (Zero Hardcoding)**: API 地址、Token 及业务参数必须通过 `devops_collector.config.settings` 获取（对应 `.env` 注入），严禁任何形式的字符串硬编码。
 
 ### 1.2 提交规范 (Commit Message)
 
@@ -83,4 +83,39 @@ just verify
 
 1. 更新 [`DOC_INDEX.md`](./docs/DOC_INDEX.md) 中受影响的模块。
 1. 运行 `/doc-audit` 指令检查文档冲突。
-1. 确保 [`progress.txt`](./progress.txt) 已更新至最新状态。
+1. 更新 [`progress.txt`](./progress.txt) 已更新至最新状态。
+
+______________________________________________________________________
+
+## 4. 运维与初始化脚本规范 (Operations & CLI Scripts)
+
+为了降低运维碎片化并提升 AI 协作效率，所有位于 `scripts/` 目录下的运维、初始化及工具类脚本必须集成至 `cli.py` 调度总线。
+
+### 4.1 入口单一原则 (Single Entry Point)
+
+- **统一入口**: 禁止直接运行 `python scripts/xxx.py`。所有任务必须通过 `uv run scripts/cli.py <command> --module <name>` 触发。
+- **调度分组**: 脚本必须按职责归入以下组别：
+  - `init`: 数据初始化与重置。
+  - `diag`: 环境诊断与连通性测试。
+  - `check`: 静态代码质检与配置校验。
+  - `verify`: 业务逻辑与数据完整性验证。
+  - `run`: 常规作业同步任务。
+  - `export`: 数据导出与报表生成。
+
+### 4.2 深度整合规范 (Phase 2 标准)
+
+为了实现资源共享（如共享数据库连接池）和事务控制，新脚本应遵循“模块化调用”设计：
+
+1. **接口契约**: 脚本必须暴露 `execute_command(session: Session, **kwargs) -> bool` 函数。
+1. **上下文注入**: 严禁在脚本内部自行创建 `engine` 或 `Session`。必须使用从 `cli.py` 注入的 `session`。
+1. **事务控制**: 脚本内仅执行 `session.flush()`，由 `cli.py` 顶层统一控制 `commit` 或 `rollback`。
+1. **兼容模式**: 保留 `if __name__ == "__main__":` 块用于本地独立调试。
+
+### 4.3 自动发现机制 (Autodiscovery)
+
+`cli.py` 具备自动探测能力。若新增脚本满足 `{group}_{name}.py` 命名规则且放入 `scripts/` 目录，它将自动出现在对应的 `--help` 列表中。
+
+### 4.4 资源路径收拢 (Resource Path Alignment)
+
+- **配置共享**: 脚本所需的外部 URL、敏感信息等配置必须统一从 `devops_collector.config.settings` 对象读取。
+- **静态数据归口**: 所有初始化所需的 CSV 数据模版必须存放于 `docs/assets/sample_data/` 目录。脚本内应通过动态路径（如 `Path(__file__).parent.parent / "docs" / "assets" / "sample_data" / "xxx.csv"`) 定位，严禁在脚本内散落数据文件。
