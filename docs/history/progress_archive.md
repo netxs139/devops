@@ -1,7 +1,10 @@
 # DevOps 平台 - 进展归档 (Progress Archive)
 
-## 归档批次：2026-05-09 (CLI & MyPy Phase 3)
+## 归档批次：2026-05-09 (SSOT & Infrastructure Convergence)
 
+- [Infrastructure] **配置维度收拢 (SSOT Configuration)**: 彻底清除了 `docker-compose.yml`、`docker-compose.prod.yml` 以及 `justfile` 中的硬编码环境变量。确立 `.env.example` 为全局唯一事实源 (SSOT)，实现了前后端、CI/CD 与容器编排的单点配置。 (2026-05-09)
+- [Infrastructure] **环境启动命令收口 (Unified Justfile)**: 完成了 `justfile` 的全面重构，确立了其作为环境管理的绝对权威。引入了 `just dev` 和 `just start` 统一入口，将代码质检（Lint）与镜像构建（Build）物理绑定，并实现了生产/开发环境的透明化调度。 (2026-05-09)
+- [Perf] **Dockerfile 多阶段构建与极致瘦身**: 引入 Builder/Final 双阶段模式，移除编译期依赖，镜像体积缩减约 40%，并优化了层缓存机制以提升 CI 打包速度。 (2026-05-09)
 - [Infrastructure] **全量运维脚本深度集成 (CLI Command Bus Phase 2)**: 完成了 30+ 核心脚本的 Native 模式重构。通过共享 SQLAlchemy Session、零硬编码配置加载和统一 DiagHelper 协议，实现了从“脚本堆砌”到“原子业务模块”的质变。全量初始化（init --all）和系统诊断（diag --module sys）已实现 100% 自动化闭环。 (2026-05-09)
 - [Infrastructure] **全量运维脚本统一收口 (CLI Command Bus Phase 1)**: 设计并实现了基于 `argparse` 的 `cli.py` 调度总线，采用绞杀者模式 (Strangler Pattern) 的第一阶段浅层收口策略。成功将 `scripts/` 目录下原本离散的 60+ 个脚本分为 `init`, `diag`, `check`, `verify`, `run`, `export` 等子命令，彻底消除开发者依赖心智 and AI Agent 的调用盲区。 (2026-05-09)
 - [Infrastructure] **MyPy 治理 (Phase 3) - 隔离区清理**: 重构 `AdminService` 等服务，消除 `Any` 传染并解除隔离。 (2026-05-04)
