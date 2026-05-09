@@ -31,6 +31,7 @@ wheels/
 MANIFEST
 
 # --- TESTING & CI ---
+tests/
 .pytest_cache
 .ruff_cache
 .coverage
@@ -41,6 +42,11 @@ htmlcov/
 .hypothesis/
 nosetests.xml
 coverage.xml
+
+# --- DOCUMENTATION ---
+docs/
+!docs/assets/sample_data/
+*.md
 
 # --- SECURITY REPORTS (V-GATE) ---
 reports/

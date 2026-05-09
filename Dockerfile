@@ -1,50 +1,60 @@
-# Default build arguments for registry and index
+# --- 阶段 1: 提取 UV 二进制文件 ---
 ARG UV_IMAGE=astral-sh/uv:latest
-ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
-
-# Copy uv binaries from the specified image
 FROM ${UV_IMAGE} AS uv_bin
 
-FROM python:3.11-slim-bookworm
+# --- 阶段 2: 构建环境 (Builder) ---
+FROM python:3.11-slim-bookworm AS builder
 
 WORKDIR /app
 
-# Install system dependencies
+# 安装编译时依赖
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 安装 UV
+COPY --from=uv_bin /uv /uvx /bin/
+
+# 预安装 Python 依赖 (利用缓存层)
+ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+COPY pyproject.toml uv.lock ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project --no-dev --index-url ${PIP_INDEX_URL}
+
+# 拷贝项目源码并执行安装 (非开发模式)
+COPY . .
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
+
+# --- 阶段 3: 运行环境 (Final) —— 极致瘦身 ---
+FROM python:3.11-slim-bookworm
+
+WORKDIR /app
+
+# 仅安装运行时必要的库
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     netcat-openbsd \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv for fast package management (Allowing override from Nexus)
-COPY --from=uv_bin /uv /uvx /bin/
+# 从 Builder 阶段拷贝虚拟环境和代码
+COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app /app
 
-# Install python dependencies using uv (Frozen mode via uv.lock)
-ARG PIP_INDEX_URL
-COPY pyproject.toml uv.lock ./
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --no-dev --index-url ${PIP_INDEX_URL} --trusted-host 192.168.5.64 || \
-    uv sync --frozen --no-install-project --no-dev --index-url https://pypi.tuna.tsinghua.edu.cn/simple
-
-# Copy project code
-COPY . .
-
-# Final sync to install the project itself and dev/test extras if needed 
-# (Standardizing on --no-dev for production, use --all-groups if tests are run in-container)
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --all-extras
-
-# Set PYTHONPATH
+# 设置环境变量，优先使用虚拟环境中的二进制文件
+ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
 
-# Startup script
+# 启动脚本处理
 COPY docker-entrypoint.sh /usr/local/bin/
-RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh && \
-    chmod +x /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 8000
 ENTRYPOINT ["docker-entrypoint.sh"]
