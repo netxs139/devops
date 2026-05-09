@@ -22,10 +22,6 @@ services:
         condition: service_healthy
       mq:
         condition: service_healthy
-    environment:
-      - RABBITMQ__HOST=mq
-      - RABBITMQ__USER=admin
-      - RABBITMQ__PASSWORD=admin123
     healthcheck:
       test: [ "CMD", "nc", "-z", "localhost", "8000" ]
       interval: 10s
@@ -50,11 +46,6 @@ services:
         condition: service_healthy
       mq:
         condition: service_healthy
-    environment:
-      - PYTHONPATH=/app
-      - RABBITMQ__HOST=mq
-      - RABBITMQ__USER=admin
-      - RABBITMQ__PASSWORD=admin123
     restart: unless-stopped
     deploy:
       replicas: 2
@@ -76,11 +67,6 @@ services:
         condition: service_healthy
       mq:
         condition: service_healthy
-    environment:
-      - PYTHONPATH=/app
-      - RABBITMQ__HOST=mq
-      - RABBITMQ__USER=admin
-      - RABBITMQ__PASSWORD=admin123
 
   # 4. PostgreSQL 数据库
   db:
@@ -104,9 +90,9 @@ services:
     image: rabbitmq:3-management-alpine
     container_name: devops-mq
     profiles: [ "core" ]
+    env_file:
+      - .env
     environment:
-      - RABBITMQ_DEFAULT_USER=admin
-      - RABBITMQ_DEFAULT_PASS=admin123
       - RABBITMQ_VM_MEMORY_HIGH_WATERMARK_RELATIVE=0.7
     ports:
       - "5672:5672"
@@ -150,8 +136,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    environment:
-      - PYTHONPATH=/app
     healthcheck:
       test: [ "CMD", "nc", "-z", "localhost", "8501" ]
       interval: 10s

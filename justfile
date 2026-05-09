@@ -7,24 +7,75 @@
 set dotenv-load := true
 set shell := ["bash", "-c"]
 
-# 统一变量定义
-NEXUS_PYPI_URL      := "http://192.168.5.64:8081/repository/group-pypi/simple"
-NEXUS_DOCKER_REGISTRY := "192.168.5.64:8082"
-EXEC_CMD            := "docker-compose exec -T api uv run"
-SHELL_EXEC          := "docker-compose exec -T api"
-PROD_CMD            := "docker-compose -f docker-compose.prod.yml"
+# 统一变量定义 (优先从 .env 读取)
+NEXUS_PYPI_URL        := env_var_or_default("NEXUS_PYPI_URL", "http://192.168.5.64:8081/repository/group-pypi/simple")
+NEXUS_DOCKER_REGISTRY := env_var_or_default("NEXUS_DOCKER_REGISTRY", "192.168.5.64:8082")
+
+
+# 动态环境判定 (SSOT: 环境变量优先)
+COMPOSE_FILE        := if env_var_or_default("PROD", "false") == "true" { "docker-compose.prod.yml" } else { "docker-compose.yml" }
+COMPOSE_CMD         := "docker-compose -f " + COMPOSE_FILE
+EXEC_CMD            := COMPOSE_CMD + " exec -T api uv run"
+SHELL_EXEC          := COMPOSE_CMD + " exec -T api"
 
 # =============================================================================
-# 核心指令 (Core Recipes)
+# 顶级入口 (Unified Entry Points) - 确立单一入口绝对权威
 # =============================================================================
 
 # 显示所有可用指令
 default:
     @just --list
 
-# [一键部署] 重建镜像 -> 启动服务 -> 初始化数据 -> 生成文档
-deploy: down build up init docs
-    @echo "DevOps Platform deployed successfully!"
+# [极速开发] 一键进入战斗状态：清理 -> 启动 -> 诊断 -> 实时日志
+dev: clean
+    @echo "🚀 Launching Development Environment..."
+    just up
+    just diagnose
+    just logs
+
+# [标准启动] 启动服务并执行增量数据对齐
+start: up
+    @echo "✅ System started. Running baseline data alignment..."
+    {{EXEC_CMD}} python scripts/cli.py init --all
+
+# [全量部署] 生产级一键部署：门禁校验 -> 构建 -> 启动 -> 初始化
+deploy: verify build up init docs
+    @echo "🌐 DevOps Platform deployed successfully!"
+
+# =============================================================================
+# 核心生命周期 (Core Lifecycle)
+# =============================================================================
+
+# 启动容器并等待健康检查
+up:
+    @echo "Starting services (Env: {{COMPOSE_FILE}})..."
+    {{COMPOSE_CMD}} up -d --wait
+
+# 停止并移除容器 (保持幂等)
+down:
+    @echo "Stopping services..."
+    {{COMPOSE_CMD}} down --remove-orphans
+
+# 物理重启
+restart: down up
+
+# 构建镜像 (强制/可选 门禁校验)
+# 用法: just build (带质检) | just build --fast (跳过质检)
+build mode="full":
+    @if [ "{{mode}}" != "fast" ]; then \
+        echo "🛡️ Running Pre-build Quality Gate..."; \
+        just lint; \
+    fi
+    @echo "🏗️ Building Docker images..."
+    {{COMPOSE_CMD}} build --build-arg PIP_INDEX_URL={{NEXUS_PYPI_URL}}
+
+# 进入 API 容器终端
+shell:
+    {{COMPOSE_CMD}} exec api /bin/bash
+
+# 查看实时日志
+logs:
+    {{COMPOSE_CMD}} logs -f --tail=100
 
 # [初始化] 使用统一命令总线进行数据初始化 (支持事务回滚)
 init:
@@ -58,32 +109,6 @@ init-dev:
         uv sync --all-groups --all-extras --extra-index-url https://pypi.tuna.tsinghua.edu.cn/simple; \
     "
 
-# =============================================================================
-# Docker 基础操作
-# =============================================================================
-
-# 启动容器并等待健康检查
-up:
-    @echo "Starting services..."
-    docker-compose up -d --wait
-
-# 停止并移除容器
-down:
-    @echo "Stopping services..."
-    docker-compose down
-
-# 构建 Docker 镜像 (含预拉取加速)
-build: pull-images
-    @echo "Building Docker images..."
-    docker-compose build --build-arg PIP_INDEX_URL={{NEXUS_PYPI_URL}}
-
-# 查看实时日志
-logs:
-    docker-compose logs -f --tail=100
-
-# 进入 API 容器终端
-shell:
-    docker-compose exec api /bin/bash
 
 # =============================================================================
 # 验证与测试 (Verification & Testing)
@@ -186,8 +211,8 @@ dbt-build:
 # 同步元数据到 DataHub
 datahub-ingest:
     @echo "Ingesting metadata to DataHub..."
-    docker-compose run --rm datahub-cli datahub ingest -c datahub/recipe_postgres.yml
-    docker-compose run --rm datahub-cli datahub ingest -c datahub/recipe_dbt.yml
+    {{COMPOSE_CMD}} run --rm datahub-cli datahub ingest -c datahub/recipe_postgres.yml
+    {{COMPOSE_CMD}} run --rm datahub-cli datahub ingest -c datahub/recipe_dbt.yml
 
 # =============================================================================
 # 安全审计 (Security Audit)
@@ -225,34 +250,34 @@ package: pull-images
 [windows]
 deploy-offline:
     @if (Test-Path devops-platform.tar) { docker load -i devops-platform.tar }
-    {{PROD_CMD}} up -d --wait --no-build
-    {{PROD_CMD}} exec -T api python -m devops_collector.utils.schema_sync
+    {{COMPOSE_CMD}} up -d --wait --no-build
+    {{COMPOSE_CMD}} exec -T api python -m devops_collector.utils.schema_sync
     just init-prod-data
 
 # 服务器专用：离线加载并部署 [Linux]
 [linux]
 deploy-offline:
     @if [ -f devops-platform.tar ]; then echo "Loading image..."; docker load -i devops-platform.tar; fi
-    {{PROD_CMD}} up -d --wait --no-build
-    {{PROD_CMD}} exec -T api python -m devops_collector.utils.schema_sync
+    {{COMPOSE_CMD}} up -d --wait --no-build
+    {{COMPOSE_CMD}} exec -T api python -m devops_collector.utils.schema_sync
     just init-prod-data
 
 # 内部调用：生产环境数据初始化
 init-prod-data:
-    {{PROD_CMD}} exec -T api python scripts/cli.py init --module rbac
-    {{PROD_CMD}} exec -T api python scripts/cli.py init --module organizations
-    {{PROD_CMD}} exec -T api python scripts/cli.py run --module import_employees
+    {{COMPOSE_CMD}} exec -T api python scripts/cli.py init --module rbac
+    {{COMPOSE_CMD}} exec -T api python scripts/cli.py init --module organizations
+    {{COMPOSE_CMD}} exec -T api python scripts/cli.py run --module import_employees
 
 # 生产环境一键部署 (联网模式)
 deploy-prod:
-    {{PROD_CMD}} down --remove-orphans
-    {{PROD_CMD}} build
-    {{PROD_CMD}} up -d --wait
+    {{COMPOSE_CMD}} down --remove-orphans
+    {{COMPOSE_CMD}} build
+    {{COMPOSE_CMD}} up -d --wait
     just init-prod-data
 
 # 查看生产日志
 prod-logs:
-    {{PROD_CMD}} logs -f --tail=100
+    {{COMPOSE_CMD}} logs -f --tail=100
 
 # =============================================================================
 # E2E 测试 (Playwright)
