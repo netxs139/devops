@@ -1,51 +1,37 @@
 """初始化地理位置主数据 (mdm_locations)
 
-本脚本用于初始化中国各省、自治区、直辖市及部分特别行政区的地理位置数据，
-以便在提交需求、Bug 时进行地域归属标记。
-
-数据来源参考: ISO 3166-2:CN 及常见业务定义。
-对应 GitLab Template: .gitlab/issue_templates/Bug.md 中的 `province::xxx` 标签。
+支持 CLI Phase 2 (Deep Integration) 调用。
 """
 
 import logging
 import sys
 from pathlib import Path
 
+from sqlalchemy.orm import Session
+
 
 # 添加项目根目录到 Python 路径
 sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from config import Config
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
 from devops_collector.models.base_models import Location
 
 
-# 配置日志
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def init_locations():
-    """初始化位置数据"""
-    engine = create_engine(Config.DB_URI)
-    Session = sessionmaker(bind=engine)
-    session = Session()
+def execute_command(session: Session, **kwargs) -> bool:
+    """[Phase 2 改造] 初始化位置数据。"""
 
     # 定义预置数据
-    # location_id: 建议使用 UUID 或标准编码，这里使用简码作为唯一标识
-    # code: 对应 Issue Template 中的标签后缀 (e.g., province::guangdong -> guangdong)
     locations_data = [
         # --- 特殊位置 ---
         {
-            "location_id": "LOC-NATIONWIDE",
+            "location_code": "LOC-NATIONWIDE",
             "code": "nationwide",
             "location_name": "全国",
             "short_name": "全国",
             "location_type": "region",
             "region": "全国",
-            "parent_id": None,
+            "parent_code": None,
         },
         # --- 直辖市 ---
         {"code": "beijing", "name": "北京市", "short": "北京", "region": "华北"},
@@ -81,55 +67,76 @@ def init_locations():
         {"code": "ningxia", "name": "宁夏回族自治区", "short": "宁夏", "region": "西北"},
         {"code": "xinjiang", "name": "新疆维吾尔自治区", "short": "新疆", "region": "西北"},
         {"code": "xizang", "name": "西藏自治区", "short": "西藏", "region": "西南"},
-        # --- 特别行政区 (可选) ---
+        # --- 特别行政区 ---
         {"code": "hongkong", "name": "香港特别行政区", "short": "香港", "region": "华南"},
         {"code": "macau", "name": "澳门特别行政区", "short": "澳门", "region": "华南"},
         {"code": "taiwan", "name": "台湾省", "short": "台湾", "region": "华东"},
     ]
 
     try:
-        count = 0
+        # 第一遍：创建/更新所有位置（不含 parent_id）
+        code_to_id = {}
         for item in locations_data:
-            # 处理数据格式差异
-            if "location_id" in item:
-                # 已完整定义的形式 (Nationwide)
-                match_code = item["code"]
-                data_dict = item
-            else:
-                # 简写形式 (需转换)
-                match_code = item["code"]
+            match_code = item["code"]
+            if "location_code" in item:
                 data_dict = {
-                    "location_id": f"LOC-{match_code.upper()}",
+                    "location_code": item["location_code"],
+                    "code": item["code"],
+                    "location_name": item["location_name"],
+                    "short_name": item["short_name"],
+                    "location_type": item["location_type"],
+                    "region": item["region"],
+                }
+            else:
+                data_dict = {
+                    "location_code": f"LOC-{match_code.upper()}",
                     "code": match_code,
                     "location_name": item["name"],
                     "short_name": item["short"],
                     "location_type": "province",
                     "region": item["region"],
-                    "parent_id": "LOC-NATIONWIDE",
                 }
 
-            # 检查是否存在
             exists = session.query(Location).filter_by(code=match_code).first()
             if exists:
-                logger.info(f"更新已有位置: {data_dict['location_name']}")
                 for k, v in data_dict.items():
                     setattr(exists, k, v)
+                session.flush()
+                code_to_id[data_dict["location_code"]] = exists.id
             else:
-                logger.info(f"新增位置: {data_dict['location_name']}")
                 new_loc = Location(**data_dict)
                 session.add(new_loc)
-            count += 1
+                session.flush()
+                code_to_id[data_dict["location_code"]] = new_loc.id
 
-        session.commit()
-        logger.info(f"位置主数据初始化完成，共处理 {count} 条记录。")
+        # 第二遍：设置 parent_id
+        nationwide_id = code_to_id.get("LOC-NATIONWIDE")
+        if nationwide_id:
+            all_locs = session.query(Location).all()
+            for loc in all_locs:
+                if loc.location_code != "LOC-NATIONWIDE":
+                    loc.parent_id = nationwide_id
+
+        session.flush()
+        logger.info("位置主数据初始化完成。")
+        return True
 
     except Exception as e:
-        session.rollback()
-        logger.error(f"初始化失败: {e}")
-        raise
-    finally:
-        session.close()
+        logger.error(f"位置初始化失败: {e}")
+        return False
+
+
+def main():
+    from sqlalchemy import create_engine
+
+    from devops_collector.config import settings
+
+    engine = create_engine(settings.database.uri)
+    with Session(engine) as session:
+        if execute_command(session):
+            session.commit()
 
 
 if __name__ == "__main__":
-    init_locations()
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    main()

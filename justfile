@@ -5,7 +5,7 @@
 # -----------------------------------------------------------
 
 set dotenv-load := true
-set shell := ["powershell.exe", "-Command"]
+set shell := ["bash", "-c"]
 
 # 统一变量定义
 NEXUS_PYPI_URL      := "http://192.168.5.64:8081/repository/group-pypi/simple"
@@ -26,22 +26,11 @@ default:
 deploy: down build up init docs
     @echo "DevOps Platform deployed successfully!"
 
-# [初始化] 在容器内安装依赖并初始化数据库
+# [初始化] 使用统一命令总线进行数据初始化 (支持事务回滚)
 init:
-    @echo "Initializing data inside container..."
+    @echo "Initializing data through Command Bus..."
     just install
-    {{EXEC_CMD}} python scripts/reset_database.py
-    {{EXEC_CMD}} python -m devops_collector.utils.schema_sync
-    {{EXEC_CMD}} python scripts/init_rbac.py
-    {{EXEC_CMD}} python scripts/import_employees.py
-    {{EXEC_CMD}} python scripts/init_organizations.py
-    {{EXEC_CMD}} python scripts/init_products_projects.py
-    {{EXEC_CMD}} python scripts/link_users_to_entities.py
-    {{EXEC_CMD}} python scripts/init_okrs.py
-    {{EXEC_CMD}} python scripts/init_calendar.py
-    {{EXEC_CMD}} python scripts/init_catalog.py
-    {{EXEC_CMD}} python scripts/init_discovery.py
-    {{EXEC_CMD}} python scripts/init_gitlab_mappings.py
+    {{EXEC_CMD}} python scripts/cli.py init --all
 
 # 使用 uv sync 同步依赖 (含内网 Nexus 重试逻辑)
 install:
@@ -59,13 +48,13 @@ install:
 # [本地] 初始化宿主机开发环境
 init-dev:
     @echo "Local Dev Init (Nexus Primary x3 -> Tsinghua Fallback)..."
-    powershell -Command " \
-        for ($i=1; $i -le 3; $i++) { \
-            Write-Host \"[Attempt $i/3] Trying Nexus (8081)...\" -ForegroundColor Yellow; \
-            uv sync --all-groups --all-extras --index-url {{NEXUS_PYPI_URL}} --trusted-host 192.168.5.64; \
-            if ($?) { Write-Host \"Local environment successfully synced!\" -ForegroundColor Cyan; exit 0 } \
-            Start-Sleep -Seconds 1; \
-        } \
+    bash -c " \
+        for i in 1 2 3; do \
+            echo \"[Attempt \$i/3] Trying Nexus (8081)...\"; \
+            uv sync --all-groups --all-extras --index-url {{NEXUS_PYPI_URL}} --trusted-host 192.168.5.64 && exit 0; \
+            sleep 1; \
+        done; \
+        echo \"Nexus failed, falling back to Tsinghua...\"; \
         uv sync --all-groups --all-extras --extra-index-url https://pypi.tuna.tsinghua.edu.cn/simple; \
     "
 
@@ -108,17 +97,17 @@ verify: lint typecheck check-imports docs-verify scan-sast
 # 代码质量检查 (Ruff)
 lint:
     @echo "Running Ruff check..."
-    ruff check devops_collector/ devops_portal/ tests/ scripts/
+    uv run ruff check devops_collector/ devops_portal/ tests/ scripts/
 
 # 代码格式化
 fmt:
     @echo "Formatting code with Ruff..."
-    ruff format devops_collector/ devops_portal/ tests/ scripts/
-    ruff check --select I --fix devops_collector/ devops_portal/ tests/ scripts/
+    uv run ruff format devops_collector/ devops_portal/ tests/ scripts/
+    uv run ruff check --select I --fix devops_collector/ devops_portal/ tests/ scripts/
 
 # 自动修复 Ruff 发现的逻辑问题
 ruff-fix:
-    ruff check --fix devops_collector/ devops_portal/ tests/ scripts/
+    uv run ruff check --fix devops_collector/ devops_portal/ tests/ scripts/
 
 # 静态类型检查 (MyPy)
 typecheck:
@@ -128,7 +117,7 @@ typecheck:
 # 检查核心模块导入依赖
 check-imports:
     @echo "Checking module imports..."
-    {{EXEC_CMD}} python scripts/check_imports.py
+    {{EXEC_CMD}} python scripts/cli.py check --module imports
 
 # [MANDATORY] 架构合规性审计 (Anti-Patterns Check)
 arch-audit:
@@ -163,11 +152,11 @@ test-int:
 
 # 系统综合诊断
 diagnose:
-    {{EXEC_CMD}} python scripts/sys_diagnose.py
+    {{EXEC_CMD}} python scripts/cli.py diag --all
 
 # 数据库专项诊断
 diag-db:
-    {{EXEC_CMD}} python scripts/diag_db.py
+    {{EXEC_CMD}} python scripts/cli.py diag --module db
 
 # 消息队列专项诊断
 diag-mq:
@@ -232,21 +221,27 @@ package: pull-images
     docker build -t devops-platform:latest .
     docker save -o devops-platform.tar devops-platform:latest
 
-# 服务器专用：离线加载并部署
+# 服务器专用：离线加载并部署 [Windows]
+[windows]
 deploy-offline:
-    @if (Test-Path devops-platform.tar) { \
-        Write-Host "Loading image..."; \
-        docker load -i devops-platform.tar \
-    }
+    @if (Test-Path devops-platform.tar) { docker load -i devops-platform.tar }
+    {{PROD_CMD}} up -d --wait --no-build
+    {{PROD_CMD}} exec -T api python -m devops_collector.utils.schema_sync
+    just init-prod-data
+
+# 服务器专用：离线加载并部署 [Linux]
+[linux]
+deploy-offline:
+    @if [ -f devops-platform.tar ]; then echo "Loading image..."; docker load -i devops-platform.tar; fi
     {{PROD_CMD}} up -d --wait --no-build
     {{PROD_CMD}} exec -T api python -m devops_collector.utils.schema_sync
     just init-prod-data
 
 # 内部调用：生产环境数据初始化
 init-prod-data:
-    {{PROD_CMD}} exec -T api python scripts/init_rbac.py
-    {{PROD_CMD}} exec -T api python scripts/init_organizations.py
-    {{PROD_CMD}} exec -T api python scripts/import_employees.py
+    {{PROD_CMD}} exec -T api python scripts/cli.py init --module rbac
+    {{PROD_CMD}} exec -T api python scripts/cli.py init --module organizations
+    {{PROD_CMD}} exec -T api python scripts/cli.py run --module import_employees
 
 # 生产环境一键部署 (联网模式)
 deploy-prod:
@@ -284,7 +279,8 @@ e2e-show-trace:
 # 环境卫生与工具 (Maintenance)
 # =============================================================================
 
-# 检查基础镜像并执行预拉取加速 (Nexus -> Official)
+# 检查基础镜像并执行预拉取加速 (Nexus -> Official) [Windows]
+[windows]
 pull-images:
     powershell -Command " \
         $$images = @('python:3.11-slim-bookworm', 'postgres:15-alpine', 'rabbitmq:3-management-alpine', 'astral-sh/uv:latest'); \
@@ -301,13 +297,29 @@ pull-images:
         } \
     "
 
+# 检查基础镜像并执行预拉取加速 (Nexus -> Official) [Linux]
+[linux]
+pull-images:
+    bash -c " \
+        for img in python:3.11-slim-bookworm postgres:15-alpine rabbitmq:3-management-alpine astral-sh/uv:latest; do \
+            if docker images -q \"\$img\" | grep -q .; then continue; fi; \
+            nexus_img='{{NEXUS_DOCKER_REGISTRY}}/\$img'; \
+            if docker pull \"\$nexus_img\" 2>/dev/null; then \
+                docker tag \"\$nexus_img\" \"\$img\"; \
+                docker rmi \"\$nexus_img\"; \
+            else \
+                docker pull \"\$img\"; \
+            fi; \
+        done; \
+    "
+
 # [Windows] 清理临时文件
 [windows]
 clean:
     @echo "Cleaning temporary files (Windows)..."
     powershell -Command " \
         Get-ChildItem -Path . -Include __pycache__ -Recurse -Directory | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; \
-        Get-ChildItem -Path . -Include *.pyc,*.pyo,.coverage,*.tmp,traceback.txt,pytest_out.txt -File -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue; \
+        Get-ChildItem -Path . -Include *.pyc,*.pyo,.coverage,*.tmp -File -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue; \
         if (Test-Path .pytest_cache) { Remove-Item -Path .pytest_cache -Recurse -Force }; \
         if (Test-Path .ruff_cache) { Remove-Item -Path .ruff_cache -Recurse -Force }; \
         if (Test-Path .agent\scratch) { Get-ChildItem .agent\scratch | Remove-Item -Force }; \
@@ -317,9 +329,10 @@ clean:
 [linux]
 clean:
     @echo "Cleaning temporary files (Linux)..."
-    find . -type d -name "__pycache__" -exec rm -rf {} +
-    find . -type f \( -name "*.pyc" -o -name "*.pyo" \) -delete
+    find . -type d -name "__pycache__" -not -path "./.venv/*" -exec rm -rf {} + 2>/dev/null || true
+    find . -type f \( -name "*.pyc" -o -name "*.pyo" \) -not -path "./.venv/*" -delete
     rm -rf .coverage .pytest_cache .ruff_cache test-results
+    @echo "Done."
 
 # 自动生成/更新数据字典
 docs:

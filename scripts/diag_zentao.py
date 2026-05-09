@@ -1,79 +1,79 @@
+"""禅道 (ZenTao) 连接与模型诊断脚本。
+
+支持 CLI Phase 2 (Native Mode) 协议。
+"""
+
 import logging
-import os
 import sys
+from pathlib import Path
 
 import requests
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
 
 
 # 添加项目根目录到路径
-sys.path.append(os.getcwd())
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# 尝试导入所有模型以避免 SQLAlchemy 映射错误
 from devops_collector.config import settings
-from devops_collector.plugins.zentao.client import ZenTaoClient
 from devops_collector.plugins.zentao.models import ZenTaoProduct
+from scripts.utils import DiagHelper
 
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("DiagZenTao")
+logger = logging.getLogger(__name__)
 
 
-def diag_zentao():
-    print("=" * 60)
-    print("ZenTao Connection & Model Diagnosis")
-    print("=" * 60)
+def execute_command(session: Session, **kwargs) -> bool:
+    """[Phase 2 改造] 诊断禅道 API 与数据库映射。"""
+    DiagHelper.print_header("禅道专项诊断")
 
-    # 1. 检查配置
-    print(f"URL: {settings.zentao.url}")
-    print(f"Token: {settings.zentao.token[:5]}***{settings.zentao.token[-5:] if len(settings.zentao.token) > 10 else ''}")
+    # 1. 配置检查
+    print(f"   URL: {settings.zentao.url}")
+    print(f"   Token: {settings.zentao.token[:5]}***")
 
-    # 2. 测试 API 连通性
-    print("\n[1/3] Testing API connectivity...")
-    ZenTaoClient(url=settings.zentao.url, token=settings.zentao.token)
-    try:
-        # 使用基础 requests 测试以获得更多信息
-        headers = {"Token": settings.zentao.token, "Accept": "application/json"}
-        resp = requests.get(f"{settings.zentao.url}/products", headers=headers, verify=False)
-        print(f"HTTP Status: {resp.status_code}")
-        if resp.status_code == 200:
-            products = resp.json().get("products", [])
-            print(f"✓ Success! Found {len(products)} products.")
-        else:
-            print(f"✗ Failed! Body: {resp.text}")
+    # 2. API 连通性
+    def check_api():
+        # 针对不同版本的禅道尝试不同的 Header
+        token_headers = [{"Token": settings.zentao.token}, {"x-zentao-token": settings.zentao.token}, {"Authorization": f"Bearer {settings.zentao.token}"}]
 
-            # 尝试不同的 Header
-            print("\nTrying with x-zentao-token...")
-            resp2 = requests.get(f"{settings.zentao.url}/products", headers={"x-zentao-token": settings.zentao.token}, verify=False)
-            print(f"x-zentao-token Status: {resp2.status_code}")
+        last_err = None
+        for h in token_headers:
+            try:
+                resp = requests.get(f"{settings.zentao.url}/products", headers=h, verify=False, timeout=5)
+                if resp.status_code == 200:
+                    count = len(resp.json().get("products", []))
+                    DiagHelper.log_success(f"API 连通成功 (Header: {list(h.keys())[0]}), 发现 {count} 个产品")
+                    return True
+                last_err = f"HTTP {resp.status_code}"
+            except Exception as e:
+                last_err = str(e)
 
-            print("\nTrying with Authorization Header...")
-            resp3 = requests.get(
-                f"{settings.zentao.url}/products",
-                headers={"Authorization": f"Bearer {settings.zentao.token}"},
-                verify=False,
-            )
-            print(f"Authorization Status: {resp3.status_code}")
+        DiagHelper.log_failure(f"API 所有认证方式均失败: {last_err}")
+        return False
 
-    except Exception as e:
-        print(f"✗ API Error: {e}")
+    api_ok, _ = DiagHelper.run_check("API 连通性", check_api)
 
-    # 3. 检查数据库和模型映射
-    print("\n[2/3] Checking DB mapping...")
-    try:
-        engine = create_engine(settings.database.uri)
-        Session = sessionmaker(bind=engine)
-        session = Session()
+    # 3. 数据库映射
+    def check_db():
         p_count = session.query(ZenTaoProduct).count()
-        print(f"✓ DB connection OK. ZenTaoProduct count: {p_count}")
-        session.close()
-    except Exception as e:
-        print(f"✗ DB Mapping Error: {e}")
-        import traceback
+        DiagHelper.log_success(f"数据库映射正常, 本地缓存 ZenTaoProduct 记录数: {p_count}")
+        return True
 
-        traceback.print_exc()
+    db_ok, _ = DiagHelper.run_check("数据库映射", check_db)
+
+    DiagHelper.print_footer()
+    return (api_ok and db_ok) is True
+
+
+def main():
+    from sqlalchemy import create_engine
+
+    from devops_collector.config import settings
+
+    engine = create_engine(settings.database.uri)
+    with Session(engine) as session:
+        execute_command(session)
 
 
 if __name__ == "__main__":
-    diag_zentao()
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    main()

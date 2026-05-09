@@ -131,7 +131,7 @@
 - **`devops_portal/` (交互管控前端 API)**：直接面向人类的大屏/系统报表拉取请求。
   - 路由定义层坚守“薄逻辑”规则，所有对库的直接调用已被剥离。`dependencies.py` 是拦截非法 Mock 越权的核心守卫。
 - **`dbt_project/` (指标建模流水线)**：运行在此工程之外的 PostgreSQL 侧，所有的原生乱码清洗 (`stg_`) 到 DORA/财务效能聚合计算 (`fct_`) 全部依赖这里的 SQL 模型。
-- **`scripts/` (自动化与自愈急救箱)**：孤儿数据巡检、脏脏数据清理、以及类似 `realign_org_managers.py` 这种两阶段强一致性修补脚本的存放地。
+- **`scripts/` (自动化与管理总线)**：全量运维脚本的单一收口地。核心入口为 `cli.py` (Command Bus)，负责调度初始化、诊断、质检及报告生成等任务。
 - **`tests/` (防线演兵场)**：
   - `unit/`：强制要求 100% Mock 断开外部数据库与发版的雷霆战区。
   - `integration/api/`：必须连接实测库（含容器化保障）的阵地，需要极其小心 `app.dependency_overrides` 的跨室感染污染。
@@ -151,7 +151,18 @@
   - **Router 层**: 仅负责路由定义、参数校验（Pydantic）、权限控制、依赖注入及调用 Service。严禁在 Router 中编写业务逻辑或直接操作多表数据库。必须定义 `response_model`，严禁直接返回 SQLAlchemy 对象。
   - **Service 层**: 承载核心业务逻辑、复杂计算、跨表事务。Service 函数应具备原子性，方便被多个 Router 或定时任务复用。多表操作强制使用 `with db.begin():` 包裹。
 - **身份治理映射**: 全球唯一 `global_user_id` 连接各系统账号，置信度通过 `IdentityResolver` 算法动态计算。
-- **Security Scans**: 采用 **CI-Driven** 模式。DevOps 平台不运行本地扫描器（如 Java/Dependency-Check），而是通过 API 接收 CI 流水线上传的 JSON 报告。这降低了平台容器的体积与资源消耗。
+- **Security Scans**: 采用 **CI-Driven** 模式。DevOps platform 不运行本地扫描器（如 Java/Dependency-Check），而是通过 API 接收 CI 流水线上传的 JSON 报告。这降低了平台容器的体积与资源消耗。
+
+### 4.4 CLI 调度总线架构 (CLI Command Bus Architecture) [NEW/MANDATORY]
+
+> **背景**: 为了对抗脚本泛滥 (Scripts Sprawl) 并降低 AI Agent 的认知负荷，系统确立了“入口单一、架构收敛”原则。
+
+- **1. 命令总线 (Command Bus)**: `scripts/cli.py` 是整个系统运维能力的唯一物理入口。
+- **2. 混合调度机制 (Hybrid Dispatching)**:
+  - **原生模式 (Native Mode) [COMPLETE]**: 已完成 30+ 核心脚本重构，支持动态加载并注入顶层 `Session` 对象，实现跨脚本事务原子性与零连接开销。
+  - **子进程模式 (Subprocess Mode)**: 对于遗留脚本，自动降级为 `subprocess.run` 调用，确保 100% 向后兼容。
+- **3. 开发契约**: 任何新增脚本必须暴露 `execute_command(session: Session, **kwargs)` 接口。
+- **4. 事务守卫**: 批量任务（如 `init --all`）由 `cli.py` 在最外层统一捕获异常并执行全局 `rollback()`。
 
 ### 4.1 数据采集管道性能规范 (Data Pipeline Performance) [MANDATORY]
 

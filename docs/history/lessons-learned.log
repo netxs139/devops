@@ -9,6 +9,7 @@
 | Timestamp | Domain | Phenomenon | Root Cause | Universal Rule (The Defense) |
 | :--- | :--- | :--- | :--- | :--- |
 | 2026-05-02 | [Arch] | 进度归档文件位置偏航 | 全局规则（user_global）仅定义了 `progress_archive.md` 的文件名，未指定其相对于 `progress.txt` 的物理路径。 | **归档路径 SSOT 锚点 (Archive Path SSOT)**: **严禁**在无审计情况下在根目录新建归档。项目级 `AGENTS.md` 必须物理固化归档路径（本项目为 `docs/history/progress_archive.md`）。在执行归档前必须先进行全局路径嗅探。 |
+| 2026-05-09 | [Data] | 归档资产毁灭性覆盖 | 在执行归档时使用 `Overwrite=true` 且未进行内容合并，导致 367 条历史记录被清空。 | **归档资产一致性协议 (Archive Integrity)**: 严禁对历史资产执行覆盖写入。必须执行“读取-合并-置顶追加”三部曲。操作 `docs/history/` 目录前强制 `git log` 确认权重。 |
 | 2026-05-01 | Engineering/OS | `UnicodeDecodeError` 摧毁 Python 源文件 |
  PowerShell `Set-Content` 默认以 UTF-16 LE 写入文件，覆盖了原始 UTF-8 编码的 Python 源码 | **PowerShell 写文件红线 (PS Write Prohibition)**: **严禁**在宿主机 PowerShell 中用 `Set-Content`、`Out-File` 等写 Python 源文件。唯一安全路径：①容器内 Python 脚本修改 → ②`docker cp` 二进制拷回宿主机。任何跨宿主机写文件操作必须先检查编码。 |
 | 2026-05-01 | Architecture/Audit | `arch_auditor.py` 误将测试目录和 Staging 模型归入 SCD2 合规域，产生 700+ 假阳性 ERROR | ①排除域缺少 `tests/` 和 `migrations/`；②`in_scd_class` 判定以包含 `Base` 关键字代替仅限 `SCDMixin`；③`file_has_traceability` 不识别 Mixin 继承，只扫字面字符串 | **审计器三原则 (Auditor Accuracy Laws)**: 1. 排除域必须显式包含 `tests/`、`migrations/`；2. SCD2 专属规则（ARCH-002/007）的类判定必须精确匹配 `SCDMixin`，不得以 `Base` 扩大化；3. 元数据有效性判定必须识别 Mixin 继承（`TraceabilityMixin` / `SCDMixin` in content）。 |

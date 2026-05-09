@@ -1,6 +1,6 @@
 """初始化系统注册表和服务目录。
 
-从 `docs/assets/sample_data/mdm_systems_registry.csv` 和 `docs/assets/sample_data/mdm_services.csv` 加载数据。
+支持 CLI Phase 2 (Deep Integration) 调用。
 """
 
 import csv
@@ -8,21 +8,20 @@ import logging
 import sys
 from pathlib import Path
 
-from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 
 # 添加项目根目录到路径
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from devops_collector.config import settings
 from devops_collector.models import BusinessSystem, Organization, Service, SystemRegistry
 
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-SYSTEMS_CSV = Path(__file__).parent.parent / "docs" / "mdm_systems_registry.csv"
-SERVICES_CSV = Path(__file__).parent.parent / "docs" / "mdm_services.csv"
+# 统一资源路径
+SAMPLE_DATA_DIR = Path(__file__).parent.parent / "docs" / "assets" / "sample_data"
+SYSTEMS_CSV = SAMPLE_DATA_DIR / "mdm_systems_registry.csv"
+SERVICES_CSV = SAMPLE_DATA_DIR / "mdm_services.csv"
 
 
 def ensure_business_system(session: Session, code: str) -> BusinessSystem:
@@ -63,13 +62,9 @@ def init_systems(session: Session):
 
             is_active_str = row.get("is_active", "TRUE").strip().upper()
             system.is_active = is_active_str == "TRUE"
-
             system.remarks = row.get("remarks", "").strip()
 
             session.flush()
-
-    session.commit()
-    logger.info("系统注册表同步完成")
 
 
 def init_services(session: Session):
@@ -80,7 +75,7 @@ def init_services(session: Session):
     logger.info(f"正在从 {SERVICES_CSV.name} 同步服务目录...")
 
     # 预加载依赖数据
-    orgs = {o.org_name: o.org_id for o in session.query(Organization).filter_by(is_current=True).all()}
+    orgs = {o.org_name: o.id for o in session.query(Organization).filter_by(is_current=True).all()}
 
     with open(SERVICES_CSV, encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
@@ -94,18 +89,15 @@ def init_services(session: Session):
                 service = Service(name=name)
                 session.add(service)
 
-            # 基础属性
             service.tier = row.get("服务分级", "").strip()
             service.description = row.get("描述", "").strip()
             service.lifecycle = row.get("生命周期", "production").strip()
             service.component_type = row.get("组件类型", "service").strip()
 
-            # 关联组织
             org_name = row.get("负责组织", "").strip()
             if org_name in orgs:
                 service.org_id = orgs[org_name]
 
-            # 关联业务系统 (Business System)
             bs_code = row.get("所属业务系统代码", "").strip()
             bs = ensure_business_system(session, bs_code)
             if bs:
@@ -113,16 +105,31 @@ def init_services(session: Session):
 
             session.flush()
 
-    session.commit()
-    logger.info("服务目录同步完成")
+
+def execute_command(session: Session, **kwargs) -> bool:
+    """[Phase 2 改造] 初始化服务目录。"""
+    try:
+        init_systems(session)
+        init_services(session)
+        session.flush()
+        logger.info("✅ 系统注册表和服务目录初始化完成。")
+        return True
+    except Exception as e:
+        logger.error(f"服务目录初始化失败: {e}")
+        return False
 
 
 def main():
+    from sqlalchemy import create_engine
+
+    from devops_collector.config import settings
+
     engine = create_engine(settings.database.uri)
     with Session(engine) as session:
-        init_systems(session)
-        init_services(session)
+        if execute_command(session):
+            session.commit()
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
     main()

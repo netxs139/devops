@@ -1,5 +1,18 @@
 # DevOps 平台 - 进展归档 (Progress Archive)
 
+## 归档批次：2026-05-09 (CLI & MyPy Phase 3)
+
+- [Infrastructure] **全量运维脚本深度集成 (CLI Command Bus Phase 2)**: 完成了 30+ 核心脚本的 Native 模式重构。通过共享 SQLAlchemy Session、零硬编码配置加载和统一 DiagHelper 协议，实现了从“脚本堆砌”到“原子业务模块”的质变。全量初始化（init --all）和系统诊断（diag --module sys）已实现 100% 自动化闭环。 (2026-05-09)
+- [Infrastructure] **全量运维脚本统一收口 (CLI Command Bus Phase 1)**: 设计并实现了基于 `argparse` 的 `cli.py` 调度总线，采用绞杀者模式 (Strangler Pattern) 的第一阶段浅层收口策略。成功将 `scripts/` 目录下原本离散的 60+ 个脚本分为 `init`, `diag`, `check`, `verify`, `run`, `export` 等子命令，彻底消除开发者依赖心智 and AI Agent 的调用盲区。 (2026-05-09)
+- [Infrastructure] **MyPy 治理 (Phase 3) - 隔离区清理**: 重构 `AdminService` 等服务，消除 `Any` 传染并解除隔离。 (2026-05-04)
+- [Infrastructure] **MyPy 治理 (Phase 3) - 严格模式开启**: 启用 `disallow_untyped_defs` 等强约束。 (2026-05-04)
+- [Infrastructure] **MyPy 治理 (Phase 3) - 插件层重构**: 将 `plugins/` 下的遗留模型迁移至 `Mapped` 风格。 (2026-05-04)
+- [Infrastructure] **工作流范式升级 (AI-Native)**: 剥离 `pre-commit` 中的重量级验证钩子（mypy, pytest, bandit），重构并强化 `just verify`，全面落地 '极速提交 + 主动终端验证' 的 AI-Native 协作模式。(2026-05-04)
+- [Infrastructure] **MyPy 治理自动化**: 实现了 `progress_manager.py` 与 `just` 集成，支持“意图语义锚点”自动更新文档。(2026-05-04)
+- [Infrastructure] **MyPy 存量债务治理 (Phase 2)**: 1. 完成 `core` 域所有核心服务的类型对齐；2. 解决了 `dora_service`, `security`, `reverse_etl` 等高难度模块的 SQLAlchemy 2.0 映射适配；3. 通过对 `admin_service` 和 `scheduler` 实施战略隔离，将核心报错清零至 0 errors。(2026-05-03)
+- [Infrastructure] **SQLAlchemy 2.0 强类型迁移**: 完成 `base_models.py` 等核心模型的 `Mapped` 声明替换与验证。(2026-05-03)
+- [Infrastructure] **MyPy 存量债务治理 (Phase 1)**: 建立 MyPy Baseline 并实施初步债务隔离。(2026-05-03)
+
 6. [Full-Stack] **效能下钻详情 (Drill-down)**: 实现四类下钻逻辑与 UI 联动。(2026-05-03)
 
 1. [Full-Stack] **Traceability Radar 仪表盘集成**: 1. 实现 `/traceability/radar` 后端聚合 API，支持 VSM/协作/安全多维指标；2. 完成 `index.html` 视图集成，替换旧拓扑图为效能看板；3. 接入 `adm-product-selector` 与时间窗筛选逻辑；4. 实现 Radar-SVG 与 ELOC-Chart.js 动态渲染；5. `just arch-audit` 满分通过。(2026-05-03)

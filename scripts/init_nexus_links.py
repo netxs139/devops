@@ -1,59 +1,67 @@
+"""初始化 Nexus 组件与 MDM 产品的关联。
+
+支持 CLI Phase 2 (Deep Integration) 调用。
+"""
+
 import csv
 import logging
-import os
 import re
+import sys
+from pathlib import Path
 
-from devops_collector.auth.auth_database import AuthSessionLocal
-from devops_collector.models.base_models import Product
+from sqlalchemy.orm import Session
+
+
+# 添加项目根目录到 Python 路径
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from devops_collector.models import Product
 from devops_collector.plugins.nexus.models import NexusComponent
 
 
-# 配置日志
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-NEXUS_MAP_CSV = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs", "nexus_component_map.csv")
+# 统一资源路径 (Zero Hardcoding Principle)
+SAMPLE_DATA_DIR = Path(__file__).parent.parent / "docs" / "assets" / "sample_data"
+NEXUS_MAP_CSV = SAMPLE_DATA_DIR / "nexus_component_map.csv"
 
 
-def init_nexus_links():
-    """根据 CSV 映射文件初始化 Nexus 组件与 MDM 产品的关联。"""
-    session = AuthSessionLocal()
-    if not os.path.exists(NEXUS_MAP_CSV):
-        logger.warning(f"找不到映射文件: {NEXUS_MAP_CSV}")
-        return
+def execute_command(session: Session, **kwargs) -> bool:
+    """[Phase 2 改造] 初始化 Nexus 组件关联。"""
+    if not NEXUS_MAP_CSV.exists():
+        logger.warning(f"找不到 Nexus 映射文件: {NEXUS_MAP_CSV}")
+        return True
 
     try:
-        logger.info("开始同步 Nexus 组件关联 (高性能模式)...")
+        logger.info(f"从 {NEXUS_MAP_CSV} 同步 Nexus 组件关联...")
 
-        # 1. 预加载所有有效产品到内存 (映射 Code -> ID)
+        # 1. 预加载产品数据
         all_products = session.query(Product.id, Product.product_code).filter(Product.is_current).all()
-        # 建立双向映射或优先 Code 映射，确保 CSV 中的业务代号能找到物理 ID
         product_code_map = {p.product_code: p.id for p in all_products}
         product_id_set = {p.id for p in all_products}
-        logger.info(f"已加载 {len(product_code_map)} 个有效产品。")
 
-        # 2. 预加载并编译所有映射规则
+        # 2. 预加载并编译映射规则
         rules = []
         with open(NEXUS_MAP_CSV, encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 group_pat = row.get("group", "").strip()
                 name_pat = row.get("name", "").strip()
-                mdm_prod_id_raw = row.get("mdm_product_id", "").strip()
+                mdm_prod_code = row.get("mdm_product_id", "").strip()
                 match_type = row.get("match_type", "exact").strip().lower()
 
-                if (not group_pat and not name_pat) or not mdm_prod_id_raw:
+                if (not group_pat and not name_pat) or not mdm_prod_code:
                     continue
 
-                # 识别 mdm_prod_id_raw 是业务 Code 还是物理 ID
                 actual_pid = None
-                if mdm_prod_id_raw in product_code_map:
-                    actual_pid = product_code_map[mdm_prod_id_raw]
-                elif mdm_prod_id_raw.isdigit() and int(mdm_prod_id_raw) in product_id_set:
-                    actual_pid = int(mdm_prod_id_raw)
+                if mdm_prod_code in product_code_map:
+                    actual_pid = product_code_map[mdm_prod_code]
+                elif f"PRD-{mdm_prod_code}" in product_code_map:
+                    actual_pid = product_code_map[f"PRD-{mdm_prod_code}"]
+                elif mdm_prod_code.isdigit() and int(mdm_prod_code) in product_id_set:
+                    actual_pid = int(mdm_prod_code)
 
                 if actual_pid is None:
-                    logger.warning(f"MDM 产品标识 '{mdm_prod_id_raw}' 不存在或非当前版本，跳过该规则.")
                     continue
 
                 rule = {
@@ -66,18 +74,13 @@ def init_nexus_links():
                 }
                 rules.append(rule)
 
-        logger.info(f"已加载 {len(rules)} 条映射规则。")
-
-        # 3. 遍历所有组件一次进行匹配 (O(Rules * Components))
-        # 使用 yield_per 降低大表内存压力
-        all_components = session.query(NexusComponent).yield_per(1000)
-        match_stats = {}  # pid -> count
+        # 3. 遍历组件进行匹配
+        all_components = session.query(NexusComponent).all()
         updated_count = 0
 
         for comp in all_components:
             for rule in rules:
                 is_match = True
-
                 if rule["type"] == "regex":
                     if rule["group"] and not rule["group_re"].search(comp.group or ""):
                         is_match = False
@@ -93,23 +96,27 @@ def init_nexus_links():
                     if comp.product_id != rule["pid"]:
                         comp.product_id = rule["pid"]
                         updated_count += 1
-                        match_stats[rule["pid"]] = match_stats.get(rule["pid"], 0) + 1
-                    break  # 匹配到第一条规则即停止
+                    break
 
-        if updated_count > 0:
-            for pid, count in match_stats.items():
-                logger.info(f"产品 {pid} 关联了 {count} 个组件。")
-            logger.info(f"本次共更新 {updated_count} 个组件的关联关系。")
-        else:
-            logger.info("未发现需要更新的关联关系。")
-
-        session.commit()
+        session.flush()
+        logger.info(f"✅ Nexus 组件关联初始化完成，共更新 {updated_count} 个组件。")
+        return True
     except Exception as e:
-        session.rollback()
-        logger.error(f"同步失败: {e}")
-    finally:
-        session.close()
+        logger.error(f"Nexus 关联初始化失败: {e}")
+        return False
+
+
+def main():
+    from sqlalchemy import create_engine
+
+    from devops_collector.config import settings
+
+    engine = create_engine(settings.database.uri)
+    with Session(engine) as session:
+        if execute_command(session):
+            session.commit()
 
 
 if __name__ == "__main__":
-    init_nexus_links()
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    main()

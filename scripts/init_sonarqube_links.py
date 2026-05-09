@@ -1,72 +1,98 @@
+"""初始化 SonarQube 项目与 MDM 资产的关联。
+
+支持 CLI Phase 2 (Deep Integration) 调用。
+"""
+
 import csv
 import logging
-import os
+import sys
+from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from devops_collector.models.base_models import Product, ProjectMaster
-from devops_collector.models.database import SessionLocal
+
+# 添加项目根目录到 Python 路径
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from devops_collector.models import Product, ProjectMaster
 from devops_collector.plugins.sonarqube.models import SonarProject
 
 
-# 配置日志
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-SONAR_MAP_CSV = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs", "sonarqube_project_map.csv")
+# 统一资源路径 (Zero Hardcoding Principle)
+SAMPLE_DATA_DIR = Path(__file__).parent.parent / "docs" / "assets" / "sample_data"
+SONAR_MAP_CSV = SAMPLE_DATA_DIR / "sonarqube_project_map.csv"
 
 
-def init_sonarqube_links():
-    """根据 CSV 映射文件初始化 SonarQube 项目与 MDM 资产的关联。"""
-    if not os.path.exists(SONAR_MAP_CSV):
-        logger.warning(f"找不到映射文件: {SONAR_MAP_CSV}")
-        return
+def execute_command(session: Session, **kwargs) -> bool:
+    """[Phase 2 改造] 初始化 SonarQube 项目关联。"""
+    if not SONAR_MAP_CSV.exists():
+        logger.warning(f"找不到 SonarQube 映射文件: {SONAR_MAP_CSV}")
+        return True
 
-    session: Session = SessionLocal()
     try:
-        logger.info("开始同步 SonarQube 项目关联...")
+        logger.info(f"从 {SONAR_MAP_CSV} 同步 SonarQube 项目关联...")
+
+        # 预加载 MDM 数据
+        projects = {p.project_code: p.id for p in session.query(ProjectMaster).filter(ProjectMaster.is_current).all()}
+        products = {p.product_code: p.id for p in session.query(Product).filter(Product.is_current).all()}
+
         with open(SONAR_MAP_CSV, encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 sonar_key = row.get("sonar_project_key", "").strip()
-                mdm_proj_id = row.get("mdm_project_id", "").strip()
-                mdm_prod_id = row.get("mdm_product_id", "").strip()
+                mdm_proj_code = row.get("mdm_project_id", "").strip()  # CSV 中通常存的是 Code
+                mdm_prod_code = row.get("mdm_product_id", "").strip()
 
                 if not sonar_key:
                     continue
 
-                # 1. 查找或创建 Sonar 项目占位符 (如果尚未同步)
+                # 1. 查找或创建 Sonar 项目占位符
                 project = session.query(SonarProject).filter_by(key=sonar_key).first()
                 if not project:
-                    project = SonarProject(key=sonar_key, name=sonar_key.split(":")[-1])
+                    project = SonarProject(key=sonar_key, name=sonar_key.split(":")[-1], qualifier="TRK")
                     session.add(project)
-                    logger.info(f"创建占位节点: {sonar_key}")
+                    session.flush()
 
-                # 2. 验证并更新 MDM 关联
-                if mdm_proj_id:
-                    exists = session.query(ProjectMaster).filter_by(project_id=mdm_proj_id).first()
-                    if exists:
-                        project.mdm_project_id = mdm_proj_id
-                    else:
-                        logger.warning(f"MDM 项目 {mdm_proj_id} 不存在")
+                # 2. 关联 MDM 项目
+                if mdm_proj_code:
+                    p_id = projects.get(mdm_proj_code) or projects.get(f"PROJ-{mdm_proj_code}")
+                    if p_id:
+                        project.mdm_project_id = p_id
+                    # 尝试通过 ID 匹配 (如果 CSV 存的是数字)
+                    elif mdm_proj_code.isdigit():
+                        project.mdm_project_id = int(mdm_proj_code)
 
-                if mdm_prod_id:
-                    exists = session.query(Product).filter_by(product_id=mdm_prod_id).first()
-                    if exists:
-                        project.mdm_product_id = mdm_prod_id
-                    else:
-                        logger.warning(f"MDM 产品 {mdm_prod_id} 不存在")
+                # 3. 关联 MDM 产品
+                if mdm_prod_code:
+                    prod_id = products.get(mdm_prod_code) or products.get(f"PRD-{mdm_prod_code}")
+                    if prod_id:
+                        project.mdm_product_id = prod_id
+                    elif mdm_prod_code.isdigit():
+                        project.mdm_product_id = int(mdm_prod_code)
 
-                logger.info(f"关联成功: {sonar_key} -> Proj:{mdm_proj_id}, Prod:{mdm_prod_id}")
+                logger.debug(f"已关联 SonarQube '{sonar_key}' -> Proj:{mdm_proj_code}, Prod:{mdm_prod_code}")
 
-        session.commit()
-        logger.info("SonarQube 拓扑关联同步完成。")
+        session.flush()
+        logger.info("✅ SonarQube 项目关联初始化完成。")
+        return True
     except Exception as e:
-        session.rollback()
-        logger.error(f"同步失败: {e}")
-    finally:
-        session.close()
+        logger.error(f"SonarQube 关联初始化失败: {e}")
+        return False
+
+
+def main():
+    from sqlalchemy import create_engine
+
+    from devops_collector.config import settings
+
+    engine = create_engine(settings.database.uri)
+    with Session(engine) as session:
+        if execute_command(session):
+            session.commit()
 
 
 if __name__ == "__main__":
-    init_sonarqube_links()
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    main()

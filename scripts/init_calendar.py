@@ -1,31 +1,23 @@
 """日历与时间维度主数据 (MDM_CALENDAR) 初始化脚本。
 
-本脚本执行以下操作:
-1. 确保 mdm_calendar 表已创建。
-2. 批量生成指定年份范围（如 2015-2030）的基础日历数据。
-3. 自动标记周末为非工作日。
-4. 预置 2025 年中国法定节假日与调休安排（示例）。
-
-执行方式:
-    python scripts/init_calendar.py
+支持 CLI Phase 2 (Deep Integration) 调用。
 """
 
 import logging
-import os
 import sys
 from datetime import date, timedelta
+from pathlib import Path
+
+from sqlalchemy.orm import Session
 
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-from devops_collector.config import settings
-from devops_collector.models.base_models import Base, Calendar
+# 添加项目根目录到路径
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from devops_collector.models.base_models import Calendar
 
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
+
 HOLIDAYS_2025 = {
     date(2025, 1, 1): "元旦",
     date(2025, 1, 28): "除夕",
@@ -66,27 +58,29 @@ WORKDAYS_2025 = {
 
 
 def get_fiscal(d: date):
-    """计算财年和财季 (假设财年等于公历年)。"""
+    """计算财年和财季。"""
     year = d.year
     quarter = (d.month - 1) // 3 + 1
     return (f"FY{year}", f"FY{str(year)[2:]}Q{quarter}")
 
 
-def init_calendar(start_year=2015, end_year=2030):
-    """初始化日历表数据。"""
-    db_uri = settings.database.uri
-    engine = create_engine(db_uri)
-    Base.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine)
-    session = Session()
+def execute_command(session: Session, **kwargs) -> bool:
+    """[Phase 2 改造] 初始化日历数据。"""
+    start_year = kwargs.get("start_year", 2024)
+    end_year = kwargs.get("end_year", 2026)
+
     try:
         logger.info(f"正在初始化日历数据从 {start_year} 到 {end_year}...")
+
+        # 预加载现有日期
+        existing_dates = {d[0] for d in session.query(Calendar.date_day).filter(Calendar.year_number >= start_year, Calendar.year_number <= end_year).all()}
+
         current_date = date(start_year, 1, 1)
         end_date = date(end_year, 12, 31)
         count = 0
+
         while current_date <= end_date:
-            exists = session.query(Calendar).filter_by(date_day=current_date).first()
-            if not exists:
+            if current_date not in existing_dates:
                 weekday = current_date.isoweekday()
                 week_of_year = current_date.isocalendar()[1]
                 fiscal_year, fiscal_quarter = get_fiscal(current_date)
@@ -94,6 +88,7 @@ def init_calendar(start_year=2015, end_year=2030):
                 is_workday = not is_weekend
                 is_holiday = False
                 h_name = None
+
                 if current_date in HOLIDAYS_2025:
                     is_holiday = True
                     is_workday = False
@@ -102,6 +97,7 @@ def init_calendar(start_year=2015, end_year=2030):
                     is_workday = True
                     is_holiday = False
                     h_name = WORKDAYS_2025[current_date]
+
                 cal = Calendar(
                     date_day=current_date,
                     year_number=current_date.year,
@@ -114,23 +110,33 @@ def init_calendar(start_year=2015, end_year=2030):
                     fiscal_year=fiscal_year,
                     fiscal_quarter=fiscal_quarter,
                     week_of_year=week_of_year,
-                    season_tag=None,
                 )
                 session.add(cal)
                 count += 1
-                if count % 1000 == 0:
+                if count % 500 == 0:
                     session.flush()
-                    logger.info(f"已处理 {count} 天...")
+
             current_date += timedelta(days=1)
-        session.commit()
-        logger.info(f"✅ 日历初始化成功，共插入 {count} 条新记录。")
+
+        session.flush()
+        logger.info(f"✅ 日历数据初始化完成，新增 {count} 条记录。")
+        return True
     except Exception as e:
-        session.rollback()
-        logger.error(f"❌ 发生错误: {e}")
-        raise
-    finally:
-        session.close()
+        logger.error(f"日历初始化失败: {e}")
+        return False
+
+
+def main():
+    from sqlalchemy import create_engine
+
+    from devops_collector.config import settings
+
+    engine = create_engine(settings.database.uri)
+    with Session(engine) as session:
+        if execute_command(session):
+            session.commit()
 
 
 if __name__ == "__main__":
-    init_calendar()
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    main()
