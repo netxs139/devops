@@ -9,8 +9,6 @@ services:
     image: devops-platform:latest
     container_name: devops-api
     profiles: [ "core" ]
-    ports:
-      - "8000:8000"
     volumes:
       - .:/app
       - /app/.venv
@@ -29,6 +27,15 @@ services:
       retries: 20
       start_period: 60s
     command: uv run uvicorn devops_portal.main:app --host 0.0.0.0 --port 8000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=PathPrefix(`/api`) || PathPrefix(`/docs`) || PathPrefix(`/openapi.json`)"
+      - "traefik.http.routers.api.entrypoints=web"
+      - "traefik.http.services.api.loadbalancer.server.port=8000"
+      - "traefik.http.middlewares.api-stripprefix.stripprefix.prefixes=/api"
+      - "traefik.http.routers.api.middlewares=api-stripprefix,ratelimit"
+      - "traefik.http.middlewares.ratelimit.ratelimit.average=100"
+      - "traefik.http.middlewares.ratelimit.ratelimit.burst=50"
 
   # 2. 数据异步采集 Worker (多实例竞争消费)
   worker:
@@ -126,9 +133,7 @@ services:
   dashboard:
     image: devops-platform:latest
     container_name: devops-dashboard
-    profiles: [ "dataops" ]
-    ports:
-      - "8501:8501"
+    profiles: [ "core" ]
     volumes:
       - .:/app
     env_file:
@@ -142,7 +147,28 @@ services:
       timeout: 5s
       retries: 10
       start_period: 60s
-    command: streamlit run dashboard/Home.py
+    command: uv run streamlit run dashboard/Home.py
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.dashboard.entrypoints=web"
+      - "traefik.http.services.dashboard.loadbalancer.server.port=8501"
+
+  # 8. Traefik API Gateway (Unified Entrypoint)
+  traefik:
+    image: traefik:v3.0
+    container_name: devops-traefik
+    profiles: [ "core" ]
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 
 volumes:
   postgres_data:
