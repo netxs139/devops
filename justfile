@@ -86,28 +86,12 @@ init:
 # 使用 uv sync 同步依赖 (含内网 Nexus 重试逻辑)
 install:
     @echo "Tiered Sync (Nexus Primary x3 -> Tsinghua Fallback)..."
-    {{SHELL_EXEC}} bash -c "\
-        for i in 1 2 3; do \
-            echo \"[Attempt $i/3] Trying Nexus (8081)...\"; \
-            uv sync --frozen --all-groups --index-url {{NEXUS_PYPI_URL}} --trusted-host 192.168.5.64 && exit 0; \
-            sleep 1; \
-        done; \
-        echo \"Nexus failed, falling back to Tsinghua...\"; \
-        uv sync --frozen --all-groups --extra-index-url https://pypi.tuna.tsinghua.edu.cn/simple; \
-    "
+    uv run scripts/cli.py run --module sync_deps --frozen
 
 # [本地] 初始化宿主机开发环境
 init-dev:
     @echo "Local Dev Init (Nexus Primary x3 -> Tsinghua Fallback)..."
-    bash -c " \
-        for i in 1 2 3; do \
-            echo \"[Attempt \$i/3] Trying Nexus (8081)...\"; \
-            uv sync --all-groups --all-extras --index-url {{NEXUS_PYPI_URL}} --trusted-host 192.168.5.64 && exit 0; \
-            sleep 1; \
-        done; \
-        echo \"Nexus failed, falling back to Tsinghua...\"; \
-        uv sync --all-groups --all-extras --extra-index-url https://pypi.tuna.tsinghua.edu.cn/simple; \
-    "
+    uv run scripts/cli.py run --module sync_deps --dev
 
 
 # =============================================================================

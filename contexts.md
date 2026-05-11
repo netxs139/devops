@@ -153,16 +153,20 @@
 - **身份治理映射**: 全球唯一 `global_user_id` 连接各系统账号，置信度通过 `IdentityResolver` 算法动态计算。
 - **Security Scans**: 采用 **CI-Driven** 模式。DevOps platform 不运行本地扫描器（如 Java/Dependency-Check），而是通过 API 接收 CI 流水线上传的 JSON 报告。这降低了平台容器的体积与资源消耗。
 
-### 4.4 CLI 调度总线架构 (CLI Command Bus Architecture) [NEW/MANDATORY]
+### 4.4 CLI 调度总线架构 (CLI Command Bus Architecture) [REVISED/MANDATORY]
 
 > **背景**: 为了对抗脚本泛滥 (Scripts Sprawl) 并降低 AI Agent 的认知负荷，系统确立了“入口单一、架构收敛”原则。
 
 - **1. 命令总线 (Command Bus)**: `scripts/cli.py` 是整个系统运维能力的唯一物理入口。
-- **2. 混合调度机制 (Hybrid Dispatching)**:
-  - **原生模式 (Native Mode) [COMPLETE]**: 已完成 30+ 核心脚本重构，支持动态加载并注入顶层 `Session` 对象，实现跨脚本事务原子性与零连接开销。
-  - **子进程模式 (Subprocess Mode)**: 对于遗留脚本，自动降级为 `subprocess.run` 调用，确保 100% 向后兼容。
-- **3. 开发契约**: 任何新增脚本必须暴露 `execute_command(session: Session, **kwargs)` 接口。
-- **4. 事务守卫**: 批量任务（如 `init --all`）由 `cli.py` 在最外层统一捕获异常并执行全局 `rollback()`。
+- **2. 混合调度机制 (Hybrid Dispatching v3)**:
+  - **框架模式 (Command Framework) [NEW/PRIORITY]**: 基于 `BaseCommand` 基类的插件化架构。存放于 `devops_collector/management/commands/`。支持：
+    - **自动发现**：无需手动注册，文件放入目录即生效。
+    - **强类型参数**：通过 `add_arguments` 定义专有 CLI 参数。
+    - **上下文注入**：自动注入 `session` 和 `settings`。
+  - **原生兼容模式 (Native Legacy)**: 支持遗留的 `execute_command(session, **kwargs)` 接口脚本。
+  - **子进程模式 (Subprocess Fallback)**: 自动降级为 `subprocess.run` 调用，确保 100% 向后兼容。
+- **3. 开发契约**: 任何**新**运维逻辑**必须**以 `BaseCommand` 子类形式实现。
+- **4. 事务与审计**: 全量任务由 `cli.py` 在最外层统一捕获异常并执行全局 `rollback()`。
 
 ### 4.1 数据采集管道性能规范 (Data Pipeline Performance) [MANDATORY]
 
