@@ -32,6 +32,7 @@ class BaseCommand(ABC):
         self.stdout = stdout or sys.stdout
         self.stderr = stderr or sys.stderr
         self.session: Session = None  # Will be injected by the runner
+        self.settings = settings
 
     def add_arguments(self, parser: argparse.ArgumentParser):  # noqa: B027
         """
