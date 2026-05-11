@@ -131,7 +131,7 @@ check-imports:
 # [MANDATORY] 架构合规性审计 (Anti-Patterns Check)
 arch-audit:
     @echo "Running Architecture & Anti-Pattern Audit..."
-    python scripts/arch_auditor.py
+    uv run python scripts/arch_auditor.py
 
 # 数据字典一致性校验
 docs-verify:
@@ -141,11 +141,11 @@ docs-verify:
 # [MANDATORY] 核心卡点：代码合并前全量校验 (Lint -> Test -> Build)
 full-gate:
     @echo "Launching Project Full Gate (Grader 3)..."
-    python scripts/gatekeeper.py --mode full
+    uv run python scripts/gatekeeper.py --mode full
 
 # [L2/CI] 快速卡点：跳过容器构建阶段
 fast-gate:
-    python scripts/gatekeeper.py --mode fast
+    uv run python scripts/gatekeeper.py --mode fast
 
 # 运行单元测试
 test:
@@ -235,7 +235,7 @@ package: pull-images
 deploy-offline:
     @if (Test-Path devops-platform.tar) { docker load -i devops-platform.tar }
     {{COMPOSE_CMD}} up -d --wait --no-build
-    {{COMPOSE_CMD}} exec -T api python -m devops_collector.utils.schema_sync
+    {{EXEC_CMD}} python -m devops_collector.utils.schema_sync
     just init-prod-data
 
 # 服务器专用：离线加载并部署 [Linux]
@@ -243,14 +243,14 @@ deploy-offline:
 deploy-offline:
     @if [ -f devops-platform.tar ]; then echo "Loading image..."; docker load -i devops-platform.tar; fi
     {{COMPOSE_CMD}} up -d --wait --no-build
-    {{COMPOSE_CMD}} exec -T api python -m devops_collector.utils.schema_sync
+    {{EXEC_CMD}} python -m devops_collector.utils.schema_sync
     just init-prod-data
 
 # 内部调用：生产环境数据初始化
 init-prod-data:
-    {{COMPOSE_CMD}} exec -T api python scripts/cli.py init --module rbac
-    {{COMPOSE_CMD}} exec -T api python scripts/cli.py init --module organizations
-    {{COMPOSE_CMD}} exec -T api python scripts/cli.py run --module import_employees
+    {{EXEC_CMD}} python scripts/cli.py init --module rbac
+    {{EXEC_CMD}} python scripts/cli.py init --module organizations
+    {{EXEC_CMD}} python scripts/cli.py run --module import_employees
 
 # 生产环境一键部署 (联网模式)
 deploy-prod:
@@ -354,20 +354,20 @@ docs:
 
 # 添加新任务到进度表
 progress-add task:
-    @python scripts/progress_manager.py --add "{{task}}"
+    @uv run python scripts/progress_manager.py --add "{{task}}"
 
 # 标记任务为已完成 (输入任务编号)
 progress-done id:
-    @python scripts/progress_manager.py --done {{id}}
+    @uv run python scripts/progress_manager.py --done {{id}}
 
 # 更新当前重点 (Focus)
 progress-focus content:
-    @python scripts/progress_manager.py --update-focus "{{content}}"
+    @uv run python scripts/progress_manager.py --update-focus "{{content}}"
 
 # 镜像未选选项到任务列表 (用分号分隔多个任务)
 progress-mirror tasks:
-    @python scripts/progress_manager.py --mirror-tasks "{{tasks}}"
+    @uv run python scripts/progress_manager.py --mirror-tasks "{{tasks}}"
 
 # 归档超过 5 条的已完成任务
 progress-archive:
-    @python scripts/progress_manager.py --archive
+    @uv run python scripts/progress_manager.py --archive
