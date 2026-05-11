@@ -42,8 +42,11 @@
 
 1. **物理验证**: L2+ 必须执行 `just verify` (覆盖率 >= 80%)；交付报告必须粘贴终端日志碎片。
 1. **环境安全**: 宿主机为 **Win+PS**，严禁使用 `&&/||` 或重定向操作符；涉及核心变更必须执行 `just security-audit`；**[Sync-Only]** `git push` 仅限跨设备同步时显式执行，严禁自动推送。
-1. **指令校验**: 修改 `justfile/CI` 前必须执行 `[command] --help`；离场前强制执行 `just clean` 与 `just docs-verify` (若涉及模型变更)。
 1. **提交语言**: Commit Message 强制使用英文 Conventional Commits 格式，严禁使用中文。
+1. **离场审计与交接协议 (Exit & Handover Protocol) [MANDATORY]**: 凡用户宣告“下班”、“任务结束”或会话离场前，必须强制执行以下动作：
+   - **审计登记**：按照 `docs/history/session-history.log` 规范，置顶登记本次会话的 Session ID、耗时及核心交付物。
+   - **物理清理**：执行 `just clean` 移除临时文件；若涉及模型变更，执行 `just docs-verify`。
+   - **SSOT 对齐**：同步更新 `progress.txt` (当前看板) 与 `CHANGELOG.md` (版本履历)。
 
 ## 4. 架构契约原则 (Architectural Contracts) [AI-NATIVE]
 
