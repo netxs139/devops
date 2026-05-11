@@ -10,7 +10,8 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 PROGRESS_FILE = "progress.txt"
-ARCHIVE_FILE = os.path.join("docs/history", "progress_archive.md")
+# 历史进度归档已收拢至 CHANGELOG.md。注意：自动化脚本写入可能破坏其结构，建议手动维护。
+ARCHIVE_FILE = "CHANGELOG.md"
 
 
 def read_file(path: str) -> list[str]:

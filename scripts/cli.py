@@ -7,13 +7,14 @@ from pathlib import Path
 
 
 # 添加项目根目录以确保模块能被正确 import
-sys.path.insert(0, str(Path(__file__).parent.parent))
+PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
-# 引入数据库上下文
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from devops_collector.config import settings
+from devops_collector.core.management import BaseCommand
 
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -89,115 +90,141 @@ COMMAND_GROUPS = {
 }
 
 
-def run_script(script_name: str, scripts_dir: Path, global_session: Session) -> bool:
-    script_path = scripts_dir / script_name
-    if not script_path.exists():
-        logger.warning(f"脚本不存在，跳过: {script_name}")
-        return True
-
-    # ---------- Phase 2 混合调度探针 ----------
-    module_name = script_name.replace(".py", "")
+def get_command_class(command_name: str) -> type[BaseCommand] | None:
+    """尝试获取类命令。"""
     try:
-        # 尝试动态加载模块 (scripts.xxx)
+        module_path = f"devops_collector.management.commands.{command_name}"
+        module = importlib.import_module(module_path)
+        if hasattr(module, "Command") and issubclass(module.Command, BaseCommand):
+            return module.Command
+    except (ImportError, AttributeError):
+        pass
+    return None
+
+
+def run_command(command_name: str, session: Session, scripts_dir: Path, args_list: list[str] = None) -> bool:
+    """
+    统一执行入口：类命令优先 -> 模块 execute_command 其次 -> 子进程兜底。
+    """
+    # 1. 尝试类命令 (New Framework)
+    cmd_class = get_command_class(command_name)
+    if cmd_class:
+        logger.info(f"🚀 [Command Framework] 正在执行: {command_name}")
+        cmd = cmd_class()
+        # 处理参数
+        parser = argparse.ArgumentParser(prog=f"cli.py ... --module {command_name}")
+        cmd.add_arguments(parser)
+        options, _ = parser.parse_known_args(args_list or [])
+        try:
+            success = cmd.execute(session, **vars(options))
+            if success:
+                session.flush()
+                return True
+            else:
+                session.rollback()
+                return False
+        except Exception as e:
+            session.rollback()
+            logger.error(f"❌ 类命令执行异常: {command_name} ({e})")
+            return False
+
+    # 2. 尝试旧的原生模式 (Phase 2 Legacy)
+    script_file = f"{command_name}.py" if not command_name.endswith(".py") else command_name
+    script_path = scripts_dir / script_file
+    module_name = command_name.replace(".py", "")
+
+    try:
         module = importlib.import_module(f"scripts.{module_name}")
         if hasattr(module, "execute_command"):
-            logger.info(f"⚡ [Native 模式] 正在执行: {script_name}")
-            try:
-                success = module.execute_command(session=global_session)
-                # 只有原生模式可以享受到事务整合，由调度器决定 commit 还是保持
-                if success is False:
-                    global_session.rollback()
-                    logger.error(f"❌ 脚本逻辑执行失败: {script_name}")
-                    return False
-                else:
-                    global_session.flush()  # 刷入缓存但不 commit，留给顶层或者内部自己控制
-                    return True
-            except Exception as e:
-                global_session.rollback()
-                logger.error(f"❌ 脚本原生调用异常: {script_name} ({e})")
+            logger.info(f"⚡ [Native Legacy] 正在执行: {script_file}")
+            success = module.execute_command(session=session)
+            if success:
+                session.flush()
+                return True
+            else:
+                session.rollback()
                 return False
     except ImportError:
-        # 找不到模块或里面有绝对路径依赖导致的导入失败，静默降级
         pass
     except Exception as e:
-        # 其他解析期错误，记录但不中断，降级到 subprocess 尝试
-        logger.debug(f"加载 {script_name} 时未命中 Phase2 规范: {e}")
+        logger.debug(f"加载脚本 {script_file} 时出错: {e}")
 
-    # ---------- 降级: Phase 1 子进程模式 ----------
-    logger.info(f"🐌 [Subprocess 模式] 正在执行: {script_name}")
-    try:
-        result = subprocess.run([sys.executable, str(script_path)], check=True, text=True)
-        return result.returncode == 0
-    except subprocess.CalledProcessError as e:
-        logger.error(f"❌ 子进程脚本失败: {script_name} (退出码: {e.returncode})")
-        return False
-    except Exception as ex:
-        logger.error(f"❌ 脚本调用发生异常: {script_name} ({ex})")
-        return False
+    # 3. 子进程模式 (Phase 1 Fallback)
+    if script_path.exists():
+        logger.info(f"🐌 [Subprocess Fallback] 正在执行: {script_file}")
+        try:
+            result = subprocess.run([sys.executable, str(script_path)], check=True, text=True)
+            return result.returncode == 0
+        except Exception as e:
+            logger.error(f"❌ 子进程执行失败: {script_file} ({e})")
+            return False
+
+    logger.warning(f"⚠️ 未找到任何匹配的命令或脚本: {command_name}")
+    return False
 
 
-def execute_group(group_name: str, args, scripts_dir: Path, global_session: Session):
+def execute_group(group_name: str, args, scripts_dir: Path, session: Session, unknown_args: list[str]):
     target_scripts = COMMAND_GROUPS.get(group_name, [])
 
     if hasattr(args, "module") and args.module:
         target = args.module
-        if not target.endswith(".py"):
-            matches = [s for s in target_scripts if target in s]
-            if not matches:
-                target = f"{group_name}_{target}.py" if group_name in ["init", "diag", "check", "verify"] else f"{target}.py"
-            else:
-                target = matches[0]
+        # 去掉 .py 后缀统一逻辑
+        cmd_name = target.replace(".py", "")
 
-        logger.info(f"🎯 单独触发: {target}")
-        success = run_script(target, scripts_dir, global_session)
+        # 如果在硬编码列表里，尝试补全
+        if cmd_name not in target_scripts and target not in target_scripts:
+            matches = [s for s in target_scripts if cmd_name in s]
+            if matches:
+                cmd_name = matches[0].replace(".py", "")
+
+        success = run_command(cmd_name, session, scripts_dir, unknown_args)
         if success:
-            global_session.commit()
+            session.commit()
         return
 
     if hasattr(args, "all") and args.all:
         logger.info(f"🚀 开始全量执行 [{group_name}] 任务组...")
         success_count = 0
-        executed = set()
-
-        try:
-            for script in target_scripts:
-                if run_script(script, scripts_dir, global_session):
-                    success_count += 1
-                executed.add(script)
-
-            prefix = f"{group_name}_"
-            all_matched_scripts = [f.name for f in scripts_dir.glob(f"{prefix}*.py")]
-            for script in all_matched_scripts:
-                if script not in executed:
-                    if run_script(script, scripts_dir, global_session):
-                        success_count += 1
-
-            global_session.commit()
-            logger.info(f"🎉 [{group_name}] 任务组执行完成！成功: {success_count} 项。已全局提交。")
-        except Exception as e:
-            global_session.rollback()
-            logger.error(f"⚠️ [{group_name}] 执行中断，发生严重异常已全局回滚。详情: {e}")
+        for script in target_scripts:
+            cmd_name = script.replace(".py", "")
+            if run_command(cmd_name, session, scripts_dir):
+                success_count += 1
+        session.commit()
+        logger.info(f"🎉 [{group_name}] 执行完成，成功 {success_count} 项。")
     else:
-        logger.warning(f"未指定执行范围。请使用 `uv run scripts/cli.py {group_name} --all` 或 `--module <name>`")
+        logger.warning("请指定 --all 或 --module <name>")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="DevOps 平台统一管理调度工具 (Command Bus)")
+    parser = argparse.ArgumentParser(description="DevOps 平台统一管理调度工具 (Command Bus v3)")
     subparsers = parser.add_subparsers(dest="command", help="可用命令组")
 
-    for group, scripts in COMMAND_GROUPS.items():
-        sp = subparsers.add_parser(group, help=f"调度 {group} 相关的任务 (共 {len(scripts)} 个)")
-        sp.add_argument("--all", action="store_true", help=f"按顺序执行所有的 {group} 脚本")
-        sp.add_argument("--module", type=str, help="仅执行指定的模块 (如输入文件名的关键词)")
+    for group in COMMAND_GROUPS:
+        sp = subparsers.add_parser(group, help=f"调度 {group} 相关的任务")
+        sp.add_argument("--all", action="store_true", help="全量执行")
+        sp.add_argument("--module", type=str, help="执行指定模块")
 
-    args = parser.parse_args()
+    # 特殊的管理命令：列出所有发现的类命令
+    subparsers.add_parser("list", help="列出所有可用的类命令")
+
+    args, unknown = parser.parse_known_args()
     scripts_dir = Path(__file__).parent.resolve()
 
+    if args.command == "list":
+        cmd_dir = PROJECT_ROOT / "devops_collector/management/commands"
+        print("\n发现的类命令 (Management Commands):")
+        for f in cmd_dir.glob("*.py"):
+            if f.stem != "__init__":
+                cmd_class = get_command_class(f.stem)
+                help_text = cmd_class.help if cmd_class else "No help available."
+                print(f"  - {f.stem:<20} : {help_text}")
+        print()
+        return
+
     if args.command in COMMAND_GROUPS:
-        # Phase 2 顶层统一拉起数据库引擎
         engine = create_engine(settings.database.uri)
         with Session(engine) as session:
-            execute_group(args.command, args, scripts_dir, session)
+            execute_group(args.command, args, scripts_dir, session, unknown)
     else:
         parser.print_help()
 

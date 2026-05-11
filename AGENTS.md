@@ -32,8 +32,9 @@
 1. **偏航必锚与计划外资产**: 偏离 Focus > 1 回合必须同步文档；临时优化标记为 `[Ad-hoc]` 并沉淀入 ADR。
 1. **中断恢复嗅探**: 启动/收尾强制 `git status -u`；发现未跟踪脚本必须汇报并整合进 `progress.txt`。
 1. **临时脚本隔离**: 严禁在业务目录排错，必须写入 `.agent/scratch/`。
-1. **统一运维入口 (CLI Mandate)**: **绝对严禁**直接执行 `python scripts/xxx.py`。所有运维任务、初始化、诊断及数据导出操作，必须通过 `uv run scripts/cli.py <group> --module <name>` 触发，以确保日志轨迹、数据库连接池及事务的一致性。
-1. **归档资产一致性协议 (Archive Integrity) [MANDATORY]**: 归档路径固化为 `docs/history/progress_archive.md`。**严禁**使用 `Overwrite=true`；必须执行 `Read-Merge-Write` 且新批次强制 **Prepend (置顶)**。
+1. **统一运维入口 (CLI Mandate)**: **绝对严禁**直接执行 `python scripts/xxx.py`。所有运维任务、初始化、诊断及数据导出操作，必须通过 `uv run scripts/cli.py <group> --module <name>` 触发。**新功能优先采用类模式实现**（存放在 `devops_collector/management/commands/`），以确保日志轨迹、数据库连接池及事务的一致性。
+1. **管理命令规范 (Command Framework)**: 新增运维逻辑必须继承 `BaseCommand` 基类。禁止在 `scripts/` 下创建新的独立 Python 脚本。执行前应先运行 `uv run scripts/cli.py list` 核实已存在的命令。
+1. **修订记录一致性协议 (Changelog Integrity) [MANDATORY]**: 历史进度归档已彻底并入 `CHANGELOG.md`。**严禁**使用已废弃的 `progress_archive.md`。执行归档时，必须将 `progress.txt` 中的任务摘要提炼并置顶于 `CHANGELOG.md` 的最新版本或 `[Unreleased]` 节段。
 1. **导入完整性与预飞行 (Import Integrity & Pre-flight)**: 任何 Model/Service 变更必须首先通过 `python -c "import ..."` 冒烟测试。严禁在宿主机环境未安装依赖时强行运行 `pytest`，必须使用沙箱模式。
 1. **文码同行律 (Code-Doc Co-evolution) [MANDATORY]**: 任何涉及业务逻辑、模型 Schema、指标口径或 UI 架构的变更，**必须**在提交代码的同时完成相关文档（如 `docs/`, `contexts.md`, `AGENTS.md`, `GLOSSARY.md`）的同步更新。严禁在文档滞后的情况下宣告完工。
 
