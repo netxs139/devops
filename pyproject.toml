@@ -57,6 +57,7 @@ dependencies = [
     "watchdog>=6.0.0,<7.0.0",
     "pypinyin>=0.50.0,<1.0.0",
     "cryptography>=46.0.5",
+    "rich>=14.3.3",
 ]
 
 [project.optional-dependencies]

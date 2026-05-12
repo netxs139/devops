@@ -29,10 +29,24 @@ class BaseCommand(ABC):
     help = ""
 
     def __init__(self, stdout=None, stderr=None):
+        from rich.console import Console
+
         self.stdout = stdout or sys.stdout
         self.stderr = stderr or sys.stderr
         self.session: Session = None  # Will be injected by the runner
         self.settings = settings
+        self.console = Console()
+
+    def get_progress(self):
+        """返回一个配置好的 Rich Progress 上下文管理器，支持进度条和耗时统计。"""
+        from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
+
+        return Progress(
+            SpinnerColumn(),
+            *Progress.get_default_columns(),
+            TimeElapsedColumn(),
+            console=self.console,
+        )
 
     def add_arguments(self, parser: argparse.ArgumentParser):  # noqa: B027
         """
@@ -76,45 +90,48 @@ class CommandContext:
 
 
 class DiagHelper:
-    """诊断助手类，用于标准化诊断输出。"""
+    """诊断助手类，用于标准化诊断输出 (已升级为 Rich)。"""
 
-    @staticmethod
-    def print_header(title: str, width: int = 60):
-        print("=" * width)
-        print(f"{title:^{width}}")
-        print("=" * width)
+    from rich.console import Console
 
-    @staticmethod
-    def print_footer(width: int = 60):
-        print("=" * width)
-        print("\n")
+    _console = Console()
 
-    @staticmethod
-    def log_success(msg: str):
-        print(f"   ✓ {msg}")
+    @classmethod
+    def print_header(cls, title: str, width: int = 60):
+        from rich.panel import Panel
 
-    @staticmethod
-    def log_failure(msg: str):
-        print(f"   ✗ {msg}")
+        cls._console.print(Panel(f"[bold cyan]{title}[/bold cyan]", width=width, expand=False))
 
-    @staticmethod
-    def log_warning(msg: str):
-        print(f"   ⚠ {msg}")
+    @classmethod
+    def print_footer(cls, width: int = 60):
+        cls._console.print(f"[dim]{'=' * width}[/dim]\n")
 
-    @staticmethod
-    def run_check(label: str, check_func: Any):
-        """运行一个检查项并打印结果。"""
+    @classmethod
+    def log_success(cls, msg: str):
+        cls._console.print(f"   [green]✓[/green] {msg}")
+
+    @classmethod
+    def log_failure(cls, msg: str):
+        cls._console.print(f"   [red]✗[/red] {msg}")
+
+    @classmethod
+    def log_warning(cls, msg: str):
+        cls._console.print(f"   [yellow]⚠[/yellow] {msg}")
+
+    @classmethod
+    def run_check(cls, label: str, check_func: Any):
+        """运行一个检查项并带有等待动画。"""
         import time
 
-        print(f"\n[{label}] 正在检查...")
         start_time = time.time()
         try:
-            result = check_func()
+            with cls._console.status(f"[cyan][{label}][/cyan] 正在检查..."):
+                result = check_func()
             elapsed = time.time() - start_time
             return result, elapsed
         except Exception as e:
             elapsed = time.time() - start_time
-            DiagHelper.log_failure(f"{label} 失败: {e}")
+            cls.log_failure(f"{label} 失败: {e}")
             return None, elapsed
 
 
