@@ -39,11 +39,11 @@ async def get_radar_detail(
     items = []
 
     if metric_type == "RUBBER_STAMP":
-        q = db.query(GitLabMergeRequest).filter(GitLabMergeRequest.merged_at >= since, GitLabMergeRequest.rubber_stamp.is_(True))
+        mr_q = db.query(GitLabMergeRequest).filter(GitLabMergeRequest.merged_at >= since, GitLabMergeRequest.rubber_stamp.is_(True))
         if project_id:
-            q = q.filter(GitLabMergeRequest.project_id == project_id)
-        results = q.order_by(GitLabMergeRequest.merged_at.desc()).limit(limit).all()
-        for m in results:
+            mr_q = mr_q.filter(GitLabMergeRequest.project_id == project_id)
+        mr_results = mr_q.order_by(GitLabMergeRequest.merged_at.desc()).limit(limit).all()
+        for m in mr_results:
             items.append(
                 {
                     "id": f"!{m.iid}",
@@ -56,31 +56,32 @@ async def get_radar_detail(
             )
 
     elif metric_type == "VSM_WAITING":
-        q = db.query(GitLabMergeRequest).filter(
+        wait_q = db.query(GitLabMergeRequest).filter(
             GitLabMergeRequest.merged_at >= since,
             GitLabMergeRequest.wait_time_to_review > 3600,  # 1h 以上视为严重等待
         )
         if project_id:
-            q = q.filter(GitLabMergeRequest.project_id == project_id)
-        results = q.order_by(GitLabMergeRequest.wait_time_to_review.desc()).limit(limit).all()
-        for m in results:
+            wait_q = wait_q.filter(GitLabMergeRequest.project_id == project_id)
+        wait_results = wait_q.order_by(GitLabMergeRequest.wait_time_to_review.desc()).limit(limit).all()
+        for m in wait_results:
+            wait_val = round(m.wait_time_to_review / 3600, 1) if m.wait_time_to_review else 0
             items.append(
                 {
                     "id": f"!{m.iid}",
                     "title": m.title,
                     "author": m.author_username,
-                    "value": f"{round(m.wait_time_to_review / 3600, 1)} h",
+                    "value": f"{wait_val} h",
                     "url": m.web_url,
                     "timestamp": m.merged_at.isoformat() if m.merged_at else None,
                 }
             )
 
     elif metric_type == "HIGH_ELOC":
-        q = db.query(GitLabCommit).filter(GitLabCommit.committed_date >= since)
+        commit_q = db.query(GitLabCommit).filter(GitLabCommit.committed_date >= since)
         if project_id:
-            q = q.filter(GitLabCommit.project_id == project_id)
-        results = q.order_by(GitLabCommit.eloc_score.desc()).limit(limit).all()
-        for c in results:
+            commit_q = commit_q.filter(GitLabCommit.project_id == project_id)
+        commit_results = commit_q.order_by(GitLabCommit.eloc_score.desc()).limit(limit).all()
+        for c in commit_results:
             items.append(
                 {
                     "id": c.short_id,
@@ -93,14 +94,14 @@ async def get_radar_detail(
             )
 
     elif metric_type == "VULNERABILITY":
-        q = db.query(GitLabVulnerability).filter(GitLabVulnerability.state.in_(["detected", "confirmed"]))
+        vuln_q = db.query(GitLabVulnerability).filter(GitLabVulnerability.state.in_(["detected", "confirmed"]))
         if project_id:
-            q = q.filter(GitLabVulnerability.project_id == project_id)
-        results = q.order_by(GitLabVulnerability.severity.desc()).limit(limit).all()
-        for v in results:
+            vuln_q = vuln_q.filter(GitLabVulnerability.project_id == project_id)
+        vuln_results = vuln_q.order_by(GitLabVulnerability.severity.desc()).limit(limit).all()
+        for v in vuln_results:
             items.append(
                 {
-                    "id": v.id,
+                    "id": str(v.id),
                     "title": (v.name or "")[:80],
                     "author": v.severity,  # 借用 author 字段存级别
                     "value": v.state,

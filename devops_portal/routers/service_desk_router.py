@@ -52,7 +52,8 @@ async def upload_service_desk_attachment(
             raise HTTPException(status_code=404, detail="Lead project repo not found")
 
         content = await file.read()
-        uploaded_file = client._post(f"projects/{lead_repo_id}/uploads", files={"file": (file.filename, content)}).json()
+        resp = client._post(f"projects/{lead_repo_id}/uploads", files={"file": (file.filename, content)})
+        uploaded_file = resp.json()
         return {"markdown": uploaded_file.get("markdown"), "url": uploaded_file.get("url")}
     except HTTPException:
         raise

@@ -489,18 +489,13 @@ class GitLabMergeRequest(Base, TimestampMixin, TraceabilityMixin):
 
     @hybrid_property
     def target_branch(self):
-        '''"""TODO: Add description.
-
-        Args:
-            self: TODO
-
-        Returns:
-            TODO
-
-        Raises:
-            TODO
-        """'''
+        """MR 目标分支。"""
         return self.raw_data.get("target_branch") if self.raw_data else None
+
+    @hybrid_property
+    def web_url(self):
+        """MR 的 GitLab 网页地址。"""
+        return self.raw_data.get("web_url") if self.raw_data else None
 
     def __repr__(self) -> str:
         return f"<GitLabMergeRequest(id={self.id}, iid={self.iid})>"
@@ -562,6 +557,11 @@ class GitLabCommit(Base, TimestampMixin, TraceabilityMixin):
     comment_lines: Mapped[int | None] = mapped_column(Integer, default=0, comment="注释行数")
     refactor_ratio: Mapped[float | None] = mapped_column(Float, default=0.0, comment="重构代码占比")
     promoted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="上架到主数据的时间")
+
+    @hybrid_property
+    def web_url(self):
+        """提交的 GitLab 网页地址。"""
+        return self.raw_data.get("web_url") if self.raw_data else None
 
     def __repr__(self) -> str:
         return f"<GitLabCommit(id='{self.short_id}', project_id={self.project_id})>"
@@ -1690,6 +1690,11 @@ class GitLabVulnerability(Base, TimestampMixin, TraceabilityMixin):
 
     project: Mapped["GitLabProject | None"] = relationship("GitLabProject", back_populates="vulnerabilities")  # noqa: F821
     pipeline: Mapped["GitLabPipeline | None"] = relationship("GitLabPipeline")  # noqa: F821
+
+    @hybrid_property
+    def web_url(self):
+        """漏洞的 GitLab 网页地址。"""
+        return self.raw_data.get("web_url") if self.raw_data else None
 
     def __repr__(self) -> str:
         return f"<GitLabVulnerability(name='{self.name[:30]}...', severity='{self.severity}')>"
