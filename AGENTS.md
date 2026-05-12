@@ -41,7 +41,7 @@
 ## 3. 工程严谨性基准 (Engineering Rigor) [MANDATORY]
 
 1. **物理验证**: L2+ 必须执行 `just verify` (覆盖率 >= 80%)；交付报告必须粘贴终端日志碎片。
-1. **环境安全**: 宿主机为 **Win+PS**，严禁使用 `&&/||` 或重定向操作符；涉及核心变更必须执行 `just security-audit`；**[Sync-Only]** `git push` 仅限跨设备同步时显式执行，严禁自动推送。
+1. **环境安全**: 宿主机为 **WSL Ubuntu (Linux/zsh)**；涉及核心变更必须执行 `just security-audit`；**[Sync-Only]** `git push` 仅限跨设备同步时显式执行，严禁自动推送。
 1. **提交语言**: Commit Message 强制使用英文 Conventional Commits 格式，严禁使用中文。
 1. **离场审计与交接协议 (Exit & Handover Protocol) [MANDATORY]**: 凡用户宣告“下班”、“任务结束”或会话离场前，必须强制执行以下动作：
    - **审计登记**：按照 `docs/history/session-history.log` 规范，置顶登记本次会话的 Session ID、耗时及核心交付物。
@@ -79,9 +79,12 @@
 
 1. **自动执行策略 (Auto-run Strategy)**:
    为提升交互效率，对于以下**无害且只读**的指令，AI 应在调用 `run_command` 或 `send_command_input` 时显式设置 `SafeToAutoRun: true`，以避免不必要的人工确认：
-   - **环境嗅探 (只读)**: `ls`, `pwd`, `git status`, `git branch`, `whoami`, `env` (不含敏感信息)。
-   - **版本与帮助**: `python --version`, `just --version`, `git --version`, `uv --version`, 以及各类命令的 `--help`。
-   - **文档查阅 (只读)**: `cat`, `head`, `tail`, `grep` (只读查询)。
+   - **环境嗅探 (只读)**: `ls`, `pwd`, `whoami`, `groups`, `env` (不含敏感信息), `find` (只读搜索), `du -sh`, `df -h`, `uname -a`, `which`, `type`, `file`, `id` 等。
+   - **版本与帮助**: `python --version`, `just --version`, `git --version`, `uv --version`, `node --version`, 以及各类命令的 `--help`。
+   - **Git 只读操作**: `git status`, `git branch`, `git log`, `git show`, `git diff` (不带 `--output`), `git stash list`, `git remote -v`, `git tag -l`, `git rev-parse`, `git blame` 等。
+   - **容器只读查询**: `docker ps`, `docker images`, `docker logs`, `docker inspect`, `docker stats --no-stream`, `docker-compose ps` 等。
+   - **文档查阅 (只读)**: `cat`, `head`, `tail`, `grep` (只读查询), `wc`, `just list` 等。
+   - **组合逻辑 (Read-only Pipes)**: 允许管道符进行只读组合（`| grep`, `| wc -l`, `| head`, `| tail`, `| sort`, `| uniq`），只要最终行为不涉及数据抹除或系统变更。
 2. **强制确认红线**: 对于任何具有**副作用**或**潜在风险**的操作，严禁设置 `SafeToAutoRun: true`，必须等待用户点击确认：
    - **物理变更**: 任何 `git commit`, `git push`, `rm`, `mv` (移动至非临时目录), `chmod` 等操作。
    - **部署与启动**: 任何 `just deploy`, `docker-compose up`, `uv run scripts/cli.py` 等。
