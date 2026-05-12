@@ -207,7 +207,14 @@ class IterationPlanService:
             logger.error(f"发布执行失败: {e}")
             raise e
 
-    def create_sprint(self, project_id: int, title: str, start_date: str, due_date: str, description: str = None) -> dict:
+    def create_sprint(
+        self,
+        project_id: int,
+        title: str,
+        start_date: str | None = None,
+        due_date: str | None = None,
+        description: str | None = None,
+    ) -> dict:
         """【迭代规划】创建新的冲刺 (GitLabMilestone)。"""
         try:
             gl_milestone = self.client.create_project_milestone(project_id, title, start_date, due_date, description)

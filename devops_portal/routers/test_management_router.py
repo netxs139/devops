@@ -129,7 +129,8 @@ async def import_test_cases(
         import pandas as pd
 
         contents = await file.read()
-        if file.filename.endswith(".csv"):
+        filename = file.filename or ""
+        if filename.endswith(".csv"):
             df = pd.read_csv(io.BytesIO(contents))
         else:
             df = pd.read_excel(io.BytesIO(contents))

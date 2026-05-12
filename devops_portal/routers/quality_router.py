@@ -38,10 +38,10 @@ async def get_province_quality(
 
     url = f"{settings.gitlab.url}/api/v4/projects/{project_id}/issues"
     headers = {"PRIVATE-TOKEN": settings.gitlab.private_token}
-    params = {"state": "all", "per_page": 100}
+    params: dict[str, str | int] = {"state": "all", "per_page": 100}
     try:
         # Use globally managed AsyncClient from Config
-        if not hasattr(Config, "http_client") or Config.http_client is None:
+        if Config.http_client is None:
             import httpx
 
             async with httpx.AsyncClient(timeout=settings.client.timeout) as client:
@@ -108,7 +108,7 @@ async def get_test_summary(
             get_test_summary as internal_summary,
         )
 
-        return await internal_summary(project_id, current_user, None, service.test_service)
+        return await internal_summary(project_id, current_user, service.session, service.test_service)
     except Exception as e:
         logger.error(f"Failed to fetch summary: {e}")
         raise HTTPException(status_code=500, detail=str(e)) from e

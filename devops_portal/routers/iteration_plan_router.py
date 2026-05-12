@@ -168,7 +168,7 @@ async def trigger_release(
             milestone_title=payload.version,
             new_title=payload.new_title,
             ref_branch=payload.ref_branch,
-            user_id=current_user.global_user_id,
+            user_id=str(current_user.global_user_id),
             auto_rollover=payload.auto_rollover,
             target_milestone_id=payload.target_milestone_id,
         )

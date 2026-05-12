@@ -32,9 +32,9 @@ class ServiceDeskService:
         description: str,
         issue_type: str,
         requester: Any,
-        attachments: list[str] = None,
-        bug_category: str = None,
-        req_type: str = None,
+        attachments: list[str] | None = None,
+        bug_category: str | None = None,
+        req_type: str | None = None,
     ) -> ServiceDeskTicket | None:
         """创建工单（同步到 GitLab Issue）。
 

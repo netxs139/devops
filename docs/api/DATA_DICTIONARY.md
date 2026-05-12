@@ -1,6 +1,6 @@
 # DevOps 效能平台 - 数据字典 (Data Dictionary)
 
-> **生成时间**: 2026-05-08 08:09:49
+> **生成时间**: 2026-05-12 10:50:29
 > **版本**: v2.2 (企业级标准版)
 > **状态**: 有效 (Active)
 
@@ -28,7 +28,7 @@ ______________________________________________________________________
 
 ## 数据表清单
 
-本系统共包含 **78 个数据表**，分为以下几个业务域：
+本系统共包含 **95 个数据表**，分为以下几个业务域：
 
 ### 核心主数据域
 
@@ -69,6 +69,8 @@ ______________________________________________________________________
 - `gtm_test_cases` - GTMTestCase
 - `gtm_test_execution_records` - GTMTestExecutionRecord
 - `qa_jenkins_test_executions` - JenkinsTestExecution
+- `zentao_test_cases` - ZenTaoTestCase
+- `zentao_test_results` - ZenTaoTestResult
 
 ### GitLab 集成域
 
@@ -102,11 +104,19 @@ ______________________________________________________________________
 - `dependencies` - Dependency
 - `dependency_cves` - DependencyCVE
 - `dependency_scans` - DependencyScan
+- `jenkins_builds` - JenkinsBuild
+- `jenkins_jobs` - JenkinsJob
+- `jfrog_artifacts` - JFrogArtifact
+- `jfrog_dependencies` - JFrogDependency
+- `jfrog_scans` - JFrogScan
+- `jfrog_vulnerability_details` - JFrogVulnerabilityDetail
 - `jira_boards` - JiraBoard
 - `jira_issues` - JiraIssue
 - `jira_projects` - JiraProject
 - `jira_sprints` - JiraSprint
 - `license_risk_rules` - LicenseRiskRule
+- `nexus_assets` - NexusAsset
+- `nexus_components` - NexusComponent
 - `rpt_commit_metrics` - CommitMetrics
 - `rpt_daily_dev_stats` - DailyDevStats
 - `service_desk_tickets` - ServiceDeskTicket
@@ -122,6 +132,13 @@ ______________________________________________________________________
 - `sys_sync_logs` - SyncLog
 - `sys_team_members` - TeamMember
 - `sys_teams` - Team
+- `zentao_actions` - ZenTaoAction
+- `zentao_builds` - ZenTaoBuild
+- `zentao_executions` - ZenTaoExecution
+- `zentao_issues` - ZenTaoIssue
+- `zentao_product_plans` - ZenTaoProductPlan
+- `zentao_products` - ZenTaoProduct
+- `zentao_releases` - ZenTaoRelease
 
 ______________________________________________________________________
 
@@ -1298,6 +1315,71 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
+### ZenTaoTestCase (`zentao_test_cases`)
+
+**业务描述**: 禅道测试用例模型 (zentao_test_cases)。
+
+#### 字段定义
+
+| 字段名 | 数据类型 | 约束 | 可空 | 默认值 | 说明 |
+|:-------|:---------|:-----|:-----|:-------|:-----|
+| `id` | Integer | PK | 否 | - | 自增主键 |
+| `product_id` | Integer | FK | 否 | - | - |
+| `story_id` | Integer | - | 是 | - | 关联的需求 (Story) ID |
+| `title` | String(500) | - | 是 | - | - |
+| `type` | String(50) | - | 是 | - | - |
+| `status` | String(20) | - | 是 | - | - |
+| `opened_by` | String(100) | - | 是 | - | - |
+| `opened_by_user_id` | UUID | FK | 是 | - | - |
+| `opened_date` | DateTime | - | 是 | - | - |
+| `last_run_result` | String(20) | - | 是 | - | - |
+| `is_automated` | Boolean | - | 否 | False | - |
+| `automation_type` | String(50) | - | 是 | - | - |
+| `script_path` | String(500) | - | 是 | - | - |
+| `raw_data` | JSON | - | 是 | - | - |
+| `promoted_at` | DateTime | - | 是 | - | 上架到主数据的时间 |
+| `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
+| `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+
+#### 关系映射
+
+- **product**: many-to-one -> `ZenTaoProduct`
+- **results**: one-to-many -> `ZenTaoTestResult`
+
+______________________________________________________________________
+
+### ZenTaoTestResult (`zentao_test_results`)
+
+**业务描述**: 禅道测试执行结果模型 (zentao_test_results)。
+
+#### 字段定义
+
+| 字段名 | 数据类型 | 约束 | 可空 | 默认值 | 说明 |
+|:-------|:---------|:-----|:-----|:-------|:-----|
+| `id` | Integer | PK | 否 | - | 自增主键 |
+| `case_id` | Integer | FK | 否 | - | - |
+| `build_id` | Integer | - | 是 | - | - |
+| `result` | String(20) | - | 是 | - | - |
+| `date` | DateTime | - | 是 | - | - |
+| `last_run_by` | String(100) | - | 是 | - | - |
+| `raw_data` | JSON | - | 是 | - | - |
+| `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
+| `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+
+#### 关系映射
+
+- **test_case**: many-to-one -> `ZenTaoTestCase`
+
+______________________________________________________________________
+
 ## GitLab 集成域
 
 ### GitLabBranch (`gitlab_branches`)
@@ -2151,6 +2233,217 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
+### JenkinsBuild (`jenkins_builds`)
+
+**业务描述**: Jenkins 构建(Build)详情模型 (jenkins_builds)。 记录每次构建的具体信息。
+
+#### 字段定义
+
+| 字段名 | 数据类型 | 约束 | 可空 | 默认值 | 说明 |
+|:-------|:---------|:-----|:-----|:-------|:-----|
+| `id` | Integer | PK | 否 | - | 自增主键 |
+| `job_id` | Integer | FK | 否 | - | - |
+| `number` | Integer | - | 否 | - | - |
+| `queue_id` | BigInteger | - | 是 | - | - |
+| `url` | String(500) | - | 是 | - | - |
+| `result` | String(20) | - | 是 | - | - |
+| `duration` | BigInteger | - | 是 | - | - |
+| `timestamp` | DateTime | - | 是 | - | - |
+| `building` | Boolean | - | 否 | False | - |
+| `executor` | String(255) | - | 是 | - | - |
+| `trigger_type` | String(50) | - | 是 | - | - |
+| `trigger_user` | String(100) | - | 是 | - | - |
+| `trigger_user_id` | UUID | FK | 是 | - | - |
+| `commit_sha` | String(100) | - | 是 | - | - |
+| `raw_data` | JSON | - | 是 | - | - |
+| `gitlab_mr_iid` | Integer | - | 是 | - | - |
+| `artifact_id` | String(200) | - | 是 | - | - |
+| `artifact_type` | String(50) | - | 是 | - | - |
+| `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
+| `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+
+#### 关系映射
+
+- **job**: many-to-one -> `JenkinsJob`
+
+______________________________________________________________________
+
+### JenkinsJob (`jenkins_jobs`)
+
+**业务描述**: Jenkins 任务(Job)模型 (jenkins_jobs)。 存储 Jenkins Job 的基本信息。
+
+#### 字段定义
+
+| 字段名 | 数据类型 | 约束 | 可空 | 默认值 | 说明 |
+|:-------|:---------|:-----|:-----|:-------|:-----|
+| `id` | Integer | PK | 否 | - | 自增主键 |
+| `name` | String(255) | - | 否 | - | - |
+| `full_name` | String(500) | UNIQUE | 否 | - | - |
+| `url` | String(500) | - | 是 | - | - |
+| `description` | Text | - | 是 | - | - |
+| `color` | String(50) | - | 是 | - | - |
+| `gitlab_project_id` | Integer | FK | 是 | - | - |
+| `mdm_project_id` | Integer | FK | 是 | - | 关联的 MDM 项目 ID |
+| `mdm_product_id` | Integer | FK | 是 | - | 关联的 MDM 产品 ID |
+| `is_deployment` | Boolean | - | 否 | False | 是否为生产/测试环境部署 Job |
+| `deployment_env` | String(50) | - | 是 | - | 部署环境标识 (prod/test/staging) |
+| `last_synced_at` | DateTime | - | 是 | - | - |
+| `sync_status` | String(20) | - | 是 | PENDING | - |
+| `raw_data` | JSON | - | 是 | - | - |
+| `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
+| `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+
+#### 关系映射
+
+- **builds**: one-to-many -> `JenkinsBuild`
+
+______________________________________________________________________
+
+### JFrogArtifact (`jfrog_artifacts`)
+
+**业务描述**: JFrog 制品模型 (jfrog_artifacts)。 存储从 Artifactory 采集的制品元数据，支持 SLSA 溯源。
+
+#### 字段定义
+
+| 字段名 | 数据类型 | 约束 | 可空 | 默认值 | 说明 |
+|:-------|:---------|:-----|:-----|:-------|:-----|
+| `id` | Integer | PK | 否 | - | 自增主键 |
+| `repo` | String(100) | - | 否 | - | - |
+| `path` | String(500) | - | 否 | - | - |
+| `name` | String(200) | - | 否 | - | - |
+| `version` | String(100) | - | 是 | - | - |
+| `package_type` | String(50) | - | 是 | - | - |
+| `size_bytes` | BigInteger | - | 是 | - | - |
+| `sha256` | String(64) | - | 是 | - | - |
+| `download_count` | Integer | - | 是 | 0 | - |
+| `last_downloaded_at` | DateTime | - | 是 | - | - |
+| `build_name` | String(200) | - | 是 | - | - |
+| `build_number` | String(50) | - | 是 | - | - |
+| `build_url` | String(500) | - | 是 | - | - |
+| `vcs_url` | String(500) | - | 是 | - | - |
+| `vcs_revision` | String(100) | - | 是 | - | - |
+| `builder_id` | String(200) | - | 是 | - | - |
+| `build_type` | String(100) | - | 是 | - | - |
+| `is_signed` | Integer | - | 是 | 0 | - |
+| `external_parameters` | JSON | - | 是 | - | - |
+| `build_started_at` | DateTime | - | 是 | - | - |
+| `build_ended_at` | DateTime | - | 是 | - | - |
+| `promotion_status` | String(50) | - | 是 | - | - |
+| `properties` | JSON | - | 是 | - | - |
+| `created_by_id` | UUID | FK | 是 | - | - |
+| `created_by_name` | String(100) | - | 是 | - | - |
+| `product_id` | Integer | FK | 是 | - | - |
+| `raw_data` | JSON | - | 是 | - | - |
+| `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
+| `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+
+#### 关系映射
+
+- **created_by**: many-to-one -> `User`
+- **product**: many-to-one -> `Product`
+
+______________________________________________________________________
+
+### JFrogDependency (`jfrog_dependencies`)
+
+**业务描述**: 制品依赖树模型 (SBoM)。
+
+#### 字段定义
+
+| 字段名 | 数据类型 | 约束 | 可空 | 默认值 | 说明 |
+|:-------|:---------|:-----|:-----|:-------|:-----|
+| `id` | Integer | PK | 否 | - | 自增主键 |
+| `artifact_id` | Integer | FK | 是 | - | - |
+| `name` | String(200) | - | 否 | - | - |
+| `version` | String(100) | - | 是 | - | - |
+| `package_type` | String(50) | - | 是 | - | - |
+| `scope` | String(50) | - | 是 | - | - |
+| `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
+| `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
+
+#### 关系映射
+
+- **artifact**: many-to-one -> `JFrogArtifact`
+
+______________________________________________________________________
+
+### JFrogScan (`jfrog_scans`)
+
+**业务描述**: JFrog Xray 扫描结果模型。
+
+#### 字段定义
+
+| 字段名 | 数据类型 | 约束 | 可空 | 默认值 | 说明 |
+|:-------|:---------|:-----|:-----|:-------|:-----|
+| `id` | Integer | PK | 否 | - | 自增主键 |
+| `artifact_id` | Integer | FK | 是 | - | - |
+| `critical_count` | Integer | - | 是 | 0 | - |
+| `high_count` | Integer | - | 是 | 0 | - |
+| `medium_count` | Integer | - | 是 | 0 | - |
+| `low_count` | Integer | - | 是 | 0 | - |
+| `violation_count` | Integer | - | 是 | 0 | - |
+| `is_compliant` | Integer | - | 是 | - | - |
+| `scan_time` | DateTime | - | 是 | - | - |
+| `raw_data` | JSON | - | 是 | - | - |
+| `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
+| `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+
+#### 关系映射
+
+- **artifact**: many-to-one -> `JFrogArtifact`
+
+______________________________________________________________________
+
+### JFrogVulnerabilityDetail (`jfrog_vulnerability_details`)
+
+**业务描述**: 漏洞详情明细表。
+
+#### 字段定义
+
+| 字段名 | 数据类型 | 约束 | 可空 | 默认值 | 说明 |
+|:-------|:---------|:-----|:-----|:-------|:-----|
+| `id` | Integer | PK | 否 | - | 自增主键 |
+| `artifact_id` | Integer | FK | 是 | - | - |
+| `cve_id` | String(50) | INDEX | 是 | - | - |
+| `severity` | String(20) | - | 是 | - | - |
+| `cvss_score` | Numeric | - | 是 | - | - |
+| `component` | String(200) | - | 是 | - | - |
+| `fixed_version` | String(100) | - | 是 | - | - |
+| `description` | String | - | 是 | - | - |
+| `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
+| `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+| `raw_data` | JSON | - | 是 | - | 原始元数据暂存 |
+
+#### 关系映射
+
+- **artifact**: many-to-one -> `JFrogArtifact`
+
+______________________________________________________________________
+
 ### JiraBoard (`jira_boards`)
 
 **业务描述**: Jira 看板模型 (jira_boards)。
@@ -2314,6 +2607,86 @@ ______________________________________________________________________
 | `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
 | `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
 | `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+
+______________________________________________________________________
+
+### NexusAsset (`nexus_assets`)
+
+**业务描述**: Nexus 资产（文件）模型 (nexus_assets)。
+
+#### 字段定义
+
+| 字段名 | 数据类型 | 约束 | 可空 | 默认值 | 说明 |
+|:-------|:---------|:-----|:-----|:-------|:-----|
+| `id` | String | PK | 否 | - | - |
+| `component_id` | String(100) | FK | 是 | - | - |
+| `path` | String(500) | - | 否 | - | - |
+| `download_url` | String(1000) | - | 是 | - | - |
+| `size_bytes` | BigInteger | - | 是 | - | - |
+| `checksum_sha1` | String(40) | - | 是 | - | - |
+| `checksum_sha256` | String(64) | - | 是 | - | - |
+| `checksum_md5` | String(32) | - | 是 | - | - |
+| `last_modified` | DateTime | - | 是 | - | - |
+| `last_downloaded` | DateTime | - | 是 | - | - |
+| `download_count` | Integer | - | 是 | 0 | - |
+| `raw_data` | JSON | - | 是 | - | - |
+| `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+| `sync_version` | Integer | - | 否 | 1 | - |
+| `effective_from` | DateTime | - | 否 | (auto) | - |
+| `effective_to` | DateTime | - | 是 | - | - |
+| `is_current` | Boolean | INDEX | 否 | True | - |
+| `is_deleted` | Boolean | - | 否 | False | - |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
+| `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+
+#### 关系映射
+
+- **component**: many-to-one -> `NexusComponent`
+
+______________________________________________________________________
+
+### NexusComponent (`nexus_components`)
+
+**业务描述**: Nexus 组件模型 (nexus_components)。
+
+#### 字段定义
+
+| 字段名 | 数据类型 | 约束 | 可空 | 默认值 | 说明 |
+|:-------|:---------|:-----|:-----|:-------|:-----|
+| `id` | String | PK | 否 | - | - |
+| `repository` | String(100) | - | 否 | - | - |
+| `format` | String(50) | - | 是 | - | - |
+| `group` | String(255) | - | 是 | - | - |
+| `name` | String(255) | - | 否 | - | - |
+| `version` | String(100) | - | 是 | - | - |
+| `product_id` | Integer | FK | 是 | - | - |
+| `commit_sha` | String(100) | INDEX | 是 | - | - |
+| `build_pipeline_id` | String(100) | - | 是 | - | - |
+| `build_url` | String(500) | - | 是 | - | - |
+| `uploader_account` | String(100) | - | 是 | - | - |
+| `highest_cve_score` | Numeric | - | 是 | - | - |
+| `policy_status` | String(50) | - | 是 | - | - |
+| `license_type` | String(100) | - | 是 | - | - |
+| `raw_data` | JSON | - | 是 | - | - |
+| `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+| `sync_version` | Integer | - | 否 | 1 | - |
+| `effective_from` | DateTime | - | 否 | (auto) | - |
+| `effective_to` | DateTime | - | 是 | - | - |
+| `is_current` | Boolean | INDEX | 否 | True | - |
+| `is_deleted` | Boolean | - | 否 | False | - |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
+| `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+
+#### 关系映射
+
+- **product**: many-to-one -> `Product`
+- **assets**: one-to-many -> `NexusAsset`
 
 ______________________________________________________________________
 
@@ -2777,6 +3150,251 @@ ______________________________________________________________________
 - **leader**: many-to-one -> `User`
 - **members**: one-to-many -> `TeamMember`
 - **children**: one-to-many -> `Team`
+
+______________________________________________________________________
+
+### ZenTaoAction (`zentao_actions`)
+
+**业务描述**: 禅道操作日志模型 (zentao_actions)。
+
+#### 字段定义
+
+| 字段名 | 数据类型 | 约束 | 可空 | 默认值 | 说明 |
+|:-------|:---------|:-----|:-----|:-------|:-----|
+| `id` | Integer | PK | 否 | - | 自增主键 |
+| `product_id` | Integer | FK | 否 | - | - |
+| `object_type` | String(50) | - | 是 | - | - |
+| `object_id` | Integer | - | 是 | - | - |
+| `actor` | String(100) | - | 是 | - | - |
+| `actor_user_id` | UUID | FK | 是 | - | - |
+| `action` | String(100) | - | 是 | - | - |
+| `date` | DateTime | INDEX | 是 | - | - |
+| `comment` | Text | - | 是 | - | - |
+| `raw_data` | JSON | - | 是 | - | - |
+| `promoted_at` | DateTime | - | 是 | - | 上架到主数据的时间 |
+| `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
+| `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+
+#### 关系映射
+
+- **product**: many-to-one -> `ZenTaoProduct`
+
+______________________________________________________________________
+
+### ZenTaoBuild (`zentao_builds`)
+
+**业务描述**: 禅道版本/构建模型 (zentao_builds)。
+
+#### 字段定义
+
+| 字段名 | 数据类型 | 约束 | 可空 | 默认值 | 说明 |
+|:-------|:---------|:-----|:-----|:-------|:-----|
+| `id` | Integer | PK | 否 | - | 自增主键 |
+| `product_id` | Integer | FK | 否 | - | - |
+| `execution_id` | Integer | FK | 是 | - | - |
+| `name` | String(255) | - | 是 | - | - |
+| `builder` | String(100) | - | 是 | - | - |
+| `builder_user_id` | UUID | FK | 是 | - | - |
+| `date` | DateTime | - | 是 | - | - |
+| `raw_data` | JSON | - | 是 | - | - |
+| `promoted_at` | DateTime | - | 是 | - | 上架到主数据的时间 |
+| `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
+| `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+
+#### 关系映射
+
+- **product**: many-to-one -> `ZenTaoProduct`
+
+______________________________________________________________________
+
+### ZenTaoExecution (`zentao_executions`)
+
+**业务描述**: 禅道执行模型 (zentao_executions)，即迭代/Sprint。
+
+#### 字段定义
+
+| 字段名 | 数据类型 | 约束 | 可空 | 默认值 | 说明 |
+|:-------|:---------|:-----|:-----|:-------|:-----|
+| `id` | Integer | PK | 否 | - | 自增主键 |
+| `product_id` | Integer | FK, INDEX | 是 | - | - |
+| `name` | String(255) | - | 是 | - | - |
+| `code` | String(100) | - | 是 | - | - |
+| `type` | String(20) | - | 是 | - | 实体类型: program, project, execution |
+| `status` | String(20) | - | 是 | - | - |
+| `parent_id` | Integer | - | 是 | - | 父级节点 ID (zt_project.parent) |
+| `path` | String(255) | - | 是 | - | 层级路径 (zt_project.path) |
+| `begin` | DateTime | - | 是 | - | - |
+| `end` | DateTime | - | 是 | - | - |
+| `real_began` | DateTime | - | 是 | - | - |
+| `real_end` | DateTime | - | 是 | - | - |
+| `mdm_project_id` | Integer | FK | 是 | - | 关联的 MDM 项目 ID |
+| `raw_data` | JSON | - | 是 | - | - |
+| `promoted_at` | DateTime | - | 是 | - | 上架到主数据的时间 |
+| `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
+| `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+
+#### 关系映射
+
+- **product**: many-to-one -> `ZenTaoProduct`
+
+______________________________________________________________________
+
+### ZenTaoIssue (`zentao_issues`)
+
+**业务描述**: 禅道 Issue 模型 (zentao_issues)，包含需求 (Story)、缺陷 (Bug) 和 任务 (Task)。
+
+#### 字段定义
+
+| 字段名 | 数据类型 | 约束 | 可空 | 默认值 | 说明 |
+|:-------|:---------|:-----|:-----|:-------|:-----|
+| `id` | Integer | PK | 是 | - | - |
+| `type` | String(50) | PK | 是 | - | - |
+| `product_id` | Integer | FK, INDEX | 否 | - | - |
+| `execution_id` | Integer | FK | 是 | - | - |
+| `plan_id` | Integer | FK | 是 | - | - |
+| `title` | String(500) | - | 否 | - | - |
+| `status` | String(50) | - | 是 | - | - |
+| `priority` | Integer | - | 是 | - | - |
+| `estimate` | JSON | - | 是 | - | - |
+| `consumed` | JSON | - | 是 | - | - |
+| `left` | JSON | - | 是 | - | - |
+| `task_type` | String(50) | - | 是 | - | - |
+| `opened_by` | String(100) | - | 是 | - | - |
+| `assigned_to` | String(100) | - | 是 | - | - |
+| `opened_by_user_id` | UUID | FK | 是 | - | - |
+| `assigned_to_user_id` | UUID | FK | 是 | - | - |
+| `closed_at` | DateTime | - | 是 | - | - |
+| `raw_data` | JSON | - | 是 | - | - |
+| `first_commit_sha` | String(100) | - | 是 | - | - |
+| `standard_status` | String(50) | INDEX | 是 | - | 平台标准状态 (Backlog, InProgress, Testing, Completed, Cancelled) |
+| `promoted_at` | DateTime | - | 是 | - | 上架到主数据的时间 |
+| `first_fix_date` | DateTime | - | 是 | - | - |
+| `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
+| `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+
+#### 关系映射
+
+- **product**: many-to-one -> `ZenTaoProduct`
+- **plan**: many-to-one -> `ZenTaoProductPlan`
+
+______________________________________________________________________
+
+### ZenTaoProductPlan (`zentao_product_plans`)
+
+**业务描述**: 禅道产品计划模型 (zentao_product_plans)。 用于规划产品的分阶段交付。需求和 Bug 通常关联到计划。
+
+#### 字段定义
+
+| 字段名 | 数据类型 | 约束 | 可空 | 默认值 | 说明 |
+|:-------|:---------|:-----|:-----|:-------|:-----|
+| `id` | Integer | PK | 否 | - | 自增主键 |
+| `product_id` | Integer | FK | 否 | - | - |
+| `title` | String(255) | - | 是 | - | - |
+| `begin` | DateTime | - | 是 | - | - |
+| `end` | DateTime | - | 是 | - | - |
+| `desc` | Text | - | 是 | - | - |
+| `status` | String(20) | - | 是 | - | - |
+| `opened_by` | String(100) | - | 是 | - | - |
+| `opened_by_user_id` | UUID | FK | 是 | - | - |
+| `opened_date` | DateTime | - | 是 | - | - |
+| `raw_data` | JSON | - | 是 | - | - |
+| `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
+| `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+
+#### 关系映射
+
+- **product**: many-to-one -> `ZenTaoProduct`
+- **issues**: one-to-many -> `ZenTaoIssue`
+
+______________________________________________________________________
+
+### ZenTaoProduct (`zentao_products`)
+
+**业务描述**: 禅道产品模型 (zentao_products)。
+
+#### 字段定义
+
+| 字段名 | 数据类型 | 约束 | 可空 | 默认值 | 说明 |
+|:-------|:---------|:-----|:-----|:-------|:-----|
+| `id` | Integer | PK | 否 | - | 自增主键 |
+| `name` | String(255) | - | 否 | - | - |
+| `code` | String(100) | - | 是 | - | - |
+| `description` | Text | - | 是 | - | - |
+| `status` | String(20) | - | 是 | - | - |
+| `gitlab_project_id` | Integer | FK | 是 | - | - |
+| `last_synced_at` | DateTime | - | 是 | - | - |
+| `sync_status` | String(20) | - | 是 | PENDING | - |
+| `raw_data` | JSON | - | 是 | - | - |
+| `mdm_product_id` | Integer | FK | 是 | - | 关联的 MDM 产品 ID |
+| `promoted_at` | DateTime | - | 是 | - | 上架到主数据的时间 |
+| `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
+| `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+
+#### 关系映射
+
+- **executions**: one-to-many -> `ZenTaoExecution`
+- **plans**: one-to-many -> `ZenTaoProductPlan`
+- **issues**: one-to-many -> `ZenTaoIssue`
+- **test_cases**: one-to-many -> `ZenTaoTestCase`
+- **builds**: one-to-many -> `ZenTaoBuild`
+- **releases**: one-to-many -> `ZenTaoRelease`
+- **actions**: one-to-many -> `ZenTaoAction`
+
+______________________________________________________________________
+
+### ZenTaoRelease (`zentao_releases`)
+
+**业务描述**: 禅道发布记录模型 (zentao_releases)。
+
+#### 字段定义
+
+| 字段名 | 数据类型 | 约束 | 可空 | 默认值 | 说明 |
+|:-------|:---------|:-----|:-----|:-------|:-----|
+| `id` | Integer | PK | 否 | - | 自增主键 |
+| `product_id` | Integer | FK | 否 | - | - |
+| `build_id` | Integer | FK | 是 | - | - |
+| `plan_id` | Integer | FK | 是 | - | 自动探测关联的产品计划 ID |
+| `name` | String(255) | - | 是 | - | - |
+| `date` | DateTime | - | 是 | - | - |
+| `status` | String(50) | - | 是 | - | - |
+| `opened_by` | String(100) | - | 是 | - | - |
+| `opened_by_user_id` | UUID | FK | 是 | - | - |
+| `raw_data` | JSON | - | 是 | - | - |
+| `promoted_at` | DateTime | - | 是 | - | 上架到主数据的时间 |
+| `created_at` | DateTime | - | 否 | (auto) | 创建时间 |
+| `updated_at` | DateTime | - | 是 | - | 最后更新时间 |
+| `created_by` | UUID | FK, INDEX | 是 | - | 创建者ID |
+| `updated_by` | UUID | FK, INDEX | 是 | - | 最后操作者ID |
+| `source_system` | String(50) | INDEX | 是 | - | 数据来源系统标识 |
+| `correlation_id` | String(100) | INDEX | 是 | - | 同步任务追踪 ID |
+
+#### 关系映射
+
+- **product**: many-to-one -> `ZenTaoProduct`
 
 ______________________________________________________________________
 

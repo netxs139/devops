@@ -1,0 +1,4 @@
+Running MyPy type checking...
+uv run mypy devops_collector/ devops_portal/
+devops_collector/core/management.py:34: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+Success: no issues found in 140 source files

@@ -37,8 +37,8 @@ from devops_portal.schemas import (
 )
 
 
-def get_admin_service(db: Session = Depends(get_auth_db)):
-    """获取 AdminService 实例的依赖项。"""
+def get_admin_service(db: Session = Depends(get_auth_db)) -> AdminService:
+    """获取系统管理服务实例。"""
     return AdminService(db)
 
 
@@ -104,11 +104,6 @@ async def export_users(service: AdminService = Depends(get_admin_service), admin
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=users_export.csv"},
     )
-
-
-def get_admin_service(db: Session = Depends(get_auth_db)) -> AdminService:
-    """获取系统管理服务实例。"""
-    return AdminService(db)
 
 
 @router.get("/users", response_model=list[dict])
@@ -282,7 +277,7 @@ async def link_repo_to_project(
 ):
     """将 GitLab 仓库关联到业务主项目。"""
     # 已通过 RoleRequired 校验权限
-    success = service.link_repo_to_mdm_project(payload.mdm_project_code, payload.gitlab_project_id, payload.is_lead)
+    success = service.link_repo_to_mdm_project(payload.mdm_project_code, payload.gitlab_project_id, payload.is_lead or False)
     if not success:
         raise HTTPException(status_code=404, detail="Entity not found")
     return {"status": "success"}

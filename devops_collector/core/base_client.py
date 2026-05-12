@@ -218,6 +218,7 @@ class BaseClient(ABC):
         endpoint: str,
         data: Any | None = None,
         json: dict[str, Any] | None = None,
+        files: Any | None = None,
         headers: dict[str, str] | None = None,
     ) -> requests.Response:
         """发送 POST 请求。"""
@@ -225,7 +226,7 @@ class BaseClient(ABC):
         self.limiter.wait_for_token()
         url = f"{self.base_url}/{endpoint}"
         try:
-            response = self._session.post(url, data=data, json=json, timeout=self.timeout, headers=headers)
+            response = self._session.post(url, data=data, json=json, files=files, timeout=self.timeout, headers=headers)
             response.raise_for_status()
             self._handle_success()
             return response

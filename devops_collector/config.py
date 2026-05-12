@@ -12,6 +12,7 @@
 
 import os
 
+import httpx
 from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -39,11 +40,11 @@ class DatabaseSettings(BaseModel):
     """Database connection and retention settings.
 
     Attributes:
-        uri (str): The database connection URI (e.g., postgresql://user:pass@host/db).
+        uri (str): The database connection URI (e.g., postgresql://user:pass@host/db).  # pragma: allowlist secret
         raw_data_retention_days (int): The number of days to retain raw data.
     """
 
-    uri: str = "postgresql://gitlab_collector:password@localhost/gitlab_data"
+    uri: str = "postgresql://gitlab_collector:password@localhost/gitlab_data"  # pragma: allowlist secret
     raw_data_retention_days: int = 30
 
 
@@ -394,6 +395,8 @@ class Config:
 
     建议新代码直接使用：from devops_collector.config import settings
     """
+
+    http_client: "httpx.AsyncClient"
 
     GITLAB_URL = settings.gitlab.url
     GITLAB_TOKEN = settings.gitlab.private_token
