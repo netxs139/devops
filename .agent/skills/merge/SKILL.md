@@ -6,162 +6,162 @@ description: Workflow for merge
 # Workflow: /merge (代码合并与集成)
 
 ---
-description: åæ¯åå¹¶å?main çå®æ´æ£æ¥æµç¨?(Pre-merge Checklist)
+description: 分支合并到 main 的完整检查流程 (Pre-merge Checklist)
 ---
 
 # Pre-merge Checklist Workflow
 
-> åèååå®ä¹ï¼`contexts.md` ç¬?13 ç«?"åå¹¶åæ£æ¥æ¸å?ã?
-> ä»»ä¸ ð´ BLOCK æ­¥éª¤ FAIL å³ä¸­æ­¢åå¹¶ï¼ä¿®å¤åéæ°æ§è¡ã?
+> 参考原则定义：`contexts.md` 第 13 章「合并前检查清单」。
+> 任一 🔴 BLOCK 步骤 FAIL 即中止合并，修复后重新执行。
 
-## åç½®æ¡ä»¶
+## 前置条件
 
-- å½åå¤äºå¾åå¹¶çåè½åæ¯ä¸?(å¦?`feat/xxx`)
-- ææåè½å¼åå·²å®æï¼ä»£ç å·² commit
+- 当前处于待合并的功能分支中 (如 `feat/xxx`)
+- 所有功能开发已完成，代码已 commit
 
 ---
 
-## Step 1: Rebase åæ­¥ ð´ BLOCK
+## Step 1: Rebase 同步 🔴 BLOCK
 
-ç¡®ä¿åè½åæ¯åºäºææ°ç mainï¼å¹¶ä¿æçº¿æ§åå²ã?
+确保功能分支基于最新的 main，并保持线性历史。
 
 ```bash
 git fetch origin
 git rebase origin/main
 ```
 
-- è¥æå²çªï¼æå¨è§£å³å `git rebase --continue`
-- éªè¯ï¼`git log --oneline -5` ç¡®è®¤åå²çº¿æ§ï¼æ?merge commit
+- 若有冲突，手动解决后 `git rebase --continue`
+- 验证：`git log --oneline -5` 确认历史线性，无 merge commit
 
 // turbo
-## Step 2: ç»æéªè¯é²å¾¡ (Total Verification Defense) ð´ BLOCK
+## Step 2: 终极验证防御 (Total Verification Defense) 🔴 BLOCK
 
-æç§ `AGENTS.md` çâç»æéªè¯å¾âï¼å¨åå¥åå¿é¡»æ§è¡å¨éæ ¡éªï¼?
+按照 `AGENTS.md` 的“终极验证律”，在合入前必须执行全量校验：
 
 ```bash
-make verify
+just verify
 ```
 
-- **éè¿æ¡ä»¶**ï¼?
-    - [ ] `make lint` 0 éè¯¯ã?
-    - [ ] `make check-imports` 0 å²çªã?
-    - [ ] å¨é `pytest` PASSED (Coverage >= 80%)ã?
+- **通过条件**：
+    - [ ] `just lint` 0 错误。
+    - [ ] `just check-imports` 0 冲突。
+    - [ ] 全量 `pytest` PASSED (Coverage >= 80%)。
 
 // turbo
-## Step 2.1: èªå¨åå®å¨å®¡è®?(Automated Security Audit) ð´ BLOCK
+## Step 2.1: 自动化安全审计 (Automated Security Audit) 🔴 BLOCK
 
-éå¯¹æ¶å `core/mdm` ææ°å¢å¤é¨éå?ä¾èµçåæ´ï¼å¿é¡»å¼ºå¶æ§è¡ï¼?
-
-```bash
-make security-audit
-```
-
-- **éè¿æ¡ä»¶**ï¼?
-    - [ ] **TruffleHog (æºå¯æ«æ)**ï¼Exit Code = 0 (æ å¯é¥æ³é?ã?
-    - [ ] **Trivy (éåæ«æ)**ï¼Exit Code = 0 (æ?HIGH/CRITICAL æ¼æ´)ã?
-- **æä½è¦æ±**ï¼å¿é¡»å¨äº¤ä»æ¥åä¸­åå«å®å¨å®¡è®¡æè¦ã?
-
-## Step 2.2: ä¸å®¶æè½ç»å®?(Expert Skill Final Approval) ð´ BLOCK [NEW]
-
-éå¯¹ L2 åä»¥ä¸çº§å«çä»»å¡ï¼å¿é¡»æä¾å¯¹åºä¸å®¶æè½ï¼Skillï¼çç»å®¡éè¿è¯æï¼?
-
-- [ ] **dbt æ¨¡ååæ´**ï¼`dbt-pipeline-auditor` å·²éªè¯?JSONB æåä¸?SCD2 å®æ´æ§ã?
-- [ ] **MDM Schema åæ´**ï¼`mdm-integrity-arbiter` å·²éªè¯?ORM å³èä¸åæ»èæ¬çæã?
-- [ ] **é«å±åè½éæ**ï¼`chaos-sentinel` å·²éè¿æéæ³¨å¥ä»¿çéªè¯ï¼ç¡®è®¤é²å¾¡é»è¾çæã?
-
-**éè¿è¦æ±**ï¼Agent å¿é¡»å¨åå¹¶è¯·æ±ä¸­ç²è´´ç¸å³ Skill ç?`Audit Passed` æ¥å¿ç¢çã?
-
-## Step 5: å®¹å¨é¨ç½²éªè¯ ð´ BLOCK (å¯éçº?
+针对涉及 `core/mdm` 或新增外部镜像依赖的变更，必须强制执行：
 
 ```bash
-make deploy
+just security-audit
 ```
 
-- **éè¿æ¡ä»¶**ï¼ææå®¹å¨å¯å¨æåï¼å¥åº·æ£æ¥éè¿
-- å¯éè¿½å éªè¯ï¼éå¤§åæ´æ¶ï¼ï¼?
+- **通过条件**：
+    - [ ] **TruffleHog (机密扫描)**：Exit Code = 0 (无密钥泄露)。
+    - [ ] **Trivy (镜像扫描)**：Exit Code = 0 (无 HIGH/CRITICAL 漏洞)。
+- **操作要求**：必须在交付报告中包含安全审计摘要。
+
+## Step 2.2: 专家技能终审 (Expert Skill Final Approval) 🔴 BLOCK [NEW]
+
+针对 L2 及以上级别的任务，必须提供对应专家技能（Skill）的终审通过证明：
+
+- [ ] **dbt 模型变更**：`dbt-pipeline-auditor` 已验证 JSONB 提取与 SCD2 完整性。
+- [ ] **MDM Schema 变更**：`mdm-integrity-arbiter` 已验证 ORM 关联与回滚脚本生成。
+- [ ] **高危功能重构**：`chaos-sentinel` 已通过故障注入仿真验证，确认防御逻辑生效。
+
+**通过要求**：Agent 必须在合并请求中粘贴相关 Skill 的 `Audit Passed` 日志碎片。
+
+## Step 5: 容器部署验证 🔴 BLOCK (可降级)
+
+```bash
+just deploy
+```
+
+- **通过条件**：所有容器启动成功，健康检查通过
+- 可选追加验证（重大变更时）：
   ```bash
-  make deploy-prod     # çäº§æ¨¡å¼éªè¯
-  make deploy-offline  # ç¦»çº¿æ¨¡å¼éªè¯
+  just deploy-prod     # 生产模式验证
+  just deploy-offline  # 离线模式验证
   ```
-- **éçº§æ¡ä»¶**ï¼å Step 4ï¼è®°å½é»å¡åå åå¯ææ¡ä»¶è·³è¿
+- **降级条件**：同 Step 4，记录阻塞原因后可有条件跳过
 
 // turbo
-## Step 6: ç¯å¢æ¸ç (Cleanup) ð¡ WARN
+## Step 6: 环境清理 (Cleanup) 🟡 WARN
 
-æ¸çå å¼å?è°è¯/æµè¯äº§ççä¸´æ¶æä»¶ï¼ç¡®ä¿é¶æ®çã?
+清理因开发/调试/测试产生的临时文件，确保零残留。
 
 ```bash
-make clean
+just clean
 ```
 
-æå¨ç¡®è®¤ï¼?
+手动确认：
 
-- [ ] `git status` æ æå¤ç untracked ä¸´æ¶æä»¶ï¼`.log`, `.tmp`, `debug_*.py` ç­ï¼
-- [ ] æ?AI çæçä¸­é´åææä»¶æ®çå¨é¡¹ç®ç®å½ä¸?
-- [ ] è¥åç?`.gitignore` æªè¦ççæ°ç±»åä¸´æ¶æä»¶ï¼è¡¥åå?`.gitignore`
+- [ ] `git status` 无意外的 untracked 临时文件（`.log`, `.tmp`, `debug_*.py` 等）
+- [ ] 无 AI 生成的中间分析文件残留在项目目录中
+- [ ] 若发现 `.gitignore` 未覆盖的新类型临时文件，补充到 `.gitignore`
 
-## Step 7: ææ¡£åæ­¥æ£æ?ð¡ WARN
+## Step 7: 文档同步检查 🟡 WARN
 
-æå¨ç¡®è®¤ä»¥ä¸ææ¡£å·²æ´æ°ï¼
+手动确认以下文档已更新：
 
-1. **`progress.txt`**ï¼è®°å½æ¬æ¬¡åæ´åå®¹ãéªè¯ç»æãéçé®é¢?
-2. **`contexts.md`**ï¼ä»å½æ¶åä»¥ä¸åæ´æ¶ï¼ï¼
-   - ææ¯æ åæ´ï¼æ°å¢?ç§»é¤æ ¸å¿ä¾èµï¼?
-   - æ¶æå³ç­è°æ´ï¼æ°å¢æ¨¡åãæ°æ®æµåæ´ï¼?
-   - æ°å¢å¼åè§èææ ¸å¿æ¨¡å
-3. **`DATA_DICTIONARY.md`**ï¼ä»å½æ¨¡ååæ´æ¶ï¼ï¼æ§è¡ `make docs` å·æ°
+1. **`progress.txt`**：记录本次变更内容、验证结果、遗留问题。
+2. **`contexts.md`**（仅当涉及以下变更时）：
+   - 技术栈变更（新增/移除核心依赖）
+   - 架构决策调整（新增模块、数据流变更）
+   - 新增开发规范或核心模型
+3. **`DATA_DICTIONARY.md`**（仅当模型变更时）：执行 `just docs` 刷新
 
-## Step 8: å®å¨èªæ£ ð¡ WARN
+## Step 8: 安全自检 🟡 WARN
 
-æå¨ç¡®è®¤ï¼?
+手动确认：
 
-- [ ] æ ç¡¬ç¼ç ç?API Keyãå¯ç æ Tokenï¼åºä½¿ç¨ `.env` ç¯å¢åéï¼?
-- [ ] æ°å¢çç¬¬ä¸æ¹ä¾èµæ å·²ç?CVE æ¼æ´
-- [ ] æ¥å¿ä¸æå°ææä¿¡æ¯ï¼token, password, key ç­å­æ®µå·²å±è½ï¼?
+- [ ] 无硬编码的 API Key、密码或 Token（应使用 `.env` 环境变量）
+- [ ] 新增的第三方依赖无已知 CVE 漏洞
+- [ ] 日志不打印敏感信息（token, password, key 等字段已屏蔽）
 
-## Step 9: æ°æ®åºå¼å®¹æ§æ£æ?ð´ BLOCK (ä»æ¶å?Schema åæ´æ?
+## Step 9: 数据库兼容性检查 🔴 BLOCK (仅涉及 Schema 变更时)
 
-- [ ] Schema åæ´ååå¼å®¹ï¼ä¸è½åæ¶ä¿®æ?Schema åä¾èµè¯¥ Schema çä»£ç ï¼
-- [ ] éµå¾ªå®å¨åæ´é¡ºåºï¼Add Column â?Deploy Code â?Drop Old Column
-- [ ] æ ç ´åæ§åæ´ï¼å è¡¨ãå åãéå½åï¼åºç°å¨åæ¬¡åå¹¶ä¸?
+- [ ] Schema 变更向后兼容（不能同时修改 Schema 和依赖该 Schema 的代码）
+- [ ] 遵循安全变更顺序：Add Column → Deploy Code → Drop Old Column
+- [ ] 无破坏性变更（删表、删列、重命名）出现在单次合并中
 
 ---
 
-## æ§è¡åå¹¶
+## 执行合并
 
-æææ£æ¥éè¿åï¼æ§è¡ Squash Mergeï¼?
+所有检查通过后，执行 Squash Merge：
 
 ```bash
-# åæ¢å?main åæ¯
+# 切换到 main 分支
 git checkout main
 git pull origin main
 
-# Squash Mergeï¼å°åè½åæ¯ææ?commit åç¼©ä¸ºä¸ä¸ªï¼
+# Squash Merge（将功能分支所有 commit 压缩为一个）
 git merge --squash <feature-branch>
 
-# ç¼åè¯­ä¹åçåå¹¶æäº¤ä¿¡æ¯
-# æ ¼å¼: type(scope): subject
-# ç¤ºä¾: feat(zt): æ¯æç¦éä»»å¡ä¸å·¥æ¶éé?
+# 编写语义化的合并提交信息
+# 格式: type(scope): subject
+# 示例: feat(zt): 支持禅道任务与工时采集
 git commit
 
-# æ¨éå°è¿ç¨
+# 推送到远程
 git push origin main
 
-# æ¸çåè½åæ¯
+# 清理功能分支
 git branch -d <feature-branch>
 git push origin --delete <feature-branch>
 ```
 
 ---
 
-## éçº§åå¹¶è®°å½æ¨¡æ¿
+## 降级合并记录模板
 
-å½?Step 4/5 å ç¯å¢é®é¢æ æ³æ§è¡æ¶ï¼å¨ `progress.txt` ç?è¿è¡ä¸?åºåæ·»å ï¼?
+当 Step 4/5 因环境问题无法执行时，在 `progress.txt` 的 [进行中] 区域添加：
 
 ```
-- [ ] [å¾è¡¥éªè¯] feat/xxx å·²åå?main (YYYY-MM-DD)
-    - å·²éè¿: Rebase + Lint + æ¬å°ååæµè¯ (20/20 passed)
-    - æªæ§è¡? make test (Docker ç½ç»è¶æ¶) / make deploy (éåæåå¤±è´¥)
-    - é»å¡åå : [å·ä½æè¿°]
-    - è¡¥éªè¯æ¶é? å¾ç¯å¢æ¢å¤åæ§è¡
+- [ ] [待补验证] feat/xxx 已合入 main (YYYY-MM-DD)
+    - 已通过: Rebase + Lint + 本地单元测试 (20/20 passed)
+    - 未执行: just test (Docker 网络超时) / just deploy (镜像拉取失败)
+    - 阻塞原因: [具体描述]
+    - 补验证时间: 待环境恢复后执行
 ```

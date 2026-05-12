@@ -4,8 +4,13 @@
 > 1. **单一主表原则**：所有新增经验必须**倒序**统一追加到下方的 Markdown 主表格中。**绝对严禁**在主表格之外另起任何零散的 `列表`、`次级小表格` 或 `### 分割的小标题`。
 > 2. **记录门槛**：不记成功的流水账，只记录由于框架机制、脏数据或跨端约束导致的非直觉类障碍。
 > 3. **字段约定**：The Defense 栏必须使用粗体加粗一句话结论，随后跟上落地措施。
+
+
 | Timestamp | Domain | Phenomenon | Root Cause | Universal Rule (The Defense) |
 | :--- | :--- | :--- | :--- | :--- |
+| 2026-05-13 | [Workflow] | Agent Skill 不同步导致 make 命令残留 | Skill 脚本未随 AGENTS.md 规范（make -> just）同步更新，导致自动化调度中断。 | **文码同步与 Skill 刷新协议 (Skill-Doc Co-evolution)**: 任何底座规范（如工具链、路径、归档逻辑）变更时，必须通过 `/doc-update` 全量审计并重刷 `.agent/skills/` 目录。 |
+| 2026-05-13 | [Host/OS] | 挂载卷硬编码路径引发“路径幻觉” | `AGENTS.md` 残留 Windows 路径 `c:/`，AI 在 WSL 下自动将其映射至 `/mnt/c/` 并修改了错误的文件镜像。 | **路径去平台化原则 (Path De-platforming)**: 严禁在规范文档中硬编码 `c:/` 或 `C:\`。必须使用相对路径或符合当前 Host OS 的环境变量路径。对跨端迁移后的路径残留必须执行全量 grep 物理清理。 |
+| 2026-05-13 | [UX/Safety] | 无害诊断指令频繁触发人工确认拦截 | 过于严格的 `SafeToAutoRun` 策略降低了诊断效率。 | **无害指令白名单机制 (Harmless Auto-run Policy)**: 在全局 `GEMINI.md` 中物理定义只读指令（version, ls, git status）的免确认自动执行权限，实现效率与安全的平衡。 |
 | 2026-05-02 | [Arch] | 进度归档文件位置偏航 | 全局规则（user_global）仅定义了 `progress_archive.md` 的文件名，未指定其相对于 `progress.txt` 的物理路径。 | **归档路径 SSOT 锚点 (Archive Path SSOT)**: **严禁**在无审计情况下在根目录新建归档。项目级 `AGENTS.md` 必须物理固化归档路径（本项目为 `docs/history/progress_archive.md`）。在执行归档前必须先进行全局路径嗅探。 |
 | 2026-05-09 | [Data] | 归档资产毁灭性覆盖 | 在执行归档时使用 `Overwrite=true` 且未进行内容合并，导致 367 条历史记录被清空。 | **归档资产一致性协议 (Archive Integrity)**: 严禁对历史资产执行覆盖写入。必须执行“读取-合并-置顶追加”三部曲。操作 `docs/history/` 目录前强制 `git log` 确认权重。 |
 | 2026-05-01 | Engineering/OS | `UnicodeDecodeError` 摧毁 Python 源文件 |

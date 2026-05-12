@@ -691,7 +691,7 @@
 
 ## 13. 分支开发与版本控制规范 (Branching & Versioning)
 
-> 基础 Git 规范（原子提交、Commit Message、Conventional Commits）参见 [`gemini.md` 第四.5 章](c:/users/netxs/.gemini/gemini.md)。以下为本项目的补充规定。
+> 基础 Git 规范（原子提交、Commit Message、Conventional Commits）参见 [GEMINI.md 第四.5 章](/home/netxs/.gemini/GEMINI.md)。以下为本项目的补充规定。
 
 - **强制性开发流程 (Mandatory Branching)**:
 
