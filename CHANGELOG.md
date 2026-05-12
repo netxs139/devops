@@ -3,6 +3,11 @@
 所有对 DevOps Data Application Platform 的重要更改都将记录在此文件中。
 
 ## [Unreleased]
+- **Agent Skill 同步与规范对齐 (v5.8.0)**:
+  - **Skill 脚本同步**: 修复了 7+ 个核心 Skill 文件的命令不一致问题（将旧的 `make` 统一替换为项目标准 `just`），并修正了日志文件在 `docs/history/` 下的物理路径。
+  - **全局自动执行策略**: 在 `GEMINI.md` 中注入了工具执行安全规范，授权 AI 对无害诊断指令（如 version, ls, status）进行免确认自动执行，提升协作效率。
+  - **环境路径脱敏与对齐**: 清理了 `AGENTS.md` 和 `contexts.md` 中残留的 Windows 硬编码路径 (`c:/`)，彻底完成了 WSL 环境的文件系统适配。
+  - **编码一致性修复**: 修复了由于 Windows/Linux 跨平台编辑导致的 Skill 文件乱码问题。
 
 ### 新增 (Added)
 - **Agent Skill 体系初始化 (v5.7.0)**:

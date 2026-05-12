@@ -6,49 +6,65 @@ description: Workflow for plugin-init
 # Workflow: /plugin-init (插件初始化与环境构建)
 
 ---
-description: [plugin-init] æä»¶å·¥åå·¥ä½æµ?â?æ åååå»ºæ°æ°æ®æºéææä»?(GitLab/ZenTao/Jira ç­?
+description: [plugin-init] 插件工厂工作流 —— 标准化创建新数据源集成插件（GitLab/ZenTao/Jira 等）。
 ---
 
-# æä»¶å·¥åå·¥ä½æµ?(Plugin Factory Workflow)
+# 插件工厂工作流 (Plugin Factory Workflow)
 
-> **è§¦åæ¶æº**ï¼éè¦æ¥å¥æ°çå¤é¨ç³»ç»ï¼å¦?Jira, Jenkins, SonarQubeï¼ææ°å¢ç¬ç«çä¸å¡åæ¨¡åã?> **æ ¸å¿ç®æ **ï¼? åéåçæåè§ç Router-Service-Worker-Bridge åå±æ¶æã?
+> **触发时机**：需要接入新的外部系统（如 Jira, Jenkins, SonarQube）或新增业务域模块。
+> **核心目标**：60 分钟内生成合规的 Router-Service-Worker-Bridge 四层架构。
+
 ---
 
-## Step 1: æ³¨åä¸å½åè§å?(Registry & Naming)
+## Step 1: 注册与命名规范 (Registry & Naming)
 
-1. **æ¥éå®ªæ³**ï¼AI å¿é¡»é¦åæå¼ [`contexts.md#11.1`](contexts.md#L323)ï¼æ£æ¥æ¯å¦å·²ç»å­å¨è¯¥ä¸å¡åçåç¼ã?   - è¥ä¸å­å¨ï¼æè®®ä¸ä¸ªæ°ç?2-3 å­æ¯åç¼ï¼å¦ `jr_` ä»£è¡¨ Jiraï¼ã?   - è¥å­å¨ï¼ä¸¥æ ¼æ§è¡ã?
-2. **æ ¸å¿åæ°æ®å®ä¹?*ï¼?   - Prefix: `[prefix]_`
+1. **查阅宪法**：AI 必须首先打开 [`contexts.md#11.1`](contexts.md#L605)，检查是否已经存在该业务域的前缀。
+   - 若不存在：提议一个新 2-3 字母前缀（如 `jr_` 代表 Jira）。
+   - 若存在：严格执行。
+2. **核心元数据定义**：
+   - Prefix: `[prefix]_`
    - Domain Component: `[component_name]`
    - Source System: `[system_id]`
 
-## Step 2: éª¨æ¶çæ (Scaffolding)
+## Step 2: 骨架生成 (Scaffolding)
 
-AI å¨æ§è¡?`/plugin-init` æ¶ï¼å¿é¡»æä»¥ä¸æ åç»æçææä»¶ï¼ä¸å¾ç¼ºå¤±ï¼ï¼
+AI 在执行 `/plugin-init` 时，必须按以下标准结构生成文件（不得缺失）：
 
-### ð 1. åç«¯ - ä¸å¡é»è¾å±?(Business Layer)
-- `devops_collector/plugins/[prefix]_[component]/service.py` -> æ ¸å¿ä¸å¡é»è¾
-- `devops_collector/plugins/[prefix]_[component]/bridge.py` -> æ°æ®æ¡¥æ¥ä¸éé
-- `devops_collector/plugins/[prefix]_[component]/worker.py` -> å¼æ­¥ééä»»å¡
+### 📂 1. 后端 - 业务逻辑层 (Business Layer)
+- `devops_collector/plugins/[prefix]_[component]/service.py` -> 核心业务逻辑
+- `devops_collector/plugins/[prefix]_[component]/bridge.py` -> 数据桥接与适配
+- `devops_collector/plugins/[prefix]_[component]/worker.py` -> 异步采集任务
 
-### ð 2. åç«¯ - API æ¥å£å±?(API Gateway)
-- `devops_portal/routers/[prefix]_[component]_router.py` -> ä»éè·¯ç±ãåæ°æ ¡éªãResponse Modelã?
-### ð 3. æ°æ®æä¹å±?(Persistence)
-- å?`devops_collector/models/` ä¸åå»ºæ¨¡åæä»¶ã?- **å¼ºå¶çº¦æ**ï¼å¿é¡»åå?`id` (BigInt), `source_id`, `created_at` ç­?mdm åºç¡å­æ®µï¼ç¬¦å?[`contexts.md#5`](contexts.md#L91)ã?
-### ð 4. èªå¨åæµè¯?(Testing)
-- `tests/plugins/[prefix]_[component]/test_worker.py` -> Worker ééæ¨¡æã?- `tests/plugins/[prefix]_[component]/test_router.py` -> Router æ¥å£æ¨¡æã?
+### 📂 2. 后端 - API 接口层 (API Gateway)
+- `devops_portal/routers/[prefix]_[component]_router.py` -> 仅限路由、参数校验、Response Model。
+
+### 📂 3. 数据持久层 (Persistence)
+- 在 `devops_collector/models/` 下创建模型文件。
+- **强制约束**：必须包含 `id` (BigInt), `source_id`, `created_at` 等 MDM 基础字段，符合 [`contexts.md#5.1`](contexts.md#L190)。
+
+### 📂 4. 自动化测试 (Testing)
+- `tests/plugins/[prefix]_[component]/test_worker.py` -> Worker 采集模拟
+- `tests/plugins/[prefix]_[component]/test_router.py` -> Router 接口模拟
+
 ---
 
-## Step 3: æå¨éæä¸æ³¨å?(Manual Wiring)
+## Step 3: 手动集成与注册 (Manual Wiring)
 
-1. å?`devops_portal/main.py` ä¸­æ³¨å?`router`ã?2. å?`devops_collector/core/worker_factory.py` ä¸­æ³¨å?`worker` ä»»å¡ã?3. æ§è¡ `make migrations` çæ Alembic èæ¬ã?
-## Step 4: åçæµè¯ (Smoke Test)
+1. 在 `devops_portal/main.py` 中注册 `router`。
+2. 在 `devops_collector/core/worker_factory.py` 中注册 `worker` 任务。
+3. 执行 `just migrations` 生成 Alembic 脚本。
+
+## Step 4: 冒烟测试 (Smoke Test)
 
 // turbo
-1. æ§è¡ `make lint` ç¡®ä¿å½åå®å¨å¯¹é½ã?2. è¿è¡åºç¡ mock æµè¯ï¼`pytest tests/plugins/[prefix]_[component]/`ã?
+1. 执行 `just lint` 确保命名完全对齐。
+2. 运行基础 mock 测试：`pytest tests/plugins/[prefix]_[component]/`。
+
 ---
 
-## å®å·¥ç­¾ç« 
+## 完工签章
 
-å¨åå¤ä¸­åå«ï¼?```
+在回复中包含：
+```
 [Plugin Init Complete] Domain: [Name] | Prefix: [xx_] | Scaffolding: 6 files generated | Ready for dbt modeling
 ```

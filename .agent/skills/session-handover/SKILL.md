@@ -49,8 +49,8 @@ docker-compose ps --format "table {{.Name}}\t{{.Status}}"
 // turbo
 
 ```powershell
-# 读取最近 10 条 Lessons Learned
-Get-Content docs/lessons-learned.log | Select-Object -Last 15
+# 读取最近 15 条 Lessons Learned
+Get-Content docs/history/lessons-learned.log | Select-Object -Last 15
 ```
 
 ### 3. 识别未完成工作与中断的临时任务 (15s)
@@ -94,7 +94,7 @@ ______________________________________________________________________
 - **🚨 踩坑血泪史**（自问：有没有超过 2 次才跑通的代码？有没有被第三方库版本、时区、ORM 关联坑过？）：记录具体的报错现象与根因。
 - **✅ 最佳实践验证**（如果真的极其顺利）：提炼出“为什么这么平通”的原因（比如：精准遵循了某条上下文约束、提前防御了什么参数漏洞等）。
 
-沉淀时，在 `docs/lessons-learned.log` 末尾追加一行，格式与字段为：
+沉淀时，在 `docs/history/lessons-learned.log` 末尾追加一行，格式与字段为：
 
 ```text
 | {date} | {Domain} | {现象或正向实践} | {根因分析} | {防线规则/经验固化} |
@@ -127,17 +127,17 @@ git status -u
 - [ ] **物理事实对齐**：通过 `git status -u` 和 `docker ps` 确认环境处于预期状态，无残留未记录文件。
 - [ ] **进度状态更新 (双向同步)**：`progress.txt` 已更新。
   - [ ] 1. 将已完成任务迁移至 「Recently Completed」。
-  - [ ] 2. 🚨 **[强制归档检查]**: 确认 `progress.txt` 中的已完成条目**绝对不超过 5 条**。若溢出，必须立刻执行裁剪，并将其安全追加至 `docs/history/progress_archive.md` 的顶部。
+  - [ ] 2. 🚨 **[强制归档检查]**: 确认 `progress.txt` 中的已完成条目**绝对不超过 5 条**。若溢出，必须立刻执行裁剪，并将其安全追加至 `CHANGELOG.md` 的最新版本或 `[Unreleased]` 节段。
   - [ ] 3. 将本会话新产生的/未尽的任务同步至 「Next Steps / Tasks」。
 - [ ] **知识资产沉淀**：本次会话教训已在 `docs/lessons-learned.log` 倒序落盘。
 - [ ] **审计规则自进化**：涉及 L2-L4 的架构变更，其教训已通过 `/evolve-skill` 转化为物理审计规则。
-- [ ] **工程轨迹溯源**：已将物理证据（日志碎片）及决策点记录至 `docs/session-history.log`。
+- [ ] **工程轨迹溯源**：已将物理证据（日志碎片）及决策点记录至 `docs/history/session-history.log`。
 - [ ] **交接备忘交底**：已呈现“当前阻断点”与“下一步行动（Next Step）”。
 - [ ] **意图锚点追溯**：涉及技术妥协或非标准设计的变更，已补齐 **ADR (Architecture Decision Record)** 或在代码中建立意图锚点。
 - [ ] **性能基准取证**：涉及 [L3/L4] 级重构的任务，已在交付报告中包含性能对比数据（如耗时、内存或 Trace 碎片）。
 - [ ] **产品特性白皮书同步 (Feature Spec Sync) [NEW]**：如果本次会话新增了业务字段、改变了核心逻辑或加塞了临时需求，**必须主动触发 `/doc-update`**，将其业务意图与场景描述补充至对应的 `docs/features/*.md` 领域说明书中。未更新业务规格，严禁下班交接。
 
-**【核心原则】**：严禁在未更新 `lessons-learned.log` 和 `session-history.log` 的情况下使用“任务已圆满完成”或“会话已就绪”等描述。
+**【核心原则】**：严禁在未更新 `docs/history/lessons-learned.log` 和 `docs/history/session-history.log` 的情况下使用“任务已圆满完成”或“会话已就绪”等描述。
 
 ______________________________________________________________________
 
