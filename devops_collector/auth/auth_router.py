@@ -5,7 +5,7 @@
 
 import logging
 from datetime import timedelta
-from typing import Any
+from typing import Any, cast
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -47,7 +47,7 @@ async def auth_bind_gitlab(request: Request, token: str = Depends(auth_service.a
     if not payload:
         raise HTTPException(401, "Invalid or expired token")
 
-    email: str | None = payload.get("sub")
+    email = cast(str | None, payload.get("sub"))
     if not email:
         raise HTTPException(401, "Invalid token: missing email")
     current_user = auth_service.auth_get_user_by_email(db, email=email)
@@ -183,10 +183,9 @@ def auth_login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()
         HTTPException: 用户名或密码错误。
     """
     from devops_collector.core import security
-    from devops_collector.models.base_models import User
 
     user = auth_service.auth_authenticate_user(db, form_data.username, form_data.password)
-    if not isinstance(user, User):
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",

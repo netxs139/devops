@@ -6,7 +6,7 @@
 import logging
 import uuid
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 import httpx
@@ -43,7 +43,7 @@ def auth_decode_access_token(token: str) -> dict | None:
         Optional[dict]: 令牌载荷，验证失败则返回 None。
     """
     try:
-        payload: dict = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = cast(dict[str, Any], jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM]))
         return payload
     except JWTError:
         return None
@@ -158,7 +158,7 @@ def auth_create_user(db: Session, user_data: Any) -> User:
     return db_user
 
 
-def auth_authenticate_user(db: Session, email: str, password: str) -> User | bool:
+def auth_authenticate_user(db: Session, email: str, password: str) -> User | None:
     """验证用户凭据并返回用户对象。
 
     Args:
@@ -167,15 +167,16 @@ def auth_authenticate_user(db: Session, email: str, password: str) -> User | boo
         password: 密码。
 
     Returns:
-        Union[User, bool]: 验证成功返回 User 对象，失败返回 False。
+        Optional[User]: 验证成功返回 User 对象，失败返回 None。
     """
     user = auth_get_user_by_email(db, email)
     if not user:
-        return False
-    if not user.credential:
-        return False
-    if not auth_verify_password(password, user.credential.password_hash):
-        return False
+        return None
+    cred: UserCredential | None = getattr(user, "credential", None)
+    if not cred:
+        return None
+    if not auth_verify_password(password, cred.password_hash):
+        return None
     return user
 
 
@@ -251,7 +252,7 @@ def auth_get_current_user(db: Session, token: str) -> User:
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-    email: str | None = payload.get("sub")
+    email = cast(str | None, payload.get("sub"))
     if email is None:
         raise HTTPException(status_code=401, detail="Invalid token")
 
@@ -260,8 +261,8 @@ def auth_get_current_user(db: Session, token: str) -> User:
         raise HTTPException(status_code=401, detail="User not found")
 
     # 挂载 Token 中的 transient 权限和角色以支持 JWT 模式的 RBAC 校验
-    user.token_permissions = payload.get("permissions", [])
-    user.token_roles = payload.get("roles", [])
+    user.token_permissions = payload.get("permissions", [])  # type: ignore[attr-defined]
+    user.token_roles = payload.get("roles", [])  # type: ignore[attr-defined]
 
     return user
 
