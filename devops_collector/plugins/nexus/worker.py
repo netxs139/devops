@@ -4,11 +4,10 @@ import logging
 import re
 from datetime import datetime
 
-from devops_collector.core.base_worker import BaseWorker
-from devops_collector.core.identity_manager import IdentityManager
-
 # from .client import NexusClient
 from devops_collector.models.base_models import Product
+from devops_collector.services.base_worker import BaseWorker
+from devops_collector.services.identity_manager import IdentityManager
 
 from .models import NexusAsset, NexusComponent
 

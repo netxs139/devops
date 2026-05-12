@@ -8,7 +8,7 @@ import base64
 import logging
 from typing import Any
 
-from devops_collector.core.base_client import BaseClient
+from devops_collector.services.base_client import BaseClient
 
 
 logger = logging.getLogger(__name__)

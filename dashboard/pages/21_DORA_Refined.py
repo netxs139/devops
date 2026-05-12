@@ -103,7 +103,7 @@ with m4:
 # --- 2. 交付漏斗分析 (Delivery Funnel) ---
 st.header("2. 交付过程漏斗 (瓶颈定位)")
 if not funnel_df.empty:
-    if selected_product != "all" and selected_product != "全部":
+    if selected_product not in {"all", "全部"}:
         # 获取该产品的平均生命周期
         # 注意：这里需要根据 product_id 关联，由于 streamlit 过滤器选的是名称，这里做个转换
         pid = dora_df[dora_df["product_name"] == selected_product]["product_id"].iloc[0]

@@ -13,11 +13,11 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from devops_collector.core.base_worker import BaseWorker
-from devops_collector.core.identity_manager import IdentityManager
-from devops_collector.core.organization_service import OrganizationService
-from devops_collector.core.registry import PluginRegistry
 from devops_collector.core.utils import safe_id
+from devops_collector.services.base_worker import BaseWorker
+from devops_collector.services.identity_manager import IdentityManager
+from devops_collector.services.organization_service import OrganizationService
+from devops_collector.services.registry import PluginRegistry
 
 
 logger = logging.getLogger(__name__)

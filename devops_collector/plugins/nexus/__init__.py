@@ -3,7 +3,7 @@
 基于声明式协议，由 PluginLoader 2.0 自动加载。
 """
 
-from devops_collector.core.base_plugin import BasePlugin, PluginMetadata
+from devops_collector.services.base_plugin import BasePlugin, PluginMetadata
 
 
 class NexusPlugin(BasePlugin):

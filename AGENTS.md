@@ -57,6 +57,10 @@
 1. **状态机行为锁**: 状态流转必须定义 `VALID_TRANSITIONS` 并通过 `.transition_to()` 封装。
 1. **意图锚点 (ADR)**: 方案设计前必查 `docs/adr/`；技术妥协必须生成极简 ADR。
 1. **性能取证**: L3/L4 任务必须执行 `just profile-db/code`，交付需含“优化前后”对比数据。
+1. **服务层与命令层分离 (Service/Command Separation) [MANDATORY]**:
+   - **Command 类职责**: 仅负责解析参数、调用服务、报告结果。严禁在 `handle()` 中直接编写复杂业务算法或 SQL。
+   - **业务下沉**: 所有核心业务逻辑、数据同步算法、报表生成逻辑必须封装在 `devops_collector/services/` 中。
+   - **价值目标**: 确保业务代码可被 CLI (Typer/Command)、API (FastAPI) 或 UI (Streamlit) 无差异调用，Command 仅作为 Service 的一个“UI 分身”。
 
 ## 5. 交互与决策契约 (Interaction & Decision Contract) [MANDATORY]
 

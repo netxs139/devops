@@ -5,9 +5,9 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from devops_collector.core.identity_manager import IdentityManager
-from devops_collector.core.organization_service import OrganizationService
 from devops_collector.models import IdentityMapping
+from devops_collector.services.identity_manager import IdentityManager
+from devops_collector.services.organization_service import OrganizationService
 
 
 logger = logging.getLogger(__name__)

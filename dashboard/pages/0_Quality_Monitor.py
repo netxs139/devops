@@ -21,11 +21,11 @@ st.markdown(
         --warning-color: #FF9F0A;
         --error-color: #FF453A;
     }
-    
+
     .stApp {
         background: linear-gradient(135deg, #000000 0%, #1c1c1e 100%);
     }
-    
+
     .metric-card {
         background: var(--glass-bg);
         backdrop-filter: blur(10px);
@@ -37,21 +37,21 @@ st.markdown(
         box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         min-height: 180px;
     }
-    
+
     .metric-value {
         font-size: 2.2rem;
         font-weight: 700;
         margin: 10px 0;
         font-family: 'Outfit', sans-serif;
     }
-    
+
     .metric-label {
         color: #8E8E93;
         font-size: 0.8rem;
         text-transform: uppercase;
         letter-spacing: 1px;
     }
-    
+
     .status-badge {
         display: inline-block;
         padding: 4px 12px;
@@ -59,11 +59,11 @@ st.markdown(
         font-size: 0.7rem;
         font-weight: 600;
     }
-    
+
     .status-safe { background: rgba(48, 209, 88, 0.2); color: #30D158; border: 1px solid #30D158; }
     .status-warn { background: rgba(255, 159, 10, 0.2); color: #FF9F0A; border: 1px solid #FF9F0A; }
     .status-danger { background: rgba(255, 69, 58, 0.2); color: #FF453A; border: 1px solid #FF453A; }
-    
+
     /* Animation */
     .fade-in {
         animation: fadeIn 0.8s ease-in;

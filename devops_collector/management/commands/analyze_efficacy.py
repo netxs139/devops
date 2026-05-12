@@ -1,7 +1,7 @@
 """AI 效能归因命令。"""
 
-from devops_collector.core.ai_analyzer import EfficacyAnalyzer
 from devops_collector.core.management import BaseCommand, DiagHelper
+from devops_collector.services.ai_analyzer import EfficacyAnalyzer
 
 
 class Command(BaseCommand):

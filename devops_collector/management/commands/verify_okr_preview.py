@@ -3,9 +3,9 @@ import uuid
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from devops_collector.core.admin_service import AdminService
 from devops_collector.core.management import BaseCommand
 from devops_collector.models.base_models import Base, OKRObjective, User
+from devops_collector.services.admin_service import AdminService
 
 
 class Command(BaseCommand):

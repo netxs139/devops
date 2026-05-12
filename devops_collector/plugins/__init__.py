@@ -16,7 +16,7 @@ Typical usage:
 
 import logging
 
-from devops_collector.core.plugin_loader import PluginLoader
+from devops_collector.services.plugin_loader import PluginLoader
 
 
 logger = logging.getLogger(__name__)

@@ -35,7 +35,7 @@ st.markdown(
 
 # --- Data Loading ---
 query = """
-    SELECT 
+    SELECT
         project_name,
         health_score,
         bug_count,

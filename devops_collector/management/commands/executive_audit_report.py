@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import text
 
 from devops_collector.core.management import BaseCommand
-from devops_collector.core.notifiers import WeComBot
+from devops_collector.services.notifiers import WeComBot
 
 
 logger = logging.getLogger(__name__)

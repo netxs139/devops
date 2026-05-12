@@ -65,7 +65,7 @@ def load_data():
 
     # Query trying to join all metrics including Collaboration (Reviews)
     query_full = """
-    SELECT 
+    SELECT
         u.full_name,
         u.department_id,
         u.primary_email,
@@ -79,9 +79,9 @@ def load_data():
         count(distinct cm.commit_id) as commits_90d,
         count(distinct date(cm.committed_at)) as active_days
     FROM mdm_identities u
-    LEFT JOIN commit_metrics cm ON u.primary_email = cm.author_email 
+    LEFT JOIN commit_metrics cm ON u.primary_email = cm.author_email
         AND cm.committed_at >= NOW() - INTERVAL '90 days'
-    LEFT JOIN daily_dev_stats dds ON u.id = dds.user_id 
+    LEFT JOIN daily_dev_stats dds ON u.id = dds.user_id
         AND dds.date >= CURRENT_DATE - INTERVAL '90 days'
     GROUP BY u.full_name, u.department_id, u.primary_email, u.id
     HAVING SUM(cm.eloc_score) > 0 OR SUM(dds.review_count) > 0
@@ -90,7 +90,7 @@ def load_data():
 
     # Fallback query
     query_basic = """
-    SELECT 
+    SELECT
         u.full_name,
         u.department_id,
         u.primary_email,
@@ -104,7 +104,7 @@ def load_data():
         count(distinct cm.commit_id) as commits_90d,
         count(distinct date(cm.committed_at)) as active_days
     FROM mdm_identities u
-    LEFT JOIN commit_metrics cm ON u.primary_email = cm.author_email 
+    LEFT JOIN commit_metrics cm ON u.primary_email = cm.author_email
         AND cm.committed_at >= NOW() - INTERVAL '90 days'
     GROUP BY u.full_name, u.department_id, u.primary_email
     HAVING SUM(cm.eloc_score) > 0

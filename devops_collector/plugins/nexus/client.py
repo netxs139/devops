@@ -3,7 +3,7 @@
 import base64
 from collections.abc import Generator
 
-from devops_collector.core.base_client import BaseClient
+from devops_collector.services.base_client import BaseClient
 
 
 class NexusClient(BaseClient):

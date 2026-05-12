@@ -5,7 +5,7 @@
 
 import os
 
-from devops_collector.core.base_plugin import BasePlugin, PluginMetadata
+from devops_collector.services.base_plugin import BasePlugin, PluginMetadata
 
 
 class SonarQubePlugin(BasePlugin):

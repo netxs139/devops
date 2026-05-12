@@ -21,7 +21,7 @@ class Command(BaseCommand):
             "devops_collector.config",
             "devops_collector.models.base_models",
             "devops_collector.auth.auth_service",
-            "devops_collector.core.security",
+            "devops_collector.services.security",
             "devops_portal.main",
         ]
 

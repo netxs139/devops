@@ -15,7 +15,7 @@ st.markdown("""
 """)
 
 alignment_df = run_query("""
-    SELECT 
+    SELECT
         gitlab_project_id,
         project_name,
         master_entity_id,

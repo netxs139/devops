@@ -25,15 +25,15 @@ st.markdown(
     """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap');
-    
+
     html, body, [class*="css"] {
         font-family: 'Outfit', sans-serif;
     }
-    
+
     .main {
         background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
     }
-    
+
     .glass-card {
         background: rgba(255, 255, 255, 0.05);
         backdrop-filter: blur(10px);
@@ -43,7 +43,7 @@ st.markdown(
         box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         margin-bottom: 20px;
     }
-    
+
     .kpi-title {
         color: #00d4ff;
         font-size: 0.9rem;
@@ -51,18 +51,18 @@ st.markdown(
         text-transform: uppercase;
         letter-spacing: 1px;
     }
-    
+
     .kpi-value {
         color: #ffffff;
         font-size: 2.5rem;
         font-weight: 600;
         margin: 5px 0;
     }
-    
+
     .kpi-delta {
         font-size: 0.85rem;
     }
-    
+
     .status-badge {
         display: inline-block;
         padding: 4px 12px;
@@ -70,7 +70,7 @@ st.markdown(
         font-size: 0.75rem;
         font-weight: 600;
     }
-    
+
     .badge-success { background: rgba(0, 255, 127, 0.2); color: #00ff7f; border: 1px solid #00ff7f; }
     .badge-warning { background: rgba(255, 171, 0, 0.2); color: #ffab00; border: 1px solid #ffab00; }
     .badge-danger { background: rgba(255, 0, 0, 0.2); color: #ff3333; border: 1px solid #ff3333; }
@@ -91,7 +91,7 @@ try:
 
     # 2. DORA Aggregates (Current Month)
     dora_data = run_query("""
-        SELECT 
+        SELECT
             avg(deployment_frequency) as freq,
             avg(lead_time_hours) as lead_time,
             avg(change_failure_rate_pct) as cfr
@@ -101,7 +101,7 @@ try:
     if dora_data.empty or pd.isna(dora_data["freq"][0]):
         # Fallback to last known month if current is empty
         dora_data = run_query("""
-            SELECT 
+            SELECT
                 avg(deployment_frequency) as freq,
                 avg(lead_time_hours) as lead_time,
                 avg(change_failure_rate_pct) as cfr
@@ -120,7 +120,7 @@ try:
 
     # 4. Critical Technical Debt (Hotspots)
     brittleness_data = run_query("""
-        SELECT 
+        SELECT
             project_name, brittleness_index, architectural_health_status
         FROM public_marts.fct_architectural_brittleness
         ORDER BY brittleness_index DESC
@@ -214,7 +214,7 @@ with col_right:
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown("#### 🚨 核心架构风险 (Brittleness Top 5)")
     if not brittleness_data.empty:
-        for idx, row in brittleness_data.iterrows():
+        for _idx, row in brittleness_data.iterrows():
             status = row["architectural_health_status"] or "NORMAL"
             brittleness_idx = safe_float(row["brittleness_index"])
             badge_class = "badge-danger" if status == "CRITICAL_BRITTLE_CORE" else "badge-warning"

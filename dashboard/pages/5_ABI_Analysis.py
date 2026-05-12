@@ -9,7 +9,7 @@ set_page_config()
 st.title("🏗️ 架构脆性指数 (ABI) 分析")
 st.caption("基于组件入度 (In-degree)、认知复杂度与测试覆盖率，识别组织内的“单点崩溃”风险模块。")
 query = """
-    SELECT 
+    SELECT
         project_name,
         impact_in_degree,
         complexity_score,
