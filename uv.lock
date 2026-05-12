@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -938,6 +938,7 @@ dependencies = [
     { name = "python-json-logger" },
     { name = "python-multipart" },
     { name = "requests" },
+    { name = "rich" },
     { name = "sqlalchemy" },
     { name = "starlette" },
     { name = "streamlit" },
@@ -1049,6 +1050,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2.32.4,<3.0.0" },
     { name = "requests-mock", marker = "extra == 'dev'", specifier = ">=1.12.0,<2.0.0" },
     { name = "requests-mock", marker = "extra == 'test'", specifier = ">=1.12.0,<2.0.0" },
+    { name = "rich", specifier = ">=14.3.3" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9.0" },
     { name = "safety", marker = "extra == 'dev'", specifier = ">=3.7.0" },
     { name = "selenium", marker = "extra == 'dev'", specifier = ">=4.27.0,<5.0.0" },
