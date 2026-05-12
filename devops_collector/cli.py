@@ -110,7 +110,6 @@ def _scan_directory(directory: Path, module_prefix: str, registry: dict):
         return
 
     for py_file in sorted(directory.glob("*.py")):
-        print(f"DEBUG: Found file {py_file.stem}")
         if py_file.stem.startswith("__"):
             continue
 
