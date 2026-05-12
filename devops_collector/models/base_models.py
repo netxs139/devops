@@ -219,6 +219,11 @@ class User(Base, TimestampMixin, SCDMixin):
             return self.roles[0].role_key
         return "user"
 
+    if TYPE_CHECKING:
+        credential: UserCredential | None
+        token_permissions: list[str]
+        token_roles: list[str]
+
     def __repr__(self) -> str:
         """返回用户的字符串表示。"""
         return f"<User(name='{self.full_name}', email='{self.primary_email}', version={self.sync_version})>"

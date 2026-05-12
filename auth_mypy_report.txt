@@ -1,0 +1,31 @@
+   Building devops-platform @ file:///home/netxs/devops
+      Built devops-platform @ file:///home/netxs/devops
+Uninstalled 1 package in 1ms
+Installed 1 package in 3ms
+devops_collector/auth/auth_service.py:46: error: Returning Any from function declared to return "dict[Any, Any] | None"  [no-any-return]
+devops_collector/auth/auth_service.py:61: error: Returning Any from function declared to return "bool"  [no-any-return]
+devops_collector/auth/auth_service.py:73: error: Returning Any from function declared to return "str"  [no-any-return]
+devops_collector/auth/auth_service.py:97: error: Returning Any from function declared to return "str"  [no-any-return]
+devops_collector/auth/auth_service.py:174: error: "User" has no attribute "credential"  [attr-defined]
+devops_collector/auth/auth_service.py:176: error: "User" has no attribute "credential"  [attr-defined]
+devops_collector/auth/auth_service.py:253: error: Incompatible types in assignment (expression has type "Any | None", variable has type "str")  [assignment]
+devops_collector/auth/auth_service.py:262: error: "User" has no attribute "token_permissions"  [attr-defined]
+devops_collector/auth/auth_service.py:263: error: "User" has no attribute "token_roles"  [attr-defined]
+devops_collector/auth/auth_router.py:49: error: Incompatible types in assignment (expression has type "Any | None", variable has type "str")  [assignment]
+devops_collector/auth/auth_router.py:92: error: Incompatible default for argument "state" (default has type "None", argument has type "str")  [assignment]
+devops_collector/auth/auth_router.py:92: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+devops_collector/auth/auth_router.py:92: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+devops_collector/auth/auth_router.py:194: error: Item "bool" of "User | Literal[True]" has no attribute "roles"  [union-attr]
+devops_collector/auth/auth_router.py:197: error: Argument 2 to "get_user_permissions" has incompatible type "User | Literal[True]"; expected "User"  [arg-type]
+devops_collector/auth/auth_router.py:200: error: Argument 2 to "get_user_effective_data_scope" has incompatible type "User | Literal[True]"; expected "User"  [arg-type]
+devops_collector/auth/auth_router.py:203: error: Item "bool" of "User | Literal[True]" has no attribute "primary_email"  [union-attr]
+devops_collector/auth/auth_router.py:204: error: Item "bool" of "User | Literal[True]" has no attribute "global_user_id"  [union-attr]
+devops_collector/auth/auth_router.py:205: error: Item "bool" of "User | Literal[True]" has no attribute "username"  [union-attr]
+devops_collector/auth/auth_router.py:206: error: Item "bool" of "User | Literal[True]" has no attribute "full_name"  [union-attr]
+devops_collector/auth/auth_router.py:207: error: Item "bool" of "User | Literal[True]" has no attribute "department_id"  [union-attr]
+devops_collector/auth/auth_router.py:234: error: Need type annotation for "resp_data"  [var-annotated]
+devops_collector/auth/auth_router.py:263: error: Incompatible types in assignment (expression has type "dict[str, str]", target has type "list[Any] | bool | str | None")  [assignment]
+devops_collector/auth/auth_router.py:263: error: "Organization" has no attribute "org_id"  [attr-defined]
+devops_collector/auth/auth_router.py:266: error: Incompatible types in assignment (expression has type "dict[str, str | None]", target has type "list[Any] | bool | str | None")  [assignment]
+devops_collector/auth/auth_router.py:267: error: "Location" has no attribute "location_id"; maybe "location_code"?  [attr-defined]
+Found 24 errors in 2 files (checked 6 source files)

@@ -5,6 +5,7 @@
 
 import logging
 from datetime import timedelta
+from typing import Any
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -46,7 +47,9 @@ async def auth_bind_gitlab(request: Request, token: str = Depends(auth_service.a
     if not payload:
         raise HTTPException(401, "Invalid or expired token")
 
-    email: str = payload.get("sub")
+    email: str | None = payload.get("sub")
+    if not email:
+        raise HTTPException(401, "Invalid token: missing email")
     current_user = auth_service.auth_get_user_by_email(db, email=email)
     if not current_user:
         raise HTTPException(401, "User not found")
@@ -89,7 +92,7 @@ async def auth_login_gitlab(request: Request):
 
 
 @auth_router.get("/gitlab/callback")
-async def auth_gitlab_callback(code: str, state: str = None, db: Session = Depends(get_auth_db)):
+async def auth_gitlab_callback(code: str, state: str | None = None, db: Session = Depends(get_auth_db)):
     """GitLab OAuth 回调处理。
 
     支持两种模式：
@@ -180,9 +183,10 @@ def auth_login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()
         HTTPException: 用户名或密码错误。
     """
     from devops_collector.core import security
+    from devops_collector.models.base_models import User
 
     user = auth_service.auth_authenticate_user(db, form_data.username, form_data.password)
-    if not user:
+    if not isinstance(user, User):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -231,7 +235,7 @@ def auth_read_users_me(token: str = Depends(auth_service.auth_oauth2_scheme), db
     user = auth_service.auth_get_current_user(db, token)
 
     # 1. Base User Info
-    resp_data = {
+    resp_data: dict[str, Any] = {
         "global_user_id": str(user.global_user_id),
         "email": str(user.primary_email),
         "full_name": str(user.full_name),
@@ -260,11 +264,11 @@ def auth_read_users_me(token: str = Depends(auth_service.auth_oauth2_scheme), db
     # 4. Department & Location Access (Safe)
     try:
         if user.department:
-            resp_data["department"] = {"org_id": str(user.department.org_id), "org_name": str(user.department.org_name)}
+            resp_data["department"] = {"org_id": str(user.department.id), "org_name": str(user.department.org_name)}
 
         if user.location:
             resp_data["location"] = {
-                "location_id": str(user.location.location_id),
+                "location_id": str(user.location.id),
                 "location_name": str(user.location.location_name),
                 "region": str(user.location.region) if user.location.region else None,
             }
