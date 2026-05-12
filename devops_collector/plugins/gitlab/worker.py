@@ -5,9 +5,9 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from devops_collector.core.base_worker import BaseWorker
-from devops_collector.core.registry import PluginRegistry
 from devops_collector.models import SyncLog
+from devops_collector.services.base_worker import BaseWorker
+from devops_collector.services.registry import PluginRegistry
 
 from .identity_service import IdentityMatcher, UserResolver
 from .mixins.asset_mixin import AssetMixin

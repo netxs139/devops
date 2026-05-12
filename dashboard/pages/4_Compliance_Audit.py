@@ -9,7 +9,7 @@ set_page_config()
 st.title("⚠️ 合规审计与过程风控")
 st.caption("基于“四眼原则”与分支保护规范，识别研发流程中的违规隐患。")
 query = """
-    SELECT 
+    SELECT
         project_name,
         path_with_namespace,
         total_merged_mrs,

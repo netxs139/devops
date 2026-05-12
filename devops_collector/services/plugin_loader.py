@@ -1,0 +1,207 @@
+"""插件自动发现与加载模块
+
+实现插件的自动扫描、加载和注册机制。
+支持从指定目录自动发现所有可用插件，并完成注册。
+
+Typical usage:
+    from devops_collector.services.plugin_loader import PluginLoader
+
+    # 自动加载所有插件
+    PluginLoader.autodiscover()
+
+    # 获取已加载的插件列表
+    plugins = PluginLoader.list_loaded_plugins()
+"""
+
+import importlib
+import logging
+import sys
+from pathlib import Path
+
+from devops_collector.services.base_plugin import BasePlugin
+from devops_collector.services.registry import PluginRegistry
+
+
+logger = logging.getLogger(__name__)
+
+
+class PluginLoader:
+    """插件自动发现与加载器。
+
+    负责从插件目录自动扫描并导入所有插件模块。
+    每个插件在其 __init__.py 中完成自注册。
+    """
+
+    _loaded_plugins: list[str] = []
+
+    @classmethod
+    def autodiscover(cls, plugins_dir: str | None = None) -> list[str]:
+        """自动发现并加载所有插件。
+
+        Args:
+            plugins_dir: 插件目录的绝对路径，默认为 devops_collector/plugins
+
+        Returns:
+            成功加载的插件名称列表
+
+        Example:
+            loaded = PluginLoader.autodiscover()
+            # ['gitlab', 'sonarqube', 'jenkins', ...]
+        """
+        if plugins_dir is None:
+            # 默认插件目录
+            current_dir = Path(__file__).parent.parent
+            resolved_dir = current_dir / "plugins"
+        else:
+            resolved_dir = Path(plugins_dir)
+
+        if not resolved_dir.exists():
+            logger.error(f"Plugins directory not found: {resolved_dir}")
+            return []
+
+        logger.info(f"Autodiscovering plugins from: {resolved_dir}")
+        loaded = []
+
+        # 遍历插件目录
+        for item in resolved_dir.iterdir():
+            if not item.is_dir():
+                continue
+
+            # 跳过私有目录和 __pycache__
+            if item.name.startswith("_") or item.name == "__pycache__":
+                continue
+
+            # 检查是否有 __init__.py
+            init_file = item / "__init__.py"
+            if not init_file.exists():
+                logger.warning(f"Skip {item.name}: no __init__.py found")
+                continue
+
+            # 动态导入插件模块
+            try:
+                plugin_name = item.name
+
+                # 白名单拦截机制 (Feature Toggle)
+                from devops_collector.config import settings
+
+                if plugin_name not in settings.plugin.enabled_plugins:
+                    logger.debug(f"Plugin '{plugin_name}' is discovered physically but NOT enabled in allowlist. Skipping import.")
+                    continue
+
+                module_path = f"devops_collector.plugins.{plugin_name}"
+                logger.debug(f"Loading plugin: {plugin_name} ({module_path})")
+
+                # 导入模块
+                module = importlib.import_module(module_path)
+
+                # 检查是否为 2.0 插件 (声明式)
+                plugin_obj = getattr(module, "plugin", None)
+                if isinstance(plugin_obj, BasePlugin):
+                    logger.info(f"Discovered Plugin 2.0: {plugin_name}")
+                    # 使用 2.0 协议进行注册
+                    cls._register_v2_plugin(plugin_obj)
+                else:
+                    logger.debug(f"Plugin {plugin_name} is Legacy (v1.0), relying on side-effect registration.")
+
+                if plugin_name not in cls._loaded_plugins:
+                    cls._loaded_plugins.append(plugin_name)
+                    loaded.append(plugin_name)
+                    logger.info(f"Successfully loaded plugin: {plugin_name}")
+                else:
+                    logger.debug(f"Plugin {plugin_name} already loaded.")
+
+            except Exception as e:
+                logger.error(f"Failed to load plugin {item.name}: {e}", exc_info=True)
+                continue
+
+        logger.info(f"Autodiscovery completed. Loaded {len(loaded)} plugins: {loaded}")
+        return loaded
+
+    @classmethod
+    def list_loaded_plugins(cls) -> list[str]:
+        """返回已加载的插件列表。
+
+        Returns:
+            插件名称列表
+        """
+        return cls._loaded_plugins.copy()
+
+    @classmethod
+    def is_plugin_loaded(cls, plugin_name: str) -> bool:
+        """检查指定插件是否已加载。
+
+        Args:
+            plugin_name: 插件名称 (如 'gitlab')
+
+        Returns:
+            True 如果已加载，否则 False
+        """
+        return plugin_name in cls._loaded_plugins
+
+    @classmethod
+    def reload_plugin(cls, plugin_name: str) -> bool:
+        """重新加载指定插件（用于开发调试）。
+
+        Args:
+            plugin_name: 插件名称
+
+        Returns:
+            True 如果重载成功，False 否则
+        """
+        try:
+            module_path = f"devops_collector.plugins.{plugin_name}"
+            if module_path in sys.modules:
+                importlib.reload(sys.modules[module_path])
+                logger.info(f"Reloaded plugin: {plugin_name}")
+                return True
+            else:
+                logger.warning(f"Plugin {plugin_name} not loaded yet, importing...")
+                importlib.import_module(module_path)
+                if plugin_name not in cls._loaded_plugins:
+                    cls._loaded_plugins.append(plugin_name)
+                return True
+        except Exception as e:
+            logger.error(f"Failed to reload plugin {plugin_name}: {e}")
+            return False
+
+    @classmethod
+    def load_models(cls) -> None:
+        """加载所有已发现插件的数据模型。
+
+        确保 SQLAlchemy 的 Base.metadata 能够收集到定义在插件中的所有表结构。
+        """
+        if not cls._loaded_plugins:
+            logger.debug("No plugins recorded. Triggering autodiscover.")
+            cls.autodiscover()
+
+        for plugin_name in cls._loaded_plugins:
+            models_path = f"devops_collector.plugins.{plugin_name}.models"
+            try:
+                # 检查是否已加载，避免重复导入触发的 SQLAlchemy 警告
+                if models_path not in sys.modules:
+                    importlib.import_module(models_path)
+                    logger.debug(f"Successfully loaded models for plugin: {plugin_name}")
+                else:
+                    logger.debug(f"Models for {plugin_name} already in sys.modules, skipping.")
+            except ImportError:
+                # 插件可能没有定义 models 模块，这是合法的
+                logger.debug(f"Plugin {plugin_name} has no models module.")
+                continue
+            except Exception as e:
+                logger.error(f"Critical error loading models for plugin {plugin_name}: {e}", exc_info=True)
+
+    @classmethod
+    def _register_v2_plugin(cls, plugin: BasePlugin) -> None:
+        """使用 2.0 协议注册插件。
+
+        不再在此阶段调用 get_worker_class()，实现真正的延迟加载。
+        """
+        PluginRegistry.register_plugin(plugin)
+
+        # 触发初始化钩子
+        plugin.on_setup()
+
+    @classmethod
+    def clear(cls) -> None:
+        """清空加载记录（主要用于测试）。"""
+        cls._loaded_plugins.clear()

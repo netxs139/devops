@@ -1,75 +1,46 @@
-import csv
-import logging
+"""初始化产品主数据 (MDM_PRODUCT) 命令。"""
+
 from pathlib import Path
 
-from devops_collector.core.management import BaseCommand, build_user_indexes, resolve_user
-from devops_collector.models.base_models import Organization, Product
+from devops_collector.core.management import BaseCommand
 
 
-logger = logging.getLogger(__name__)
+SAMPLE_DATA_DIR = Path("docs/assets/sample_data")
+DEFAULT_CSV = SAMPLE_DATA_DIR / "products.csv"
 
 
 class Command(BaseCommand):
-    help = "初始化产品主数据 (MDM_PRODUCT)。"
+    help = "初始化产品主数据 (MDM_PRODUCT)"
 
     def add_arguments(self, parser):
-        parser.add_argument("--csv", type=str, help="Path to products CSV")
+        parser.add_argument("--csv", type=str, help="产品 CSV 路径")
 
     def handle(self, *args, **options):
-        csv_path = Path(options.get("csv")) if options.get("csv") else Path("docs/assets/sample_data/products.csv")
+        csv_path = Path(options["csv"]) if options.get("csv") else DEFAULT_CSV
 
-        if not csv_path.exists():
-            self.stdout.write(f"WARN: {csv_path} not found, skipping.\n")
-            return True
+        from devops_collector.services.product_service import ProductService
 
-        self.stdout.write(f"从 {csv_path} 同步产品目录...\n")
+        service = ProductService(self.session)
 
         try:
-            # 构建用户双索引 (邮箱 + 姓名)
-            email_idx, name_idx = build_user_indexes(self.session)
-            # 预加载组织
-            orgs = {o.org_name: o.id for o in self.session.query(Organization).filter_by(is_current=True).all()}
+            if not csv_path.exists():
+                self.stdout.write(f"⚠️ 警告: 缺少产品初始化文件 {csv_path}，跳过同步。\n")
+                return True
+
+            self.stdout.write(f"正在从 {csv_path} 初始化产品目录 (via Service Layer)...\n")
+
+            import csv
 
             with open(csv_path, encoding="utf-8-sig") as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    p_id = row.get("产品ID", "").strip() or row.get("product_id", "").strip()
-                    p_name = row.get("产品名称", "").strip() or row.get("product_name", "").strip()
-                    owner_team_name = row.get("归属中心", "").strip()
-                    manager_val = row.get("负责人", "").strip()
+                row_count = sum(1 for _ in csv.DictReader(f))
 
-                    if not p_id or not p_name:
-                        continue
+            with self.get_progress() as progress:
+                task = progress.add_task("[cyan]同步产品目录...", total=row_count)
+                service.sync_products_from_csv(csv_path, progress_callback=lambda: progress.advance(task))
 
-                    # 1. 匹配所属部门 ID
-                    org_id = orgs.get(owner_team_name)
-
-                    # 2. 查找负责人
-                    mgr_user_id = resolve_user(manager_val, email_idx, name_idx, "产品负责人")
-
-                    # 3. 创建/更新产品
-                    existing = self.session.query(Product).filter(Product.product_code == p_id, Product.is_current).first()
-                    if not existing:
-                        product = Product(
-                            product_code=p_id,
-                            product_name=p_name,
-                            product_description=f"核心产品: {p_name}",
-                            category="Core Product",
-                            version_schema="SemVer",
-                            lifecycle_status="Active",
-                            owner_team_id=org_id,
-                            product_manager_id=mgr_user_id,
-                        )
-                        self.session.add(product)
-                    else:
-                        existing.product_name = p_name
-                        existing.owner_team_id = org_id
-                        if mgr_user_id:
-                            existing.product_manager_id = mgr_user_id
-
-            self.session.flush()
-            self.stdout.write("✅ 产品目录初始化完成。\n")
+            self.stdout.write("✅ 产品主数据初始化完成。\n")
             return True
+
         except Exception as e:
-            logger.error(f"产品初始化失败: {e}")
+            self.stderr.write(f"❌ 产品初始化失败: {e}\n")
             return False

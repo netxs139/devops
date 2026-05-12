@@ -6,10 +6,10 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from devops_collector.core.base_worker import BaseWorker
-from devops_collector.core.identity_manager import IdentityManager
-from devops_collector.core.organization_service import OrganizationService
 from devops_collector.models.base_models import TraceabilityLink
+from devops_collector.services.base_worker import BaseWorker
+from devops_collector.services.identity_manager import IdentityManager
+from devops_collector.services.organization_service import OrganizationService
 
 # from .client import JiraClient
 from .models import JiraBoard, JiraIssue, JiraIssueHistory, JiraProject, JiraSprint

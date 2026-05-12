@@ -3,10 +3,10 @@ import logging
 from sqlalchemy.orm import configure_mappers
 
 from devops_collector.core.management import BaseCommand
-from devops_collector.core.plugin_loader import PluginLoader
 from devops_collector.plugins.zentao.client import ZenTaoClient
 from devops_collector.plugins.zentao.models import ZenTaoProduct
 from devops_collector.plugins.zentao.worker import ZenTaoWorker
+from devops_collector.services.plugin_loader import PluginLoader
 
 
 logger = logging.getLogger("SyncZenTao")
@@ -17,6 +17,13 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--product-id", type=int, help="只同步特定产品 ID")
+
+    def check(self, **options) -> list[tuple[str, str]]:
+        results = []
+        conn_err = self.check_url_connectivity(self.settings.zentao.url, label="ZenTao API")
+        if conn_err:
+            results.append(conn_err)
+        return results
 
     def handle(self, *args, **options):
         # 强制加载所有插件模型

@@ -78,7 +78,7 @@ with col_info:
         <div class="dna-archetype">🧬 {row["developer_archetype"]}</div>
         <h2 style="margin:0; color:white;">{row["real_name"]}</h2>
         <div style="color:#888; margin-bottom:20px;">{row["department"]} | Tech Impact Leader</div>
-        
+
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
             <div>
                 <div class="metric-label">影响力总分</div>
@@ -133,8 +133,8 @@ with col_radar:
 # --- Contribution Trend (Daily Activity) ---
 st.subheader("📊 近期活跃度趋势 (Daily Activity Stream)")
 activity_query = f"""
-    SELECT metric_date, activity_count 
-    FROM public_marts.dws_developer_metrics_daily 
+    SELECT metric_date, activity_count
+    FROM public_marts.dws_developer_metrics_daily
     WHERE master_user_id = (SELECT master_user_id FROM public_staging.stg_mdm_identities WHERE user_id = '{selected_user_id}' LIMIT 1)
     ORDER BY metric_date ASC
 """
@@ -150,8 +150,8 @@ else:
 st.divider()
 st.subheader("🏆 全站研发影响力排行榜 (Top 10)")
 top_df = run_query("""
-    SELECT real_name, total_impact_score, developer_archetype, daily_velocity 
-    FROM public_marts.fct_developer_activity_profile 
+    SELECT real_name, total_impact_score, developer_archetype, daily_velocity
+    FROM public_marts.fct_developer_activity_profile
     ORDER BY total_impact_score DESC LIMIT 10
 """)
 

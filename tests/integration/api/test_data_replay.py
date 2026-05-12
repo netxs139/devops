@@ -9,9 +9,10 @@ from devops_collector.config import Config
 
 
 Config.DB_URI = "sqlite:///:memory:"
+from scripts.reprocess_staging_data import reprocess_by_source
+
 from devops_collector.models.base_models import Base, RawDataStaging
 from devops_collector.plugins.gitlab.models import GitLabMergeRequest, GitLabProject
-from scripts.reprocess_staging_data import reprocess_by_source
 
 
 logging.basicConfig(level=logging.INFO)

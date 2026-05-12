@@ -3,9 +3,9 @@
 提供插件化架构的核心抽象类和注册表。
 """
 
-from .base_client import BaseClient, RateLimiter
-from .base_worker import BaseWorker
-from .registry import PluginRegistry
+from devops_collector.services.base_client import BaseClient, RateLimiter
+from devops_collector.services.base_worker import BaseWorker
+from devops_collector.services.registry import PluginRegistry
 
 
 __all__ = ["BaseClient", "RateLimiter", "BaseWorker", "PluginRegistry"]

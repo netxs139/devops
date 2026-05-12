@@ -1,8 +1,8 @@
 import logging
 
 from devops_collector.core.management import BaseCommand
-from devops_collector.core.registry import PluginRegistry
 from devops_collector.plugins import load_all_plugins
+from devops_collector.services.registry import PluginRegistry
 
 
 logger = logging.getLogger("PluginVerifier")

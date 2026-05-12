@@ -54,7 +54,7 @@ st.markdown(
 def load_space_data():
     # v3.0 Use dws_space_metrics_daily
     query = """
-    SELECT 
+    SELECT
         avg(s_satisfaction) as satisfaction,
         avg(p_performance) as performance,
         avg(a_activity) as activity,
@@ -199,15 +199,15 @@ with col_insights:
 
     st.markdown("""
     ---
-    **系统洞察:** 
+    **系统洞察:**
     基于历史数据，当前组织处于 *成长扩张期*。效率(E)得分稳步上升，但请注意高负荷(A)可能带来的长期倦怠风险。
     """)
 
 # --- Regional Heatmap or Trend ---
 st.subheader("📈 团队效能演进 (Team Evolution)")
 trend_query = """
-SELECT metric_date, avg(total_space_score) as total_score 
-FROM public_marts.dws_space_metrics_daily 
+SELECT metric_date, avg(total_space_score) as total_score
+FROM public_marts.dws_space_metrics_daily
 GROUP BY 1 ORDER BY 1
 """
 trend_df = run_query(trend_query)

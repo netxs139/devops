@@ -18,6 +18,23 @@ class Command(BaseCommand):
         parser.add_argument("--attempts", type=int, default=3, help="Number of attempts for primary index")
         parser.add_argument("--dev", action="store_true", help="Include dev dependencies and extras")
 
+    def check(self, **options) -> list[tuple[str, str]]:
+        results = []
+        nexus_url = self.settings.pypi.nexus_url if hasattr(self.settings.pypi, "nexus_url") else "http://192.168.5.64:8081/repository/pypi-all/simple"
+        tsinghua_url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+
+        # 检查主镜像
+        nexus_err = self.check_url_connectivity(nexus_url, label="Nexus PyPI")
+        if nexus_err:
+            results.append(nexus_err)
+
+        # 检查备选镜像 (仅作为警告)
+        tsinghua_err = self.check_url_connectivity(tsinghua_url, label="Tsinghua PyPI")
+        if tsinghua_err:
+            results.append(("WARNING", f"备选镜像无法访问: {tsinghua_url}"))
+
+        return results
+
     def handle(self, *args, **options):
         nexus_url = self.settings.pypi.nexus_url if hasattr(self.settings.pypi, "nexus_url") else "http://192.168.5.64:8081/repository/pypi-all/simple"
         tsinghua_url = "https://pypi.tuna.tsinghua.edu.cn/simple"

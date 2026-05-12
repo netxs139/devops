@@ -2,7 +2,21 @@
 
 所有对 DevOps Data Application Platform 的重要更改都将记录在此文件中。
 
-## [5.1.0] - 2026-05-11
+## [5.2.0] - 2026-05-12
+
+### 新增 (Added) - v5.2.0
+
+- **CLI 现代化与去中心化发现 (Decentralized CLI Discovery)**:
+  - **Typer 引擎集成**: 交付了基于 `typer` 的现代化命令行入口 `cli.py`，支持多级命令分组、Rich 渲染与参数自动反射。
+  - **插件自动挂载**: 实现了 `plugins/*/management/commands` 的动态扫描机制，支持插件命令的零配置、无感扩展。
+  - **全局审计总线 (Audit Trail)**: 在 `BaseCommand` 注入审计钩子，物理追踪所有 CLI 操作（Who/When/What/Changes/Result）。
+- **业务逻辑层标准化 (Service-Oriented Refactoring)**:
+  - **Service/Command 严格分离**: 完成了全量核心命令（OKR, Org, Calendar, DataDict, Products 等）的逻辑下沉，建立了统一的 `services/` 包。
+  - **预飞行检查钩子 (Pre-flight Checks)**: 为所有命令集成了环境连通性、DB 连通性及运行时架构审计。
+
+### 优化 (Improved) - v5.2.0
+
+- **架构红线确立**: 在 `AGENTS.md` 中固化了“服务/命令分离”与“去中心化发现”的强制性契约。
 
 ### 新增 (Added) - v5.1.0
 

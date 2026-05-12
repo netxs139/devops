@@ -10,7 +10,7 @@ from typing import Any
 logger = logging.getLogger(__name__)
 import base64
 
-from devops_collector.core.base_client import BaseClient
+from devops_collector.services.base_client import BaseClient
 
 
 class JiraClient(BaseClient):

@@ -1,15 +1,19 @@
 # DevOps 平台建设进度跟踪 (Progress Tracker)
 
 ## 🎯 当前重点 (Current Focus)
-- **核心重点**: CLI 现代化 - Typer 迁移 (Phase 1: 壳层替换)
-- **状态**: 🔵 执行中
+- **核心重点**: 架构标准化交付与离场审计 (v5.2.0)
+- **状态**: ✅ 已完成
 
 ## 🛠️ 任务清单 (Tasks)
-1. [Core/H] **[Ad-hoc] CLI Typer 迁移 Phase 1**: 用 Typer 重写 `cli.py` 调度层，实现自动发现 + 子应用分组。✅ 已完成
+1. [Core/H] **FastAPI 接入**: 将重构后的 `services/` 接入 FastAPI Router，实现 Web 端的双轨调用。⏳ 待实现
 2. [Core/M] **[Deferred] CLI Typer 迁移 Phase 2**: 将高频命令的 `add_arguments` 迁移为 Typer 函数签名。⏳ 待实现
 3. [Core/L] **[Deferred] CLI Typer 迁移 Phase 3**: 在 `pyproject.toml` 注册 `[project.scripts]` 入口点。⏳ 待实现
 
 ## 📋 最近完成 (Recently Completed)
+- **[2026-05-12] 插件去中心化挂载 (v5.2.0)**: 实现 `plugins/*/management/commands` 自动发现机制，支持零配置命令扩展。
+- **[2026-05-12] 全局自动化审计日志**: 在 `BaseCommand` 注入审计总线，实现 CLI 操作的 Who/When/What/Result 全量追踪。
+- **[2026-05-12] 逻辑层服务化重构**: 完成全量核心命令的“肢体分离”，逻辑下沉至 `services/`，达成 100% 服务化交付。
+- **[2026-05-12] CLI 架构升级**: 全面迁移至 `devops_collector/cli.py` (Typer Edition)，实现基础自动发现与业务分组、预飞行检查。
 - **[2026-05-12] AI 效能归因 (v5.6.0)**: 引入 LiteLLM 作为统一模型网关，开发 `analyze_efficacy` 诊断命令实现异常指标的自动化诊断。
 - **[2026-05-12] UI 视觉提升 (v5.5.0)**: 注入 Apple HIG 深色模式全套 Design Tokens，并将卡片与侧边栏的玻璃拟态通透度升级为 blur(20px)。
 - **[2026-05-12] CLI 插件增强 (v5.4.0)**: 重构了 `BaseCommand` 与 `DiagHelper`，全局集成 `rich` 组件，支持面板渲染与动态进度条。

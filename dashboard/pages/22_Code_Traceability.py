@@ -50,11 +50,11 @@ with col2:
 def fetch_traceability(issue_id: str):
     engine = get_db_engine()
     query = text("""
-        SELECT 
-            l.target_type, 
-            l.target_id, 
-            c.title as commit_title, 
-            c.author_name as commit_author, 
+        SELECT
+            l.target_type,
+            l.target_id,
+            c.title as commit_title,
+            c.author_name as commit_author,
             c.committed_date,
             c.raw_data->>'web_url' as commit_url,
             m.title as mr_title,
@@ -100,7 +100,7 @@ if search_btn and issue_id:
             if commits_df.empty:
                 st.write("暂无关联提交")
             else:
-                for idx, row in commits_df.iterrows():
+                for _idx, row in commits_df.iterrows():
                     commit_hash = row["target_id"][:8]
                     commit_author = row["commit_author"] or "未知"
                     date_str = str(row["committed_date"])[:16] if pd.notnull(row["committed_date"]) else "未知时间"
@@ -124,7 +124,7 @@ if search_btn and issue_id:
             if mrs_df.empty:
                 st.write("暂无关联的合并请求 (可能通过 Commit 关联但未主动挂载 MR)")
             else:
-                for idx, row in mrs_df.iterrows():
+                for _idx, row in mrs_df.iterrows():
                     mr_state = row["mr_state"]
                     badge_class = "status-merged" if mr_state == "merged" else "status-open"
                     mr_state_zh = "已合并" if mr_state == "merged" else str(mr_state).capitalize()

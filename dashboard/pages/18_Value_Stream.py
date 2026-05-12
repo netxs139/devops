@@ -132,9 +132,9 @@ try:
     engine = get_db_engine()
     with engine.connect() as conn:
         wip_query = """
-        SELECT flow_type, count(*) as count 
-        FROM public_marts.view_flow_items 
-        WHERE state = 'opened' 
+        SELECT flow_type, count(*) as count
+        FROM public_marts.view_flow_items
+        WHERE state = 'opened'
         GROUP BY flow_type
         """
         wip_df = pd.read_sql(text(wip_query), conn)

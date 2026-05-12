@@ -19,16 +19,16 @@ with col1:
 with col2:
     limit = st.slider("显示最近记录数", 100, 1000, 500)
 query = f"""
-    SELECT 
-        occurred_at, 
-        activity_type, 
-        author_name, 
-        project_id, 
-        summary, 
-        base_impact_score 
-    FROM public_intermediate.int_unified_activities 
+    SELECT
+        occurred_at,
+        activity_type,
+        author_name,
+        project_id,
+        summary,
+        base_impact_score
+    FROM public_intermediate.int_unified_activities
     WHERE activity_type IN ({",".join([f"'{t}'" for t in activity_type])})
-    ORDER BY occurred_at DESC 
+    ORDER BY occurred_at DESC
     LIMIT {limit}
 """
 activities_df = run_query(query)

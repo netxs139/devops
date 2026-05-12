@@ -5,8 +5,8 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from devops_collector.core.base_worker import BaseWorker
 from devops_collector.core.utils import parse_iso8601
+from devops_collector.services.base_worker import BaseWorker
 
 from .models import SonarProject
 from .transformer import SonarDataTransformer

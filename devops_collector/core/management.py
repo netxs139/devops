@@ -54,6 +54,103 @@ class BaseCommand(ABC):
         """
         pass
 
+    def check_url_connectivity(self, url: str, label: str = "API", timeout: int = 5) -> tuple[str, str] | None:
+        """
+        Helper to check if a URL is reachable.
+        Returns (level, message) or None if successful.
+        """
+        import requests
+
+        if not url:
+            return ("ERROR", f"[{label}] 未配置 URL，请检查配置文件。")
+
+        try:
+            # 仅做 HEAD 请求以节省流量和时间
+            response = requests.head(url, timeout=timeout, allow_redirects=True)
+            if response.status_code >= 500:
+                return ("WARNING", f"[{label}] 目标服务器响应异常 (HTTP {response.status_code})。")
+            return None
+        except requests.exceptions.RequestException as e:
+            return ("ERROR", f"[{label}] 网络无法连接: {url} (原因: {e})")
+
+    def check(self, **options) -> list[tuple[str, str]]:
+        """
+        Subclasses should override this to provide custom pre-flight checks.
+        Returns a list of (level, message) tuples where level is 'ERROR' or 'WARNING'.
+        """
+        return []
+
+    def _base_checks(self) -> list[tuple[str, str]]:
+        """
+        Internal global checks for infrastructure (DB connectivity, etc.)
+        and runtime architecture compliance.
+        """
+        import sys
+        from pathlib import Path
+
+        from sqlalchemy import text
+
+        from devops_collector.services.audit_service import ArchAuditor
+
+        results = []
+
+        # 1. 基础设施检查 (Database)
+        try:
+            self.session.execute(text("SELECT 1"))
+        except Exception as e:
+            results.append(("ERROR", f"Database connectivity check failed: {e}"))
+
+        # 2. 运行时架构审计 (Self-Audit)
+        try:
+            # 获取当前子类命令的文件路径
+            cmd_module = sys.modules[self.__class__.__module__]
+            if hasattr(cmd_module, "__file__") and cmd_module.__file__:
+                cmd_path = Path(cmd_module.__file__)
+                audit_results = ArchAuditor.audit_file(cmd_path)
+                results.extend(audit_results)
+        except Exception as e:
+            # 审计器出错不应阻断业务，仅记录警告
+            results.append(("WARNING", f"Self-architecture audit failed to run: {e}"))
+
+        return results
+
+    def run_checks(self, **options) -> bool:
+        """
+        Run all pre-flight checks. Returns True if execution can proceed.
+        """
+        skip_checks = options.get("skip_checks", False)
+        if skip_checks:
+            return True
+
+        from rich.console import Group
+        from rich.panel import Panel
+        from rich.text import Text
+
+        self.stdout.write("🔍 [dim]执行系统预检 (Pre-flight Checks)...[/dim]\n")
+
+        results = self._base_checks() + self.check(**options)
+
+        if not results:
+            return True
+
+        has_error = False
+        messages = []
+        for level, msg in results:
+            if level == "ERROR":
+                has_error = True
+                messages.append(Text.from_markup(f"[bold red]❌ ERROR:[/bold red] {msg}"))
+            else:
+                messages.append(Text.from_markup(f"[bold yellow]⚠️ WARNING:[/bold yellow] {msg}"))
+
+        if messages:
+            self.console.print(Panel(Group(*messages), title="[bold]系统检查报告[/bold]", border_style="red" if has_error else "yellow"))
+
+        if has_error:
+            self.stderr.write("\n🚨 [bold red]预检失败，操作已终止。[/bold red] 请修复上述问题后重试。\n")
+            return False
+
+        return True
+
     @abstractmethod
     def handle(self, *args, **options) -> bool | None:
         """
@@ -67,8 +164,16 @@ class BaseCommand(ABC):
         Executes the command. This is usually called by the management runner.
         """
         self.session = session
+
+        # 1. 运行预检
+        if not self.run_checks(**options):
+            return False
+
+        # 2. 执行核心逻辑
+        success = False
         try:
-            return self.handle(*args, **options)
+            success = self.handle(*args, **options)
+            return success
         except CommandError as e:
             self.stderr.write(f"Error: {e}\n")
             sys.exit(1)
@@ -76,6 +181,32 @@ class BaseCommand(ABC):
             logger.exception("Unexpected error during command execution")
             self.stderr.write(f"Unexpected error: {e}\n")
             sys.exit(1)
+        finally:
+            # 3. 记录自动化审计日志 (Command Audit Trail)
+            try:
+                import getpass
+
+                from devops_collector.models.audit import AuditLog
+
+                # 序列化参数，过滤掉下划线开头的私有选项
+                safe_options = {k: str(v) for k, v in options.items() if not k.startswith("_")}
+
+                # 确定命令标识 (从模块名提取)
+                cmd_id = self.__class__.__module__.split(".")[-1]
+
+                AuditLog.create_log(
+                    self.session,
+                    action="MANAGEMENT_COMMAND",
+                    resource_type="cli_command",
+                    resource_id=cmd_id,
+                    status="SUCCESS" if success else "FAILURE",
+                    changes=safe_options,
+                    remark=f"CLI exec: {self.help or '-'}",
+                    actor_name=f"{getpass.getuser()}@{sys.platform}",
+                )
+                # 审计日志随业务事务同步 commit/flush，session 管理由外层 cli.py 负责
+            except Exception as audit_err:
+                logger.warning(f"Failed to record command audit log: {audit_err}")
 
 
 class CommandContext:

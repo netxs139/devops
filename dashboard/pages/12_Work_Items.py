@@ -9,13 +9,13 @@ set_page_config()
 st.title("统一扁平化工作项 (Unified Work Items)")
 st.markdown("---")
 work_items_df = run_query("""
-    SELECT 
-        source_system, 
-        work_item_type, 
-        current_status, 
-        title, 
-        author_user_id, 
-        created_at 
+    SELECT
+        source_system,
+        work_item_type,
+        current_status,
+        title,
+        author_user_id,
+        created_at
     FROM public_intermediate.int_unified_work_items
 """)
 c1, c2, c3 = st.columns(3)

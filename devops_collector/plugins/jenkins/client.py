@@ -7,7 +7,7 @@ API 文档: https://www.jenkins.io/doc/book/using/remote-access-api/
 import base64
 from typing import Any
 
-from devops_collector.core.base_client import BaseClient
+from devops_collector.services.base_client import BaseClient
 
 
 class JenkinsClient(BaseClient):

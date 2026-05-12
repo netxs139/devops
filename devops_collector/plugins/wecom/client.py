@@ -10,8 +10,8 @@ import time
 
 import requests
 
-from devops_collector.core.base_client import BaseClient
 from devops_collector.core.exceptions import CircuitBreakerOpenError
+from devops_collector.services.base_client import BaseClient
 
 
 logger = logging.getLogger(__name__)

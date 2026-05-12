@@ -3,8 +3,8 @@
 import logging
 from datetime import UTC, datetime
 
-from devops_collector.core.base_worker import BaseWorker
-from devops_collector.core.identity_manager import IdentityManager
+from devops_collector.services.base_worker import BaseWorker
+from devops_collector.services.identity_manager import IdentityManager
 
 # from .client import JFrogClient
 from .models import JFrogArtifact, JFrogScan, JFrogVulnerabilityDetail
