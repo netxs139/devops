@@ -206,6 +206,13 @@ class BaseCommand(ABC):
 
                 from devops_collector.models.audit import AuditLog
 
+                # 如果命令执行失败，先回滚以获得干净的事务状态
+                if not success:
+                    try:
+                        session.rollback()
+                    except Exception:
+                        pass
+
                 # 序列化参数，过滤掉下划线开头的私有选项
                 safe_options = {k: str(v) for k, v in options.items() if not k.startswith("_")}
 
@@ -213,7 +220,7 @@ class BaseCommand(ABC):
                 cmd_id = self.__class__.__module__.split(".")[-1]
 
                 AuditLog.create_log(
-                    self.session,
+                    session,
                     action="MANAGEMENT_COMMAND",
                     resource_type="cli_command",
                     resource_id=cmd_id,
@@ -224,6 +231,11 @@ class BaseCommand(ABC):
                 )
                 # 审计日志随业务事务同步 commit/flush，session 管理由外层 cli.py 负责
             except Exception as audit_err:
+                # 审计日志写入失败（如表不存在）不应影响命令本身的执行结果
+                try:
+                    session.rollback()
+                except Exception:
+                    pass
                 logger.warning(f"Failed to record command audit log: {audit_err}")
 
 
