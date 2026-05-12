@@ -1,4 +1,9 @@
-﻿# Workflow: /doc-update (Feature Spec Sync)
+---
+name: doc-update
+description: Workflow for doc-update
+---
+
+# Workflow: /doc-update (Feature Spec Sync)
 
 > Trigger: When user calls /doc-update, or during session handover if new business fields/logic were added.
 > Goal: Automatically translate code changes into human-readable business specifications.

@@ -1,3 +1,8 @@
+---
+name: codify-rule
+description: Workflow for codify-rule
+---
+
 # Workflow: /codify-rule (活宪法：规则自动化提取与物理护栏固化)
 
 > **触发条件**：当用户输入 `/codify-rule <文档路径/规则描述>` 或人类要求“将某条自然语言规则转化为审计代码”时。

@@ -1,7 +1,0 @@
-Running MyPy type checking...
-uv run mypy devops_collector/ devops_portal/
-devops_collector/config.py:398: error: Name "httpx" is not defined  [name-defined]
-devops_collector/core/management.py:34: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
-devops_portal/routers/traceability_router.py:91: error: "GitLabCommit" has no attribute "web_url"  [attr-defined]
-Found 2 errors in 2 files (checked 140 source files)
-error: Recipe `typecheck` failed on line 124 with exit code 1

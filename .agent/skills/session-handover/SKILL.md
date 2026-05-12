@@ -1,3 +1,10 @@
+---
+name: session-handover
+description: Workflow for session-handover
+---
+
+# Workflow: /session-handover (会话交接与状态对齐)
+
 ______________________________________________________________________
 
 ## description: 会话交接协议 — 上下文恢复清单与状态对齐
