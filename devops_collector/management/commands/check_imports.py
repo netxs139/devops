@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = "核心模块导入依赖检查：快速确认环境是否完整。"
 
-    def handle(self, *args, **options):
+    def handle(self):
         self.stdout.write("=" * 60 + "\n")
         self.stdout.write("DevOps Platform 依赖导入检查\n")
         self.stdout.write("=" * 60 + "\n")

@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 
 from devops_collector.auth import auth_service
 from devops_collector.auth.auth_database import AuthSessionLocal, get_auth_db
-from devops_collector.core import security
+from devops_collector.services import security
 from devops_collector.models.base_models import Location, User
 
 

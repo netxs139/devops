@@ -2,8 +2,11 @@ import csv
 import logging
 import uuid
 from pathlib import Path
+from typing import Annotated, Optional
 
 import pypinyin
+import typer
+from sqlalchemy.orm import Session
 
 from devops_collector.core.management import BaseCommand
 from devops_collector.models.base_models import Organization, User
@@ -15,11 +18,12 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = "导入全量员工信息并关联组织架构。"
 
-    def add_arguments(self, parser):
-        parser.add_argument("--csv", type=str, help="Path to employees CSV")
-
-    def handle(self, *args, **options):
-        csv_path = Path(options.get("csv")) if options.get("csv") else Path("docs/assets/sample_data/employees.csv")
+    def handle(
+        self,
+        session: Session,
+        csv_file: Annotated[Optional[str], typer.Option("--csv", help="员工信息 CSV 文件的物理路径")] = None,
+    ):
+        csv_path = Path(csv_file) if csv_file else Path("docs/assets/sample_data/employees.csv")
 
         if not csv_path.exists():
             self.stdout.write(f"ERROR: CSV 文件未找到: {csv_path}\n")
@@ -56,19 +60,19 @@ class Command(BaseCommand):
 
                         # 2. 查找所属组织
                         target_org_code = f"DEP-{dept}" if (dept and dept != center) else f"CTR-{center}"
-                        org = self.session.query(Organization).filter_by(org_code=target_org_code).first()
+                        org = session.query(Organization).filter_by(org_code=target_org_code).first()
                         if not org:
-                            org = self.session.query(Organization).filter(Organization.org_name == dept).first()
+                            org = session.query(Organization).filter(Organization.org_name == dept).first()
                             if not org:
-                                org = self.session.query(Organization).filter(Organization.org_name == center).first()
+                                org = session.query(Organization).filter(Organization.org_name == center).first()
 
                         final_org_id = org.id if org else None
 
                         # 3. 创建或更新用户
-                        user = self.session.query(User).filter_by(employee_id=employee_id).first()
+                        user = session.query(User).filter_by(employee_id=employee_id).first()
 
                         if not user:
-                            user = self.session.query(User).filter_by(primary_email=email).first()
+                            user = session.query(User).filter_by(primary_email=email).first()
 
                         if not user:
                             user = User(
@@ -85,7 +89,7 @@ class Command(BaseCommand):
                                 sync_version=1,
                                 is_current=True,
                             )
-                            self.session.add(user)
+                            session.add(user)
                         else:
                             user.employee_id = employee_id
                             user.full_name = name
@@ -100,9 +104,9 @@ class Command(BaseCommand):
                         progress.advance(task)
 
                         if count % 100 == 0:
-                            self.session.flush()
+                            session.flush()
 
-                    self.session.flush()
+                    session.flush()
                     self.console.print(f"  [green]✓[/green] 员工导入已完成！共处理 {count} 条记录。")
                     return True
         except Exception as e:

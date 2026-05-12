@@ -2,8 +2,11 @@ import csv
 import logging
 import uuid
 from pathlib import Path
+from typing import Annotated
 
+import typer
 from passlib.context import CryptContext
+from sqlalchemy.orm import Session
 
 from devops_collector.core.management import BaseCommand
 from devops_collector.models.base_models import (
@@ -51,16 +54,17 @@ DEFAULT_MENUS = [
 
 
 class Command(BaseCommand):
-    help = "初始化 RBAC 权限系统脚本（内置默认值 + 业务自适应版）"
+    help = "初始化 RBAC 权限 system 脚本（内置默认值 + 业务自适应版）"
 
-    def add_arguments(self, parser):
-        parser.add_argument("--force-admin", action="store_true", help="强制更新 admin 用户的密码")
-
-    def handle(self, *args, **options):
+    def handle(
+        self,
+        session: Session,
+        force_admin: Annotated[bool, typer.Option("--force-admin", help="强制更新 admin 用户的密码")] = False,
+    ):
         try:
             # 1. 确保 admin 用户
             admin_email = "admin@tjhq.com"
-            admin_user = self.session.query(User).filter_by(primary_email=admin_email, is_current=True).first()
+            admin_user = session.query(User).filter_by(primary_email=admin_email, is_current=True).first()
             if not admin_user:
                 uid = uuid.uuid4()
                 admin_user = User(
@@ -74,8 +78,8 @@ class Command(BaseCommand):
                 self.session.add(admin_user)
                 self.session.flush()
                 self.session.add(UserCredential(user_id=uid, password_hash=pwd_context.hash("admin_password_123!")))
-            elif options.get("force_admin"):
-                cred = self.session.query(UserCredential).filter_by(user_id=admin_user.global_user_id).first()
+            elif force_admin:
+                cred = session.query(UserCredential).filter_by(user_id=admin_user.global_user_id).first()
                 if cred:
                     cred.password_hash = pwd_context.hash("admin_password_123!")
                     self.stdout.write("Admin password reset successfully.")
@@ -88,11 +92,11 @@ class Command(BaseCommand):
             self._ensure_auto_permissions()
 
             # 4. 兜底绑定 admin 角色
-            ar = self.session.query(SysRole).filter_by(role_key="SYSTEM_ADMIN").first()
-            if ar and not self.session.query(UserRole).filter_by(user_id=admin_user.global_user_id, role_id=ar.id).first():
-                self.session.add(UserRole(user_id=admin_user.global_user_id, role_id=ar.id))
+            ar = session.query(SysRole).filter_by(role_key="SYSTEM_ADMIN").first()
+            if ar and not session.query(UserRole).filter_by(user_id=admin_user.global_user_id, role_id=ar.id).first():
+                session.add(UserRole(user_id=admin_user.global_user_id, role_id=ar.id))
 
-            self.session.flush()
+            session.flush()
             self.stdout.write("🎉 RBAC 系统初始化/同步完成。\n")
             return True
         except Exception as e:

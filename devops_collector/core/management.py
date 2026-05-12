@@ -172,15 +172,33 @@ class BaseCommand(ABC):
         # 2. 执行核心逻辑
         success = False
         try:
-            success = self.handle(*args, **options)
+            # 动态解析 handle 签名，实现参数智能映射
+            import inspect
+
+            sig = inspect.signature(self.handle)
+
+            # 如果 handle 需要 session，则注入到 options 中供后续匹配
+            if "session" in sig.parameters:
+                options["session"] = session
+
+            # 检查 handle 是否接受 **kwargs
+            has_var_kwargs = any(p.kind == p.VAR_KEYWORD for p in sig.parameters.values())
+
+            if has_var_kwargs:
+                # 兼容旧模式：handle(self, *args, **options)
+                success = self.handle(*args, **options)
+            else:
+                # 现代模式：handle(self, force: bool, ...) 仅传递匹配的参数
+                # 注意：第一个参数通常是 self，不需要在 options 中查找
+                filtered_options = {k: v for k, v in options.items() if k in sig.parameters}
+                success = self.handle(*args, **filtered_options)
+
             return success
-        except CommandError as e:
-            self.stderr.write(f"Error: {e}\n")
-            sys.exit(1)
         except Exception as e:
+            session.rollback()  # 修复：确保异常时回滚事务，防止事务污染
             logger.exception("Unexpected error during command execution")
             self.stderr.write(f"Unexpected error: {e}\n")
-            sys.exit(1)
+            raise e  # 修复：抛出异常由调用方处理，不要在 execute 中直接 sys.exit
         finally:
             # 3. 记录自动化审计日志 (Command Audit Trail)
             try:

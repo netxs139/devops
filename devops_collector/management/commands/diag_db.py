@@ -1,5 +1,6 @@
 import logging
-
+import requests
+from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from devops_collector.core.management import BaseCommand, DiagHelper
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = "数据库专项诊断脚本。"
 
-    def handle(self, *args, **options):
+    def handle(self, session: Session):
         DiagHelper.print_header("数据库专项诊断")
 
         success = True
@@ -34,6 +35,7 @@ class Command(BaseCommand):
                 count_result = self.session.execute(text(f"SELECT count(*) FROM {table}")).fetchone()[0]
                 print(f"   - {table:22}: {count_result} 条记录")
             except Exception:
+                session.rollback()  # 修复：局部失败也要回滚，否则 Session 会被锁定
                 DiagHelper.log_warning(f"{table:22}: ✗ 查询失败 (可能表不存在)")
                 success = False
 

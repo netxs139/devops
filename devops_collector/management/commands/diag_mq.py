@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = "RabbitMQ 专项诊断脚本。"
 
-    def handle(self, *args, **options):
+    def handle(self):
         DiagHelper.print_header("RabbitMQ 专项诊断")
 
         # 尝试从环境变量获取，如果 settings 没对齐

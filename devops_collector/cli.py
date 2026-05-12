@@ -110,6 +110,7 @@ def _scan_directory(directory: Path, module_prefix: str, registry: dict):
         return
 
     for py_file in sorted(directory.glob("*.py")):
+        print(f"DEBUG: Found file {py_file.stem}")
         if py_file.stem.startswith("__"):
             continue
 
@@ -119,10 +120,7 @@ def _scan_directory(directory: Path, module_prefix: str, registry: dict):
             if hasattr(module, "Command") and issubclass(module.Command, BaseCommand):
                 group = _classify_command(py_file.stem)
                 short_name = _make_short_name(py_file.stem)
-
-                # 记录原始路径，方便后续验证
                 module.Command._source_file = str(py_file)
-
                 registry.setdefault(group, {})[short_name] = module.Command
         except Exception as e:
             logger.debug(f"Failed to load command {py_file.stem}: {e}")
@@ -172,15 +170,60 @@ app = typer.Typer(
 )
 
 
-def _introspect_arguments(cmd_class: type[BaseCommand]) -> list[dict]:
-    """反射提取 BaseCommand.add_arguments 中声明的 argparse 参数。"""
+def _introspect_command_params(cmd_class: type[BaseCommand]) -> tuple[list[dict], bool]:
+    """探测命令参数定义。返回 (参数列表, 是否为现代模式)。"""
+    import inspect
+
+    handle_method = cmd_class.handle
+    sig = inspect.signature(handle_method)
+
+    # 1. 检查是否为“现代”签名：存在除 self, session, args, options 以外的具体命名参数
+    modern_params = []
+    is_modern = False
+    for name, param in sig.parameters.items():
+        if name in ("self", "session", "args", "options"):
+            continue
+        # 只要有一个特定参数，就视为现代模式
+        is_modern = True
+
+        # 尝试提取 Annotated 信息
+        from typing import Annotated, get_args, get_origin
+
+        annotation = param.annotation
+        default = param.default
+
+        param_type = annotation
+        typer_info = None
+
+        if get_origin(annotation) is Annotated:
+            # 提取 Annotated[type, typer.Option/Argument]
+            param_type = get_args(annotation)[0]
+            for arg in get_args(annotation)[1:]:
+                if isinstance(arg, (typer.models.OptionInfo, typer.models.ArgumentInfo)):
+                    typer_info = arg
+                    break
+
+        modern_params.append(
+            {
+                "name": name,
+                "type": param_type if param_type is not inspect.Parameter.empty else str,
+                "default": default if default is not inspect.Parameter.empty else None,
+                "typer_info": typer_info,
+                "is_flag": param_type is bool,
+            }
+        )
+
+    if is_modern:
+        return modern_params, True
+
+    # 2. 回退到旧的 argparse 探测模式
     probe_parser = argparse.ArgumentParser(add_help=False)
     try:
         cmd_class().add_arguments(probe_parser)
     except Exception:
-        return []
+        return [], False
 
-    params = []
+    legacy_params = []
     for action in probe_parser._actions:
         if isinstance(action, argparse._HelpAction):
             continue
@@ -188,16 +231,17 @@ def _introspect_arguments(cmd_class: type[BaseCommand]) -> list[dict]:
         if not opt_strings:
             continue
         name = max(opt_strings, key=len).lstrip("-").replace("-", "_")
-        params.append(
+        legacy_params.append(
             {
                 "name": name,
                 "type": action.type or str,
                 "default": action.default,
                 "help": action.help or "",
                 "is_flag": isinstance(action, argparse._StoreTrueAction),
+                "typer_info": None,
             }
         )
-    return params
+    return legacy_params, False
 
 
 def _run_base_command(cmd_class: type[BaseCommand], original_stem: str, options: dict):
@@ -223,7 +267,7 @@ def _make_command_callback(cmd_class: type[BaseCommand], original_stem: str):
     """为一个 BaseCommand 子类生成 Typer 回调函数。"""
     import inspect
 
-    params = _introspect_arguments(cmd_class)
+    params, is_modern = _introspect_command_params(cmd_class)
 
     def callback(**kwargs):
         _run_base_command(cmd_class, original_stem, kwargs)
@@ -231,16 +275,30 @@ def _make_command_callback(cmd_class: type[BaseCommand], original_stem: str):
     callback.__doc__ = cmd_class.help or f"执行 {original_stem}"
     callback.__name__ = original_stem
 
+    # 注入默认的 skip_checks
     sig_params = [
-        inspect.Parameter("skip_checks", inspect.Parameter.KEYWORD_ONLY, default=typer.Option(False, "--skip-checks", help="跳过预飞行检查"), annotation=bool)
+        inspect.Parameter(
+            "skip_checks",
+            inspect.Parameter.KEYWORD_ONLY,
+            default=typer.Option(False, "--skip-checks", help="跳过预飞行检查"),
+            annotation=bool,
+        )
     ]
+
     for p in params:
-        if p["is_flag"]:
-            default = typer.Option(False, help=p["help"])
-            annotation = bool
-        else:
-            default = typer.Option(p["default"], help=p["help"])
+        if is_modern:
+            # 现代模式：直接透传原有的默认值（可能是 typer.Option 对象）
+            default = p["default"]
             annotation = p["type"]
+        else:
+            # 旧模式：手动包装
+            if p["is_flag"]:
+                default = typer.Option(False, help=p["help"])
+                annotation = bool
+            else:
+                default = typer.Option(p["default"], help=p["help"])
+                annotation = p["type"]
+
         sig_params.append(inspect.Parameter(p["name"], inspect.Parameter.KEYWORD_ONLY, default=default, annotation=annotation))
 
     callback.__signature__ = inspect.Signature(sig_params)
