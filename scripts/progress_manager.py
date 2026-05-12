@@ -200,7 +200,7 @@ def mirror_tasks(tasks_str: str):
             add_task(task.strip())
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--add", help="Add a new task")
     parser.add_argument("--done", type=int, help="Mark a task index as done")
@@ -221,3 +221,7 @@ if __name__ == "__main__":
         mirror_tasks(args.mirror_tasks)
     else:
         parser.print_help()
+
+
+if __name__ == "__main__":
+    main()

@@ -1,6 +1,7 @@
 import logging
 
 import requests
+from sqlalchemy.orm import Session
 
 from devops_collector.config import settings
 from devops_collector.core.management import BaseCommand, DiagHelper
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = "禅道 (ZenTao) 连接与模型诊断脚本。"
 
-    def handle(self, *args, **options):
+    def handle(self, session: Session):
         DiagHelper.print_header("禅道专项诊断")
 
         # 1. 配置检查

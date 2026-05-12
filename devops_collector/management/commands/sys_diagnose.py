@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 import httpx
+from sqlalchemy.orm import Session
 
 from devops_collector.core.management import BaseCommand, DiagHelper, call_command
 
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = "系统综合诊断主调度脚本。"
 
-    def handle(self, *args, **options):
+    def handle(self, session: Session):
         DiagHelper.print_header("DevOps 平台全项体检")
 
         # 1. 基础 API 检查 (异步)

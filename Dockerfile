@@ -1,8 +1,4 @@
-# --- 阶段 1: 提取 UV 二进制文件 ---
-ARG UV_IMAGE=astral-sh/uv:latest
-FROM ${UV_IMAGE} AS uv_bin
-
-# --- 阶段 2: 构建环境 (Builder) ---
+# --- 阶段 1: 构建环境 (Builder) ---
 FROM python:3.11-slim-bookworm AS builder
 
 WORKDIR /app
@@ -15,8 +11,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# 安装 UV
-COPY --from=uv_bin /uv /uvx /bin/
+# 安装 UV (改用 pip 安装以避开镜像拉取限制)
+RUN pip install uv -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 # 预安装 Python 依赖 (利用缓存层)
 ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
@@ -29,7 +25,7 @@ COPY . .
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
-# --- 阶段 3: 运行环境 (Final) —— 极致瘦身 ---
+# --- 阶段 2: 运行环境 (Final) ---
 FROM python:3.11-slim-bookworm
 
 WORKDIR /app
@@ -43,11 +39,14 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+# 安装运行时 UV
+RUN pip install uv -i https://pypi.tuna.tsinghua.edu.cn/simple
+
 # 从 Builder 阶段拷贝虚拟环境和代码
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app /app
 
-# 设置环境变量，优先使用虚拟环境中的二进制文件
+# 设置环境变量
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1

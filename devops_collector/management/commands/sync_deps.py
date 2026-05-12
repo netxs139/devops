@@ -4,8 +4,12 @@ import subprocess
 import time
 from urllib.parse import urlparse
 
-from devops_collector.core.management import BaseCommand
+from typing import Annotated
 
+import typer
+from sqlalchemy.orm import Session
+
+from devops_collector.core.management import BaseCommand
 
 logger = logging.getLogger("SyncDeps")
 
@@ -13,14 +17,13 @@ logger = logging.getLogger("SyncDeps")
 class Command(BaseCommand):
     help = "依赖同步工具：实现 uv sync 的多级重试与镜像切换逻辑 (Nexus -> Tsinghua)。"
 
-    def add_arguments(self, parser):
-        parser.add_argument("--frozen", action="store_true", help="Use --frozen flag for uv sync")
-        parser.add_argument("--attempts", type=int, default=3, help="Number of attempts for primary index")
-        parser.add_argument("--dev", action="store_true", help="Include dev dependencies and extras")
-
     def check(self, **options) -> list[tuple[str, str]]:
         results = []
-        nexus_url = self.settings.pypi.nexus_url if hasattr(self.settings.pypi, "nexus_url") else "http://192.168.5.64:8081/repository/pypi-all/simple"
+        nexus_url = (
+            self.settings.pypi.nexus_url
+            if hasattr(self.settings.pypi, "nexus_url")
+            else "http://192.168.5.64:8081/repository/pypi-all/simple"
+        )
         tsinghua_url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
         # 检查主镜像
@@ -35,20 +38,26 @@ class Command(BaseCommand):
 
         return results
 
-    def handle(self, *args, **options):
-        nexus_url = self.settings.pypi.nexus_url if hasattr(self.settings.pypi, "nexus_url") else "http://192.168.5.64:8081/repository/pypi-all/simple"
+    def handle(
+        self,
+        session: Session,
+        frozen: Annotated[bool, typer.Option("--frozen", help="Use --frozen flag for uv sync")] = False,
+        attempts: Annotated[int, typer.Option("--attempts", help="Number of attempts for primary index")] = 3,
+        dev: Annotated[bool, typer.Option("--dev", help="Include dev dependencies and extras")] = False,
+    ):
+        nexus_url = (
+            self.settings.pypi.nexus_url
+            if hasattr(self.settings.pypi, "nexus_url")
+            else "http://192.168.5.64:8081/repository/pypi-all/simple"
+        )
         tsinghua_url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
-        attempts = options.get("attempts")
-        is_frozen = options.get("frozen")
-        is_dev = options.get("dev")
 
         # 构建基础命令
         base_cmd = ["uv", "sync"]
-        if is_frozen:
+        if frozen:
             base_cmd.append("--frozen")
 
-        if is_dev:
+        if dev:
             base_cmd.extend(["--all-groups", "--all-extras"])
         else:
             base_cmd.append("--all-groups")

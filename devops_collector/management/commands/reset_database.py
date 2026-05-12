@@ -1,6 +1,10 @@
 import logging
 
+from typing import Annotated
+
+import typer
 from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from devops_collector.core.management import BaseCommand
 from devops_collector.models.base_models import Base
@@ -12,11 +16,12 @@ logger = logging.getLogger("DBReset")
 class Command(BaseCommand):
     help = "数据库重置工具 (PostgreSQL 增强版). 强制清空并重建所有表。"
 
-    def add_arguments(self, parser):
-        parser.add_argument("--yes", action="store_true", help="跳过确认提示")
-
-    def handle(self, *args, **options):
-        if not options.get("yes"):
+    def handle(
+        self,
+        session: Session,
+        yes: Annotated[bool, typer.Option("--yes", help="强制执行，跳过所有安全确认提示")] = False,
+    ):
+        if not yes:
             self.stdout.write("！！！警告：正在重置数据库，全量数据将被清空！！！\n")
             confirm = input("确定要继续吗？(y/N): ")
             if confirm.lower() != "y":
@@ -33,18 +38,18 @@ class Command(BaseCommand):
               AND pid <> pg_backend_pid();
             """
             try:
-                self.session.execute(text(terminate_sql))
-                self.session.commit()
+                session.execute(text(terminate_sql))
+                session.commit()
             except Exception:
                 pass
 
             # 2. 清理 Schema (Postgres 专用最强清理法)
             self.stdout.write("清理 public schema...\n")
-            self.session.execute(text("DROP SCHEMA public CASCADE;"))
-            self.session.execute(text("CREATE SCHEMA public;"))
-            self.session.execute(text("GRANT ALL ON SCHEMA public TO postgres;"))
-            self.session.execute(text("GRANT ALL ON SCHEMA public TO public;"))
-            self.session.commit()
+            session.execute(text("DROP SCHEMA public CASCADE;"))
+            session.execute(text("CREATE SCHEMA public;"))
+            session.execute(text("GRANT ALL ON SCHEMA public TO postgres;"))
+            session.execute(text("GRANT ALL ON SCHEMA public TO public;"))
+            session.commit()
             self.stdout.write("public schema 已重置。\n")
 
             # 3. 重新创建所有表

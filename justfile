@@ -36,7 +36,7 @@ dev: clean
 # [标准启动] 启动服务并执行增量数据对齐
 start: up
     @echo "✅ System started. Running baseline data alignment..."
-    {{EXEC_CMD}} python scripts/cli.py init --all
+    {{EXEC_CMD}} devops init --all
 
 # [全量部署] 生产级一键部署：门禁校验 -> 构建 -> 启动 -> 初始化
 deploy: verify build up init docs
@@ -81,17 +81,17 @@ logs:
 init:
     @echo "Initializing data through Command Bus..."
     just install
-    {{EXEC_CMD}} python scripts/cli.py init --all
+    {{EXEC_CMD}} devops init --all
 
 # 使用 uv sync 同步依赖 (含内网 Nexus 重试逻辑)
 install:
     @echo "Tiered Sync (Nexus Primary x3 -> Tsinghua Fallback)..."
-    uv run scripts/cli.py run --module sync_deps --frozen
+    uv run devops run sync-deps --frozen
 
 # [本地] 初始化宿主机开发环境
 init-dev:
     @echo "Local Dev Init (Nexus Primary x3 -> Tsinghua Fallback)..."
-    uv run scripts/cli.py run --module sync_deps --dev
+    uv run devops run sync-deps --dev
 
 
 # =============================================================================
@@ -126,12 +126,12 @@ typecheck:
 # 检查核心模块导入依赖
 check-imports:
     @echo "Checking module imports..."
-    {{EXEC_CMD}} python scripts/cli.py check --module imports
+    {{EXEC_CMD}} devops check imports
 
 # [MANDATORY] 架构合规性审计 (Anti-Patterns Check)
 arch-audit:
     @echo "Running Architecture & Anti-Pattern Audit..."
-    uv run python scripts/arch_auditor.py
+    uv run devops verify arch-auditor
 
 # 数据字典一致性校验
 docs-verify:
@@ -141,11 +141,11 @@ docs-verify:
 # [MANDATORY] 核心卡点：代码合并前全量校验 (Lint -> Test -> Build)
 full-gate:
     @echo "Launching Project Full Gate (Grader 3)..."
-    uv run python scripts/gatekeeper.py --mode full
+    uv run devops-gate --mode full
 
 # [L2/CI] 快速卡点：跳过容器构建阶段
 fast-gate:
-    uv run python scripts/gatekeeper.py --mode fast
+    uv run devops-gate --mode fast
 
 # 运行单元测试
 test:
@@ -161,11 +161,11 @@ test-int:
 
 # 系统综合诊断
 diagnose:
-    {{EXEC_CMD}} python scripts/cli.py diag --all
+    {{EXEC_CMD}} devops diag --all
 
 # 数据库专项诊断
 diag-db:
-    {{EXEC_CMD}} python scripts/cli.py diag --module db
+    {{EXEC_CMD}} devops diag db
 
 # 消息队列专项诊断
 diag-mq:
@@ -248,9 +248,9 @@ deploy-offline:
 
 # 内部调用：生产环境数据初始化
 init-prod-data:
-    {{EXEC_CMD}} python scripts/cli.py init --module rbac
-    {{EXEC_CMD}} python scripts/cli.py init --module organizations
-    {{EXEC_CMD}} python scripts/cli.py run --module import_employees
+    {{EXEC_CMD}} devops init rbac
+    {{EXEC_CMD}} devops init organizations
+    {{EXEC_CMD}} devops run import-employees
 
 # 生产环境一键部署 (联网模式)
 deploy-prod:
@@ -354,20 +354,20 @@ docs:
 
 # 添加新任务到进度表
 progress-add task:
-    @uv run python scripts/progress_manager.py --add "{{task}}"
+    @uv run devops-progress --add "{{task}}"
 
 # 标记任务为已完成 (输入任务编号)
 progress-done id:
-    @uv run python scripts/progress_manager.py --done {{id}}
+    @uv run devops-progress --done {{id}}
 
 # 更新当前重点 (Focus)
 progress-focus content:
-    @uv run python scripts/progress_manager.py --update-focus "{{content}}"
+    @uv run devops-progress --update-focus "{{content}}"
 
 # 镜像未选选项到任务列表 (用分号分隔多个任务)
 progress-mirror tasks:
-    @uv run python scripts/progress_manager.py --mirror-tasks "{{tasks}}"
+    @uv run devops-progress --mirror-tasks "{{tasks}}"
 
 # 归档超过 5 条的已完成任务
 progress-archive:
-    @uv run python scripts/progress_manager.py --archive
+    @uv run devops-progress --archive

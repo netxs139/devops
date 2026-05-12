@@ -1,4 +1,5 @@
 import logging
+from sqlalchemy.orm import Session
 
 from devops_collector.core.management import BaseCommand
 from devops_collector.models.base_models import Location
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = "初始化地理位置主数据 (mdm_locations)"
 
-    def handle(self, *args, **options):
+    def handle(self, session: Session):
         # 定义预置数据
         locations_data = [
             # --- 特殊位置 ---

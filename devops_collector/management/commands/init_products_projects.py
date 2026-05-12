@@ -2,7 +2,11 @@ import csv
 import logging
 import uuid
 from pathlib import Path
+from typing import Annotated, Optional
 from urllib.parse import urlparse
+
+import typer
+from sqlalchemy.orm import Session
 
 from devops_collector.core.management import BaseCommand, build_user_indexes, resolve_user
 from devops_collector.models import (
@@ -21,14 +25,15 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = "初始化产品与项目主数据。"
 
-    def add_arguments(self, parser):
-        parser.add_argument("--prd-csv", type=str, help="Path to products CSV")
-        parser.add_argument("--proj-csv", type=str, help="Path to projects CSV")
-
-    def handle(self, *args, **options):
+    def handle(
+        self,
+        session: Session,
+        prd_csv_file: Annotated[Optional[str], typer.Option("--prd-csv", help="产品信息 CSV 路径")] = None,
+        proj_csv_file: Annotated[Optional[str], typer.Option("--proj-csv", help="项目信息 CSV 路径")] = None,
+    ):
         sample_dir = Path("docs/assets/sample_data")
-        prd_csv = Path(options.get("prd_csv")) if options.get("prd_csv") else sample_dir / "products.csv"
-        proj_csv = Path(options.get("proj_csv")) if options.get("proj_csv") else sample_dir / "projects.csv"
+        prd_csv = Path(prd_csv_file) if prd_csv_file else sample_dir / "products.csv"
+        proj_csv = Path(proj_csv_file) if proj_csv_file else sample_dir / "projects.csv"
 
         try:
             prod_map_id = self._init_products(prd_csv)

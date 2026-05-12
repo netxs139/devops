@@ -2,6 +2,10 @@
 
 import csv
 from pathlib import Path
+from typing import Annotated, Optional
+
+import typer
+from sqlalchemy.orm import Session
 
 from devops_collector.core.management import BaseCommand
 from devops_collector.models import EntityTopology, Product, ProjectMaster, SystemRegistry
@@ -14,13 +18,14 @@ SAMPLE_DATA_DIR = Path("docs/assets/sample_data")
 class Command(BaseCommand):
     help = "从 CSV 初始化 ZenTao 产品/项目与 MDM 资产的拓扑映射"
 
-    def add_arguments(self, parser):
-        parser.add_argument("--product-csv", type=str, help="ZenTao 产品映射 CSV（默认: zentao_product_map.csv）")
-        parser.add_argument("--project-csv", type=str, help="ZenTao 项目映射 CSV（默认: zentao_project_map.csv）")
-
-    def handle(self, *args, **options):
-        product_csv = Path(options["product_csv"]) if options.get("product_csv") else SAMPLE_DATA_DIR / "zentao_product_map.csv"
-        project_csv = Path(options["project_csv"]) if options.get("project_csv") else SAMPLE_DATA_DIR / "zentao_project_map.csv"
+    def handle(
+        self,
+        session: Session,
+        product_csv_file: Annotated[Optional[str], typer.Option("--product-csv", help="ZenTao 产品映射 CSV")] = None,
+        project_csv_file: Annotated[Optional[str], typer.Option("--project-csv", help="ZenTao 项目映射 CSV")] = None,
+    ):
+        product_csv = Path(product_csv_file) if product_csv_file else SAMPLE_DATA_DIR / "zentao_product_map.csv"
+        project_csv = Path(project_csv_file) if project_csv_file else SAMPLE_DATA_DIR / "zentao_project_map.csv"
 
         try:
             system = self._ensure_system_registry()

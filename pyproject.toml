@@ -109,7 +109,8 @@ Issues = "https://github.com/netxs2000/devops/projects"
 
 [project.scripts]
 devops = "devops_collector.cli:main"
-devops-collector = "devops_collector.cli:main"
+devops-gate = "scripts.gatekeeper:main"
+devops-progress = "scripts.progress_manager:main"
 
 [tool.setuptools]
 packages = ["devops_collector", "devops_portal"]
