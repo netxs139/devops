@@ -58,6 +58,7 @@ dependencies = [
     "pypinyin>=0.50.0,<1.0.0",
     "cryptography>=46.0.5",
     "rich>=14.3.3",
+    "litellm>=1.83.0",
 ]
 
 [project.optional-dependencies]
