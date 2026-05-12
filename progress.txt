@@ -6,9 +6,9 @@
 
 ## 🛠️ 任务清单 (Tasks)
 1. [Data/E] **AI 效能归归因**: 集成 LLM 对异常指标进行自动归因。⏳ 待实现
-2. [UI/F] **暗色模式适配**: 优化仪表盘视觉通透度。⏳ 待实现
 
 ## 📋 最近完成 (Recently Completed)
+- **[2026-05-12] UI 视觉提升 (v5.5.0)**: 注入 Apple HIG 深色模式全套 Design Tokens，并将卡片与侧边栏的玻璃拟态通透度升级为 blur(20px)。
 - **[2026-05-12] CLI 插件增强 (v5.4.0)**: 重构了 `BaseCommand` 与 `DiagHelper`，全局集成 `rich` 组件，支持面板渲染与动态进度条。
 - **[2026-05-12] MyPy 治理 (Phase 4) (v5.3.0)**: 完成 Auth 模块 26 项报错修复，解除了 pyproject.toml 中的鉴权模块隔离。
 - **[2026-05-12] MyPy 治理 (Phase 3) (v5.2.0)**: 完成 Router 层变量污染重构、GitLab 模型 web_url 补齐及 UUID/Datetime 严格校验。

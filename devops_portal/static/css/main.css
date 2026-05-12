@@ -51,7 +51,7 @@
 
     /* Backgrounds */
     --sys-bg-app: var(--g-neutral-0);
-    --sys-bg-sidebar: var(--g-neutral-50);
+    --sys-bg-sidebar: rgba(255, 255, 255, 0.72);
     --sys-bg-card: var(--g-neutral-0);
     --sys-bg-overlay: rgba(15, 23, 42, 0.4);
     --sys-bg-overlay-strong: rgba(15, 23, 42, 0.7);
@@ -143,6 +143,44 @@
     --shadow-md: var(--g-shadow-md);
 }
 
+[data-theme="dark"] {
+    /* ==========================================
+       DARK MODE TOKENS (Apple HIG)
+       ========================================== */
+    
+    /* Backgrounds: Deep black/slate with high contrast */
+    --sys-bg-app: #000000;
+    --sys-bg-sidebar: rgba(28, 28, 30, 0.72);
+    --sys-bg-card: rgba(44, 44, 46, 0.72); /* systemGray5 with transparency */
+    --sys-bg-overlay: rgba(0, 0, 0, 0.6);
+    --sys-bg-overlay-strong: rgba(0, 0, 0, 0.85);
+
+    /* Text: Pure white and secondary grays */
+    --sys-text-primary: #F5F5F7;
+    --sys-text-secondary: #86868B;
+    --sys-text-on-primary: #FFFFFF;
+
+    /* Borders: Very subtle separators */
+    --sys-border-subtle: rgba(255, 255, 255, 0.15);
+    --sys-border-strong: rgba(255, 255, 255, 0.25);
+
+    /* Shadows: Stronger shadows for depth in dark mode */
+    --g-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+    --g-shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.6);
+    --g-shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.8);
+    
+    /* Primary / Accent tweaks for better contrast */
+    --sys-primary: #0a84ff;
+    --sys-primary-hover: #409cff;
+    --sys-accent: #0a84ff;
+    
+    /* Status Tweaks */
+    --status-success: #32d74b;
+    --status-error: #ff453a;
+    --status-warning: #ffd60a;
+    --status-info: #0a84ff;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -206,6 +244,8 @@ body.is-app-layout {
     flex-direction: column;
     padding: 24px 0;
     z-index: 100;
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 
 .sidebar-nav {
@@ -256,8 +296,8 @@ body.is-dual-pane .sys-main-content {
     border-radius: var(--g-radius-md);
     padding: 24px;
     box-shadow: var(--g-shadow-sm);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 
 .test-list {
