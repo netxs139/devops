@@ -19,7 +19,7 @@ class Command(BaseCommand):
         parser.add_argument("--dev", action="store_true", help="Include dev dependencies and extras")
 
     def handle(self, *args, **options):
-        nexus_url = self.settings.nexus.url if self.settings.nexus.url else "http://192.168.5.64:8081/repository/group-pypi/simple"
+        nexus_url = self.settings.pypi.nexus_url if hasattr(self.settings.pypi, "nexus_url") else "http://192.168.5.64:8081/repository/pypi-all/simple"
         tsinghua_url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
         attempts = options.get("attempts")
