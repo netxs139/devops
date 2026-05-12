@@ -170,7 +170,6 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = [
-    "devops_collector.auth.*",
     "devops_collector.plugins.*",
     "devops_collector.alembic.*",
 ]

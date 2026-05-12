@@ -43,7 +43,8 @@ def auth_decode_access_token(token: str) -> dict | None:
         Optional[dict]: 令牌载荷，验证失败则返回 None。
     """
     try:
-        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload: dict = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
     except JWTError:
         return None
 
@@ -58,7 +59,7 @@ def auth_verify_password(plain_password: str, hashed_password: str) -> bool:
     Returns:
         bool: 是否匹配。
     """
-    return auth_pwd_context.verify(plain_password, hashed_password)
+    return bool(auth_pwd_context.verify(plain_password, hashed_password))
 
 
 def auth_get_password_hash(password: str) -> str:
@@ -70,7 +71,7 @@ def auth_get_password_hash(password: str) -> str:
     Returns:
         str: 哈希后的密码。
     """
-    return auth_pwd_context.hash(password)
+    return str(auth_pwd_context.hash(password))
 
 
 def auth_create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
@@ -93,7 +94,7 @@ def auth_create_access_token(data: dict, expires_delta: timedelta | None = None)
     for k, v in to_encode.items():
         if isinstance(v, (UUID, uuid.UUID)):
             to_encode[k] = str(v)
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = str(jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM))
     return encoded_jwt
 
 
@@ -250,7 +251,7 @@ def auth_get_current_user(db: Session, token: str) -> User:
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-    email: str = payload.get("sub")
+    email: str | None = payload.get("sub")
     if email is None:
         raise HTTPException(status_code=401, detail="Invalid token")
 
