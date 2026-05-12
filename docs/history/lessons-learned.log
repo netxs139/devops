@@ -156,3 +156,4 @@
 | 2026-05-03 | AI-Native TDD | 自动化指令 /ai-solve v2.1 针对逻辑偏航与环境依赖感知探测 | 发现 AI 助手可能产生逻辑偏航或因路径依赖导致 ModuleNotFoundError | [MANDATORY] 遵循 3 次原则，当自动化失败时强制回归物理验证逻辑。全栈使用 pytest-mock 替代原生 unittest.mock 以提升隔离性。 |
 | 2026-05-03 | SQLite Dialect | FinOps Worker 耗时计算 | SQLite 不支持直接 Date 减法 | 使用 CAST((JULIANDAY(end) - JULIANDAY(start)) * 86400 AS INTEGER) 获取秒数，确保多环境一致性。 |
 | 2026-05-12 | Hybrid Execution | 宿主机执行 CLI 调度 (DB_HOST=db) | (psycopg2.OperationalError) name resolution failure | 容器内 `db` 域名在宿主机不可达。在开发环境需通过环境变量覆盖 (如 `DATABASE__URI=...localhost...`) 或在 `just` 脚本中增加宿主机探测与自动地址转换逻辑。 |
+| 2026-05-12 | AI-Native Collaboration | AI-Native Safety Lock vs Execution Intent | The assistant correctly paused execution when untracked files were detected, but the user expected immediate action based on a command-like request. | Use structured options (A/B/C) to align intent before destructive or large-scale physical changes, even when the request seems like a command. |

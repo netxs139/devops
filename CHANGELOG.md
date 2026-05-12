@@ -2,7 +2,19 @@
 
 所有对 DevOps Data Application Platform 的重要更改都将记录在此文件中。
 
+## [Unreleased]
+
+### 新增 (Added)
+- **Agent Skill 体系初始化 (v5.7.0)**:
+  - **Skill 物理注入**: 初始化并提交了 16+ 个核心 Agent Skill，覆盖了任务启动、故障分诊、代码审查及离场交接等全生命周期。
+  - **意图锚点加固**: 建立了「安全锁」机制，强化了 AI 在执行物理写操作前的方案呈报与 A/B/C 决策对齐流程。
+- **AI 效能归因 (v5.6.0)**: 引入 LiteLLM 作为统一模型网关，开发 `analyze_efficacy` 诊断命令实现异常指标的自动化诊断。
+- **UI 视觉提升 (v5.5.0)**: 注入 Apple HIG 深色模式全套 Design Tokens，并将卡片与侧边栏的玻璃拟态通透度升级为 blur(20px)。
+- **CLI 插件增强 (v5.4.0)**: 重构了 `BaseCommand` 与 `DiagHelper`，全局集成 `rich` 组件，支持面板渲染与动态进度条。
+- **MyPy 治理 (Phase 4) (v5.3.0)**: 完成 Auth 模块 26 项报错修复，解除了 pyproject.toml 中的鉴权模块隔离。
+
 ## [5.2.0] - 2026-05-12
+
 
 ### 新增 (Added) - v5.2.0
 
