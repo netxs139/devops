@@ -1,232 +1,284 @@
+"""DevOps 平台统一管理调度工具 (Command Bus v4 - Typer Edition)。
+
+基于 Typer 的现代化 CLI 入口。自动发现 management/commands/ 下的
+BaseCommand 子类并按前缀归组注册为子命令。
+"""
+
 import argparse
 import importlib
 import logging
-import subprocess
+import os
 import sys
 from pathlib import Path
+
+
+# 禁用 LiteLLM 远程模型价格拉取，消除 CLI 启动延迟
+os.environ.setdefault("LITELLM_LOCAL_MODEL_COST_MAP", "True")
+
+import typer
+from rich.console import Console
+from rich.table import Table
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 
 
 # 添加项目根目录以确保模块能被正确 import
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
-
-from devops_collector.config import settings
-from devops_collector.core.management import BaseCommand
+from devops_collector.config import settings  # noqa: E402
+from devops_collector.core.management import BaseCommand  # noqa: E402
 
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("CLI")
+console = Console()
 
-COMMAND_GROUPS = {
-    "init": [
-        "seed_base_data.py",
-        "init_organizations.py",
-        "init_rbac.py",
-        "init_locations.py",
-        "init_mdm_location.py",
-        "init_cost_codes.py",
-        "init_labor_rates.py",
-        "init_products.py",
-        "init_products_projects.py",
-        "link_users_to_entities.py",
-        "init_gitlab_mappings.py",
-        "init_zentao_mappings.py",
-        "init_revenue_contracts.py",
-        "init_purchase_contracts.py",
-        "init_okrs.py",
-        "init_catalog.py",
-        "init_calendar.py",
-        "init_discovery.py",
-        "init_jenkins_links.py",
-        "init_nexus_links.py",
-        "init_sonarqube_links.py",
-        "init_zentao_links.py",
-        "seed_e2e_admin.py",
-        "reset_database.py",
-    ],
-    "diag": ["diag_db.py", "diag_mq.py", "diag_zentao.py", "sys_diagnose.py", "analyze_efficacy.py"],
-    "check": [
-        "check_imports.py",
-        "check_data_dict_freshness.py",
-        "check_issue_labels.py",
-        "check_issue_resolution.py",
-        "check_identity_alignment.py",
-        "dependency_check.py",
-        "lint_frontend.py",
-    ],
-    "verify": [
-        "verify_orm_integrity.py",
-        "verify_plugins.py",
-        "verify_okr_preview.py",
-        "arch_auditor.py",
-        "smoke_test_report.py",
-        "test_dashboard_pages.py",
-        "test_wecom_alignment.py",
-    ],
-    "run": [
-        "sync_zentao.py",
-        "mini_sync_gitlab.py",
-        "run_gitlab_direct.py",
-        "run_identity_resolver.py",
-        "refresh_master_data.py",
-        "reprocess_staging_data.py",
-        "import_employees.py",
-        "cleanup_stale_data.py",
-        "analyze_nexus_lifecycle.py",
-        "fetch_api_doc.py",
-        "get_zt_token.py",
-    ],
-    "export": [
-        "export_sonarqube_report.py",
-        "export_zentao_data.py",
-        "executive_audit_report.py",
-        "generate_alignment_report.py",
-        "generate_data_dictionary.py",
-        "generate_project_map.py",
-    ],
+# ============================================================
+# 1. 命令自动发现引擎
+# ============================================================
+
+COMMANDS_DIR = PROJECT_ROOT / "devops_collector" / "management" / "commands"
+
+# 前缀 → 子应用分组映射
+PREFIX_GROUP_MAP: dict[str, str] = {
+    "init_": "init",
+    "seed_": "init",
+    "link_": "init",
+    "reset_": "init",
+    "diag_": "diag",
+    "sys_": "diag",
+    "analyze_": "diag",
+    "check_": "check",
+    "dependency_": "check",
+    "lint_": "check",
+    "verify_": "verify",
+    "arch_": "verify",
+    "smoke_": "verify",
+    "test_": "verify",
+    "sync_": "sync",
+    "mini_sync_": "sync",
+    "run_": "run",
+    "refresh_": "run",
+    "reprocess_": "run",
+    "import_": "run",
+    "cleanup_": "run",
+    "fetch_": "run",
+    "get_": "run",
+    "realign_": "run",
+    "export_": "export",
+    "executive_": "export",
+    "generate_": "export",
+}
+
+GROUP_HELP: dict[str, str] = {
+    "init": "初始化与主数据灌库",
+    "diag": "系统诊断与 AI 归因",
+    "check": "数据校验与合规检查",
+    "verify": "架构审计与冒烟测试",
+    "sync": "外部系统数据同步",
+    "run": "运维与数据处理任务",
+    "export": "报告导出与数据字典生成",
 }
 
 
-def get_command_class(command_name: str) -> type[BaseCommand] | None:
-    """尝试获取类命令。"""
-    try:
-        module_path = f"devops_collector.management.commands.{command_name}"
-        module = importlib.import_module(module_path)
-        if hasattr(module, "Command") and issubclass(module.Command, BaseCommand):
-            return module.Command
-    except (ImportError, AttributeError):
-        pass
-    return None
+def _classify_command(stem: str) -> str:
+    """根据文件名前缀确定其所属分组。"""
+    for prefix, group in PREFIX_GROUP_MAP.items():
+        if stem.startswith(prefix):
+            return group
+    return "run"  # 默认兜底
 
 
-def run_command(command_name: str, session: Session, scripts_dir: Path, args_list: list[str] = None) -> bool:
+def _make_short_name(stem: str) -> str:
+    """将文件名转换为简短的子命令名。
+
+    Examples:
+        init_employees   → employees
+        diag_db          → db
+        sync_zentao      → zentao
+        analyze_efficacy → efficacy
+        seed_base_data   → base-data
     """
-    统一执行入口：类命令优先 -> 模块 execute_command 其次 -> 子进程兜底。
-    """
-    # 1. 尝试类命令 (New Framework)
-    cmd_class = get_command_class(command_name)
-    if cmd_class:
-        logger.info(f"🚀 [Command Framework] 正在执行: {command_name}")
-        cmd = cmd_class()
-        # 处理参数
-        parser = argparse.ArgumentParser(prog=f"cli.py ... --module {command_name}")
-        cmd.add_arguments(parser)
-        options, _ = parser.parse_known_args(args_list or [])
+    for prefix in PREFIX_GROUP_MAP:
+        if stem.startswith(prefix):
+            short = stem[len(prefix) :]
+            return short.replace("_", "-")
+    return stem.replace("_", "-")
+
+
+def discover_commands() -> dict[str, dict[str, type[BaseCommand]]]:
+    """扫描 commands 目录，返回 {group: {short_name: CommandClass}} 映射。"""
+    registry: dict[str, dict[str, type[BaseCommand]]] = {}
+
+    for py_file in sorted(COMMANDS_DIR.glob("*.py")):
+        if py_file.stem.startswith("__"):
+            continue
+
         try:
+            module_path = f"devops_collector.management.commands.{py_file.stem}"
+            module = importlib.import_module(module_path)
+            if hasattr(module, "Command") and issubclass(module.Command, BaseCommand):
+                group = _classify_command(py_file.stem)
+                short_name = _make_short_name(py_file.stem)
+                registry.setdefault(group, {})[short_name] = module.Command
+        except Exception as e:
+            logger.debug(f"跳过 {py_file.stem}: {e}")
+
+    return registry
+
+
+# ============================================================
+# 2. 数据库 Session 工厂
+# ============================================================
+
+
+def _get_session() -> Session:
+    """创建数据库 Session。"""
+    engine = create_engine(settings.database.uri)
+    return Session(engine)
+
+
+# ============================================================
+# 3. Typer 应用构建
+# ============================================================
+
+app = typer.Typer(
+    name="devops",
+    help="DevOps 平台统一管理调度工具 (Command Bus v4)",
+    no_args_is_help=True,
+    rich_markup_mode="rich",
+)
+
+
+def _make_command_callback(cmd_class: type[BaseCommand], original_stem: str):
+    """为一个 BaseCommand 子类生成 Typer 回调函数。"""
+
+    def callback(
+        args: list[str] = typer.Argument(None, help="传递给命令的额外参数"),
+    ):
+        """桥接函数：将 Typer 调用委托给 BaseCommand.execute()。"""
+        cmd = cmd_class()
+
+        # 解析 BaseCommand 自身声明的参数
+        parser = argparse.ArgumentParser(prog=original_stem)
+        cmd.add_arguments(parser)
+        options, _ = parser.parse_known_args(args or [])
+
+        session = _get_session()
+        try:
+            console.print(f"🚀 [bold cyan]正在执行:[/bold cyan] {original_stem}")
             success = cmd.execute(session, **vars(options))
             if success:
-                session.flush()
-                return True
+                session.commit()
             else:
                 session.rollback()
-                return False
         except Exception as e:
             session.rollback()
-            logger.error(f"❌ 类命令执行异常: {command_name} ({e})")
-            return False
+            console.print(f"[red]❌ 执行异常:[/red] {original_stem} ({e})")
+            raise typer.Exit(code=1)
+        finally:
+            session.close()
 
-    # 2. 尝试旧的原生模式 (Phase 2 Legacy)
-    script_file = f"{command_name}.py" if not command_name.endswith(".py") else command_name
-    script_path = scripts_dir / script_file
-    module_name = command_name.replace(".py", "")
-
-    try:
-        module = importlib.import_module(f"scripts.{module_name}")
-        if hasattr(module, "execute_command"):
-            logger.info(f"⚡ [Native Legacy] 正在执行: {script_file}")
-            success = module.execute_command(session=session)
-            if success:
-                session.flush()
-                return True
-            else:
-                session.rollback()
-                return False
-    except ImportError:
-        pass
-    except Exception as e:
-        logger.debug(f"加载脚本 {script_file} 时出错: {e}")
-
-    # 3. 子进程模式 (Phase 1 Fallback)
-    if script_path.exists():
-        logger.info(f"🐌 [Subprocess Fallback] 正在执行: {script_file}")
-        try:
-            result = subprocess.run([sys.executable, str(script_path)], check=True, text=True)
-            return result.returncode == 0
-        except Exception as e:
-            logger.error(f"❌ 子进程执行失败: {script_file} ({e})")
-            return False
-
-    logger.warning(f"⚠️ 未找到任何匹配的命令或脚本: {command_name}")
-    return False
+    # 设置函数的文档字符串为命令的 help 文本
+    callback.__doc__ = cmd_class.help or f"执行 {original_stem}"
+    callback.__name__ = original_stem
+    return callback
 
 
-def execute_group(group_name: str, args, scripts_dir: Path, session: Session, unknown_args: list[str]):
-    target_scripts = COMMAND_GROUPS.get(group_name, [])
+def _build_app():
+    """动态构建所有子应用和命令。"""
+    registry = discover_commands()
 
-    if hasattr(args, "module") and args.module:
-        target = args.module
-        # 去掉 .py 后缀统一逻辑
-        cmd_name = target.replace(".py", "")
+    # 为每个分组创建子应用
+    sub_apps: dict[str, typer.Typer] = {}
+    for group_name, help_text in GROUP_HELP.items():
+        sub_app = typer.Typer(help=help_text, no_args_is_help=True, rich_markup_mode="rich")
+        sub_apps[group_name] = sub_app
+        app.add_typer(sub_app, name=group_name)
 
-        # 如果在硬编码列表里，尝试补全
-        if cmd_name not in target_scripts and target not in target_scripts:
-            matches = [s for s in target_scripts if cmd_name in s]
-            if matches:
-                cmd_name = matches[0].replace(".py", "")
+    # 将发现的命令注册到对应的子应用
+    for group_name, commands in registry.items():
+        sub_app = sub_apps.get(group_name)
+        if not sub_app:
+            sub_app = typer.Typer(help=group_name, no_args_is_help=True)
+            sub_apps[group_name] = sub_app
+            app.add_typer(sub_app, name=group_name)
 
-        success = run_command(cmd_name, session, scripts_dir, unknown_args)
-        if success:
-            session.commit()
-        return
+        for short_name, cmd_class in commands.items():
+            # 还原原始文件名用于 execute
+            original_stem = None
+            for py_file in COMMANDS_DIR.glob("*.py"):
+                if _make_short_name(py_file.stem) == short_name and _classify_command(py_file.stem) == group_name:
+                    original_stem = py_file.stem
+                    break
+            original_stem = original_stem or short_name
 
-    if hasattr(args, "all") and args.all:
-        logger.info(f"🚀 开始全量执行 [{group_name}] 任务组...")
-        success_count = 0
-        for script in target_scripts:
-            cmd_name = script.replace(".py", "")
-            if run_command(cmd_name, session, scripts_dir):
-                success_count += 1
-        session.commit()
-        logger.info(f"🎉 [{group_name}] 执行完成，成功 {success_count} 项。")
-    else:
-        logger.warning("请指定 --all 或 --module <name>")
+            cb = _make_command_callback(cmd_class, original_stem)
+            sub_app.command(name=short_name, help=cmd_class.help)(cb)
+
+
+# ============================================================
+# 4. 特殊命令：list
+# ============================================================
+
+
+@app.command("list")
+def list_commands():
+    """列出所有自动发现的管理命令。"""
+    registry = discover_commands()
+    table = Table(title="📋 已注册管理命令", show_lines=False)
+    table.add_column("分组", style="cyan", no_wrap=True)
+    table.add_column("命令", style="green")
+    table.add_column("说明", style="dim")
+
+    for group_name in sorted(registry.keys()):
+        commands = registry[group_name]
+        for short_name, cmd_class in sorted(commands.items()):
+            table.add_row(group_name, short_name, cmd_class.help or "-")
+
+    console.print(table)
+
+
+# ============================================================
+# 5. 向下兼容：保留旧的 --module 调用方式
+# ============================================================
+
+
+@app.command("legacy", hidden=True)
+def legacy_dispatch(
+    group: str = typer.Argument(..., help="命令组名"),
+    module: str = typer.Option(..., "--module", help="模块名"),
+):
+    """向下兼容旧的 cli.py group --module name 调用方式。"""
+    registry = discover_commands()
+    commands = registry.get(group, {})
+
+    # 尝试匹配短名或原始文件名
+    cmd_class = commands.get(module.replace("_", "-"))
+    if not cmd_class:
+        # 尝试用原始文件名匹配
+        for py_file in COMMANDS_DIR.glob("*.py"):
+            if py_file.stem == module:
+                group_for = _classify_command(py_file.stem)
+                short = _make_short_name(py_file.stem)
+                cmd_class = registry.get(group_for, {}).get(short)
+                break
+
+    if not cmd_class:
+        console.print(f"[red]未找到命令:[/red] {group} → {module}")
+        raise typer.Exit(code=1)
+
+    cb = _make_command_callback(cmd_class, module)
+    cb(args=None)
+
+
+# 构建应用
+_build_app()
 
 
 def main():
-    parser = argparse.ArgumentParser(description="DevOps 平台统一管理调度工具 (Command Bus v3)")
-    subparsers = parser.add_subparsers(dest="command", help="可用命令组")
-
-    for group in COMMAND_GROUPS:
-        sp = subparsers.add_parser(group, help=f"调度 {group} 相关的任务")
-        sp.add_argument("--all", action="store_true", help="全量执行")
-        sp.add_argument("--module", type=str, help="执行指定模块")
-
-    # 特殊的管理命令：列出所有发现的类命令
-    subparsers.add_parser("list", help="列出所有可用的类命令")
-
-    args, unknown = parser.parse_known_args()
-    scripts_dir = Path(__file__).parent.resolve()
-
-    if args.command == "list":
-        cmd_dir = PROJECT_ROOT / "devops_collector/management/commands"
-        print("\n发现的类命令 (Management Commands):")
-        for f in cmd_dir.glob("*.py"):
-            if f.stem != "__init__":
-                cmd_class = get_command_class(f.stem)
-                help_text = cmd_class.help if cmd_class else "No help available."
-                print(f"  - {f.stem:<20} : {help_text}")
-        print()
-        return
-
-    if args.command in COMMAND_GROUPS:
-        engine = create_engine(settings.database.uri)
-        with Session(engine) as session:
-            execute_group(args.command, args, scripts_dir, session, unknown)
-    else:
-        parser.print_help()
+    app()
 
 
 if __name__ == "__main__":

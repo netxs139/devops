@@ -59,6 +59,7 @@ dependencies = [
     "cryptography>=46.0.5",
     "rich>=14.3.3",
     "litellm>=1.83.0",
+    "typer>=0.24.1",
 ]
 
 [project.optional-dependencies]

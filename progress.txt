@@ -1,11 +1,13 @@
 # DevOps 平台建设进度跟踪 (Progress Tracker)
 
 ## 🎯 当前重点 (Current Focus)
-- **核心重点**: 提升 CLI 体验或开启数据归因模块
-- **状态**: 🟢 Phase 4 (Auth) 类型治理已完成，核心安全与鉴权链路 100% 类型安全
+- **核心重点**: CLI 现代化 - Typer 迁移 (Phase 1: 壳层替换)
+- **状态**: 🔵 执行中
 
 ## 🛠️ 任务清单 (Tasks)
-(当前看板任务已全部清空，等待新一轮战略规划)
+1. [Core/H] **[Ad-hoc] CLI Typer 迁移 Phase 1**: 用 Typer 重写 `cli.py` 调度层，实现自动发现 + 子应用分组。✅ 已完成
+2. [Core/M] **[Deferred] CLI Typer 迁移 Phase 2**: 将高频命令的 `add_arguments` 迁移为 Typer 函数签名。⏳ 待实现
+3. [Core/L] **[Deferred] CLI Typer 迁移 Phase 3**: 在 `pyproject.toml` 注册 `[project.scripts]` 入口点。⏳ 待实现
 
 ## 📋 最近完成 (Recently Completed)
 - **[2026-05-12] AI 效能归因 (v5.6.0)**: 引入 LiteLLM 作为统一模型网关，开发 `analyze_efficacy` 诊断命令实现异常指标的自动化诊断。
