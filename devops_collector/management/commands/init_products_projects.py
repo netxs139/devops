@@ -63,48 +63,51 @@ class Command(BaseCommand):
 
         product_rows = []
         with open(prd_csv, encoding="utf-8-sig") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                name = row.get("产品名称", row.get("PRODUCT_NAME", "")).strip()
-                if not name:
-                    continue
+            reader = list(csv.DictReader(f))
+            with self.get_progress() as progress:
+                task = progress.add_task(f"[cyan]同步产品主数据 ({prd_csv.name})...", total=len(reader))
+                for row in reader:
+                    name = row.get("产品名称", row.get("PRODUCT_NAME", "")).strip()
+                    if not name:
+                        continue
 
-                prod_code = row.get("PRODUCT_ID", "").strip()
-                if not prod_code:
-                    prod_code = f"PRD-{uuid.uuid5(uuid.NAMESPACE_DNS, name).hex[:8].upper()}"
+                    prod_code = row.get("PRODUCT_ID", "").strip()
+                    if not prod_code:
+                        prod_code = f"PRD-{uuid.uuid5(uuid.NAMESPACE_DNS, name).hex[:8].upper()}"
 
-                product = self.session.query(Product).filter_by(product_code=prod_code).first()
-                if not product:
-                    product = Product(product_code=prod_code, product_name=name, product_description=name, version_schema="SemVer", is_current=True)
-                    self.session.add(product)
+                    product = self.session.query(Product).filter_by(product_code=prod_code).first()
+                    if not product:
+                        product = Product(product_code=prod_code, product_name=name, product_description=name, version_schema="SemVer", is_current=True)
+                        self.session.add(product)
 
-                product.product_name = name
-                product.node_type = row.get("节点类型", row.get("node_type", "APP")).strip().upper()
-                product.category = row.get("产品分类", row.get("category", "")).strip()
+                    product.product_name = name
+                    product.node_type = row.get("节点类型", row.get("node_type", "APP")).strip().upper()
+                    product.category = row.get("产品分类", row.get("category", "")).strip()
 
-                team_name = row.get("负责团队", row.get("owner_team_id", "")).strip()
-                if team_name in orgs:
-                    product.owner_team_id = orgs[team_name]
-                elif team_name:
-                    org_by_code = self.session.query(Organization).filter_by(org_code=team_name).first()
-                    if org_by_code:
-                        product.owner_team_id = org_by_code.id
+                    team_name = row.get("负责团队", row.get("owner_team_id", "")).strip()
+                    if team_name in orgs:
+                        product.owner_team_id = orgs[team_name]
+                    elif team_name:
+                        org_by_code = self.session.query(Organization).filter_by(org_code=team_name).first()
+                        if org_by_code:
+                            product.owner_team_id = org_by_code.id
 
-                for csv_col, attr in [
-                    ("产品经理", "product_manager_id"),
-                    ("开发经理", "dev_lead_id"),
-                    ("测试经理", "qa_lead_id"),
-                    ("发布经理", "release_lead_id"),
-                ]:
-                    val = row.get(csv_col, "").strip()
-                    uid = resolve_user(val, email_idx, name_idx, csv_col)
-                    if uid:
-                        setattr(product, attr, uid)
+                    for csv_col, attr in [
+                        ("产品经理", "product_manager_id"),
+                        ("开发经理", "dev_lead_id"),
+                        ("测试经理", "qa_lead_id"),
+                        ("发布经理", "release_lead_id"),
+                    ]:
+                        val = row.get(csv_col, "").strip()
+                        uid = resolve_user(val, email_idx, name_idx, csv_col)
+                        if uid:
+                            setattr(product, attr, uid)
 
-                self.session.flush()
-                prod_map_id[prod_code] = product.id
-                prod_map_id[name] = product.id
-                product_rows.append((product, row))
+                    self.session.flush()
+                    prod_map_id[prod_code] = product.id
+                    prod_map_id[name] = product.id
+                    product_rows.append((product, row))
+                    progress.advance(task)
 
         for product, row in product_rows:
             parent_ref = row.get("上级产品ID", row.get("parent_product_id", "")).strip()
@@ -127,70 +130,76 @@ class Command(BaseCommand):
         orgs_by_name = {o.org_name: o.id for o in self.session.query(Organization).filter_by(is_current=True).all()}
 
         with open(proj_csv, encoding="utf-8-sig") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                code_val = row.get("项目代号", "").strip()
-                name = row.get("项目名称", "").strip()
-                prod_name = row.get("所属产品", "").strip()
+            reader = list(csv.DictReader(f))
+            with self.get_progress() as progress:
+                task = progress.add_task(f"[cyan]同步项目主数据 ({proj_csv.name})...", total=len(reader))
+                for row in reader:
+                    code_val = row.get("项目代号", "").strip()
+                    name = row.get("项目名称", "").strip()
+                    prod_name = row.get("所属产品", "").strip()
 
-                if not code_val or not name:
-                    continue
+                    if not code_val or not name:
+                        progress.advance(task)
+                        continue
 
-                proj_code = f"PROJ-{code_val}"
-                project = self.session.query(ProjectMaster).filter_by(project_code=proj_code).first()
-                if not project:
-                    project = ProjectMaster(project_code=proj_code, project_name=name, status="ACTIVE", is_current=True)
-                    self.session.add(project)
+                    proj_code = f"PROJ-{code_val}"
+                    project = self.session.query(ProjectMaster).filter_by(project_code=proj_code).first()
+                    if not project:
+                        project = ProjectMaster(project_code=proj_code, project_name=name, status="ACTIVE", is_current=True)
+                        self.session.add(project)
 
-                dept_name = row.get("负责部门", "").strip()
-                if dept_name in orgs_by_name:
-                    project.org_id = orgs_by_name[dept_name]
-                elif dept_name:
-                    org_by_code = self.session.query(Organization).filter_by(org_code=dept_name).first()
-                    if org_by_code:
-                        project.org_id = org_by_code.id
+                    dept_name = row.get("负责部门", "").strip()
+                    if dept_name in orgs_by_name:
+                        project.org_id = orgs_by_name[dept_name]
+                    elif dept_name:
+                        org_by_code = self.session.query(Organization).filter_by(org_code=dept_name).first()
+                        if org_by_code:
+                            project.org_id = org_by_code.id
 
-                repo_url = row.get("主代码仓库URL", "").strip()
-                if repo_url:
-                    system = self._ensure_system_registry()
-                    self.session.flush()
-                    topology = (
-                        self.session.query(EntityTopology).filter_by(project_id=project.id, external_resource_id=repo_url, element_type="source-code").first()
-                    )
-                    if not topology:
-                        topology = EntityTopology(
-                            project_id=project.id,
-                            system_id=system.id,
-                            external_resource_id=repo_url,
-                            resource_name=urlparse(repo_url).path.strip("/").removesuffix(".git"),
-                            element_type="source-code",
-                            is_active=True,
+                    repo_url = row.get("主代码仓库URL", "").strip()
+                    if repo_url:
+                        system = self._ensure_system_registry()
+                        self.session.flush()
+                        topology = (
+                            self.session.query(EntityTopology)
+                            .filter_by(project_id=project.id, external_resource_id=repo_url, element_type="source-code")
+                            .first()
                         )
-                        self.session.add(topology)
-
-                for csv_col, attr in [
-                    ("项目经理", "pm_user_id"),
-                    ("产品经理", "product_owner_id"),
-                    ("开发经理", "dev_lead_id"),
-                    ("测试经理", "qa_lead_id"),
-                    ("发布经理", "release_lead_id"),
-                ]:
-                    val = row.get(csv_col, "").strip()
-                    uid = resolve_user(val, email_idx, name_idx, csv_col)
-                    if uid:
-                        setattr(project, attr, uid)
-
-                self.session.flush()
-                target_prod_id = prod_map_id.get(prod_name)
-                if target_prod_id:
-                    rel = self.session.query(ProjectProductRelation).filter_by(project_id=project.id, product_id=target_prod_id).first()
-                    if not rel and project.org_id:
-                        self.session.add(
-                            ProjectProductRelation(
+                        if not topology:
+                            topology = EntityTopology(
                                 project_id=project.id,
-                                product_id=target_prod_id,
-                                org_id=project.org_id,
-                                relation_type="PRIMARY",
+                                system_id=system.id,
+                                external_resource_id=repo_url,
+                                resource_name=urlparse(repo_url).path.strip("/").removesuffix(".git"),
+                                element_type="source-code",
+                                is_active=True,
                             )
-                        )
+                            self.session.add(topology)
+
+                    for csv_col, attr in [
+                        ("项目经理", "pm_user_id"),
+                        ("产品经理", "product_owner_id"),
+                        ("开发经理", "dev_lead_id"),
+                        ("测试经理", "qa_lead_id"),
+                        ("发布经理", "release_lead_id"),
+                    ]:
+                        val = row.get(csv_col, "").strip()
+                        uid = resolve_user(val, email_idx, name_idx, csv_col)
+                        if uid:
+                            setattr(project, attr, uid)
+
+                    self.session.flush()
+                    target_prod_id = prod_map_id.get(prod_name)
+                    if target_prod_id:
+                        rel = self.session.query(ProjectProductRelation).filter_by(project_id=project.id, product_id=target_prod_id).first()
+                        if not rel and project.org_id:
+                            self.session.add(
+                                ProjectProductRelation(
+                                    project_id=project.id,
+                                    product_id=target_prod_id,
+                                    org_id=project.org_id,
+                                    relation_type="PRIMARY",
+                                )
+                            )
+                progress.advance(task)
         self.session.flush()

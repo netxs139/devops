@@ -66,12 +66,17 @@ class Command(BaseCommand):
                 self.stdout.write("未找到任何禅道产品。\n")
                 return True
 
-            for p in products:
-                self.stdout.write(f"开始同步产品: {p.name} (ID: {p.id})\n")
-                task = {"product_id": p.id}
-                worker.process_task(task)
-                self.stdout.write(f"产品 {p.name} 同步完成！\n")
-                self.session.flush()
+            with self.get_progress() as progress:
+                task = progress.add_task("[cyan]同步禅道产品...", total=len(products))
+
+                for p in products:
+                    progress.update(task, description=f"[cyan]同步产品: {p.name} (ID: {p.id})...")
+                    task_dict = {"product_id": p.id}
+                    worker.process_task(task_dict)
+                    self.session.flush()
+                    progress.advance(task)
+
+            self.console.print("  [green]✓[/green] 全量产品同步完成！")
 
             return True
 
