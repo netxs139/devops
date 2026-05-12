@@ -47,7 +47,7 @@ COMMAND_GROUPS = {
         "seed_e2e_admin.py",
         "reset_database.py",
     ],
-    "diag": ["diag_db.py", "diag_mq.py", "diag_zentao.py", "sys_diagnose.py"],
+    "diag": ["diag_db.py", "diag_mq.py", "diag_zentao.py", "sys_diagnose.py", "analyze_efficacy.py"],
     "check": [
         "check_imports.py",
         "check_data_dict_freshness.py",
