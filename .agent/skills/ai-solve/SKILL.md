@@ -1,3 +1,8 @@
+---
+name: ai-solve
+description: Workflow for ai-solve
+---
+
 # Workflow: /ai-solve (测试驱动意图：自愈合编码流水线 v2.3)
 
 > **触发条件**：当用户输入 `/ai-solve <测试文件路径/Schema名>`，或者人类写好了一个必定失败的单元测试/空 Schema 让你"把它跑通"时。

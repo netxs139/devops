@@ -1,4 +1,9 @@
-# Workflow: /task-kickoff (任务入场与意图驱动切片)
+---
+name: task-kickoff
+description: Workflow for task-kickoff
+---
+
+# Workflow: /task-kickoff (Task Kickoff)
 
 > **触发条件**：收到用户的具体需求、缺陷报告或 `/task-kickoff <需求说明>` 指令时。
 > **目标**：强迫 AI 和开发者在动手编码前，先定级、划定红线、设计测试意图，并分解为原子任务（Micro-Loop），彻底杜绝“盲人摸象”式的开发。

@@ -1,3 +1,8 @@
+---
+name: chaos-sentinel
+description: Chaos Sentinel: 混沌工程与环境熔断打卡员
+---
+
 # Chaos Sentinel: 混沌工程与环境熔断打卡员
 
 ## 1. 角色定义 (Role)

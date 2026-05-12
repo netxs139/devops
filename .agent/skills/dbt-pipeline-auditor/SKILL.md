@@ -1,6 +1,7 @@
-______________________________________________________________________
-
-## name: dbt-pipeline-auditor description: | Trigger this skill when the user asks to review, audit, or check dbt SQL models (files in `dbt_project/models/`) for architectural compliance and data integrity. Use this skill for: 1) Reviewing PRs involving `stg_`, `int_`, or `fct_` models. 2) Auditing SQL logic for specific risks: JSONB safe extraction (trim/nullif), Postgres-specific numeric traps (round/numeric cast, integer division truncation), SCD Type 2 `is_current` filters, `UNION ALL` type width alignment, and cross-source ID mapping via bridge tables. 3) Enforcing dbt best practices like `ref()` macros instead of hardcoded schemas and maintaining staging purity (no joins in `stg_` models). Avoid this skill for Python development, ORM modeling, Grafana dashboards, or dbt performance tuning/infrastructure unless it relates directly to SQL logic audit.
+---
+name: dbt-pipeline-auditor
+description: Trigger this skill when the user asks to review, audit, or check dbt SQL models (files in `dbt_project/models/`) for architectural compliance and data integrity. Use this skill for: 1) Reviewing PRs involving `stg_`, `int_`, or `fct_` models. 2) Auditing SQL logic for specific risks: JSONB safe extraction (trim/nullif), Postgres-specific numeric traps (round/numeric cast, integer division truncation), SCD Type 2 `is_current` filters, `UNION ALL` type width alignment, and cross-source ID mapping via bridge tables. 3) Enforcing dbt best practices like `ref()` macros instead of hardcoded schemas and maintaining staging purity (no joins in `stg_` models). Avoid this skill for Python development, ORM modeling, Grafana dashboards, or dbt performance tuning/infrastructure unless it relates directly to SQL logic audit.
+---
 
 # dbt Pipeline Auditor (数仓口径与血缘精算师)
 
