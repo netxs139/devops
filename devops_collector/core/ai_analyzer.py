@@ -64,7 +64,14 @@ class EfficacyAnalyzer:
                     kwargs["model"] = f"openai/{self.model}"
 
             response = completion(**kwargs)
-            return response.choices[0].message.content
+
+            content = response.choices[0].message.content
+            if not content:
+                # 尝试抓取可能存在的 reasoning_content 等字段（DeepSeek-R1 系列特色）
+                message_dict = getattr(response.choices[0].message, "model_dump", lambda: dict(response.choices[0].message))()
+                content = message_dict.get("reasoning_content", "") or str(message_dict)
+
+            return content or "No content returned by model"
 
         except Exception as e:
             logger.error(f"AI 归因请求失败: {e}")
