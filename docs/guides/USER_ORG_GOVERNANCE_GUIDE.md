@@ -29,7 +29,7 @@
 
 **运行脚本：**
 
-```powershell
+```bash
 # 1. 测试运行 (Dry Run)，查看匹配建议
 python scripts/run_identity_resolver.py
 

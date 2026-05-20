@@ -230,16 +230,7 @@ package: pull-images
     docker build -t devops-platform:latest .
     docker save -o devops-platform.tar devops-platform:latest
 
-# 服务器专用：离线加载并部署 [Windows]
-[windows]
-deploy-offline:
-    @if (Test-Path devops-platform.tar) { docker load -i devops-platform.tar }
-    {{COMPOSE_CMD}} up -d --wait --no-build
-    {{EXEC_CMD}} python -m devops_collector.utils.schema_sync
-    just init-prod-data
-
-# 服务器专用：离线加载并部署 [Linux]
-[linux]
+# 服务器专用：离线加载并部署
 deploy-offline:
     @if [ -f devops-platform.tar ]; then echo "Loading image..."; docker load -i devops-platform.tar; fi
     {{COMPOSE_CMD}} up -d --wait --no-build
@@ -288,26 +279,7 @@ e2e-show-trace:
 # 环境卫生与工具 (Maintenance)
 # =============================================================================
 
-# 检查基础镜像并执行预拉取加速 (Nexus -> Official) [Windows]
-[windows]
-pull-images:
-    powershell -Command " \
-        $$images = @('python:3.11-slim-bookworm', 'postgres:15-alpine', 'rabbitmq:3-management-alpine', 'astral-sh/uv:latest'); \
-        foreach ($$img in $$images) { \
-            if (docker images -q $$img) { continue; } \
-            $$nexusImg = '{{NEXUS_DOCKER_REGISTRY}}/' + $$img; \
-            & docker pull $$nexusImg 2>&1 | Out-Null; \
-            if ($$LASTEXITCODE -eq 0) { \
-                docker tag $$nexusImg $$img; \
-                docker rmi $$nexusImg; \
-                continue; \
-            } \
-            docker pull $$img; \
-        } \
-    "
-
-# 检查基础镜像并执行预拉取加速 (Nexus -> Official) [Linux]
-[linux]
+# 检查基础镜像并执行预拉取加速 (Nexus -> Official)
 pull-images:
     bash -c " \
         for img in python:3.11-slim-bookworm postgres:15-alpine rabbitmq:3-management-alpine astral-sh/uv:latest; do \
@@ -322,22 +294,9 @@ pull-images:
         done; \
     "
 
-# [Windows] 清理临时文件
-[windows]
+# 清理临时文件
 clean:
-    @echo "Cleaning temporary files (Windows)..."
-    powershell -Command " \
-        Get-ChildItem -Path . -Include __pycache__ -Recurse -Directory | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; \
-        Get-ChildItem -Path . -Include *.pyc,*.pyo,.coverage,*.tmp -File -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue; \
-        if (Test-Path .pytest_cache) { Remove-Item -Path .pytest_cache -Recurse -Force }; \
-        if (Test-Path .ruff_cache) { Remove-Item -Path .ruff_cache -Recurse -Force }; \
-        if (Test-Path .agent\scratch) { Get-ChildItem .agent\scratch | Remove-Item -Force }; \
-    "
-
-# [Linux] 清理临时文件
-[linux]
-clean:
-    @echo "Cleaning temporary files (Linux)..."
+    @echo "Cleaning temporary files..."
     find . -type d -name "__pycache__" -not -path "./.venv/*" -exec rm -rf {} + 2>/dev/null || true
     find . -type f \( -name "*.pyc" -o -name "*.pyo" \) -not -path "./.venv/*" -delete
     rm -rf .coverage .pytest_cache .ruff_cache test-results
