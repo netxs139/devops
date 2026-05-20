@@ -7,9 +7,9 @@ from sqlalchemy.orm import Session
 
 from devops_collector.auth.auth_database import get_auth_db
 from devops_collector.auth.auth_dependency import get_user_gitlab_client
-from devops_collector.core.service_desk_service import ServiceDeskCoreService
 from devops_collector.models.base_models import User
 from devops_collector.plugins.gitlab.gitlab_client import GitLabClient
+from devops_collector.services.service_desk_service import ServiceDeskCoreService
 
 
 def get_sd_core_service(db: Session = Depends(get_auth_db)) -> ServiceDeskCoreService:

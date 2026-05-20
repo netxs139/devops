@@ -5,9 +5,9 @@
 - **状态**: 🟡 正在进行中
 
 ## 🛠️ 任务清单 (Tasks)
-1. [Core/H] **FastAPI 接入**: 将重构后的 `services/` 接入 FastAPI Router，实现 Web 端的双轨调用。⏳ 待实现
-2. [Bug/H] **诊断事务泄露修复**: 修复 `diag` 指令在 SQL 失败后未及时 rollback 导致的审计日志写入崩溃。⏳ 待实现
-3. [Dev/M] **存量命令迁移**: 将剩余的 20+ 个管理命令逐步迁移至现代函数签名模式。⏳ 待实现
+1. [Core/H] **FastAPI 接入**: 将重构后的 `services/` 接入 FastAPI Router，完成 Admin/Quality/Plugin 等 7+ 路由的直连。✅ 已完成
+2. [Bug/H] **诊断事务泄露修复**: 修复了 `DiagHelper` 和 `diag` 指令在 SQL 失败后的回滚逻辑。✅ 已完成
+3. [Dev/M] **存量命令迁移**: 启动 20+ 管理命令的现代化迁移，已完成 `realign_org_managers` 和 `init_organizations`。🟡 正在进行中
 
 ## 📋 最近完成 (Recently Completed)
 1. [2026-05-13] **CLI 架构现代化 (Phase 1-3)**: 实现了“签名即契约”引擎，完成了 pyproject.toml 入口注册及 Docker 环境修复。

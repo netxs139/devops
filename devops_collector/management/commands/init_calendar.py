@@ -1,22 +1,23 @@
 from datetime import date
+from typing import Annotated
+
+import typer
+from sqlalchemy.orm import Session
 
 from devops_collector.core.management import BaseCommand
+from devops_collector.services.calendar_service import CalendarService
 
 
 class Command(BaseCommand):
     help = "日历与时间维度主数据 (MDM_CALENDAR) 初始化"
 
-    def add_arguments(self, parser):
-        parser.add_argument("--start-year", type=int, default=2024, help="起始年份 (默认: 2024)")
-        parser.add_argument("--end-year", type=int, default=2026, help="结束年份 (默认: 2026)")
-
-    def handle(self, *args, **options):
-        start_year: int = options.get("start_year", 2024)
-        end_year: int = options.get("end_year", 2026)
-
-        from devops_collector.services.calendar_service import CalendarService
-
-        service = CalendarService(self.session)
+    def handle(
+        self,
+        session: Session,
+        start_year: Annotated[int, typer.Option("--start-year", help="起始年份")] = 2024,
+        end_year: Annotated[int, typer.Option("--end-year", help="结束年份")] = 2026,
+    ):
+        service = CalendarService(session)
 
         try:
             self.stdout.write(f"正在初始化日历数据从 {start_year} 到 {end_year} (via Service)...\n")

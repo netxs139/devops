@@ -21,7 +21,6 @@ from typing import Any
 
 from sqlalchemy.orm import Query, Session
 
-from devops_collector.services import business_auth
 from devops_collector.models.base_models import (
     Organization,
     Product,
@@ -31,6 +30,7 @@ from devops_collector.models.base_models import (
     SysRoleMenu,
     User,
 )
+from devops_collector.services import business_auth
 
 
 logger = logging.getLogger(__name__)

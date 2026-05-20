@@ -2,7 +2,7 @@
 
 import csv
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 from sqlalchemy.orm import Session
@@ -21,8 +21,8 @@ class Command(BaseCommand):
     def handle(
         self,
         session: Session,
-        product_csv_file: Annotated[Optional[str], typer.Option("--product-csv", help="ZenTao 产品映射 CSV")] = None,
-        project_csv_file: Annotated[Optional[str], typer.Option("--project-csv", help="ZenTao 项目映射 CSV")] = None,
+        product_csv_file: Annotated[str | None, typer.Option("--product-csv", help="ZenTao 产品映射 CSV")] = None,
+        project_csv_file: Annotated[str | None, typer.Option("--project-csv", help="ZenTao 项目映射 CSV")] = None,
     ):
         product_csv = Path(product_csv_file) if product_csv_file else SAMPLE_DATA_DIR / "zentao_product_map.csv"
         project_csv = Path(project_csv_file) if project_csv_file else SAMPLE_DATA_DIR / "zentao_project_map.csv"

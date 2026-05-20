@@ -67,7 +67,7 @@ class Command(BaseCommand):
                                 dt = datetime.fromisoformat(dl_str.replace("Z", "+00:00"))
                                 if last_dl is None or dt > last_dl:
                                     last_dl = dt
-                            except:
+                            except Exception:
                                 pass
 
                     stats["size_mb"] += comp_size / (1024 * 1024)

@@ -2,7 +2,7 @@ import csv
 import logging
 import uuid
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import pypinyin
 import typer
@@ -21,7 +21,7 @@ class Command(BaseCommand):
     def handle(
         self,
         session: Session,
-        csv_file: Annotated[Optional[str], typer.Option("--csv", help="员工信息 CSV 文件的物理路径")] = None,
+        csv_file: Annotated[str | None, typer.Option("--csv", help="员工信息 CSV 文件的物理路径")] = None,
     ):
         csv_path = Path(csv_file) if csv_file else Path("docs/assets/sample_data/employees.csv")
 

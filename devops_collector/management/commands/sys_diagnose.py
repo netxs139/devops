@@ -44,7 +44,7 @@ class Command(BaseCommand):
             DiagHelper.log_warning("部分链路存在异常，请查看上方详细日志。")
 
         DiagHelper.print_footer()
-        return True
+        return overall_success
 
     async def _check_api_health(self):
         """检查 API 服务是否在线。"""

@@ -2,7 +2,7 @@ import csv
 import logging
 import uuid
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 from urllib.parse import urlparse
 
 import typer
@@ -28,8 +28,8 @@ class Command(BaseCommand):
     def handle(
         self,
         session: Session,
-        prd_csv_file: Annotated[Optional[str], typer.Option("--prd-csv", help="产品信息 CSV 路径")] = None,
-        proj_csv_file: Annotated[Optional[str], typer.Option("--proj-csv", help="项目信息 CSV 路径")] = None,
+        prd_csv_file: Annotated[str | None, typer.Option("--prd-csv", help="产品信息 CSV 路径")] = None,
+        proj_csv_file: Annotated[str | None, typer.Option("--proj-csv", help="项目信息 CSV 路径")] = None,
     ):
         sample_dir = Path("docs/assets/sample_data")
         prd_csv = Path(prd_csv_file) if prd_csv_file else sample_dir / "products.csv"

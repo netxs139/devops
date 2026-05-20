@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from devops_collector.auth.auth_database import get_auth_db
-from devops_collector.core.devex_pulse_service import DevexPulseService
+from devops_collector.services.devex_pulse_service import DevexPulseService
 from devops_portal.schemas_pulse import PulseStatus, PulseSubmission
 
 

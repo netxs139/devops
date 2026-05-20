@@ -49,7 +49,7 @@ class Command(BaseCommand):
             DiagHelper.log_success(f"数据库映射正常, 本地缓存 ZenTaoProduct 记录数: {p_count}")
             return True
 
-        db_ok, _ = DiagHelper.run_check("数据库映射", check_db)
+        db_ok, _ = DiagHelper.run_check("数据库映射", check_db, session=self.session)
 
         DiagHelper.print_footer()
         return (api_ok and db_ok) is True

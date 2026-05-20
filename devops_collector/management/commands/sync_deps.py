@@ -2,14 +2,14 @@ import logging
 import socket
 import subprocess
 import time
-from urllib.parse import urlparse
-
 from typing import Annotated
+from urllib.parse import urlparse
 
 import typer
 from sqlalchemy.orm import Session
 
 from devops_collector.core.management import BaseCommand
+
 
 logger = logging.getLogger("SyncDeps")
 
@@ -19,11 +19,7 @@ class Command(BaseCommand):
 
     def check(self, **options) -> list[tuple[str, str]]:
         results = []
-        nexus_url = (
-            self.settings.pypi.nexus_url
-            if hasattr(self.settings.pypi, "nexus_url")
-            else "http://192.168.5.64:8081/repository/pypi-all/simple"
-        )
+        nexus_url = self.settings.pypi.nexus_url if hasattr(self.settings.pypi, "nexus_url") else "http://192.168.5.64:8081/repository/pypi-all/simple"
         tsinghua_url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
         # 检查主镜像
@@ -45,11 +41,7 @@ class Command(BaseCommand):
         attempts: Annotated[int, typer.Option("--attempts", help="Number of attempts for primary index")] = 3,
         dev: Annotated[bool, typer.Option("--dev", help="Include dev dependencies and extras")] = False,
     ):
-        nexus_url = (
-            self.settings.pypi.nexus_url
-            if hasattr(self.settings.pypi, "nexus_url")
-            else "http://192.168.5.64:8081/repository/pypi-all/simple"
-        )
+        nexus_url = self.settings.pypi.nexus_url if hasattr(self.settings.pypi, "nexus_url") else "http://192.168.5.64:8081/repository/pypi-all/simple"
         tsinghua_url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
         # 构建基础命令

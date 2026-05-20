@@ -6,8 +6,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from devops_collector.auth.auth_database import get_auth_db
-from devops_collector.core.plugin_service import PluginService
 from devops_collector.models import User
+from devops_collector.services.plugin_service import PluginService
 from devops_portal import schemas
 from devops_portal.dependencies import get_current_user
 

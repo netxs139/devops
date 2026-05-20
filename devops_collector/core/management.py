@@ -280,7 +280,7 @@ class DiagHelper:
         cls._console.print(f"   [yellow]⚠[/yellow] {msg}")
 
     @classmethod
-    def run_check(cls, label: str, check_func: Any):
+    def run_check(cls, label: str, check_func: Any, session: Session | None = None):
         """运行一个检查项并带有等待动画。"""
         import time
 
@@ -291,6 +291,11 @@ class DiagHelper:
             elapsed = time.time() - start_time
             return result, elapsed
         except Exception as e:
+            if session:
+                try:
+                    session.rollback()
+                except Exception:
+                    pass
             elapsed = time.time() - start_time
             cls.log_failure(f"{label} 失败: {e}")
             return None, elapsed

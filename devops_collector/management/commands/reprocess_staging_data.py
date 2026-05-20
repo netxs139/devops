@@ -126,11 +126,11 @@ class Command(BaseCommand):
     def _ensure_plugins_loaded(self):
         """确保所有 Worker 已注册。"""
         try:
-            import devops_collector.plugins.gitlab.worker
-            import devops_collector.plugins.jenkins.worker
-            import devops_collector.plugins.nexus.worker
-            import devops_collector.plugins.sonarqube.worker
-            import devops_collector.plugins.zentao.worker
+            import devops_collector.plugins.gitlab.worker  # noqa: F401
+            import devops_collector.plugins.jenkins.worker  # noqa: F401
+            import devops_collector.plugins.nexus.worker  # noqa: F401
+            import devops_collector.plugins.sonarqube.worker  # noqa: F401
+            import devops_collector.plugins.zentao.worker  # noqa: F401
         except ImportError:
             pass
 
