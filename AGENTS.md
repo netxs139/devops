@@ -37,6 +37,7 @@
 1. **修订记录一致性协议 (Changelog Integrity) [MANDATORY]**: 历史进度归档已彻底并入 `CHANGELOG.md`。**严禁**使用已废弃的 `progress_archive.md`。执行归档时，必须将 `progress.txt` 中的任务摘要提炼并置顶于 `CHANGELOG.md` 的最新版本或 `[Unreleased]` 节段。
 1. **导入完整性与预飞行 (Import Integrity & Pre-flight)**: 任何 Model/Service 变更必须首先通过 `python -c "import ..."` 冒烟测试。严禁在宿主机环境未安装依赖时强行运行 `pytest`，必须使用沙箱模式。
 1. **文码同行律 (Code-Doc Co-evolution) [MANDATORY]**: 任何涉及业务逻辑、模型 Schema、指标口径或 UI 架构的变更，**必须**在提交代码的同时完成相关文档（如 `docs/`, `contexts.md`, `AGENTS.md`, `GLOSSARY.md`）的同步更新。严禁在文档滞后的情况下宣告完工。
+1. **交付闭环律 (Delivery Closure) [MANDATORY]**: 建立认知卡点：今后但凡一个核心逻辑切片（Focus）宣告完成并 Commit 落库，无论是否处于会话离场态，都必须主动且静默地完成 `progress.txt` 的焦点切换与 `lessons-learned.log` 的沉淀，做到“交付即闭环”。
 
 ## 3. 工程严谨性基准 (Engineering Rigor) [MANDATORY]
 
@@ -85,7 +86,7 @@
    - **容器只读查询**: `docker ps`, `docker images`, `docker logs`, `docker inspect`, `docker stats --no-stream`, `docker-compose ps` 等。
    - **文档查阅 (只读)**: `cat`, `head`, `tail`, `grep` (只读查询), `wc`, `just list` 等。
    - **组合逻辑 (Read-only Pipes)**: 允许管道符进行只读组合（`| grep`, `| wc -l`, `| head`, `| tail`, `| sort`, `| uniq`），只要最终行为不涉及数据抹除或系统变更。
-2. **强制确认红线**: 对于任何具有**副作用**或**潜在风险**的操作，严禁设置 `SafeToAutoRun: true`，必须等待用户点击确认：
+1. **强制确认红线**: 对于任何具有**副作用**或**潜在风险**的操作，严禁设置 `SafeToAutoRun: true`，必须等待用户点击确认：
    - **物理变更**: 任何 `git commit`, `git push`, `rm`, `mv` (移动至非临时目录), `chmod` 等操作。
    - **部署与启动**: 任何 `just deploy`, `docker-compose up`, `uv run scripts/cli.py` 等。
    - **配置修改**: 任何修改 `.env`, `pyproject.toml` 或其他核心配置文件的操作。
