@@ -80,7 +80,7 @@ class ArchAuditor:
                 continue
 
             for rule in ARCH_RULES:
-                if rule["check"](line, file_ctx):
-                    results.append((rule["severity"], f"[{rule['id']}] {rule['message']} (Line {i + 1})"))
+                if rule["check"](line, file_ctx):  # type: ignore
+                    results.append((str(rule["severity"]), f"[{rule['id']}] {rule['message']} (Line {i + 1})"))
 
         return results

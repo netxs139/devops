@@ -3,13 +3,18 @@
 所有对 DevOps Data Application Platform 的重要更改都将记录在此文件中。
 
 ## [Unreleased]
-- **Agent Skill 同步与规范对齐 (v5.8.0)**:
-  - **Skill 脚本同步**: 修复了 7+ 个核心 Skill 文件的命令不一致问题（将旧的 `make` 统一替换为项目标准 `just`），并修正了日志文件在 `docs/history/` 下的物理路径。
-  - **全局自动执行策略**: 在 `GEMINI.md` 中注入了工具执行安全规范，授权 AI 对无害诊断指令（如 version, ls, status）进行免确认自动执行，提升协作效率。
-  - **环境路径脱敏与对齐**: 清理了 `AGENTS.md` 和 `contexts.md` 中残留的 Windows 硬编码路径 (`c:/`)，彻底完成了 WSL 环境的文件系统适配。
-  - **编码一致性修复**: 修复了由于 Windows/Linux 跨平台编辑导致的 Skill 文件乱码问题。
+
+- **FastAPI 路由与 Service 层深度集成 (Phase 1)**:
+  - **解耦中转层**: 完成了 `admin`, `iteration`, `plugin`, `security`, `devex_pulse`, `service_desk` 等 7+ 个核心路由的重构，由 `devops_collector.core` 映射切换为直接引用 `devops_collector.services`。
+  - **双轨调用对齐**: 确保 Web 端与 CLI 端共享同一套重构后的业务逻辑服务，通过了全量单元测试 (`tests/unit/test_portal/`)。
+- **诊断总线事务安全性修复 (Bug Fix)**:
+  - **原子回滚保护**: 在 `DiagHelper.run_check` 中注入了 Session 回滚机制，确保单项诊断 SQL 失败时能及时释放锁并清理状态，彻底解决了审计日志写入时的“事务锁定”崩溃。
+  - **状态传播修复**: 修正了 `sys_diagnose` 的返回逻辑，使其能正确透传子诊断项的聚合状态。
+- **管理命令现代化迁移 (Progressing)**:
+  - **签名即文档**: 已完成 `realign_org_managers`, `init_organizations`, `init_products`, `export_sonar_report`, `export_project_map`, `export_data_dict`, `init_okrs`, `init_locations`, `init_mdm_location`，插件映射类命令（`init_gitlab_mappings`, `init_zentao_mappings`, `init_sonarqube_links`, `init_jenkins_links`, `init_nexus_links`），基础主数据类命令（`init_catalog`, `init_calendar`, `init_cost_codes`, `init_labor_rates`, `init_purchase_contracts`, `init_revenue_contracts`），以及数据诊断类命令（`check_data_dict_freshness`, `check_identity_alignment`）等核心命令的现代化重构，采用 `Annotated` 类型提示实现参数的自动解析与 Rich 进度条集成。同时移除了所有过时的 `add_arguments` 定义。
 
 ### 新增 (Added)
+
 - **Agent Skill 体系初始化 (v5.7.0)**:
   - **Skill 物理注入**: 初始化并提交了 16+ 个核心 Agent Skill，覆盖了任务启动、故障分诊、代码审查及离场交接等全生命周期。
   - **意图锚点加固**: 建立了「安全锁」机制，强化了 AI 在执行物理写操作前的方案呈报与 A/B/C 决策对齐流程。
@@ -19,7 +24,6 @@
 - **MyPy 治理 (Phase 4) (v5.3.0)**: 完成 Auth 模块 26 项报错修复，解除了 pyproject.toml 中的鉴权模块隔离。
 
 ## [5.2.0] - 2026-05-12
-
 
 ### 新增 (Added) - v5.2.0
 

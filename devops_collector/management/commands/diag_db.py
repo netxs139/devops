@@ -1,7 +1,7 @@
 import logging
-import requests
-from sqlalchemy.orm import Session
+
 from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from devops_collector.core.management import BaseCommand, DiagHelper
 
@@ -24,7 +24,7 @@ class Command(BaseCommand):
             DiagHelper.log_success(f"数据库连接成功: {version}")
             return True
 
-        _, _ = DiagHelper.run_check("连接测试", check_version)
+        _, _ = DiagHelper.run_check("连接测试", check_version, session=self.session)
 
         # 2. 检查核心表内容
         tables = ["mdm_identities", "mdm_organizations", "mdm_products", "mdm_projects", "sys_role", "sys_menu"]

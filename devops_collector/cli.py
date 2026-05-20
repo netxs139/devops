@@ -289,14 +289,13 @@ def _make_command_callback(cmd_class: type[BaseCommand], original_stem: str):
             # 现代模式：直接透传原有的默认值（可能是 typer.Option 对象）
             default = p["default"]
             annotation = p["type"]
+        # 旧模式：手动包装
+        elif p["is_flag"]:
+            default = typer.Option(False, help=p["help"])
+            annotation = bool
         else:
-            # 旧模式：手动包装
-            if p["is_flag"]:
-                default = typer.Option(False, help=p["help"])
-                annotation = bool
-            else:
-                default = typer.Option(p["default"], help=p["help"])
-                annotation = p["type"]
+            default = typer.Option(p["default"], help=p["help"])
+            annotation = p["type"]
 
         sig_params.append(inspect.Parameter(p["name"], inspect.Parameter.KEYWORD_ONLY, default=default, annotation=annotation))
 

@@ -5,6 +5,9 @@
 
 import os
 from pathlib import Path
+from typing import Annotated
+
+import typer
 
 from devops_collector.core.management import BaseCommand
 
@@ -12,11 +15,11 @@ from devops_collector.core.management import BaseCommand
 class Command(BaseCommand):
     help = "导出项目地图：生成项目核心目录的职责拓扑图 (Markdown)"
 
-    def add_arguments(self, parser):
-        parser.add_argument("-o", "--output", default="docs/PROJECT_MAP.md", help="输出路径 (默认: docs/PROJECT_MAP.md)")
-
-    def handle(self, *args, **options):
-        output_file = Path(options["output"])
+    def handle(
+        self,
+        output_path: Annotated[str, typer.Option("--output", "-o", help="输出路径")] = "docs/PROJECT_MAP.md",
+    ):
+        output_file = Path(output_path)
         output_file.parent.mkdir(parents=True, exist_ok=True)
 
         # 核心文件夹扫描白名单
