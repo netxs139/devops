@@ -72,11 +72,10 @@
    - **禁止**: 在处理同步任务的循环中执行 `session.query(...).first()`。
    - **正解**: 必须在循环外使用 `in_` 批量拉取数据并建立内存 Map。
 
-1. **[Shell] Windows 重定向编码崩溃 (Windows Redirection corruption)**:
+1. **[Shell] 宿主机与容器一致性 (Host-Container Consistency)**:
 
-   - **禁止**: 在 Windows PowerShell 环境下使用 `>` 或 `Set-Content` 处理包含中文的代码文件。
-   - **原因**: 默认编码 (UTF-16/GBK) 会损坏 UTF-8 字节流。
-   - **正解**: 必须使用显式声明 `encoding='utf-8'` 的 Python 脚本进行批处理。
+   - **背景**: 现已全面迁移至 Ubuntu 环境，默认编码统一为 UTF-8。
+   - **原则**: 可在宿主机安全使用原生 bash/zsh 管道和重定向处理代码文件，无需再绕过 PowerShell 限制，但跨平台交付的 Python 脚本仍需保持明确的 UTF-8 编码声明。
 
 ## 2. 核心技术栈 (Technology Stack)
 
@@ -92,13 +91,12 @@
 
 - **开发与测试环境 (Dev & Test Env)**:
   - **主验证环境 (Primary)**: **Docker Desktop (Linux 模式)**。所有功能逻辑、数据库变更、集成测试**必须**首先在容器内验证。
-  - **辅助/调试环境 (Auxiliary)**: Windows + PowerShell。仅用于代码编写、轻量级 Lint 检查及辅助脚本调试。
-  - **核心原则**: 严禁以“Windows 能跑通”作为提测标准。物理真实环境以 Docker 内的 Linux 表现为准。通过 `just test` 或 `docker-compose exec api pytest` 确保 100% 环境对齐。
-- **路径处理**: 强制使用 `pathlib` 确保跨平台路径兼容。
-- **Shell 方言约束 [MANDATORY]**:
-  - **宿主机 (Windows + PowerShell 5.1)**：严禁在终端指令中使用 `&&`、`||`、`$(...)` 等 bash-only 语法。链式命令必须拆分为独立调用或使用 `;` 分号。
-  - **容器内 (Linux + bash)**：`justfile` 中使用 `just test` 等指令在容器内执行时，可自由使用 bash 语法。
-  - **Justfile 跨平台**：涉及 OS 特有指令的 recipe 必须使用 `just` 的内建函数或 `if/else` 进行环境嗅探，确保在 Win/Linux 下表现一致。
+  - **辅助/调试环境 (Auxiliary)**: Ubuntu 原生 (bash/zsh)。仅用于代码编写、轻量级 Lint 检查及辅助脚本调试。
+  - **核心原则**: 虽然宿主机与容器同为 Linux 环境，消除了大量跨端差异，但**严禁**以“宿主机环境能跑通”作为提测标准。物理真实环境必须以独立 Docker 容器内表现为准。通过 `just test` 或 `docker-compose exec api pytest` 确保环境绝对隔离。
+- **路径处理**: 强制使用 `pathlib` 确保路径处理的规范性与健壮性。
+- **Shell 方言约束 (Ubuntu Edition)**:
+  - **宿主机与容器同构**: 宿主机与容器现已全面统一为 Ubuntu (bash/zsh)，**解禁**使用 `&&`、`||`、`$(...)` 等 bash 原生语法。
+  - **Justfile 简化**: 涉及 OS 特有指令的 recipe 不再需要使用 `just` 内建函数进行 Win/Linux 环境嗅探，可直接使用标准的 Linux shell 语法（如 `rm -rf`），大幅提升维护效率。
 - **目录用途分工 [MANDATORY]**: 禁止在根目录散落临时文件。两个临时目录用途严格区分：
   - **`./tmp/`**：运行时生成的临时数据产物，如 CSV 导出、日志重定向、分析报告。CI 构建和镜像打包**不包含**此目录。
   - **`./scratch/`**：开发过程中的一次性调试脚本（如 `monitor_sync.py`、`force_sync.py`）。仅用于本地排查，**必须**在 `.dockerignore` 中排除，任务结束前**必须**清理或归档至 `docs/` 下。
@@ -107,7 +105,7 @@
   - **GitHub Actions** (`ubuntu-latest`): 用于开源/外网代码库托管的防御，定义在 `.github/workflows/full-gate.yml`。
   - **GitLab CI** (私有化 Docker Runner): 用于内网企业级部署与验证，拥有直连私有 Nexus 与 DB 的优势，定义在 `.gitlab-ci.yml`。
   - **核心防线解耦**: 两套 CI 仅仅是调度器，**核心卡点逻辑 100% 封装于 `scripts/gatekeeper.py` 与 `justfile` 中**，确保“编写一次，到处/多引擎运行”。
-- **CSV 编码**: 所有 CSV 文件的生成、读取及模版任务强制使用 `utf-8-sig` 编码，确保在 Windows Office/Excel 环境下打开不出现汉字乱码。
+- **CSV 编码**: 所有 CSV 文件的生成、读取及模版任务强制使用 `utf-8-sig` 编码，确保业务侧在 Windows Office/Excel 环境下打开不出现汉字乱码。
 - **语义分层规范 (Semantic Alignment)**:
   - **技术侧用英文**: 数据库字段名、API Schema、核心代码变量必须使用标准英文命名（如 `pm_user_id`）。
   - **业务侧用中文**: 数据库 `comment`、CSV 导入/导出表头、UI 界面显示、报表评估指标必须使用专业业务中文术语（如：项目经理、负责人邮箱、交付周期、ELOC等）。
@@ -496,8 +494,8 @@
 
 1. **100ms 准则**: 单个 Unit Test 文件执行时间严禁超过 100ms。
 1. **超时熔断 (Timeout)**: 每个测试用例由 `pytest-timeout` 强制守护，上限为 **30s**。超过此阈值的任务必须被物理杀死。
-1. **Windows 性能守卫**:
-   - 为规避 Windows 下频繁建表/删表的 I/O 阻塞，集成测试的数据库 Engine 必须设置为 `scope="session"`。
+1. **测试 I/O 性能守卫**:
+   - 为规避高频建表/删表引发的 I/O 阻塞（跨平台通用优化），集成测试的数据库 Engine 必须设置为 `scope="session"`。
    - 数据库表（Base.metadata）只需在会话开始时创建一次。
 1. **默认运行策略**: 为保证开发敏捷性，`pyproject.toml` 的 `addopts` 必须默认包含 `-m "not slow"`。所有耗时超过 2s 的脚本必须手动标记为 `@pytest.mark.slow`。
 1. **模型导入警告**: 在 `conftest.py` 中执行 `create_all` 前，必须显式导入所有相关的 `models` 模块，否则 `sqlite` 将因“no such table”报错。
@@ -521,7 +519,7 @@
 
 1. **强制测试与运行 (Mandatory Test & Run)**：AI 代理在生成或修改逻辑代码后，**必须**自行编写对应的 `pytest` 测试用例并执行验证。
 1. **测试持久化 (Test Persistence)**：**严禁**仅使用 `tmp/` 下的一次性验证脚本作为终态交付。所有核心逻辑（如 Transformer, Service, Algorithms）的验证必须直接在 `tests/unit/` 或 `tests/integration/` 下创建永久性测试文件。
-1. **容器内验证 (Container-In Validation) [MANDATORY]**：所有测试执行**必须**在 Docker 容器内完成（使用 `just test` 或 `docker-compose exec api pytest`），**严禁**在宿主机环境（如 Windows）下进行单纯的 Python 逻辑验证，以确保在 Linux 环境下的完全兼容。
+1. **容器内验证 (Container-In Validation) [MANDATORY]**：所有测试执行**必须**在 Docker 容器内完成（使用 `just test` 或 `docker-compose exec api pytest`），**严禁**在宿主机环境（即使同为 Ubuntu）下进行单纯的 Python 逻辑验证，以防依赖混淆，确保与生产环境的绝对隔离一致性。
 1. **TDD 2.1 物理护栏 (TDD 2.1 Physical Guardrails) [NEW]**：调用 `/ai-solve` 时必须执行：
    - **A. 静态扫描预检 (Pre-flight Check)**：在运行测试前强制执行 `ruff check`。严禁在存在 `NameError` 或 `ImportError` 时尝试运行测试。
    - **B. 环境沙箱化 (Env Sandboxing)**：执行 pytest 时强制追加 `-o "addopts="` 以屏蔽 `pyproject.toml` 中可能因环境缺失导致的干扰参数。
@@ -536,8 +534,8 @@
 
 | 测试类型 | 运行环境 | 验证重点 | 触发时机 |
 | :--- | :--- | :--- | :--- |
-| **单元测试 (Unit)** | **本地 (PowerShell)** | 纯代码算法、工具函数、Mock逻辑。 | **随写随练**：每改一个函数执行一次。 |
-| **轻量集成 (Lite)** | **本地 (PowerShell)** | Router -> Service 链路，使用 **SQLite** 内存库。 | **功能初成**：提交 PR 前的初步自检。 |
+| **单元测试 (Unit)** | **本地 (Ubuntu bash)** | 纯代码算法、工具函数、Mock逻辑。 | **随写随练**：每改一个函数执行一次。 |
+| **轻量集成 (Lite)** | **本地 (Ubuntu bash)** | Router -> Service 链路，使用 **SQLite** 内存库。 | **功能初成**：提交 PR 前的初步自检。 |
 | **全量集成 (Full)** | **容器 (Docker)** | **PostgreSQL** 语法兼容、方言差异、跨服务通信。 | **DoD 准入**：宣告任务完成前的强制审计项。 |
 | **环境迁移 (Ops)** | **容器 (Docker)** | Alembic 数据库迁移脚本、环境变量解析、卷挂载。 | **架构变更**：修改核心配置或表结构后。 |
 
