@@ -13,7 +13,7 @@
 
 ### 软件依赖
 
-- **OS**: Linux (Ubuntu 20.04+, CentOS 7+) / Windows Server
+- **OS**: Linux (Ubuntu 20.04+, CentOS 7+)
 - **Runtime**: Python 3.9+
 - **Database**: PostgreSQL 12+
 - **Message Queue**: RabbitMQ 3.8+ (必选，系统核心异步总线，用于支持海量数据采集与重试)
@@ -47,7 +47,6 @@ cd devops_collector
 ```bash
 python3 -m venv venv
 source venv/bin/activate  # Linux
-# venv\Scripts\activate   # Windows
 ```
 
 ### 2.3 安装依赖
@@ -89,7 +88,7 @@ python scripts/init_revenue_contracts.py
 
 | 类别 | 环境变量 Key | 说明 | 示例 |
 |:---|:---|:---|:---|
-| **数据库** | `DATABASE__URI` | 数据库连接串 | `postgresql://user:pass@host:5432/db` |
+| **数据库** | `DATABASE__URI` | 数据库连接串 | `postgresql://user:pass@host:5432/db` | <!-- pragma: allowlist secret -->
 | | `STORAGE__DATA_DIR` | 持久化数据目录 | `/app/data` |
 | **GitLab** | `GITLAB__URL` | GitLab 实例地址 | `https://gitlab.company.com` |
 | | `GITLAB__PRIVATE_TOKEN` | 具有 API 权限的 Token | `glpat-xxxxxxxx` |

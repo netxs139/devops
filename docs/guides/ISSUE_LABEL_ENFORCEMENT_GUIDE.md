@@ -215,7 +215,7 @@ python scripts/check_issue_labels.py --project-id <your_project_id> --auto-label
 
 **Windows (任务计划程序)**:
 
-```powershell
+```bash
 # 每天上午 9:00 运行检查
 schtasks /create /tn "GitLab Issue Label Check" /tr "python C:\path\to\scripts\check_issue_labels.py --project-id 123 --auto-label --auto-comment" /sc daily /st 09:00
 ```
