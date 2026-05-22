@@ -90,9 +90,10 @@
 ## 3. 开发环境与兼容性 (Environment)
 
 - **开发与测试环境 (Dev & Test Env)**:
+  - **底层宿主架构 [MANDATORY 物理锚点]**: 三层混合结构：**物理机 (Windows)** → **容器引擎层 (Docker Desktop，Linux 模式)** → **开发执行层 (WSL2 Ubuntu / bash/zsh)**。AI Agent 在任何指令中，必须以此三层架构为物理真实，严禁单独假设某一层为唯一环境。
   - **主验证环境 (Primary)**: **Docker Desktop (Linux 模式)**。所有功能逻辑、数据库变更、集成测试**必须**首先在容器内验证。
-  - **辅助/调试环境 (Auxiliary)**: Ubuntu 原生 (bash/zsh)。仅用于代码编写、轻量级 Lint 检查及辅助脚本调试。
-  - **核心原则**: 虽然宿主机与容器同为 Linux 环境，消除了大量跨端差异，但**严禁**以“宿主机环境能跑通”作为提测标准。物理真实环境必须以独立 Docker 容器内表现为准。通过 `just test` 或 `docker-compose exec api pytest` 确保环境绝对隔离。
+  - **辅助/调试环境 (Auxiliary)**: WSL2 Ubuntu (bash/zsh)。仅用于代码编写、轻量级 Lint 检查及辅助脚本调试。
+  - **核心原则**: 虽然开发执行层（WSL2）与容器同为 Linux 内核，消除了大量跨端差异，但**严禁**以“WSL2 宿主机能跑通”作为提测标准。物理真实环境必须以独立 Docker 容器内表现为准。通过 `just test` 或 `docker-compose exec api pytest` 确保环境绝对隔离。
 - **路径处理**: 强制使用 `pathlib` 确保路径处理的规范性与健壮性。
 - **Shell 方言约束 (Ubuntu Edition)**:
   - **宿主机与容器同构**: 宿主机与容器现已全面统一为 Ubuntu (bash/zsh)，**解禁**使用 `&&`、`||`、`$(...)` 等 bash 原生语法。
