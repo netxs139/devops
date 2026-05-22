@@ -78,18 +78,23 @@
 
 ## 6. 工具执行与安全规范 (Tool Execution & Safety) [MANDATORY]
 
-1. **自动执行策略 (Auto-run Strategy)**:
-   为提升交互效率，对于以下**无害且只读**的指令，AI 应在调用 `run_command` 或 `send_command_input` 时显式设置 `SafeToAutoRun: true`，以避免不必要的人工确认：
-   - **环境嗅探 (只读)**: `ls`, `pwd`, `whoami`, `groups`, `env` (不含敏感信息), `find` (只读搜索), `du -sh`, `df -h`, `uname -a`, `which`, `type`, `file`, `id` 等。
-   - **版本与帮助**: `python --version`, `just --version`, `git --version`, `uv --version`, `node --version`, 以及各类命令的 `--help`。
-   - **Git 只读操作**: `git status`, `git branch`, `git log`, `git show`, `git diff` (不带 `--output`), `git stash list`, `git remote -v`, `git tag -l`, `git rev-parse`, `git blame` 等。
-   - **容器只读查询**: `docker ps`, `docker images`, `docker logs`, `docker inspect`, `docker stats --no-stream`, `docker-compose ps` 等。
-   - **文档查阅 (只读)**: `cat`, `head`, `tail`, `grep` (只读查询), `wc`, `just list` 等。
-   - **组合逻辑 (Read-only Pipes)**: 允许管道符进行只读组合（`| grep`, `| wc -l`, `| head`, `| tail`, `| sort`, `| uniq`），只要最终行为不涉及数据抹除或系统变更。
-1. **强制确认红线**: 对于任何具有**副作用**或**潜在风险**的操作，严禁设置 `SafeToAutoRun: true`，必须等待用户点击确认：
-   - **物理变更**: 任何 `git commit`, `git push`, `rm`, `mv` (移动至非临时目录), `chmod` 等操作。
-   - **部署与启动**: 任何 `just deploy`, `docker-compose up`, `uv run scripts/cli.py` 等。
-   - **配置修改**: 任何修改 `.env`, `pyproject.toml` 或其他核心配置文件的操作。
+1. **默认自动执行 (Auto-run by Default)**:
+   除下方"强制确认红线"列举的4类操作外，**所有其他命令均自动执行，无需用户确认**。涵盖但不限于：
+
+   - **只读探查**: `ls`, `pwd`, `cat`, `head`, `tail`, `grep`, `find`, `git status/log/diff/show/branch` 等所有只读操作。
+   - **代码构建与测试**: `pytest`, `just test`, `just verify`, `just lint`, `ruff`, `uv run` (非敏感操作), `docker-compose build` 等。
+   - **git commit**: 代码提交视为常规开发动作，**自动执行**，无需确认。
+   - **文件写入与移动**: 创建/修改代码文件、文档、配置模板（`.env` 本体除外）均自动执行。
+   - **AI 清理战场**: AI 发起的临时文件清理（`.agent/scratch/`、`tmp/`、`*.log` 等）**自动执行**，无需确认。
+   - **服务启动与重启**: `docker-compose up/restart`, `just dev`, `just start` 等开发环境操作自动执行。
+   - **依赖安装**: `uv pip install`, `npm install` 等包管理操作自动执行。
+
+1. **强制确认红线 [仅此4类，不得扩展]**: 以下操作**严禁自动执行**，必须等待用户明确点击确认：
+
+   - **危险删除**: `rm -rf` 指向**业务目录或非临时数据**（如 `src/`, `data/`, 数据库文件）。AI 自动清理战场（`tmp/`, `scratch/`, `*.log`）**不在此列**，可自动执行。
+   - **环境配置**: 任何对 `.env` 文件（含 `.env.prod`, `.env.staging` 等所有变体）的写入或覆盖操作。
+   - **密钥操作**: 任何明文出现或写入 `password`, `token`, `api_key`, `secret` 字段的操作。
+   - **远程推送**: `git push`（含 `--force`）。跨设备同步时，须用户显式触发。
 
 ______________________________________________________________________
 
