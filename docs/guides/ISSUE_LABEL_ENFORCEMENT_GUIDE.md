@@ -213,11 +213,11 @@ python scripts/check_issue_labels.py --project-id <your_project_id> --auto-label
 
 #### 定期任务（推荐）
 
-**Windows (任务计划程序)**:
+**Windows (任务计划程序 + WSL)**:
 
 ```bash
-# 每天上午 9:00 运行检查
-schtasks /create /tn "GitLab Issue Label Check" /tr "python C:\path\to\scripts\check_issue_labels.py --project-id 123 --auto-label --auto-comment" /sc daily /st 09:00
+# 每天上午 9:00 运行检查 (通过 WSL 桥接执行)
+schtasks /create /tn "GitLab Issue Label Check" /tr "wsl.exe -d Ubuntu -e bash -c 'cd /home/netxs/devops && uv run python scripts/check_issue_labels.py --project-id 123 --auto-label --auto-comment'" /sc daily /st 09:00
 ```
 
 **Linux (Crontab)**:
