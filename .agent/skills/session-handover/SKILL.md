@@ -119,9 +119,22 @@ just clean
 git status -u
 ```
 
-### 5. 交接完工标准 (Handover DoD) [MANDATORY]
+### 5. 自动快照与状态落库 (Automatic Snapshot Commit)
 
-在宣告会话交接完成前，Agent 必须确信以下五项已 100% 达成：
+在完成所有的审计日志更新与 `progress.txt` 状态同步后，Agent 必须强制发起代码提交，将本次会话产生的所有状态变更与日志物理落盘：
+
+// turbo
+
+```bash
+git add .
+git commit -m "chore(session): handover snapshot and audit logs synced"
+```
+
+> **注意**：按照项目安全红线，`git commit` 禁止免确认自动执行。Agent 执行此步骤时自然会弹出确认提示框，由用户审核后作为下班前的“最后签字”。
+
+### 6. 交接完工标准 (Handover DoD) [MANDATORY]
+
+在宣告会话交接完成前，Agent 必须确信以下核心项已 100% 达成：
 
 - [ ] **物理事实对齐**：通过 `git status -u` 和 `docker ps` 确认环境处于预期状态，无残留未记录文件。
 - [ ] **进度状态更新 (双向同步)**：`progress.txt` 已更新。
@@ -131,12 +144,13 @@ git status -u
 - [ ] **知识资产沉淀**：本次会话教训已在 `docs/lessons-learned.log` 倒序落盘。
 - [ ] **审计规则自进化**：涉及 L2-L4 的架构变更，其教训已通过 `/evolve-skill` 转化为物理审计规则。
 - [ ] **工程轨迹溯源**：已将物理证据（日志碎片）及决策点记录至 `docs/history/session-history.log`。
+- [ ] **状态物理落库**：已成功发起并完成包含所有审计与进度日志的 `git commit` 快照提交。
 - [ ] **交接备忘交底**：已呈现“当前阻断点”与“下一步行动（Next Step）”。
 - [ ] **意图锚点追溯**：涉及技术妥协或非标准设计的变更，已补齐 **ADR (Architecture Decision Record)** 或在代码中建立意图锚点。
 - [ ] **性能基准取证**：涉及 [L3/L4] 级重构的任务，已在交付报告中包含性能对比数据（如耗时、内存或 Trace 碎片）。
 - [ ] **产品特性白皮书同步 (Feature Spec Sync) [NEW]**：如果本次会话新增了业务字段、改变了核心逻辑或加塞了临时需求，**必须主动触发 `/doc-update`**，将其业务意图与场景描述补充至对应的 `docs/features/*.md` 领域说明书中。未更新业务规格，严禁下班交接。
 
-**【核心原则】**：严禁在未更新 `docs/history/lessons-learned.log` 和 `docs/history/session-history.log` 的情况下使用“任务已圆满完成”或“会话已就绪”等描述。
+**【核心原则】**：严禁在未更新审计日志以及未执行快照提交的情况下使用“任务已圆满完成”或“会话已就绪”等描述。
 
 ______________________________________________________________________
 
