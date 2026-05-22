@@ -1,26 +1,27 @@
----
-name: lint
-description: Workflow for lint
----
+______________________________________________________________________
+
+## name: lint description: Workflow for lint
 
 # Workflow: /lint (代码质量自检)
 
----
-description: [lint] 执行全项目代码质量审计，包含 Ruff 静态检查、前端行数限制及全链路对齐规范。
----
+______________________________________________________________________
+
+## description: [lint] 执行全项目代码质量审计，包含 Ruff 静态检查、前端行数限制及全链路对齐规范。
 
 # 全项目质量审计 (Comprehensive Lint)
 
 该工作流用于在合并或交付前，对项目进行全方位"宪法"合规性检查。
+
 > **工具链**：项目已统一使用 **Ruff** 作为唯一针对 Python 的 Lint + Format 工具（参见 [`contexts.md#1.5`](contexts.md#L15)）。
 > 所有检查以根目录 `ruff.toml` 为准。
 
 ## 审计步骤 (Audit Steps)
 
 // turbo
+
 1. **Ruff 代码检查 (Lint)**
    运行 Ruff 检查代码质量与规范合规：
-   ```powershell
+   ```bash
    just lint
    ```
    - 等价于 `ruff check devops_collector/ devops_portal/ tests/ scripts/`
@@ -28,22 +29,27 @@ description: [lint] 执行全项目代码质量审计，包含 Ruff 静态检查
    - 若失败：优先尝试 `just ruff-fix` 自动修复，仍有遗留则手动处理。
 
 // turbo
-2. **Ruff 代码格式化检查 (Format)**
-   检查代码格式一致性（不自动修改）：
-   ```powershell
-   ruff format --check devops_collector/ devops_portal/ tests/ scripts/
-   ```
-   - 若失败：执行 `just fmt` 自动格式化，然后重新 Commit。
+2\. **Ruff 代码格式化检查 (Format)**
+检查代码格式一致性（不自动修改）：
+
+```bash
+ruff format --check devops_collector/ devops_portal/ tests/ scripts/
+```
+
+- 若失败：执行 `just fmt` 自动格式化，然后重新 Commit。
 
 3. **前端行数审计 (300 Line Law)**
    检查 HTML/CSS/JS 文件是否超过 300 行：
-   ```powershell
+
+   ```bash
    python scripts/lint_frontend.py
    ```
+
    - **红线**：若文件超限，**严禁**直接通过 `# noqa` 跳过，必须在报告中提出【核心逻辑拆分建议】。
 
-4. **全链路对齐审计 (Naming Alignment Audit)**
+1. **全链路对齐审计 (Naming Alignment Audit)**
    强制核对 [`contexts.md#11.1`](contexts.md#L605) 定义的业务域前缀：
+
    - Service Desk: `sd_`
    - Administration: `adm_`
    - Project Management: `pm_`
@@ -52,13 +58,15 @@ description: [lint] 执行全项目代码质量审计，包含 Ruff 静态检查
    - Report / Dashboard: `rpt_`
    - System / Infra: `sys_`
 
-5. **依赖导入审计 (Dependency Health)**
+1. **依赖导入审计 (Dependency Health)**
    运行环境依赖检查脚本：
-   ```powershell
+
+   ```bash
    python scripts/check_imports.py
    ```
 
 ## 完工标准 (DoD)
+
 - [ ] `just lint` 输出 0 错误 (Green Build)。
 - [ ] 若存在阻塞性错误（如代码无法导入），必须立即修复。
 - [ ] 若因架构需求显式忽略规则，需在 `ruff.toml` 或行内 `# noqa` 标注原因。

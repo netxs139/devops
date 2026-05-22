@@ -1,7 +1,6 @@
----
-name: ai-solve
-description: Workflow for ai-solve
----
+______________________________________________________________________
+
+## name: ai-solve description: Workflow for ai-solve
 
 # Workflow: /ai-solve (测试驱动意图：自愈合编码流水线 v2.3)
 
@@ -78,8 +77,8 @@ ______________________________________________________________________
 1. **前端"Red"信号定义 [NEW]**：
    前端没有 pytest，但必须在动手前明确"什么是成功"：
 
-   - **HTTP 可达性**：`Invoke-WebRequest -Uri "http://localhost:8000/static/<页面>" | StatusCode` → 期望 200
-   - **API 响应**：`Invoke-WebRequest -Uri "http://localhost:8000/<api路径>"` → 期望返回正确 JSON
+   - **HTTP 可达性**：`curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/static/<页面>` → 期望 200
+   - **API 响应**：`curl -s http://localhost:8000/<api路径>` → 期望返回正确 JSON
    - **DOM 渲染**：图表容器 `getBoundingClientRect().height > 0`（浏览器 DevTools 验证）
 
 ### 阶段 2F：前端闭环微循环 (Frontend Micro-Loop) [NEW]
@@ -88,16 +87,16 @@ ______________________________________________________________________
 
 1. **HTTP 可达性验证（第一层 Green）**：
 
-   ```powershell
-   Invoke-WebRequest -Uri "http://localhost:8000/static/<页面>" -UseBasicParsing | Select-Object StatusCode
+   ```bash
+   curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/static/<页面>
    ```
 
    若返回 404 → 检查静态文件路径与 FastAPI `StaticFiles` mount 配置。
 
 1. **API 端点验证（第二层 Green）**：
 
-   ```powershell
-   Invoke-WebRequest -Uri "http://localhost:8000/<api路径>" -UseBasicParsing | Select-Object StatusCode, Content
+   ```bash
+   curl -s http://localhost:8000/<api路径>
    ```
 
    若返回 422/500 → 检查 Pydantic Schema 与查询逻辑。
