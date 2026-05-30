@@ -8,9 +8,9 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from .config import Config
-from .core.dora_service import DORAService
-from .core.plugin_loader import PluginLoader
-from .core.promotion_service import PromotionService
+from .services.dora_service import DORAService
+from .services.plugin_loader import PluginLoader
+from .services.promotion_service import PromotionService
 from .models.base_models import Base
 from .mq import MessageQueue
 

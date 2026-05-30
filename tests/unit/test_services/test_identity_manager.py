@@ -8,7 +8,7 @@ import unittest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from devops_collector.core.identity_manager import IdentityManager
+from devops_collector.services.identity_manager import IdentityManager
 from devops_collector.models.base_models import Base, IdentityMapping
 
 

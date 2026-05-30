@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devops_collector.core.plugin_loader import PluginLoader
+from devops_collector.services.plugin_loader import PluginLoader
 
 
 @pytest.fixture
@@ -19,7 +19,7 @@ def test_autodiscover_basic(clean_loader):
         mock_settings.plugin.enabled_plugins = ["mock_p1"]
 
         # Mock Path class in the module
-        with patch("devops_collector.core.plugin_loader.Path") as MockPath:
+        with patch("devops_collector.services.plugin_loader.Path") as MockPath:
             plugins_dir = MockPath.return_value
             plugins_dir.exists.return_value = True
 

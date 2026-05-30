@@ -17,8 +17,8 @@ from sqlalchemy.orm import sessionmaker
 
 # 触发插件自动发现
 from .config import Config
-from .core.plugin_loader import PluginLoader
-from .core.registry import PluginRegistry
+from .services.plugin_loader import PluginLoader
+from .services.registry import PluginRegistry
 from .models.base_models import Base
 from .mq import MessageQueue
 

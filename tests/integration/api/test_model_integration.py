@@ -20,7 +20,7 @@ def run_integration_test():
     print("Starting deep integration test...")
 
     # 延迟加载，防止 collection 阶段死锁
-    from devops_collector.core.plugin_loader import PluginLoader
+    from devops_collector.services.plugin_loader import PluginLoader
 
     PluginLoader.autodiscover()
     PluginLoader.load_models()
@@ -178,7 +178,7 @@ def run_integration_test():
         assert saved_project.last_activity_at > old_activity
         print("  - Event Listener (Project.last_activity_at) verified.")
         test_pipe = Pipeline(id=888, project_id=50001, status="success")
-        test_deploy = Deployment(id=777, project_id=50001, status="success", environment="Production")
+        test_deploy = Deployment(id=777, project_id=50001, status="success", environment="Production", is_production=True)
         session.add(test_pipe)
         session.add(test_deploy)
         session.commit()
@@ -318,7 +318,7 @@ def run_integration_test():
         assert ghost_commit.gitlab_user_id == user_uuid
         print("  - Global Event (IdentityMapping -> Commit auto-link) verified.")
         print("Scenario 12: DORA MTTR & Change Failure Rate (Hybrid Aggregates)...")
-        deploy = Deployment(id=90001, project_id=50001, environment="production", status="success", created_at=datetime.now(UTC))
+        deploy = Deployment(id=90001, project_id=50001, environment="production", status="success", created_at=datetime.now(UTC), is_production=True)
         session.add(deploy)
         incident_issue = Issue(
             id=90002,
@@ -366,6 +366,7 @@ def run_integration_test():
             status="success",
             sha="feat_sha_123",
             created_at=datetime.now(UTC),
+            is_production=True,
         )
         session.add(prod_deploy)
         session.commit()

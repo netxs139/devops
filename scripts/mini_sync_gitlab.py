@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 sys.path.append(os.getcwd())
 
 from devops_collector.config import settings
-from devops_collector.core.registry import PluginRegistry
+from devops_collector.services.registry import PluginRegistry
 from devops_collector.plugins import load_all_plugins
 from devops_collector.plugins.gitlab.gitlab_client import GitLabClient
 from devops_collector.plugins.gitlab.models import GitLabProject

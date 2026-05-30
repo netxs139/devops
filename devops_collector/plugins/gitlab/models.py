@@ -31,6 +31,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import Mapped, backref, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -1708,3 +1709,4 @@ events.register_events()
 
 # 动态挂载反向关联，规避 base_models 中的循环引用 NameError
 User.project_memberships = relationship("GitLabProjectMember", back_populates="user", primaryjoin=lambda: User.global_user_id == GitLabProjectMember.user_id)
+User.projects = association_proxy("project_memberships", "project")
