@@ -14,7 +14,7 @@ class TestGitLabWorkerEdgeCases(unittest.TestCase):
     def setUp(self):
         """初始化测试环境，使用 Mock 隔离外部依赖。"""
         # 预加载模型以避免 SQLAlchemy 映射错误
-        from devops_collector.core.plugin_loader import PluginLoader
+        from devops_collector.services.plugin_loader import PluginLoader
 
         PluginLoader.autodiscover()
         PluginLoader.load_models()

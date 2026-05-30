@@ -12,7 +12,7 @@ from sqlalchemy import create_engine
 # 添加项目根目录到路径
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from devops_collector.core.plugin_loader import PluginLoader
+from devops_collector.services.plugin_loader import PluginLoader
 from devops_collector.models.base_models import Base
 
 

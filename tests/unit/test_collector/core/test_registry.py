@@ -1,6 +1,6 @@
 import pytest
 
-from devops_collector.core.registry import PluginRegistry
+from devops_collector.services.registry import PluginRegistry
 
 
 class MockClient:

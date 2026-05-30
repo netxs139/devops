@@ -48,7 +48,7 @@ class TestZenTaoWorker(unittest.TestCase):
         mapping = IdentityMapping(source_system="zentao", external_user_id="dev1", global_user_id=user.global_user_id)
         self.session.add(mapping)
         self.session.commit()
-        from devops_collector.core.identity_manager import IdentityManager
+        from devops_collector.services.identity_manager import IdentityManager
 
         IdentityManager._local_cache.clear()
         self.worker = ZenTaoWorker(self.session, self.mock_client)
