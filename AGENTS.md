@@ -1,7 +1,7 @@
 # DevOps Platform 机器人协作守则 (AGENTS.md)
 
 > **调度中心**：继承 [GEMINI.md](/home/netxs/.gemini/GEMINI.md) (底座) 与 [contexts.md](contexts.md) (宪法)。
-> **新 Agent 提示**：若不理解下述规则的物理边界或设计意图，**必须首先**深度查阅 [`docs/LAWS_DETAIL.md`](docs/LAWS_DETAIL.md)。
+> **新 Agent 提示**：若不理解下述规则边界或在特定领域开发，**必须首先**查阅 [contexts.md](contexts.md) 顶部的「领域契约路由表」。
 
 ## 1. 指令调度与专家矩阵 (The Dispatcher)
 
