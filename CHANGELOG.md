@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+- **Git Hooks 体系标准化升级 (A+B) (2026-05-31)**:
+  - **Ruff 原生 Pydocstyle**: 淘汰脆弱的 AST 内联脚本 `check-docstrings`，启用 Ruff `D101/D102/D103/D105` 规则，执行速度提升百倍，同时引入格式校验能力。
+  - **标准防呆护栏**: 新增 `trailing-whitespace`, `end-of-file-fixer`, `check-yaml`, `check-toml`, `check-merge-conflict` 五项官方 pre-commit-hooks 防止低级错误入库。
+  - **Layer 1 本地类型门禁**: 在 pre-commit 中接入 `mypy` 静态类型检查，确保 AI 生成的代码在 `git commit` 时即被类型防线拦截。
+  - **Commit 规范强拦截**: 接入 `commitizen`，物理强制 Conventional Commits 格式（`feat/fix/docs: ...`），与 `AGENTS.md §3.3` 契约对齐。
+  - **Layer 2 CI/CD 类型验收门禁**: 在 `.gitlab-ci.yml` 新增独立 `static-analysis` stage，在 MR 和 `main` 分支触发 `mypy` 全局扫描，作为组织级验收防线（当前 `allow_failure: true` 观测模式，待 Tech-Debt 清零后切换为强制拦截）。
+
 - **FastAPI 路由与 Service 层深度集成 (Phase 1)**:
   - **解耦中转层**: 完成了 `admin`, `iteration`, `plugin`, `security`, `devex_pulse`, `service_desk` 等 7+ 个核心路由的重构，由 `devops_collector.core` 映射切换为直接引用 `devops_collector.services`。
   - **双轨调用对齐**: 确保 Web 端与 CLI 端共享同一套重构后的业务逻辑服务，通过了全量单元测试 (`tests/unit/test_portal/`)。

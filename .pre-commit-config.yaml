@@ -51,14 +51,52 @@ repos:
         types: [python, markdown, html, css, javascript]
         exclude: '^(tests/|archived/)'
 
-      # 检查中文注释规范
-      - id: check-docstrings
-        name: Check Docstrings Exist
-        entry: >
-          uv run python -c "import sys, ast; tree = ast.parse(open(sys.argv[1], encoding='utf-8').read()); [print(f'Missing docstring: {n.name} in {sys.argv[1]}') for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.ClassDef)) and not ast.get_docstring(n)]"
+      # 标准防呆检查 (pre-commit-hooks managed by uv)
+      - id: trailing-whitespace
+        name: Trailing Whitespace
+        entry: uv run trailing-whitespace-fixer
+        language: system
+        types: [text]
+
+      - id: end-of-file-fixer
+        name: End of File Fixer
+        entry: uv run end-of-file-fixer
+        language: system
+        types: [text]
+
+      - id: check-yaml
+        name: Check YAML
+        entry: uv run check-yaml
+        language: system
+        types: [yaml]
+
+      - id: check-toml
+        name: Check TOML
+        entry: uv run check-toml
+        language: system
+        types: [toml]
+
+      - id: check-merge-conflict
+        name: Check Merge Conflict
+        entry: uv run check-merge-conflict
+        language: system
+        types: [text]
+
+      # 静态类型检查
+      - id: mypy
+        name: Mypy Static Type Checking
+        entry: uv run mypy
         language: system
         types: [python]
-        exclude: '^(tests/|archived/|scripts/)'
+        require_serial: true
+        exclude: 'devops_collector/core/schemas\.py'
+
+      # Commit Message 规范拦截
+      - id: commitizen
+        name: Check Commit Message (Conventional Commits)
+        entry: uv run cz check --commit-msg-file
+        language: system
+        stages: [commit-msg]
 
 
       # HTML/Jinja2 缩进规范 (djHTML)

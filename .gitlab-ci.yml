@@ -3,12 +3,32 @@
 # 此配置确保云端流水线与本地 `make full-gate` 完全对齐，消除环境脱节。
 
 stages:
+  - static-analysis
   - full-gate
   - deploy
 
 variables:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
+
+# ==================== 静态分析：类型安全验收 ====================
+type-check-mypy:
+  stage: static-analysis
+  image: python:3.12-slim
+  before_script:
+    - pip install uv --quiet
+    - uv sync --only-group dev --index-url https://pypi.tuna.tsinghua.edu.cn/simple
+  script:
+    - echo "[Mypy] Running static type check (CI/CD Governance Gate)..."
+    - uv run mypy devops_collector devops_portal
+      --ignore-missing-imports
+      --exclude 'devops_collector/plugins/(sonarqube|jenkins|nexus|jfrog|wecom)/'
+      --exclude 'devops_collector/alembic/'
+      --exclude 'devops_collector/core/schemas\.py'
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+  allow_failure: true  # 当前阶段为观测模式，积累基线后切换为 false 强制拦截
 
 # ==================== 核心卡点：全门禁 ====================
 project-full-gate:

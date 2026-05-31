@@ -24,7 +24,7 @@ exclude = [
 # PL: Pylint (逻辑检查)
 # B: flake8-bugbear (逻辑漏洞)
 # ERA: eradicate (清理僵尸代码)
-select = ["E", "W", "F", "I", "UP", "PL", "B", "ERA"]
+select = ["E", "W", "F", "I", "UP", "PL", "B", "ERA", "D101", "D102", "D103", "D105"]
 
 # 忽略的特定规则 (与其主要工具逻辑对齐)
 ignore = [
@@ -51,6 +51,8 @@ fixable = ["ALL"]
 # 保护插件注册逻辑：__init__.py 中的 unused imports 通常是有意为之的（用于 API 暴露或插件注册）
 "__init__.py" = ["F401"]
 "devops_collector/core/*_service.py" = ["F403", "F401"]
+"tests/*" = ["D"]
+"scripts/*" = ["D"]
 
 [lint.isort]
 # isort 专属配置
