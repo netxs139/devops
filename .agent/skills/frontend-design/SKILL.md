@@ -38,7 +38,7 @@ ______________________________________________________________________
 
 读取项目设计规范文件（若存在）：
 
-- `docs/frontend/CONVENTIONS.md` — 项目 CSS 变量体系与 Apple Style 规范
+- `docs/contracts/frontend.md` — **前端唯一权威规范**（含 Apple Style、组件契约、Dashboard Map）
 - `devops_portal/static/css/main.css` — 当前全局 CSS 变量定义
 
 **强制约束**（来自 `contexts.md §6`）：
