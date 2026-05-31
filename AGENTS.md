@@ -22,12 +22,12 @@
 
 - **意图映射**: `"下班" / "吃饭" / "休息"` ➜ `/session-handover` | `"开始" / "上班" / "干活"` ➜ `/session-handover (Bootstrap)` | `"复杂/未知需求"` ➜ `/task-kickoff (SPIKE-FIRST Evaluation)`。
 - **专家链**: `模型变更` ➜ `mdm-integrity-arbiter` | `SQL评审` ➜ `dbt-pipeline-auditor` | `高危重构` ➜ `chaos-sentinel` | `严谨性` ➜ `engineering-rigor-arbiter`。
-- **技术锚点**: `编码`➜[#1.5](contexts.md#L15), `DB`➜[#5](contexts.md#L171), `UI`➜[#6](contexts.md#L251), `命名`➜[#11](contexts.md#L551)。
+- **技术锚点**: `编码`➜[`contexts.md §1.5`](contexts.md), `DB`➜[`contracts/database.md`](docs/contracts/database.md), `UI`➜[`contracts/frontend.md`](docs/contracts/frontend.md), `命名`➜[`frontend.md §3`](docs/contracts/frontend.md)。
 - **UI 开发强制前置** \[MANDATORY\]: 任何涉及 `devops_portal/static/` 的前端工作，**必须**先激活 `frontend-design` SKILL，执行 **Step 0（项目合规性预检）**，依次完成：Dashboard Map 注册核查 → 读取 `docs/contracts/frontend.md` → 确认 API ResponseSchema 存在。
 
 ## 2. 软件生命周期红线 (Lifecycle Laws) [MANDATORY]
 
-1. **执行锁 (Execution Lock)**: 仅在显式信号（“OK/开始”）后修改代码；“？”判定为咨询态，禁止物理编码。
+1. **执行锁 (Execution Lock)**: 仅在显式信号（“OK/开始”）后修改代码；“？”判定为咨询态，禁止物理编码。→ *规则定义继承自 `GEMINI.md §二.2`，本项目无覆盖；项目级 DoD 扩展见 `contexts.md §1.1`。*
 1. **交接审计自进化**: [L2-L4] 离场 DoD 强制执行 `/evolve-skill`；严禁在未持久化日志时宣告完工。
 1. **偏航必锚与计划外资产**: 偏离 Focus > 1 回合必须同步文档；临时优化标记为 `[Ad-hoc]` 并沉淀入 ADR。
 1. **中断恢复嗅探**: 启动/收尾强制 `git status -u`；发现未跟踪脚本必须汇报并整合进 `progress.txt`。

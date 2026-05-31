@@ -14,6 +14,7 @@
 
 | 触发条件 (如果你涉及以下领域...) | 必须查阅的契约文档 | 覆盖内容 |
 | :--- | :--- | :--- |
+| AI 调度规则、Skill 触发、会话交接 | [`AGENTS.md`](file:///home/netxs/workspace/devops/AGENTS.md) | 指令矩阵、生命周期红线、交互契约 |
 | `models/`, 数据库 Schema, 实体映射 | [`docs/contracts/database.md`](file:///home/netxs/workspace/devops/docs/contracts/database.md) | Surrogate PK, SCD2, MDM 脱敏, 行级权限 |
 | `devops_portal/static/`, CSS/JS | [`docs/contracts/frontend.md`](file:///home/netxs/workspace/devops/docs/contracts/frontend.md) | Apple Style, Dashboard Map 索引注册 |
 | `dbt_project/`, SQL 数据转换 | [`docs/contracts/dbt.md`](file:///home/netxs/workspace/devops/docs/contracts/dbt.md) | dbt 分层规范, JSONB 类型安全, 报表视图约定 |
