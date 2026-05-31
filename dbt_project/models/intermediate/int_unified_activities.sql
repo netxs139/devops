@@ -1,16 +1,16 @@
 
 /*
     统一活动流 (Unified Activity Stream) - v3
-    
+
     架构逻辑：
     1. 本模型为视图 (View)，不存储数据。
-    2. 它将增量生成的 raw 信号 (int_raw_activities) 与 
+    2. 它将增量生成的 raw 信号 (int_raw_activities) 与
        动态更新的身份校准表 (int_identity_alignment) 进行实时关联。
     3. 解决了“身份风暴”：即便某人的 Email 被重新关联到另一个 OneID，
        此处视图查询时会自动指向新的 OneID，无需重跑数百万条历史改增量。
 */
 
-with 
+with
 
 raw_stream as (
     select * from {{ ref('int_raw_activities') }}
@@ -38,7 +38,7 @@ final as (
         coalesce(i.master_user_id, '00000000-0000-0000-0000-000000000000'::uuid) as author_user_id,
         coalesce(u.real_name, 'Unknown') as author_name
     from raw_stream r
-    left join identities i 
+    left join identities i
         on (r.source_system = i.source_system or i.source_system = 'ANY')
         and r.identifier_type = i.identifier_type
         and r.external_author_id = i.identifier_value

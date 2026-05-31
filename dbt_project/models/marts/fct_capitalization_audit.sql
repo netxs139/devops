@@ -1,7 +1,7 @@
 
 /*
     研发资本化审计事实模型 (Capitalization Audit Fact)
-    
+
     逻辑：
     1. 聚合各项目在不同时间段的 CapEx vs OpEx 活动分布。
     2. 计算资本化率 (Capitalization Rate)。
@@ -41,13 +41,13 @@ select
     capex_impact,
     opex_impact,
     total_impact,
-    case 
+    case
         when total_impact > 0 then round(capex_impact * 100.0 / total_impact, 2)
-        else 0 
+        else 0
     end as capitalization_rate,
-    
+
     -- 审计状态
-    case 
+    case
         when (capex_impact * 100.0 / nullif(total_impact, 0)) > 80 then 'HIGH_CAPEX_INSPECTION_REQUIRED'
         when total_impact > 100 then 'AUDIT_READY'
         else 'INSUFFICIENT_DATA'

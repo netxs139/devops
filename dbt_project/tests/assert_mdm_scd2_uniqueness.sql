@@ -4,8 +4,8 @@
 with
 
 identities as (
-    select 
-        cast(global_user_id as text) as entity_id, 
+    select
+        cast(global_user_id as text) as entity_id,
         'mdm_identities' as source_table,
         count(*) as current_count
     from {{ source('raw', 'mdm_identities') }}
@@ -15,8 +15,8 @@ identities as (
 ),
 
 organizations as (
-    select 
-        cast(id as text) as entity_id, 
+    select
+        cast(id as text) as entity_id,
         'mdm_organizations' as source_table,
         count(*) as current_count
     from {{ source('raw', 'mdm_organizations') }}
@@ -26,8 +26,8 @@ organizations as (
 ),
 
 projects as (
-    select 
-        cast(id as text) as entity_id, 
+    select
+        cast(id as text) as entity_id,
         'mdm_projects' as source_table,
         count(*) as current_count
     from {{ source('raw', 'mdm_projects') }}

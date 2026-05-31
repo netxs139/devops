@@ -34,7 +34,7 @@ MIRRORS='[
 if [ -f "$DAEMON_FILE" ]; then
     echo -e "${YELLOW}Existing configuration found. Backing up to $BACKUP_FILE...${NC}"
     cp "$DAEMON_FILE" "$BACKUP_FILE"
-    
+
     # 简单的合并逻辑太复杂，这里选择提示用户覆盖或手动合并
     # 为了自动化，我们尝试检查是否已经是有效的JSON，若需要高级合并建议手动处理
     # 这里采取覆盖策略，但发出警告

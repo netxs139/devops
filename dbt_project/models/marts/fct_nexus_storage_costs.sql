@@ -55,14 +55,14 @@ select
     component_group,
     component_name,
     version,
-    
+
     -- 度量值
     total_bytes,
     size_gb,
     rate as unit_price_per_gb,
     -- 最终月度预估金额 (GB * 单价)
     round(cast(size_gb * rate as numeric), 4) as estimated_monthly_cost_cny,
-    
+
     -- 审计信息
     now() as calculated_at
 from cost_calculation

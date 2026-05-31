@@ -1,12 +1,12 @@
 
 /*
     DWS: 价值流周效指标 (Value Stream Weekly Metrics)
-    
+
     基于 Flow Framework (Tasktop)，度量业务价值的流动。
     划分四种价值类型：Features, Defects, Debts, Risks.
 */
 
-with 
+with
 
 flow_items as (
     select * from {{ ref('int_flow_items') }}
@@ -35,13 +35,13 @@ select
     closed_defects,
     closed_debts,
     closed_risks,
-    
+
     -- Flow Distribution (分配分布比例)
     round(closed_features * 100.0 / nullif(flow_velocity, 0), 2) as feature_dist_pct,
     round(closed_defects * 100.0 / nullif(flow_velocity, 0), 2) as defect_dist_pct,
     round(closed_debts * 100.0 / nullif(flow_velocity, 0), 2) as debt_dist_pct,
     round(closed_risks * 100.0 / nullif(flow_velocity, 0), 2) as risk_dist_pct,
-    
+
     -- Flow Time (平均时长)
     round(sum_flow_time_days / nullif(flow_velocity, 0), 2) as avg_flow_time_days
 

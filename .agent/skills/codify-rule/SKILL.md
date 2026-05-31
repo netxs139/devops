@@ -1,7 +1,6 @@
----
-name: codify-rule
-description: Workflow for codify-rule
----
+______________________________________________________________________
+
+## name: codify-rule description: Workflow for codify-rule
 
 # Workflow: /codify-rule (活宪法：规则自动化提取与物理护栏固化)
 

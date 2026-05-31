@@ -9,7 +9,7 @@
 CREATE OR REPLACE VIEW view_finance_project_profitability AS
 WITH project_revenue AS (
     -- 汇总项目的已达成收入
-    SELECT 
+    SELECT
         rc.product_id,
         SUM(cpn.billing_amount) as total_revenue
     FROM revenue_contracts rc
@@ -19,7 +19,7 @@ WITH project_revenue AS (
 ),
 project_labor_cost AS (
     -- 汇总项目的人力成本
-    SELECT 
+    SELECT
         jp.gitlab_project_id as project_id,
         SUM((ji.time_spent / 3600.0) * COALESCE(lrc.hourly_rate, 0)) as total_labor_cost,
         COUNT(DISTINCT ji.assignee_user_id) as active_contributors
@@ -32,7 +32,7 @@ project_labor_cost AS (
 ),
 project_purchase_cost AS (
     -- 汇总项目的采购成本（云成本、外包等）
-    SELECT 
+    SELECT
         p.id as project_id,
         SUM(pc.total_amount) as total_purchase_cost
     FROM purchase_contracts pc
@@ -40,7 +40,7 @@ project_purchase_cost AS (
     JOIN projects p ON prod.id = p.id  -- 简化逻辑，实际需要更复杂的映射
     GROUP BY p.id
 )
-SELECT 
+SELECT
     p.name as project_name,
     prod.name as product_name,
     COALESCE(pr.total_revenue, 0) as total_revenue,
@@ -50,26 +50,26 @@ SELECT
     -- 毛利
     COALESCE(pr.total_revenue, 0) - (COALESCE(plc.total_labor_cost, 0) + COALESCE(ppc.total_purchase_cost, 0)) as gross_profit,
     -- 毛利率
-    CASE 
+    CASE
         WHEN COALESCE(pr.total_revenue, 0) > 0 THEN
-            ROUND((COALESCE(pr.total_revenue, 0) - (COALESCE(plc.total_labor_cost, 0) + COALESCE(ppc.total_purchase_cost, 0))) 
+            ROUND((COALESCE(pr.total_revenue, 0) - (COALESCE(plc.total_labor_cost, 0) + COALESCE(ppc.total_purchase_cost, 0)))
                   / COALESCE(pr.total_revenue, 0) * 100, 2)
         ELSE 0
     END as gross_margin_pct,
     -- 人效比
-    CASE 
+    CASE
         WHEN COALESCE(plc.active_contributors, 0) > 0 THEN
             ROUND(COALESCE(pr.total_revenue, 0) / plc.active_contributors, 2)
         ELSE 0
     END as revenue_per_fte,
     -- 成本结构
-    CASE 
+    CASE
         WHEN (COALESCE(plc.total_labor_cost, 0) + COALESCE(ppc.total_purchase_cost, 0)) > 0 THEN
             ROUND(COALESCE(plc.total_labor_cost, 0) / (COALESCE(plc.total_labor_cost, 0) + COALESCE(ppc.total_purchase_cost, 0)) * 100, 1)
         ELSE 0
     END as labor_cost_ratio_pct,
     -- 盈利状态
-    CASE 
+    CASE
         WHEN COALESCE(pr.total_revenue, 0) - (COALESCE(plc.total_labor_cost, 0) + COALESCE(ppc.total_purchase_cost, 0)) > 0 THEN 'Profitable'
         WHEN COALESCE(pr.total_revenue, 0) = 0 THEN 'No Revenue'
         ELSE 'Loss-Making'
@@ -85,7 +85,7 @@ WHERE p.archived = false;
 -- 2. 里程碑交付与回款健康度 (Milestone-Payment Health)
 -- 作用：监控技术交付进度与财务回款节奏的同步性
 CREATE OR REPLACE VIEW view_finance_milestone_payment_health AS
-SELECT 
+SELECT
     rc.contract_no,
     rc.title as contract_title,
     cpn.node_name as payment_node,
@@ -96,13 +96,13 @@ SELECT
     cpn.is_achieved as payment_achieved,
     cpn.achieved_at as payment_achieved_at,
     -- 交付-回款延迟（天数）
-    CASE 
+    CASE
         WHEN cpn.achieved_at IS NOT NULL AND m.due_date IS NOT NULL THEN
             EXTRACT(DAY FROM (cpn.achieved_at - m.due_date))
         ELSE NULL
     END as delivery_payment_lag_days,
     -- 健康度状态
-    CASE 
+    CASE
         WHEN cpn.is_achieved = true AND m.state = 'closed' THEN 'Healthy: Delivered & Paid'
         WHEN cpn.is_achieved = false AND m.state = 'closed' THEN 'Risk: Delivered but Unpaid'
         WHEN cpn.is_achieved = false AND m.due_date < CURRENT_DATE THEN 'Critical: Overdue Milestone'
@@ -113,8 +113,8 @@ FROM contract_payment_nodes cpn
 JOIN revenue_contracts rc ON cpn.contract_id = rc.id
 LEFT JOIN milestones m ON cpn.linked_milestone_id = m.id
 WHERE cpn.linked_system = 'gitlab'
-ORDER BY 
-    CASE 
+ORDER BY
+    CASE
         WHEN cpn.is_achieved = false AND m.due_date < CURRENT_DATE THEN 1
         WHEN cpn.is_achieved = false AND m.state = 'closed' THEN 2
         ELSE 3
@@ -126,7 +126,7 @@ ORDER BY
 -- 作用：监控项目的人力成本消耗速度与预算健康度
 CREATE OR REPLACE VIEW view_finance_burn_rate_alert AS
 WITH monthly_cost AS (
-    SELECT 
+    SELECT
         jp.gitlab_project_id as project_id,
         TO_CHAR(ji.updated_at, 'YYYY-MM') as month_str,
         SUM((ji.time_spent / 3600.0) * COALESCE(lrc.hourly_rate, 0)) as monthly_labor_cost
@@ -139,14 +139,14 @@ WITH monthly_cost AS (
     GROUP BY jp.gitlab_project_id, TO_CHAR(ji.updated_at, 'YYYY-MM')
 ),
 project_budget AS (
-    SELECT 
+    SELECT
         prod.id as product_id,
         SUM(rc.total_value) * 0.7 as estimated_budget  -- 假设70%为成本预算
     FROM revenue_contracts rc
     JOIN products prod ON rc.product_id = prod.id
     GROUP BY prod.id
 )
-SELECT 
+SELECT
     p.name as project_name,
     -- 累计已消耗成本
     SUM(mc.monthly_labor_cost) as total_spent,
@@ -155,7 +155,7 @@ SELECT
     -- 月均燃烧率
     ROUND(AVG(mc.monthly_labor_cost), 2) as avg_monthly_burn_rate,
     -- 预算消耗率
-    CASE 
+    CASE
         WHEN COALESCE(pb.estimated_budget, 0) > 0 THEN
             ROUND(SUM(mc.monthly_labor_cost) / pb.estimated_budget * 100, 2)
         ELSE 0
@@ -163,13 +163,13 @@ SELECT
     -- 剩余预算
     COALESCE(pb.estimated_budget, 0) - SUM(mc.monthly_labor_cost) as remaining_budget,
     -- 跑道时长（月）
-    CASE 
+    CASE
         WHEN AVG(mc.monthly_labor_cost) > 0 THEN
             ROUND((COALESCE(pb.estimated_budget, 0) - SUM(mc.monthly_labor_cost)) / AVG(mc.monthly_labor_cost), 1)
         ELSE NULL
     END as runway_months,
     -- 预警状态
-    CASE 
+    CASE
         WHEN COALESCE(pb.estimated_budget, 0) = 0 THEN 'No Budget Defined'
         WHEN SUM(mc.monthly_labor_cost) / NULLIF(pb.estimated_budget, 0) > 0.9 THEN 'Critical: Budget Exhausted'
         WHEN SUM(mc.monthly_labor_cost) / NULLIF(pb.estimated_budget, 0) > 0.7 THEN 'Warning: High Consumption'
@@ -187,7 +187,7 @@ GROUP BY p.name, pb.estimated_budget;
 -- 作用：将 SonarQube 的技术债务转换为财务成本
 CREATE OR REPLACE VIEW view_finance_tech_debt_cost AS
 WITH project_debt AS (
-    SELECT 
+    SELECT
         sp.gitlab_project_id as project_id,
         SUM(sm.sqale_index) / 60.0 as total_debt_hours,  -- 转换为小时
         SUM(sm.bugs) as total_bugs,
@@ -204,14 +204,14 @@ avg_hourly_rate AS (
     FROM labor_rate_configs
     WHERE is_active = true
 )
-SELECT 
+SELECT
     p.name as project_name,
     g.name as group_name,
     ROUND(pd.total_debt_hours, 1) as debt_hours,
     -- 债务总额
     ROUND(pd.total_debt_hours * ahr.avg_rate, 2) as debt_cost,
     -- 债务密度（每千行代码的债务成本）
-    CASE 
+    CASE
         WHEN sm.ncloc > 0 THEN
             ROUND((pd.total_debt_hours * ahr.avg_rate) / (sm.ncloc / 1000.0), 2)
         ELSE 0
@@ -219,7 +219,7 @@ SELECT
     pd.total_bugs,
     pd.total_code_smells,
     -- 债务等级
-    CASE 
+    CASE
         WHEN pd.total_debt_hours * ahr.avg_rate > 100000 THEN 'Critical: Debt Black Hole'
         WHEN pd.total_debt_hours * ahr.avg_rate > 50000 THEN 'High: Significant Debt'
         WHEN pd.total_debt_hours * ahr.avg_rate > 10000 THEN 'Medium: Manageable Debt'
@@ -229,7 +229,7 @@ FROM projects p
 JOIN gitlab_groups g ON p.group_id = g.id
 LEFT JOIN project_debt pd ON p.id = pd.project_id
 LEFT JOIN sonar_projects sp ON p.id = sp.gitlab_project_id
-LEFT JOIN sonar_measures sm ON sp.id = sm.project_id 
+LEFT JOIN sonar_measures sm ON sp.id = sm.project_id
     AND sm.analysis_date = (SELECT MAX(analysis_date) FROM sonar_measures WHERE project_id = sm.project_id)
 CROSS JOIN avg_hourly_rate ahr
 WHERE p.archived = false
@@ -241,12 +241,12 @@ ORDER BY debt_cost DESC;
 -- 作用：对比外包项目与自研项目的成本与质量
 CREATE OR REPLACE VIEW view_finance_outsourcing_analysis AS
 WITH project_classification AS (
-    SELECT 
+    SELECT
         p.id as project_id,
         p.name as project_name,
-        CASE 
+        CASE
             WHEN EXISTS (
-                SELECT 1 FROM purchase_contracts pc 
+                SELECT 1 FROM purchase_contracts pc
                 WHERE pc.vendor_name LIKE '%外包%' OR pc.vendor_name LIKE '%Outsourc%'
             ) THEN 'Outsourced'
             ELSE 'In-house'
@@ -254,7 +254,7 @@ WITH project_classification AS (
     FROM projects p
 ),
 project_metrics AS (
-    SELECT 
+    SELECT
         jp.gitlab_project_id as project_id,
         SUM((ji.time_spent / 3600.0) * COALESCE(lrc.hourly_rate, 0)) as total_cost,
         COUNT(DISTINCT CASE WHEN ji.status IN ('Done', 'Closed') THEN ji.id END) as delivered_features,
@@ -265,7 +265,7 @@ project_metrics AS (
     LEFT JOIN labor_rate_configs lrc ON u.job_title_level = lrc.job_title_level
     GROUP BY jp.gitlab_project_id
 )
-SELECT 
+SELECT
     pc.project_type,
     COUNT(DISTINCT pc.project_id) as project_count,
     -- 平均单位产出成本
@@ -275,9 +275,9 @@ SELECT
     -- 质量调整成本
     ROUND(AVG(pm.total_cost * (1 + pm.rework_count::numeric / NULLIF(pm.delivered_features, 0))), 2) as quality_adjusted_cost,
     -- 成本效益评级
-    CASE 
-        WHEN pc.project_type = 'Outsourced' AND AVG(pm.total_cost / NULLIF(pm.delivered_features, 0)) > 
-             (SELECT AVG(pm2.total_cost / NULLIF(pm2.delivered_features, 0)) FROM project_metrics pm2 
+    CASE
+        WHEN pc.project_type = 'Outsourced' AND AVG(pm.total_cost / NULLIF(pm.delivered_features, 0)) >
+             (SELECT AVG(pm2.total_cost / NULLIF(pm2.delivered_features, 0)) FROM project_metrics pm2
               JOIN project_classification pc2 ON pm2.project_id = pc2.project_id WHERE pc2.project_type = 'In-house') * 1.2
         THEN 'Expensive: Consider In-house'
         WHEN pc.project_type = 'Outsourced' THEN 'Cost-Effective'
@@ -292,11 +292,11 @@ GROUP BY pc.project_type;
 -- 作用：识别可资本化的研发投入，确保会计合规
 CREATE OR REPLACE VIEW view_finance_capex_compliance AS
 WITH issue_classification AS (
-    SELECT 
+    SELECT
         jp.gitlab_project_id as project_id,
         ji.id as issue_id,
         ji.time_spent / 3600.0 as spent_hours,
-        CASE 
+        CASE
             WHEN ji.labels::text LIKE '%Feature%' OR ji.labels::text LIKE '%Epic%' THEN 'CAPEX'
             WHEN ji.labels::text LIKE '%Bug%' OR ji.labels::text LIKE '%Refactor%' THEN 'OPEX'
             ELSE 'OPEX'  -- 默认费用化
@@ -306,14 +306,14 @@ WITH issue_classification AS (
     WHERE ji.time_spent > 0
 ),
 project_capex_summary AS (
-    SELECT 
+    SELECT
         project_id,
         SUM(CASE WHEN accounting_category = 'CAPEX' THEN spent_hours ELSE 0 END) as capex_hours,
         SUM(spent_hours) as total_hours
     FROM issue_classification
     GROUP BY project_id
 )
-SELECT 
+SELECT
     p.name as project_name,
     ROUND(pcs.capex_hours, 1) as capitalized_hours,
     ROUND(pcs.total_hours, 1) as total_hours,
@@ -322,7 +322,7 @@ SELECT
     -- 资本化金额
     ROUND(pcs.capex_hours * (SELECT AVG(hourly_rate) FROM labor_rate_configs WHERE is_active = true), 2) as capitalized_amount,
     -- 合规性评估
-    CASE 
+    CASE
         WHEN pcs.capex_hours / NULLIF(pcs.total_hours, 0) < 0.3 THEN 'Low Risk: Conservative'
         WHEN pcs.capex_hours / NULLIF(pcs.total_hours, 0) BETWEEN 0.3 AND 0.7 THEN 'Compliant: Reasonable'
         WHEN pcs.capex_hours / NULLIF(pcs.total_hours, 0) > 0.7 THEN 'High Risk: Aggressive'

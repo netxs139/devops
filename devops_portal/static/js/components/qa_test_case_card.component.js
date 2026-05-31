@@ -32,7 +32,7 @@ class QaTestCaseCard extends HTMLElement {
             <style>
                 :host { display: block; border-bottom: 1px solid #F0F0F0; }
                 :host(:last-child) { border-bottom: none; }
-                
+
                 .row {
                     display: grid;
                     grid-template-columns: 32px 60px 1fr auto;
@@ -45,7 +45,7 @@ class QaTestCaseCard extends HTMLElement {
                 }
                 .row:hover { background: #F9FAFB; }
                 :host([active]) .row { background: #F2F7FF; border-left: 3px solid #0071e3; }
-                
+
                 .status-icon {
                     width: 10px;
                     height: 10px;
@@ -56,13 +56,13 @@ class QaTestCaseCard extends HTMLElement {
                 .status-failed { background: #FF3B30; box-shadow: 0 0 0 4px rgba(255, 59, 48, 0.1); }
                 .status-pending { background: #8E8E93; }
                 .status-blocked { background: #FF9500; }
-                
+
                 .iid {
                     font-family: var(--g-font-mono);
                     font-size: 12px;
                     color: #86868b;
                 }
-                
+
                 .title {
                     font-size: 14px;
                     font-weight: 500;
@@ -71,13 +71,13 @@ class QaTestCaseCard extends HTMLElement {
                     overflow: hidden;
                     text-overflow: ellipsis;
                 }
-                
+
                 .meta {
                     display: flex;
                     align-items: center;
                     gap: 12px;
                 }
-                
+
                 .label {
                     font-size: 11px;
                     padding: 2px 8px;

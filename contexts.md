@@ -3,7 +3,7 @@
 > **Document Positioning**: This file is the project-specific constitution for **DevOps Platform**.
 >
 > - **全局原则 (Global Rules)**: 基础 AI 协作哲学定义在 `~/.gemini/gemini.md`。
-> - **AI 导航路由 (Meta-Prompt)**: 自动化代理的入场规则、行为守则定义在库根目录 [`AGENTS.md`](file:///home/netxs/workspace/devops/AGENTS.md)。
+> - **AI 导航路由 (Meta-Prompt)**: 自动化代理的入场规则、行为守则定义在库根目录 \[`AGENTS.md`\](file:///home/netxs/workspace/devops/AGENTS.md)。
 > - **项目宪法 (Project Contexts)**: 本文件（`contexts.md`）包含全局架构与编码红线。
 >
 > *优先级：`contexts.md` (业务/技术真相) > `AGENTS.md` (AI 调度指令) > `gemini.md` (全局)。发生冲突时按此优先级执行。*
@@ -12,19 +12,19 @@
 
 为防止认知超载，本代码库的深层技术细节已拆分为独立领域契约。AI Agent 在进行任何具有技术深度的变更前，**必须首先**通过 `view_file` 查阅对应的领域契约：
 
-> 🛡️ **架构纪律：一域一档 (SSOT)** 
+> 🛡️ **架构纪律：一域一档 (SSOT)**
 > 任何领域的核心开发规范**必须且只能**存在于单一契约文档中。严禁将规范散落为“契约 (Contract)”与“指南 (Guide)”双轨制。若发现文档之间存在知识重叠或互相引用导致认知链路断裂，必须立即发起合并并废弃冗余文件。
 
 | 触发条件 (如果你涉及以下领域...) | 必须查阅的契约文档 | 覆盖内容 |
 | :--- | :--- | :--- |
-| AI 调度规则、Skill 触发、会话交接 | [`AGENTS.md`](file:///home/netxs/workspace/devops/AGENTS.md) | 指令矩阵、生命周期红线、交互契约 |
-| `models/`, 数据库 Schema, 实体映射 | [`docs/contracts/database.md`](file:///home/netxs/workspace/devops/docs/contracts/database.md) | Surrogate PK, SCD2, MDM 脱敏, 行级权限 |
-| `devops_portal/static/`, CSS/JS | [`docs/contracts/frontend.md`](file:///home/netxs/workspace/devops/docs/contracts/frontend.md) | Apple Style, Dashboard Map 索引注册 |
-| `dbt_project/`, SQL 数据转换 | [`docs/contracts/dbt.md`](file:///home/netxs/workspace/devops/docs/contracts/dbt.md) | dbt 分层规范, JSONB 类型安全, 报表视图约定 |
-| Docker, RabbitMQ, 调度器, 插件集成 | [`docs/contracts/ops.md`](file:///home/netxs/workspace/devops/docs/contracts/ops.md) | 运维网关, 队列隔离, GitLab/ZenTao 特异防护 |
-| `tests/`, Pytest, 排查Bug, 代码重构 | [`docs/contracts/testing.md`](file:///home/netxs/workspace/devops/docs/contracts/testing.md) | **防御性编程 10 大守则**, 测试层级, 代码门禁 |
+| AI 调度规则、Skill 触发、会话交接 | \[`AGENTS.md`\](file:///home/netxs/workspace/devops/AGENTS.md) | 指令矩阵、生命周期红线、交互契约 |
+| `models/`, 数据库 Schema, 实体映射 | \[`docs/contracts/database.md`\](file:///home/netxs/workspace/devops/docs/contracts/database.md) | Surrogate PK, SCD2, MDM 脱敏, 行级权限 |
+| `devops_portal/static/`, CSS/JS | \[`docs/contracts/frontend.md`\](file:///home/netxs/workspace/devops/docs/contracts/frontend.md) | Apple Style, Dashboard Map 索引注册 |
+| `dbt_project/`, SQL 数据转换 | \[`docs/contracts/dbt.md`\](file:///home/netxs/workspace/devops/docs/contracts/dbt.md) | dbt 分层规范, JSONB 类型安全, 报表视图约定 |
+| Docker, RabbitMQ, 调度器, 插件集成 | \[`docs/contracts/ops.md`\](file:///home/netxs/workspace/devops/docs/contracts/ops.md) | 运维网关, 队列隔离, GitLab/ZenTao 特异防护 |
+| `tests/`, Pytest, 排查Bug, 代码重构 | \[`docs/contracts/testing.md`\](file:///home/netxs/workspace/devops/docs/contracts/testing.md) | **防御性编程 10 大守则**, 测试层级, 代码门禁 |
 
----
+______________________________________________________________________
 
 ## 1. 项目概览 (Overview)
 
@@ -48,13 +48,13 @@
    - **严实假设**: 严禁在存在 20% 以上理解模糊时盲目编码。如果不确定，必须停下来提问而不是猜测。
    - **双重路径**: 存在歧义或多种实现方案时，必须呈现 A/B 权衡选项供人类决策，不得默默选择一种并执行。
    - **诊断豁免**: 为确保排障效率，只读诊断指令（如 `ls`, `git status`, `cat`）豁免于“咨询态代码锁定”，AI 可自主执行。
-2. **简洁优先 (Less is More)**:
+1. **简洁优先 (Less is More)**:
    - **对抗过度工程**: 不要添加要求之外的功能，严禁为一次性代码创建复杂的抽象。
    - **逻辑重写律**: 如果 200 行代码可以通过逻辑优化写成 50 行，必须重写它。
-3. **精准修改 (Precision First)**:
+1. **精准修改 (Precision First)**:
    - **局部封锁**: 修改现有代码时，严禁“顺手”改进相邻的无关代码、注释或格式。只准碰必须碰的部分。
    - **孤儿清理律**: 必须删除因本次改动而变得无用的导入 (import)、变量或函数。
-4. **目标驱动验证 (Verify > Hope)**:
+1. **目标驱动验证 (Verify > Hope)**:
    - **可验证意图**: 将模糊指令转化为可物理验证的目标。
    - **计划先行**: 对于多步骤任务，必须先输出分步计划及每个步骤的物理验证方法 (`1.[步骤] -> 验证:[检查]`)，严禁“憋大招”。
 
@@ -63,10 +63,10 @@
 为防止架构腐化并规避已知的物理坑位，所有开发必须避开以下负面模式：
 
 1. **[Import] 插件自注册陷阱**: 在插件的 `__init__.py` 中直接导入 Worker/Client 会导致级联导入。正解：通过 `get_worker_class()` 延迟加载。
-2. **[DB] SCD2 物理唯一性冲突**: 在 SCD2 表的业务键列上直接设置物理 `unique=True` 会阻止历史快照。正解：改用 **部分索引 (Partial Index)**。
-3. **[Type] 过时类型引用**: 禁止在 Python 3.9+ 代码中使用 `from typing import Type, List, Dict`。
-4. **[Hook] 静默抽象钩子**: 在 ABC 基类中定义空的 `pass` 方法必须显式标注 `# noqa: B027`。
-5. **[Logic] 循环内 N+1 查询**: 在处理任务的循环中执行 `session.query().first()` 严禁使用。必须在循环外通过 `in_` 批量拉取数据并建立内存 Map。
+1. **[DB] SCD2 物理唯一性冲突**: 在 SCD2 表的业务键列上直接设置物理 `unique=True` 会阻止历史快照。正解：改用 **部分索引 (Partial Index)**。
+1. **[Type] 过时类型引用**: 禁止在 Python 3.9+ 代码中使用 `from typing import Type, List, Dict`。
+1. **[Hook] 静默抽象钩子**: 在 ABC 基类中定义空的 `pass` 方法必须显式标注 `# noqa: B027`。
+1. **[Logic] 循环内 N+1 查询**: 在处理任务的循环中执行 `session.query().first()` 严禁使用。必须在循环外通过 `in_` 批量拉取数据并建立内存 Map。
 
 ## 2. 核心技术栈 (Technology Stack)
 

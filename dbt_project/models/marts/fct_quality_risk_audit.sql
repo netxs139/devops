@@ -1,7 +1,7 @@
 
 /*
     代码质量风险审计事实表 (Quality Risk Audit)
-    
+
     基于 DWS 层质量趋势，自动识别“高风险”资产。
     风险判定标准：
     1. 质量门禁状态为 ERROR。
@@ -9,7 +9,7 @@
     3. 技术债 > 40 小时。
 */
 
-with 
+with
 
 latest_quality as (
     select
@@ -29,7 +29,7 @@ weekly_trend as (
 
 topology as (
     -- 获取业务系统拓扑资产名称
-    select 
+    select
         topology_id,
         resource_name,
         master_project_id
@@ -44,15 +44,15 @@ select
     q.coverage,
     q.tech_debt_hours,
     w.total_weekly_bugs_change as bugs_added_this_week,
-    
+
     -- 风险级别判定 (简化逻辑以对齐当前字段)
-    case 
+    case
         when q.quality_gate_status = 'ERROR' or q.coverage < 30 or q.bugs > 50 then 'CRITICAL'
         when q.coverage < 50 or q.tech_debt_hours > 20 then 'HIGH'
         when q.bugs > 0 then 'MEDIUM'
         else 'LOW'
     end as risk_level,
-    
+
     -- 改进建议
     case
         when q.coverage < 50 then 'Unit tests focus required'

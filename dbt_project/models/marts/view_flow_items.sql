@@ -1,7 +1,7 @@
 
 /*
     价值流明细视图 (Flow Items View)
-    
+
     提供给 Dashboard 的价值流详情视图，包含状态、类型和耗时。
 */
 

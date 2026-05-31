@@ -115,24 +115,24 @@ async def register_user(
     reason: Optional[str] = None
 ):
     """用户注册（需要管理员审批）
-    
+
     Args:
         email: 邮箱地址
         name: 姓名
         company: 公司/部门
         phone: 联系电话（可选）
         reason: 注册原因（可选）
-    
+
     Returns:
         dict: 注册结果
-    
+
     Raises:
         HTTPException: 邮箱已注册或格式错误时抛出
     """
     # 验证邮箱格式
     if not email or '@' not in email:
         raise HTTPException(status_code=400, detail="无效的邮箱地址")
-    
+
     # 检查是否已注册
     if email in SERVICE_DESK_USERS:
         user = SERVICE_DESK_USERS[email]
@@ -142,7 +142,7 @@ async def register_user(
             raise HTTPException(status_code=400, detail="此邮箱正在等待审批，请耐心等待")
         elif user["status"] == "rejected":
             raise HTTPException(status_code=403, detail="此邮箱的注册申请已被拒绝，如有疑问请联系管理员")
-    
+
     # 创建用户记录
     SERVICE_DESK_USERS[email] = {
         "email": email,
@@ -156,11 +156,11 @@ async def register_user(
         "approved_by": None,
         "reject_reason": None
     }
-    
+
     save_service_desk_users()
-    
+
     logger.info(f"New user registration: {email} ({name}) from {company}")
-    
+
     return {
         "status": "success",
         "message": "注册申请已提交，请等待管理员审批。审批通过后您将收到通知邮件。",
@@ -185,53 +185,53 @@ async def approve_user(
     reject_reason: Optional[str] = None
 ):
     """审批用户注册（管理员功能）
-    
+
     Args:
         email: 用户邮箱
         approved: 是否批准（True=批准，False=拒绝）
         admin_token: 管理员令牌
         reject_reason: 拒绝原因（拒绝时必填）
-    
+
     Returns:
         dict: 审批结果
-    
+
     Raises:
         HTTPException: 权限不足或用户不存在时抛出
     """
     # 验证管理员权限
     if admin_token != ADMIN_TOKEN:
         raise HTTPException(status_code=403, detail="管理员令牌无效")
-    
+
     if email not in SERVICE_DESK_USERS:
         raise HTTPException(status_code=404, detail="用户不存在")
-    
+
     user = SERVICE_DESK_USERS[email]
-    
+
     if user["status"] != "pending":
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail=f"用户状态不是待审批（当前状态：{user['status']}）"
         )
-    
+
     # 拒绝时必须提供原因
     if not approved and not reject_reason:
         raise HTTPException(status_code=400, detail="拒绝时必须提供拒绝原因")
-    
+
     # 更新状态
     user["status"] = "approved" if approved else "rejected"
     user["approved_at"] = datetime.now().isoformat()
     user["approved_by"] = "admin"  # TODO: 使用实际管理员信息
-    
+
     if not approved:
         user["reject_reason"] = reject_reason
-    
+
     save_service_desk_users()
-    
+
     action = "approved" if approved else "rejected"
     logger.info(f"User {email} {action} by admin")
-    
+
     # TODO: 发送邮件通知用户
-    
+
     return {
         "status": "success",
         "email": email,
@@ -243,24 +243,24 @@ async def approve_user(
 @app.get("/service-desk/admin/pending-users")
 async def get_pending_users(admin_token: str):
     """获取待审批用户列表（管理员功能）
-    
+
     Args:
         admin_token: 管理员令牌
-    
+
     Returns:
         list: 待审批用户列表
     """
     if admin_token != ADMIN_TOKEN:
         raise HTTPException(status_code=403, detail="管理员令牌无效")
-    
+
     pending = [
         user for user in SERVICE_DESK_USERS.values()
         if user["status"] == "pending"
     ]
-    
+
     # 按创建时间倒序
     pending.sort(key=lambda x: x["created_at"], reverse=True)
-    
+
     return {
         "status": "success",
         "total": len(pending),
@@ -271,26 +271,26 @@ async def get_pending_users(admin_token: str):
 @app.get("/service-desk/admin/all-users")
 async def get_all_users(admin_token: str, status: Optional[str] = None):
     """获取所有用户列表（管理员功能）
-    
+
     Args:
         admin_token: 管理员令牌
         status: 筛选状态（可选：pending, approved, rejected）
-    
+
     Returns:
         dict: 用户列表
     """
     if admin_token != ADMIN_TOKEN:
         raise HTTPException(status_code=403, detail="管理员令牌无效")
-    
+
     users = list(SERVICE_DESK_USERS.values())
-    
+
     # 状态筛选
     if status:
         users = [u for u in users if u["status"] == status]
-    
+
     # 按创建时间倒序
     users.sort(key=lambda x: x["created_at"], reverse=True)
-    
+
     # 统计
     stats = {
         "total": len(SERVICE_DESK_USERS),
@@ -298,7 +298,7 @@ async def get_all_users(admin_token: str, status: Optional[str] = None):
         "approved": len([u for u in SERVICE_DESK_USERS.values() if u["status"] == "approved"]),
         "rejected": len([u for u in SERVICE_DESK_USERS.values() if u["status"] == "rejected"])
     }
-    
+
     return {
         "status": "success",
         "stats": stats,
@@ -314,20 +314,20 @@ ______________________________________________________________________
 @app.post("/service-desk/auth/request-code")
 async def request_verification_code(email: str):
     """请求登录验证码（带用户审批验证）"""
-    
+
     # 验证邮箱格式
     if not email or '@' not in email:
         raise HTTPException(status_code=400, detail="无效的邮箱地址")
-    
+
     # 检查用户是否存在且已审批
     if email not in SERVICE_DESK_USERS:
         raise HTTPException(
             status_code=403,
             detail="此邮箱未注册。请先注册并等待管理员审批。"
         )
-    
+
     user = SERVICE_DESK_USERS[email]
-    
+
     if user["status"] == "pending":
         raise HTTPException(
             status_code=403,
@@ -344,22 +344,22 @@ async def request_verification_code(email: str):
             status_code=403,
             detail="账号状态异常，请联系管理员"
         )
-    
+
     # 生成验证码（演示模式：固定验证码）
     code = 123456
-    
+
     # 存储验证码（5分钟有效）
     VERIFICATION_CODES[email] = {
         "code": code,
         "expires_at": datetime.now() + timedelta(minutes=5),
         "created_at": datetime.now()
     }
-    
+
     logger.info(f"Generated verification code for approved user {email}: {code}")
-    
+
     # TODO: 在生产环境中，这里应该发送邮件
     # send_verification_email(email, code)
-    
+
     return {
         "status": "success",
         "message": "验证码已生成（演示模式）",

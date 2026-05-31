@@ -1,12 +1,12 @@
 
 /*
     DWS: 项目每周成本汇总 (Project Weekly Cost Summary)
-    
+
     汇总单个项目在每周的人力投入成本。
     事实表粒度：项目 + 统计周
 */
 
-with 
+with
 
 daily_costs as (
     select * from {{ ref('int_developer_daily_costs') }}
@@ -29,7 +29,7 @@ select
     contributor_count,
     total_human_cost,
     currency,
-    
+
     -- 累计成本 (Window Function)
     sum(total_human_cost) over (partition by project_id order by metric_week) as running_total_cost
 

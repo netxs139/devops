@@ -1,13 +1,12 @@
----
-name: merge
-description: Workflow for merge
----
+______________________________________________________________________
+
+## name: merge description: Workflow for merge
 
 # Workflow: /merge (代码合并与集成)
 
----
-description: 分支合并到 main 的完整检查流程 (Pre-merge Checklist)
----
+______________________________________________________________________
+
+## description: 分支合并到 main 的完整检查流程 (Pre-merge Checklist)
 
 # Pre-merge Checklist Workflow
 
@@ -19,7 +18,7 @@ description: 分支合并到 main 的完整检查流程 (Pre-merge Checklist)
 - 当前处于待合并的功能分支中 (如 `feat/xxx`)
 - 所有功能开发已完成，代码已 commit
 
----
+______________________________________________________________________
 
 ## Step 1: Rebase 同步 🔴 BLOCK
 
@@ -34,6 +33,7 @@ git rebase origin/main
 - 验证：`git log --oneline -5` 确认历史线性，无 merge commit
 
 // turbo
+
 ## Step 2: 终极验证防御 (Total Verification Defense) 🔴 BLOCK
 
 按照 `AGENTS.md` 的“终极验证律”，在合入前必须执行全量校验：
@@ -43,11 +43,12 @@ just verify
 ```
 
 - **通过条件**：
-    - [ ] `just lint` 0 错误。
-    - [ ] `just check-imports` 0 冲突。
-    - [ ] 全量 `pytest` PASSED (Coverage >= 80%)。
+  - [ ] `just lint` 0 错误。
+  - [ ] `just check-imports` 0 冲突。
+  - [ ] 全量 `pytest` PASSED (Coverage >= 80%)。
 
 // turbo
+
 ## Step 2.1: 自动化安全审计 (Automated Security Audit) 🔴 BLOCK
 
 针对涉及 `core/mdm` 或新增外部镜像依赖的变更，必须强制执行：
@@ -57,8 +58,8 @@ just security-audit
 ```
 
 - **通过条件**：
-    - [ ] **TruffleHog (机密扫描)**：Exit Code = 0 (无密钥泄露)。
-    - [ ] **Trivy (镜像扫描)**：Exit Code = 0 (无 HIGH/CRITICAL 漏洞)。
+  - [ ] **TruffleHog (机密扫描)**：Exit Code = 0 (无密钥泄露)。
+  - [ ] **Trivy (镜像扫描)**：Exit Code = 0 (无 HIGH/CRITICAL 漏洞)。
 - **操作要求**：必须在交付报告中包含安全审计摘要。
 
 ## Step 2.2: 专家技能终审 (Expert Skill Final Approval) 🔴 BLOCK [NEW]
@@ -86,6 +87,7 @@ just deploy
 - **降级条件**：同 Step 4，记录阻塞原因后可有条件跳过
 
 // turbo
+
 ## Step 6: 环境清理 (Cleanup) 🟡 WARN
 
 清理因开发/调试/测试产生的临时文件，确保零残留。
@@ -105,11 +107,11 @@ just clean
 手动确认以下文档已更新：
 
 1. **`progress.txt`**：记录本次变更内容、验证结果、遗留问题。
-2. **`contexts.md`**（仅当涉及以下变更时）：
+1. **`contexts.md`**（仅当涉及以下变更时）：
    - 技术栈变更（新增/移除核心依赖）
    - 架构决策调整（新增模块、数据流变更）
    - 新增开发规范或核心模型
-3. **`DATA_DICTIONARY.md`**（仅当模型变更时）：执行 `just docs` 刷新
+1. **`DATA_DICTIONARY.md`**（仅当模型变更时）：执行 `just docs` 刷新
 
 ## Step 8: 安全自检 🟡 WARN
 
@@ -125,7 +127,7 @@ just clean
 - [ ] 遵循安全变更顺序：Add Column → Deploy Code → Drop Old Column
 - [ ] 无破坏性变更（删表、删列、重命名）出现在单次合并中
 
----
+______________________________________________________________________
 
 ## 执行合并
 
@@ -152,7 +154,7 @@ git branch -d <feature-branch>
 git push origin --delete <feature-branch>
 ```
 
----
+______________________________________________________________________
 
 ## 降级合并记录模板
 

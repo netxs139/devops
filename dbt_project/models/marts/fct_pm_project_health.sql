@@ -5,7 +5,7 @@ WITH project_efforts AS (
 ),
 
 execution_details AS (
-    SELECT 
+    SELECT
         e.execution_id,
         e.execution_name,
         e.execution_type,
@@ -31,7 +31,7 @@ SELECT
     COALESCE(f.total_consumed_hours, 0) AS total_effort_hours,
     f.effort_variance,
     -- 计算时间进度 (Time Progress)
-    CASE 
+    CASE
         WHEN d.start_date IS NULL OR d.end_date IS NULL THEN 0
         WHEN CURRENT_DATE > d.end_date THEN 1
         WHEN CURRENT_DATE < d.start_date THEN 0

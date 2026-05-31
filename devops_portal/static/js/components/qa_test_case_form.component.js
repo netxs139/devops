@@ -163,28 +163,28 @@ class QaTestCaseForm extends HTMLElement {
         this.shadowRoot.innerHTML = `
             <style>
                 :host { display: block; max-width: 900px; margin: 40px auto; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-                
+
                 .form-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px) saturate(180%); border-radius: 24px; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.05); overflow: hidden; }
-                
+
                 .header { padding: 48px; background: linear-gradient(135deg, #f5f5f7 0%, #fff 100%); border-bottom: 1px solid rgba(0,0,0,0.05); }
                 .title { font-size: 36px; font-weight: 700; color: #1d1d1f; margin: 0 0 12px 0; letter-spacing: -0.02em; }
                 .subtitle { font-size: 17px; color: #86868b; margin: 0; }
-                
+
                 .body { padding: 48px; }
-                
+
                 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 32px; }
                 .form-group { margin-bottom: 24px; }
                 .form-group.full { grid-column: span 2; }
-                
+
                 .label { display: block; font-size: 13px; font-weight: 600; color: #86868b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
-                
-                .input, .textarea, .select { 
-                    width: 100%; box-sizing: border-box; padding: 16px; font-size: 16px; 
-                    border: 1px solid #d2d2d7; border-radius: 12px; background: rgba(255,255,255,0.8); 
-                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+
+                .input, .textarea, .select {
+                    width: 100%; box-sizing: border-box; padding: 16px; font-size: 16px;
+                    border: 1px solid #d2d2d7; border-radius: 12px; background: rgba(255,255,255,0.8);
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                 }
                 .input:focus, .textarea:focus, .select:focus { outline: none; border-color: ${themeColor}; box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1); }
-                
+
                 .textarea { min-height: 100px; resize: vertical; }
 
                 /* Steps Design */
@@ -209,7 +209,7 @@ class QaTestCaseForm extends HTMLElement {
                 .ai-badge:hover { background: #e5f0ff; }
 
                 .required::after { content: '*'; color: #ff3b30; margin-left: 4px; }
-                
+
                 .loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; font-weight: 600; color: #1d1d1f; }
             </style>
 
@@ -219,7 +219,7 @@ class QaTestCaseForm extends HTMLElement {
                     <h1 class="title">建立测试用例</h1>
                     <p class="subtitle">录入结构化的测试场景，支持 AI 自动化补全执行步骤。</p>
                 </div>
-                
+
                 <form class="body" id="tc-form">
                     <div class="grid">
                         <div class="form-group">

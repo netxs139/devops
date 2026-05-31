@@ -32,10 +32,10 @@ select
     count(distinct case when committed_at >= current_date - interval '30 days' then commit_id end) as churn_30d,
     -- 7天内的变更频率
     count(distinct case when committed_at >= current_date - interval '7 days' then commit_id end) as churn_7d,
-    
+
     -- 预估行数 (Complexity Proxy)
     abs(sum(code_added) - sum(code_deleted)) as estimated_loc,
-    
+
     max(committed_at) as last_modified_at
 from joined
 group by 1, 2

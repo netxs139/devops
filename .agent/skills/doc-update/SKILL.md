@@ -1,7 +1,6 @@
----
-name: doc-update
-description: Workflow for doc-update
----
+______________________________________________________________________
+
+## name: doc-update description: Workflow for doc-update
 
 # Workflow: /doc-update (Feature Spec Sync)
 

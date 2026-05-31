@@ -1,14 +1,14 @@
 
 /*
     Unified Project Resource Mapping
-    
+
     Provides a unified lookup table to map external Resource IDs (GitLab, ZenTao, etc.)
      to the Master Project ID in MDM.
 */
 
 with topology as (
     -- 1. 基础拓扑映射 (GitLab, Sonar, ZenTao Projects 等)
-    select 
+    select
         system_code,
         element_type,
         external_resource_id,
@@ -20,7 +20,7 @@ with topology as (
 
 -- 2. 禅道执行/迭代层级展平映射 (递归向上找 Master Project)
 zentao_execution_lookup as (
-    select 
+    select
         'zentao-prod' as system_code,
         'issue-tracker-execution' as element_type,
         execution_id::text as external_resource_id,

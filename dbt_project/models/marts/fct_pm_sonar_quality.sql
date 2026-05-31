@@ -18,7 +18,7 @@ SELECT
     new_bugs,
     increment_quality_status,
     -- 简单等级判断
-    CASE 
+    CASE
         WHEN quality_gate_status = 'OK' AND increment_quality_status = 'STABLE' THEN 'EXCELLENT'
         WHEN quality_gate_status = 'OK' AND increment_quality_status = 'RISKY' THEN 'WARNING'
         ELSE 'CRITICAL'

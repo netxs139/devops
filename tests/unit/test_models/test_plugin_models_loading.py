@@ -1,8 +1,8 @@
 import pytest
 from sqlalchemy import create_engine, inspect
 
-from devops_collector.services.plugin_loader import PluginLoader
 from devops_collector.models.base_models import Base
+from devops_collector.services.plugin_loader import PluginLoader
 
 
 @pytest.fixture(scope="module")

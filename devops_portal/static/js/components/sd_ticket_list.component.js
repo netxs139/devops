@@ -41,7 +41,7 @@ class SdTicketList extends HTMLElement {
                 .btn-back:hover { background: #e8e8ed; }
 
                 .ticket-list { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(0,0,0,0.05); overflow: hidden; }
-                
+
                 .ticket-item { padding: 20px 24px; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between; transition: 0.2s; }
                 .ticket-item:last-child { border-bottom: none; }
                 .ticket-item:hover { background: #fff; }
@@ -50,11 +50,11 @@ class SdTicketList extends HTMLElement {
                 .status-dot { width: 10px; height: 10px; border-radius: 50%; }
                 .status-opened { background: #FF9500; box-shadow: 0 0 8px rgba(255, 149, 0, 0.4); }
                 .status-closed { background: #34C759; box-shadow: 0 0 8px rgba(52, 199, 89, 0.4); }
-                
+
                 .ticket-main { display: flex; flex-direction: column; gap: 4px; }
                 .ticket-title { font-size: 16px; font-weight: 600; color: #1d1d1f; }
                 .ticket-meta { font-size: 12px; color: #86868b; }
-                
+
                 .ticket-right { display: flex; align-items: center; gap: 12px; }
                 .badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; background: #f5f5f7; color: #86868b; }
                 .badge-bug { background: #FFF0F0; color: #FF3B30; }
@@ -70,7 +70,7 @@ class SdTicketList extends HTMLElement {
 
             <div class="ticket-list">
                 ${loading ? '<div class="empty-state">加载中...</div>' : ''}
-                
+
                 ${!loading && tickets.length === 0 ? '<div class="empty-state">暂无提交记录</div>' : ''}
 
                 ${tickets.map(t => `

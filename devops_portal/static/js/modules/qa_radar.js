@@ -17,10 +17,10 @@ const QaRadarHandler = {
 
     init() {
         console.log("Traceability Radar Dashboard Initialized");
-        
+
         // 绑定刷新按钮
         document.querySelector('.js-btn-radar-refresh')?.addEventListener('click', () => this.loadData());
-        
+
         // 绑定天数切换
         document.getElementById('radar-filter-days')?.addEventListener('change', (e) => {
             this.state.days = parseInt(e.target.value);
@@ -54,7 +54,7 @@ const QaRadarHandler = {
 
             const data = await Api.get('/traceability/radar', params);
             this.state.data = data;
-            
+
             this.render(data);
             UI.showToast("Radar data synchronized", "success");
         } catch (e) {
@@ -77,7 +77,7 @@ const QaRadarHandler = {
         const vsm = data.vsm || {};
         const col = data.collaboration || {};
         const sec = data.security || {};
-        
+
         const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
         set('card-wait-time',  vsm.avg_wait_minutes != null ? Math.round(vsm.avg_wait_minutes) + 'm' : '--');
         set('card-rubber-stamp', col.rubber_stamp_rate != null ? (col.rubber_stamp_rate * 100).toFixed(1) + '%' : '--');
@@ -109,7 +109,7 @@ const QaRadarHandler = {
             if (this.state.projectId) params.project_id = this.state.projectId;
 
             const data = await Api.get('/traceability/detail', params);
-            
+
             drawer.setAttribute('title', title);
             drawer.data = data.items;
             drawer.setAttribute('opened', 'true');
@@ -122,7 +122,7 @@ const QaRadarHandler = {
     buildRadarAxes(data) {
         const vsm = data.vsm || {};
         const col = data.collaboration || {};
-        
+
         // 定义 5 个维度的归一化得分 (0-1)
         return [
             { label: 'Flow Efficiency', value: vsm.flow_efficiency || 0.5 },
@@ -146,7 +146,7 @@ const QaRadarHandler = {
     drawRadarChart(svgId, axes) {
         const svg = document.getElementById(svgId);
         if (!svg) return;
-        svg.innerHTML = ''; 
+        svg.innerHTML = '';
 
         const centerX = 200, centerY = 200, radius = 150, levels = 5;
         const angleStep = (Math.PI * 2) / axes.length;

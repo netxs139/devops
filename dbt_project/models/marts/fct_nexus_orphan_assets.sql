@@ -58,17 +58,17 @@ select
     total_assets,
     total_size_bytes,
     last_downloaded_at,
-    
+
     -- 判断是否为孤儿包
-    case 
-        when mdm_product_id is null then true 
-        else false 
+    case
+        when mdm_product_id is null then true
+        else false
     end as is_orphan,
-    
+
     -- 清理建议标识
-    case 
-        when mdm_product_id is null 
-             and last_downloaded_at < (current_date - interval '90 days') 
+    case
+        when mdm_product_id is null
+             and last_downloaded_at < (current_date - interval '90 days')
              then 'HIGH_RISK_GHOST'
         else 'SAFE'
     end as cleanup_suggestion

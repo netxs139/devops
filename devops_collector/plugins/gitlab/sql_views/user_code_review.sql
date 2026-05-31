@@ -3,23 +3,23 @@
 -- Filters out system notes and self-reviews to capture true peer review impact.
 
 CREATE OR REPLACE VIEW view_user_code_review AS
-SELECT 
+SELECT
     u.id as user_id,
     u.name as user_name,
     u.department,
-    
+
     -- 1. Review Breadth (Number of MRs reviewed)
     -- Count MRs where user left a comment but was NOT the author
     COUNT(DISTINCT mr.id) as mrs_reviewed_count,
-    
+
     -- 2. Review Depth (Total Comments)
     COUNT(n.id) as total_review_comments,
-    
+
     -- 3. Average Interaction
-    CASE 
-        WHEN COUNT(DISTINCT mr.id) > 0 THEN 
+    CASE
+        WHEN COUNT(DISTINCT mr.id) > 0 THEN
             ROUND(CAST(COUNT(n.id) AS FLOAT) / COUNT(DISTINCT mr.id), 1)
-        ELSE 0 
+        ELSE 0
     END as avg_comments_per_review
 
 FROM users u

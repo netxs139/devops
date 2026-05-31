@@ -1,10 +1,10 @@
 # RBAC 权限管理系统设计方案
 
-> 版本: 2.1  
-> 日期: 2026-01-18  
+> 版本: 2.1
+> 日期: 2026-01-18
 > 状态: 已实现 (Implemented)
 
----
+______________________________________________________________________
 
 ## 一、现状分析
 
@@ -22,20 +22,20 @@
 ### 1.2 迁移成果
 
 1. **架构统一**：成功清理了旧版 `rbac_roles`、`rbac_permissions` 及相关关联表，消除数据重复与逻辑冲突。
-2. **规范化**：权限标识规范化为 `业务:模块:操作` 格式 (如 `system:user:list`)。
-3. **功能增强**：全面支持了行级权限过滤 (RLS) 和角色继承。
-4. **性能优化**：通过 JWT 注入权限标识，减少了高频 API 鉴权时的数据库压力。
+1. **规范化**：权限标识规范化为 `业务:模块:操作` 格式 (如 `system:user:list`)。
+1. **功能增强**：全面支持了行级权限过滤 (RLS) 和角色继承。
+1. **性能优化**：通过 JWT 注入权限标识，减少了高频 API 鉴权时的数据库压力。
 
----
+______________________________________________________________________
 
 ## 二、目标架构设计
 
 ### 2.1 核心设计原则
 
 1. **五表体系**：标准化的 5 张核心表 + 2 张扩展表
-2. **角色继承 (RBAC1)**：通过 `parent_id` 实现角色层级
-3. **行级权限 (RLS)**：通过 `data_scope` + `sys_role_dept` 实现数据范围控制
-4. **权限标识规范**：统一使用 `业务:模块:操作` 格式
+1. **角色继承 (RBAC1)**：通过 `parent_id` 实现角色层级
+1. **行级权限 (RLS)**：通过 `data_scope` + `sys_role_dept` 实现数据范围控制
+1. **权限标识规范**：统一使用 `业务:模块:操作` 格式
 
 ### 2.2 表结构设计
 
@@ -146,7 +146,7 @@
 | user_id | UUID | 用户ID (联合主键) |
 | role_id | Integer | 角色ID (联合主键) |
 
----
+______________________________________________________________________
 
 ## 三、权限标识规范
 
@@ -157,6 +157,7 @@
 ```
 
 **示例**:
+
 - `system:user:list` - 系统管理 > 用户管理 > 列表查询
 - `system:user:add` - 系统管理 > 用户管理 > 新增
 - `system:user:edit` - 系统管理 > 用户管理 > 修改
@@ -188,7 +189,7 @@
 | approve | 审批 |
 | assign | 分配 |
 
----
+______________________________________________________________________
 
 ## 四、行级权限 (RLS) 实现方案
 
@@ -197,29 +198,29 @@
 ```python
 def apply_row_level_security(db: Session, query: Query, model_class: Any, current_user: User) -> Query:
     """行级数据权限过滤器。
-    
+
     根据用户角色的 data_scope 配置，自动过滤数据行。
     """
     # 1. 获取用户所有角色中的最大数据范围 (数值越小权限越大)
     data_scope = get_user_effective_data_scope(db, current_user)
-    
+
     if data_scope == 1:  # 全部数据
         return query
-    
+
     if data_scope == 2:  # 自定义数据权限
         allowed_dept_ids = get_custom_dept_ids(db, current_user)
         return query.filter(model_class.dept_id.in_(allowed_dept_ids))
-    
+
     if data_scope == 3:  # 本部门
         return query.filter(model_class.dept_id == current_user.department_id)
-    
+
     if data_scope == 4:  # 本部门及以下
         scope_ids = get_dept_tree_ids(db, current_user.department_id)
         return query.filter(model_class.dept_id.in_(scope_ids))
-    
+
     if data_scope == 5:  # 仅本人
         return query.filter(model_class.create_by == current_user.global_user_id)
-    
+
     return query
 ```
 
@@ -250,15 +251,15 @@ async def list_projects(
     return query.all()
 ```
 
----
+______________________________________________________________________
 
 ## 五、迁移方案
 
 ### 5.1 迁移执行总结
 
 1. **表结构同步**：通过 Alembic 迁移脚本完成了数据库 Schema 的原地升级，旧表已彻底移除。
-2. **数据持久化**：使用 `init_rbac.py` 重新初始化了所有标准角色和菜单权限数据。
-3. **代码兼容**：所有后台 API 路由已从旧版 Role 依赖切换为 `PermissionRequired`。
+1. **数据持久化**：使用 `init_rbac.py` 重新初始化了所有标准角色和菜单权限数据。
+1. **代码兼容**：所有后台 API 路由已从旧版 Role 依赖切换为 `PermissionRequired`。
 
 ### 5.2 阶段二：权限初始化
 
@@ -268,12 +269,12 @@ async def list_projects(
 MENU_DATA = [
     # 目录
     {'id': 1, 'menu_name': '系统管理', 'parent_id': 0, 'menu_type': 'M', 'path': 'system', 'icon': 'setting'},
-    
+
     # 菜单
     {'id': 100, 'menu_name': '用户管理', 'parent_id': 1, 'menu_type': 'C', 'path': 'user', 'component': 'system/user/index', 'perms': 'system:user:list'},
     {'id': 101, 'menu_name': '角色管理', 'parent_id': 1, 'menu_type': 'C', 'path': 'role', 'component': 'system/role/index', 'perms': 'system:role:list'},
     {'id': 102, 'menu_name': '菜单管理', 'parent_id': 1, 'menu_type': 'C', 'path': 'menu', 'component': 'system/menu/index', 'perms': 'system:menu:list'},
-    
+
     # 按钮
     {'id': 1001, 'menu_name': '用户新增', 'parent_id': 100, 'menu_type': 'F', 'perms': 'system:user:add'},
     {'id': 1002, 'menu_name': '用户修改', 'parent_id': 100, 'menu_type': 'F', 'perms': 'system:user:edit'},
@@ -299,11 +300,11 @@ ROLE_DATA = [
 ### 5.3 阶段三：代码重构
 
 1. **更新 `security.py`**：实现完整的 `apply_row_level_security`
-2. **更新 `dependencies.py`**：新增 `PermissionRequired` 装饰器
-3. **更新 `auth_service.py`**：JWT 中注入用户权限列表 (从 `sys_role_menu` 聚合)
-4. **更新前端 `auth_utils.js`**：对齐新的权限校验逻辑
+1. **更新 `dependencies.py`**：新增 `PermissionRequired` 装饰器
+1. **更新 `auth_service.py`**：JWT 中注入用户权限列表 (从 `sys_role_menu` 聚合)
+1. **更新前端 `auth_utils.js`**：对齐新的权限校验逻辑
 
----
+______________________________________________________________________
 
 ## 六、JWT Token 结构
 
@@ -335,7 +336,7 @@ ROLE_DATA = [
 def aggregate_user_permissions(db: Session, user: User) -> List[str]:
     """聚合用户所有角色的权限标识。"""
     permissions = set()
-    
+
     for role in user.roles:
         # 角色继承：递归获取父角色权限
         role_chain = get_role_hierarchy(db, role)
@@ -343,11 +344,11 @@ def aggregate_user_permissions(db: Session, user: User) -> List[str]:
             for menu in r.menus:
                 if menu.perms:
                     permissions.add(menu.perms)
-    
+
     return list(permissions)
 ```
 
----
+______________________________________________________________________
 
 ## 七、前端权限控制
 
@@ -394,7 +395,7 @@ Vue.directive('permission', {
 <button v-permission="'system:user:add'">新增用户</button>
 ```
 
----
+______________________________________________________________________
 
 ## 八、实施计划
 
@@ -410,7 +411,7 @@ Vue.directive('permission', {
 
 **项目结论**: RBAC 2.0 已上线并成为系统标准权限框架。
 
----
+______________________________________________________________________
 
 ## 九、风险与缓解
 
@@ -420,7 +421,7 @@ Vue.directive('permission', {
 | JWT 体积过大 | 降低请求性能 | 权限压缩，仅存角色 |
 | 权限配置复杂 | 运维成本高 | 提供可视化管理界面 |
 
----
+______________________________________________________________________
 
 ## 十、已确认事项
 
@@ -431,7 +432,7 @@ Vue.directive('permission', {
 | 默认 data_scope | **5 (仅本人)** |
 | 菜单初始化 | **见下方详细规划** |
 
----
+______________________________________________________________________
 
 ## 十一、菜单初始化详细规划
 
@@ -530,6 +531,6 @@ Vue.directive('permission', {
 | FINANCE_OFFICER | ❌ | ✅ | ✅ | ❌ | ❌ | ✅ |
 | VIEWER | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ |
 
----
+______________________________________________________________________
 
 **状态: 已确认，开始执行编码工作。**

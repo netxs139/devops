@@ -9,12 +9,12 @@
 
 /*
     DWS: 项目每日指标汇总 (Project Daily Metrics Summary) - Refactored v3 (Incremental)
-    
+
     汇总单个项目在每一天的交付、质量、任务和活跃度指标。
     支持 GitLab (代码/部署/MR) 和 ZenTao (需求/任务/Bug)。
 */
 
-with 
+with
 
 resource_map as (
     select * from {{ ref('int_project_resource_map') }}
@@ -98,13 +98,13 @@ all_dates_projects as (
 select
     adp.project_id,
     adp.metric_date,
-    
+
     -- GitLab 交付
     coalesce(ms.mrs_opened_count, 0) as mrs_opened,
     coalesce(ms.mrs_merged_count, 0) as mrs_merged,
     coalesce(ds.successful_prod_deploys, 0) as prod_deploys,
     coalesce(ds.failed_deployments, 0) as failed_deploys,
-    
+
     -- ZenTao 任务/Bug
     coalesce(zs.stories_opened, 0) as zentao_stories_opened,
     coalesce(zs.bugs_opened, 0) as zentao_bugs_opened,
@@ -117,11 +117,11 @@ select
     coalesce(ss.avg_test_coverage, 0) as test_coverage_pct,
     coalesce(ss.tech_debt_hours, 0) as tech_debt_hours,
     ss.quality_gate_status,
-    
+
     -- 活跃度标记
     (
-        coalesce(ms.mrs_opened_count, 0) + 
-        coalesce(ds.successful_prod_deploys, 0) + 
+        coalesce(ms.mrs_opened_count, 0) +
+        coalesce(ds.successful_prod_deploys, 0) +
         coalesce(zs.tasks_opened, 0) +
         coalesce(zs.items_closed, 0) > 0
     ) as is_active_day

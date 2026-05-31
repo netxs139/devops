@@ -293,7 +293,7 @@ models:
         description: "消耗工时 (JSONB)"
         tests:
           - dbt_expectations.expect_column_values_to_not_be_null:
-              row_condition: "issue_type = 'task' and issue_status in ('closed', 'done', 'finished')" 
+              row_condition: "issue_type = 'task' and issue_status in ('closed', 'done', 'finished')"
 
   - name: stg_zentao_releases
     description: "禅道发布清洗层"

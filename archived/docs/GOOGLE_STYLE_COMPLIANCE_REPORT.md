@@ -200,13 +200,13 @@ Typical usage:
 ```python
 class MyClass:
     """类的简短描述（一行）。
-    
+
     详细说明类的功能和用途（可选）。
-    
+
     Attributes:
         attr1: 属性1的说明
         attr2: 属性2的说明
-    
+
     Example:
         obj = MyClass(param1, param2)
         result = obj.method()
@@ -218,16 +218,16 @@ class MyClass:
 ```python
 def my_function(param1: str, param2: int) -> bool:
     """函数的简短描述（一行）。
-    
+
     详细说明函数的功能（可选）。
-    
+
     Args:
         param1: 参数1的说明
         param2: 参数2的说明
-    
+
     Returns:
         返回值的说明
-    
+
     Raises:
         ValueError: 参数无效时抛出
         IOError: 文件操作失败时抛出

@@ -14,7 +14,7 @@ WITH project_groups AS (
     JOIN gitlab_groups g ON p.group_id = g.id
 ),
 deployment_stats AS (
-    SELECT 
+    SELECT
         project_id,
         DATE_TRUNC('month', created_at) as month_date,
         COUNT(*) as deploy_count,
@@ -25,7 +25,7 @@ deployment_stats AS (
     GROUP BY project_id, DATE_TRUNC('month', created_at)
 ),
 lead_time_stats AS (
-    SELECT 
+    SELECT
         project_id,
         DATE_TRUNC('month', merged_at) as month_date,
         AVG(EXTRACT(EPOCH FROM (merged_at - created_at))/60) as avg_lead_time_minutes
@@ -34,7 +34,7 @@ lead_time_stats AS (
     AND merged_at >= NOW() - INTERVAL '6 months'
     GROUP BY project_id, DATE_TRUNC('month', merged_at)
 )
-SELECT 
+SELECT
     pg.group_name,
     ds.month_date,
     SUM(ds.deploy_count) as total_deploys,
@@ -51,7 +51,7 @@ ORDER BY pg.group_name, ds.month_date DESC;
 -- 作用：识别"伪敏捷" (无 Review) 和 "知识孤岛" (Review 覆盖率低)
 CREATE OR REPLACE VIEW view_team_collaboration_health AS
 WITH group_stats AS (
-    SELECT 
+    SELECT
         g.name as group_name,
         count(distinct c.gitlab_user_id) as active_devs,
         count(distinct mr.id) as total_mrs,
@@ -59,21 +59,21 @@ WITH group_stats AS (
     FROM gitlab_groups g
     JOIN projects p ON g.id = p.group_id
     JOIN merge_requests mr ON p.id = mr.project_id
-    LEFT JOIN commits c ON p.id = c.project_id 
+    LEFT JOIN commits c ON p.id = c.project_id
         AND c.committed_date >= NOW() - INTERVAL '90 days'
-    LEFT JOIN notes n ON mr.iid = n.noteable_iid 
-        AND mr.project_id = n.project_id 
+    LEFT JOIN notes n ON mr.iid = n.noteable_iid
+        AND mr.project_id = n.project_id
         AND n.system = false
     WHERE mr.created_at >= NOW() - INTERVAL '90 days'
     GROUP BY g.name
 )
-SELECT 
+SELECT
     group_name,
     active_devs,
     total_mrs,
     reviewed_mrs,
     ROUND(reviewed_mrs::numeric / NULLIF(total_mrs, 0) * 100, 1) as review_coverage_pct,
-    CASE 
+    CASE
         WHEN reviewed_mrs::numeric / NULLIF(total_mrs, 0) < 0.3 THEN 'RISK: Isolation'
         WHEN reviewed_mrs::numeric / NULLIF(total_mrs, 0) > 0.8 THEN 'HEALTHY'
         ELSE 'NEEDS_IMPROVEMENT'
@@ -85,7 +85,7 @@ ORDER BY review_coverage_pct ASC;
 -- 3. 团队技术债务与质量 (Technical Debt)
 -- 作用：监控团队背负的"技术利息" (债务时长、密度)
 CREATE OR REPLACE VIEW view_team_quality_debt AS
-SELECT 
+SELECT
     g.name as group_name,
     SUM(sm.ncloc) as total_lines_of_code,
     COUNT(distinct p.id) as project_count,
@@ -110,7 +110,7 @@ ORDER BY total_debt_hours DESC;
 -- 作用：识别"走过场"评审、技术垄断及沟通冗余风险
 CREATE OR REPLACE VIEW view_team_review_quality_entropy AS
 WITH mr_review_stats AS (
-    SELECT 
+    SELECT
         g.name as group_name,
         mr.id as mr_id,
         mr.author_id,
@@ -122,7 +122,7 @@ WITH mr_review_stats AS (
     FROM gitlab_groups g
     JOIN projects p ON g.id = p.group_id
     JOIN merge_requests mr ON p.id = mr.project_id
-    LEFT JOIN notes n ON mr.id = n.noteable_iid 
+    LEFT JOIN notes n ON mr.id = n.noteable_iid
         AND n.noteable_type = 'MergeRequest'
         AND n.system = false
     WHERE mr.state = 'merged'
@@ -130,7 +130,7 @@ WITH mr_review_stats AS (
     GROUP BY g.name, mr.id, mr.review_cycles, mr.human_comment_count, mr.author_id
 ),
 team_summary AS (
-    SELECT 
+    SELECT
         group_name,
         AVG(independent_reviewers) as avg_reviewers,
         AVG(rounds) as ping_pong_index,
@@ -140,12 +140,12 @@ team_summary AS (
     FROM mr_review_stats
     GROUP BY group_name
 )
-SELECT 
+SELECT
     ts.group_name,
     ROUND(ts.ping_pong_index::numeric, 1) as avg_review_rounds, -- 评审乒乓指数
     ROUND(ts.collab_entropy_score::numeric, 1) as collab_entropy, -- 协作熵 (平均人工评论数)
     ROUND(ts.avg_reviewers::numeric, 1) as avg_reviewers_per_mr,
-    CASE 
+    CASE
         WHEN ts.ping_pong_index > 4 THEN 'HIGH_ENTROPY (Inefficient)'
         WHEN ts.ping_pong_index < 1.2 AND ts.collab_entropy_score < 2 THEN 'LOW_ENGAGEMENT (Trivial)'
         ELSE 'HEALTHY'

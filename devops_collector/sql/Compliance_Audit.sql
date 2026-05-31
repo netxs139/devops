@@ -8,7 +8,7 @@
 -- 作用：确保代码合并经过独立审查，满足 SOX 404 职责分离要求
 CREATE OR REPLACE VIEW view_compliance_four_eyes_principle AS
 WITH mr_review_analysis AS (
-    SELECT 
+    SELECT
         mr.id as mr_id,
         mr.iid,
         mr.project_id,
@@ -18,20 +18,20 @@ WITH mr_review_analysis AS (
         mr.merged_at,
         mr.approval_count,
         -- 识别自审（作者在评论中参与审批）
-        COUNT(DISTINCT CASE 
-            WHEN n.author_id != mr.author_id AND n.system = false 
-            THEN n.author_id 
+        COUNT(DISTINCT CASE
+            WHEN n.author_id != mr.author_id AND n.system = false
+            THEN n.author_id
         END) as independent_reviewers,
         -- 检查是否有实质性评审（非系统消息的评论）
         COUNT(CASE WHEN n.system = false THEN 1 END) as human_comments
     FROM merge_requests mr
-    LEFT JOIN notes n ON mr.id = n.noteable_iid 
-        AND mr.project_id = n.project_id 
+    LEFT JOIN notes n ON mr.id = n.noteable_iid
+        AND mr.project_id = n.project_id
         AND n.noteable_type = 'MergeRequest'
     WHERE mr.created_at >= NOW() - INTERVAL '90 days'
     GROUP BY mr.id, mr.iid, mr.project_id, mr.title, mr.author_id, mr.state, mr.merged_at, mr.approval_count
 )
-SELECT 
+SELECT
     p.name as project_name,
     g.name as group_name,
     COUNT(mra.mr_id) as total_merged_mrs,
@@ -42,18 +42,18 @@ SELECT
     -- 合规审批（≥2人）
     SUM(CASE WHEN mra.independent_reviewers >= 2 AND mra.state = 'merged' THEN 1 ELSE 0 END) as compliant_review_count,
     -- 零审批率
-    ROUND(SUM(CASE WHEN mra.independent_reviewers = 0 AND mra.state = 'merged' THEN 1 ELSE 0 END)::numeric 
+    ROUND(SUM(CASE WHEN mra.independent_reviewers = 0 AND mra.state = 'merged' THEN 1 ELSE 0 END)::numeric
           / NULLIF(COUNT(CASE WHEN mra.state = 'merged' THEN 1 END), 0) * 100, 2) as zero_review_rate_pct,
     -- 合规率
-    ROUND(SUM(CASE WHEN mra.independent_reviewers >= 2 AND mra.state = 'merged' THEN 1 ELSE 0 END)::numeric 
+    ROUND(SUM(CASE WHEN mra.independent_reviewers >= 2 AND mra.state = 'merged' THEN 1 ELSE 0 END)::numeric
           / NULLIF(COUNT(CASE WHEN mra.state = 'merged' THEN 1 END), 0) * 100, 2) as compliance_rate_pct,
     -- 合规状态
-    CASE 
-        WHEN SUM(CASE WHEN mra.independent_reviewers = 0 AND mra.state = 'merged' THEN 1 ELSE 0 END)::numeric 
-             / NULLIF(COUNT(CASE WHEN mra.state = 'merged' THEN 1 END), 0) > 0.2 
+    CASE
+        WHEN SUM(CASE WHEN mra.independent_reviewers = 0 AND mra.state = 'merged' THEN 1 ELSE 0 END)::numeric
+             / NULLIF(COUNT(CASE WHEN mra.state = 'merged' THEN 1 END), 0) > 0.2
         THEN 'Critical: High Bypass Rate'
-        WHEN SUM(CASE WHEN mra.independent_reviewers >= 2 AND mra.state = 'merged' THEN 1 ELSE 0 END)::numeric 
-             / NULLIF(COUNT(CASE WHEN mra.state = 'merged' THEN 1 END), 0) < 0.5 
+        WHEN SUM(CASE WHEN mra.independent_reviewers >= 2 AND mra.state = 'merged' THEN 1 ELSE 0 END)::numeric
+             / NULLIF(COUNT(CASE WHEN mra.state = 'merged' THEN 1 END), 0) < 0.5
         THEN 'Warning: Low Compliance'
         ELSE 'Compliant'
     END as compliance_status
@@ -69,13 +69,13 @@ ORDER BY zero_review_rate_pct DESC;
 -- 作用：识别非工作时间的敏感操作和权限滥用行为
 CREATE OR REPLACE VIEW view_compliance_privilege_abuse AS
 WITH off_hours_deployments AS (
-    SELECT 
+    SELECT
         project_id,
         COUNT(*) as total_deployments,
-        SUM(CASE 
-            WHEN EXTRACT(HOUR FROM created_at) >= 22 OR EXTRACT(HOUR FROM created_at) < 8 
+        SUM(CASE
+            WHEN EXTRACT(HOUR FROM created_at) >= 22 OR EXTRACT(HOUR FROM created_at) < 8
                  OR EXTRACT(ISODOW FROM created_at) IN (6, 7)
-            THEN 1 ELSE 0 
+            THEN 1 ELSE 0
         END) as off_hours_deployments
     FROM deployments
     WHERE environment = 'production'
@@ -83,7 +83,7 @@ WITH off_hours_deployments AS (
     GROUP BY project_id
 ),
 high_privilege_operations AS (
-    SELECT 
+    SELECT
         ggm.group_id,
         ggm.user_id,
         ggm.access_level,
@@ -95,22 +95,22 @@ high_privilege_operations AS (
       AND c.committed_date >= NOW() - INTERVAL '90 days'
     GROUP BY ggm.group_id, ggm.user_id, ggm.access_level
 )
-SELECT 
+SELECT
     p.name as project_name,
     g.name as group_name,
     COALESCE(ohd.total_deployments, 0) as total_prod_deployments,
     COALESCE(ohd.off_hours_deployments, 0) as off_hours_deployments,
     -- 非工作时间部署率
-    ROUND(COALESCE(ohd.off_hours_deployments, 0)::numeric 
+    ROUND(COALESCE(ohd.off_hours_deployments, 0)::numeric
           / NULLIF(ohd.total_deployments, 0) * 100, 2) as off_hours_deployment_rate_pct,
     -- 超级管理员直接操作频率
-    (SELECT COUNT(*) FROM high_privilege_operations hpo 
+    (SELECT COUNT(*) FROM high_privilege_operations hpo
      WHERE hpo.group_id = g.id AND hpo.access_level = 50) as owner_direct_commits,
     -- 风险评级
-    CASE 
-        WHEN COALESCE(ohd.off_hours_deployments, 0)::numeric / NULLIF(ohd.total_deployments, 0) > 0.3 
+    CASE
+        WHEN COALESCE(ohd.off_hours_deployments, 0)::numeric / NULLIF(ohd.total_deployments, 0) > 0.3
         THEN 'High Risk: Frequent Off-Hours Operations'
-        WHEN COALESCE(ohd.off_hours_deployments, 0)::numeric / NULLIF(ohd.total_deployments, 0) > 0.1 
+        WHEN COALESCE(ohd.off_hours_deployments, 0)::numeric / NULLIF(ohd.total_deployments, 0) > 0.1
         THEN 'Medium Risk: Some Off-Hours Operations'
         ELSE 'Low Risk'
     END as risk_level
@@ -125,7 +125,7 @@ ORDER BY off_hours_deployment_rate_pct DESC;
 -- 作用：确保生产变更可追溯到需求，满足 ITIL 变更管理要求
 CREATE OR REPLACE VIEW view_compliance_change_traceability AS
 WITH production_deployments AS (
-    SELECT 
+    SELECT
         d.id as deployment_id,
         d.project_id,
         d.ref,
@@ -135,22 +135,22 @@ WITH production_deployments AS (
         mr.id as linked_mr_id,
         mr.title as mr_title
     FROM deployments d
-    LEFT JOIN merge_requests mr ON d.project_id = mr.project_id 
+    LEFT JOIN merge_requests mr ON d.project_id = mr.project_id
         AND d.ref LIKE '%' || mr.source_branch || '%'
     WHERE d.environment = 'production'
       AND d.created_at >= NOW() - INTERVAL '90 days'
 ),
 mr_issue_links AS (
-    SELECT 
+    SELECT
         mr.id as mr_id,
         COUNT(DISTINCT tl.target_id) as linked_issues_count
     FROM merge_requests mr
-    LEFT JOIN traceability_links tl ON CAST(mr.id AS TEXT) = tl.source_id 
-        AND tl.source_system = 'gitlab' 
+    LEFT JOIN traceability_links tl ON CAST(mr.id AS TEXT) = tl.source_id
+        AND tl.source_system = 'gitlab'
         AND tl.target_system = 'jira'
     GROUP BY mr.id
 )
-SELECT 
+SELECT
     p.name as project_name,
     COUNT(pd.deployment_id) as total_deployments,
     -- 可追溯到 MR
@@ -162,15 +162,15 @@ SELECT
     -- 未授权变更（无 MR 也无 Issue）
     SUM(CASE WHEN pd.linked_mr_id IS NULL THEN 1 ELSE 0 END) as unauthorized_changes,
     -- 可追溯率
-    ROUND(SUM(CASE WHEN pd.linked_mr_id IS NOT NULL THEN 1 ELSE 0 END)::numeric 
+    ROUND(SUM(CASE WHEN pd.linked_mr_id IS NOT NULL THEN 1 ELSE 0 END)::numeric
           / NULLIF(COUNT(pd.deployment_id), 0) * 100, 2) as traceability_rate_pct,
     -- 合规状态
-    CASE 
-        WHEN SUM(CASE WHEN pd.linked_mr_id IS NULL THEN 1 ELSE 0 END)::numeric 
-             / NULLIF(COUNT(pd.deployment_id), 0) > 0.2 
+    CASE
+        WHEN SUM(CASE WHEN pd.linked_mr_id IS NULL THEN 1 ELSE 0 END)::numeric
+             / NULLIF(COUNT(pd.deployment_id), 0) > 0.2
         THEN 'Non-Compliant: High Unauthorized Changes'
-        WHEN SUM(CASE WHEN pd.linked_mr_id IS NOT NULL THEN 1 ELSE 0 END)::numeric 
-             / NULLIF(COUNT(pd.deployment_id), 0) >= 0.9 
+        WHEN SUM(CASE WHEN pd.linked_mr_id IS NOT NULL THEN 1 ELSE 0 END)::numeric
+             / NULLIF(COUNT(pd.deployment_id), 0) >= 0.9
         THEN 'Compliant'
         ELSE 'Partially Compliant'
     END as compliance_status
@@ -186,15 +186,15 @@ ORDER BY traceability_rate_pct ASC;
 -- 作用：监控敏感文件的访问和变更，满足 GDPR/PIPL 数据保护要求
 CREATE OR REPLACE VIEW view_compliance_sensitive_data_access AS
 WITH sensitive_file_changes AS (
-    SELECT 
+    SELECT
         c.id as commit_id,
         c.project_id,
         c.gitlab_user_id,
         c.committed_date,
         cfs.file_path,
         cfs.code_added + cfs.code_added as total_changes,
-        CASE 
-            WHEN cfs.file_path LIKE '%config%' OR cfs.file_path LIKE '%secret%' 
+        CASE
+            WHEN cfs.file_path LIKE '%config%' OR cfs.file_path LIKE '%secret%'
                  OR cfs.file_path LIKE '%credential%' OR cfs.file_path LIKE '%password%'
                  OR cfs.file_path LIKE '%.env%' OR cfs.file_path LIKE '%key%'
             THEN 'Sensitive'
@@ -204,24 +204,24 @@ WITH sensitive_file_changes AS (
     JOIN commit_file_stats cfs ON c.id = cfs.commit_id
     WHERE c.committed_date >= NOW() - INTERVAL '90 days'
 )
-SELECT 
+SELECT
     p.name as project_name,
     u.name as user_name,
     u.email as user_email,
     COUNT(DISTINCT sfc.commit_id) as total_commits,
     COUNT(DISTINCT CASE WHEN sfc.file_sensitivity = 'Sensitive' THEN sfc.commit_id END) as sensitive_file_commits,
     -- 敏感文件变更率
-    ROUND(COUNT(DISTINCT CASE WHEN sfc.file_sensitivity = 'Sensitive' THEN sfc.commit_id END)::numeric 
+    ROUND(COUNT(DISTINCT CASE WHEN sfc.file_sensitivity = 'Sensitive' THEN sfc.commit_id END)::numeric
           / NULLIF(COUNT(DISTINCT sfc.commit_id), 0) * 100, 2) as sensitive_change_rate_pct,
     -- 最近一次敏感操作
     MAX(CASE WHEN sfc.file_sensitivity = 'Sensitive' THEN sfc.committed_date END) as last_sensitive_access,
     -- 风险评级
-    CASE 
-        WHEN COUNT(DISTINCT CASE WHEN sfc.file_sensitivity = 'Sensitive' THEN sfc.commit_id END) > 10 
+    CASE
+        WHEN COUNT(DISTINCT CASE WHEN sfc.file_sensitivity = 'Sensitive' THEN sfc.commit_id END) > 10
         THEN 'High Risk: Frequent Sensitive Access'
-        WHEN COUNT(DISTINCT CASE WHEN sfc.file_sensitivity = 'Sensitive' THEN sfc.commit_id END) > 3 
+        WHEN COUNT(DISTINCT CASE WHEN sfc.file_sensitivity = 'Sensitive' THEN sfc.commit_id END) > 3
         THEN 'Medium Risk'
-        WHEN COUNT(DISTINCT CASE WHEN sfc.file_sensitivity = 'Sensitive' THEN sfc.commit_id END) > 0 
+        WHEN COUNT(DISTINCT CASE WHEN sfc.file_sensitivity = 'Sensitive' THEN sfc.commit_id END) > 0
         THEN 'Low Risk'
         ELSE 'No Sensitive Access'
     END as risk_level
@@ -238,18 +238,18 @@ ORDER BY sensitive_file_commits DESC;
 -- 作用：确保同一人不同时拥有开发和发布权限，满足 SOX 404 要求
 CREATE OR REPLACE VIEW view_compliance_segregation_of_duties AS
 WITH user_roles AS (
-    SELECT 
+    SELECT
         u.id as user_id,
         u.name,
         u.email,
         -- 开发角色（有提交记录）
         CASE WHEN EXISTS (
-            SELECT 1 FROM commits c WHERE c.gitlab_user_id = u.id 
+            SELECT 1 FROM commits c WHERE c.gitlab_user_id = u.id
             AND c.committed_date >= NOW() - INTERVAL '90 days'
         ) THEN true ELSE false END as is_developer,
         -- 发布角色（有生产部署记录）
         CASE WHEN EXISTS (
-            SELECT 1 FROM deployments d 
+            SELECT 1 FROM deployments d
             JOIN projects p ON d.project_id = p.id
             WHERE d.environment = 'production'
             AND d.created_at >= NOW() - INTERVAL '90 days'
@@ -257,14 +257,14 @@ WITH user_roles AS (
         ) THEN true ELSE false END as is_deployer,
         -- 高权限角色
         CASE WHEN EXISTS (
-            SELECT 1 FROM gitlab_group_members ggm 
+            SELECT 1 FROM gitlab_group_members ggm
             WHERE ggm.user_id = u.id AND ggm.access_level >= 40
         ) THEN true ELSE false END as has_high_privilege
     FROM users u
     WHERE u.state = 'active'
 ),
 sod_violations AS (
-    SELECT 
+    SELECT
         user_id,
         name,
         email,
@@ -272,14 +272,14 @@ sod_violations AS (
         is_deployer,
         has_high_privilege,
         -- SoD 违规判定
-        CASE 
+        CASE
             WHEN is_developer = true AND is_deployer = true THEN 'SoD Violation: Dev + Deploy'
             WHEN is_developer = true AND has_high_privilege = true THEN 'Potential Risk: Dev + Admin'
             ELSE 'Compliant'
         END as sod_status
     FROM user_roles
 )
-SELECT 
+SELECT
     name,
     email,
     is_developer,
@@ -287,15 +287,15 @@ SELECT
     has_high_privilege,
     sod_status,
     -- 风险等级
-    CASE 
+    CASE
         WHEN sod_status LIKE 'SoD Violation%' THEN 'Critical'
         WHEN sod_status LIKE 'Potential Risk%' THEN 'Medium'
         ELSE 'Low'
     END as risk_level
 FROM sod_violations
 WHERE sod_status != 'Compliant'
-ORDER BY 
-    CASE 
+ORDER BY
+    CASE
         WHEN sod_status LIKE 'SoD Violation%' THEN 1
         WHEN sod_status LIKE 'Potential Risk%' THEN 2
         ELSE 3
@@ -306,13 +306,13 @@ ORDER BY
 -- 作用：识别高风险开源许可证，降低知识产权诉讼风险
 CREATE OR REPLACE VIEW view_compliance_oss_license_risk AS
 WITH dependency_analysis AS (
-    SELECT 
+    SELECT
         gd.project_id,
         gd.name as package_name,
         gd.version,
         gd.package_manager,
         -- 简化的许可证风险判定（实际需要外部 API 查询）
-        CASE 
+        CASE
             WHEN gd.name LIKE '%gpl%' THEN 'GPL (High Risk)'
             WHEN gd.name LIKE '%agpl%' THEN 'AGPL (Critical Risk)'
             WHEN gd.name LIKE '%lgpl%' THEN 'LGPL (Medium Risk)'
@@ -322,23 +322,23 @@ WITH dependency_analysis AS (
         END as license_risk
     FROM gitlab_dependencies gd
 )
-SELECT 
+SELECT
     p.name as project_name,
     COUNT(da.package_name) as total_dependencies,
     COUNT(CASE WHEN da.license_risk LIKE '%Critical%' THEN 1 END) as critical_risk_count,
     COUNT(CASE WHEN da.license_risk LIKE '%High%' THEN 1 END) as high_risk_count,
     COUNT(CASE WHEN da.license_risk = 'Unknown License' THEN 1 END) as unknown_license_count,
     -- 高风险许可证占比
-    ROUND(COUNT(CASE WHEN da.license_risk LIKE '%Critical%' OR da.license_risk LIKE '%High%' THEN 1 END)::numeric 
+    ROUND(COUNT(CASE WHEN da.license_risk LIKE '%Critical%' OR da.license_risk LIKE '%High%' THEN 1 END)::numeric
           / NULLIF(COUNT(da.package_name), 0) * 100, 2) as high_risk_rate_pct,
     -- 合规状态
-    CASE 
-        WHEN COUNT(CASE WHEN da.license_risk LIKE '%Critical%' THEN 1 END) > 0 
+    CASE
+        WHEN COUNT(CASE WHEN da.license_risk LIKE '%Critical%' THEN 1 END) > 0
         THEN 'Critical: AGPL Detected'
-        WHEN COUNT(CASE WHEN da.license_risk LIKE '%High%' THEN 1 END) > 5 
+        WHEN COUNT(CASE WHEN da.license_risk LIKE '%High%' THEN 1 END) > 5
         THEN 'High Risk: Multiple GPL'
-        WHEN COUNT(CASE WHEN da.license_risk = 'Unknown License' THEN 1 END)::numeric 
-             / NULLIF(COUNT(da.package_name), 0) > 0.3 
+        WHEN COUNT(CASE WHEN da.license_risk = 'Unknown License' THEN 1 END)::numeric
+             / NULLIF(COUNT(da.package_name), 0) > 0.3
         THEN 'Warning: Many Unknown Licenses'
         ELSE 'Low Risk'
     END as compliance_status
@@ -353,18 +353,18 @@ ORDER BY critical_risk_count DESC, high_risk_count DESC;
 -- 作用：识别离职员工的异常行为和潜在的知识产权流失风险
 CREATE OR REPLACE VIEW view_compliance_ip_protection AS
 WITH user_activity_analysis AS (
-    SELECT 
+    SELECT
         u.id as user_id,
         u.name,
         u.email,
         u.state,
         -- 最近 30 天的提交量
-        COUNT(DISTINCT CASE 
-            WHEN c.committed_date >= NOW() - INTERVAL '30 days' THEN c.id 
+        COUNT(DISTINCT CASE
+            WHEN c.committed_date >= NOW() - INTERVAL '30 days' THEN c.id
         END) as commits_last_30_days,
         -- 最近 90 天的提交量
-        COUNT(DISTINCT CASE 
-            WHEN c.committed_date >= NOW() - INTERVAL '90 days' THEN c.id 
+        COUNT(DISTINCT CASE
+            WHEN c.committed_date >= NOW() - INTERVAL '90 days' THEN c.id
         END) as commits_last_90_days,
         -- 大规模删除
         SUM(CASE WHEN cfs.code_added < -1000 THEN 1 ELSE 0 END) as large_deletions,
@@ -377,7 +377,7 @@ WITH user_activity_analysis AS (
     WHERE c.committed_date >= NOW() - INTERVAL '90 days'
     GROUP BY u.id, u.name, u.email, u.state
 )
-SELECT 
+SELECT
     name,
     email,
     state,
@@ -387,17 +387,17 @@ SELECT
     external_email_commits,
     last_commit_date,
     -- 异常活动检测
-    CASE 
-        WHEN state = 'inactive' AND commits_last_30_days > commits_last_90_days * 0.5 
+    CASE
+        WHEN state = 'inactive' AND commits_last_30_days > commits_last_90_days * 0.5
         THEN 'Critical: High Activity Before Departure'
-        WHEN large_deletions > 3 
+        WHEN large_deletions > 3
         THEN 'High Risk: Multiple Large Deletions'
-        WHEN external_email_commits > 5 
+        WHEN external_email_commits > 5
         THEN 'Medium Risk: External Email Usage'
         ELSE 'Normal'
     END as ip_risk_status,
     -- 风险等级
-    CASE 
+    CASE
         WHEN state = 'inactive' AND commits_last_30_days > commits_last_90_days * 0.5 THEN 'Critical'
         WHEN large_deletions > 3 THEN 'High'
         WHEN external_email_commits > 5 THEN 'Medium'
@@ -405,12 +405,12 @@ SELECT
     END as risk_level
 FROM user_activity_analysis
 WHERE commits_last_90_days > 0
-  AND (state = 'inactive' 
-       OR large_deletions > 0 
+  AND (state = 'inactive'
+       OR large_deletions > 0
        OR external_email_commits > 0
        OR commits_last_30_days > commits_last_90_days * 0.3)
-ORDER BY 
-    CASE 
+ORDER BY
+    CASE
         WHEN state = 'inactive' AND commits_last_30_days > commits_last_90_days * 0.5 THEN 1
         WHEN large_deletions > 3 THEN 2
         ELSE 3

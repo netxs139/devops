@@ -17,9 +17,9 @@ select
     total_risk_score,
     cleanup_priority_level,
     cleanup_reasons_text,
-    
+
     -- 给自动化脚本一个开关：只有 CRITICAL_DELETE 且 空间大于 100MB 的才自动删（安全防范）
-    case 
+    case
         when cleanup_priority_level = 'CRITICAL_DELETE' and total_size_bytes > 104857600 then true
         else false
     end as is_safe_to_auto_cleanup

@@ -4,29 +4,29 @@
 -- 定义: 用户 Push 代码到非自己所属部门的项目
 -- 前提: users 表和 projects 表都有 organization_id 或 department 字段
 CREATE OR REPLACE VIEW view_innersource_rate AS
-SELECT 
+SELECT
     u.name AS user_name,
     u.department AS user_dept,
     COUNT(c.id) AS total_commits,
     -- 跨部门提交数
     COUNT(CASE WHEN p.department != u.department THEN 1 END) AS cross_dept_commits,
     ROUND(
-        COUNT(CASE WHEN p.department != u.department THEN 1 END) * 100.0 / COUNT(c.id), 
+        COUNT(CASE WHEN p.department != u.department THEN 1 END) * 100.0 / COUNT(c.id),
         2
     ) AS innersource_ratio
-FROM 
+FROM
     commits c
-JOIN 
+JOIN
     users u ON c.gitlab_user_id = u.id -- 使用内部ID关联
-JOIN 
+JOIN
     projects p ON c.project_id = p.id
-WHERE 
+WHERE
     u.department IS NOT NULL AND p.department IS NOT NULL
-GROUP BY 
+GROUP BY
     u.name, u.department
-HAVING 
+HAVING
     COUNT(c.id) > 10
-ORDER BY 
+ORDER BY
     innersource_ratio DESC;
 
 
@@ -35,38 +35,38 @@ ORDER BY
 -- 这里用提交次数简算
 CREATE OR REPLACE VIEW view_silo_risk_files AS
 WITH file_authors AS (
-    SELECT 
+    SELECT
         fs.file_path,
         c.author_email,
         COUNT(*) AS commit_count
-    FROM 
+    FROM
         commit_file_stats fs
-    JOIN 
+    JOIN
         commits c ON fs.commit_id = c.id
-    GROUP BY 
+    GROUP BY
         fs.file_path, c.author_email
 ),
 file_total AS (
-    SELECT 
+    SELECT
         file_path,
         SUM(commit_count) AS total_commits
-    FROM 
+    FROM
         file_authors
-    GROUP BY 
+    GROUP BY
         file_path
 )
-SELECT 
+SELECT
     fa.file_path,
     fa.author_email AS dominant_author,
     fa.commit_count,
     ft.total_commits,
     ROUND(fa.commit_count * 100.0 / ft.total_commits, 2) AS ownership_ratio
-FROM 
+FROM
     file_authors fa
-JOIN 
+JOIN
     file_total ft ON fa.file_path = ft.file_path
-WHERE 
+WHERE
     ft.total_commits > 5 -- 忽略刚建立的文件
     AND (fa.commit_count * 1.0 / ft.total_commits) > 0.8 -- 超过 80% 由一人完成
-ORDER BY 
+ORDER BY
     ft.total_commits DESC, ownership_ratio DESC;

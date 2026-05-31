@@ -17,6 +17,7 @@
 ### 1.2 Plugin Factory 结构
 
 插件位于 `devops_collector/plugins/`，结构必须遵循以下标准：
+
 ```text
 plugins/{plugin_name}/
     __init__.py      # 必须包含 register() 函数
@@ -84,7 +85,7 @@ plugins/{plugin_name}/
 ### 3.1 禅道集成防护规范 (ZenTao Guardrails) [MANDATORY]
 
 - **认证防御**: 必须实现 401 异常拦截与 Token 自动刷新，重试逻辑必须包含 `is_retry` 状态位防止死循环。MQ 连接心跳 `heartbeat=600`。
-- **数据一致性陷阱**: 
+- **数据一致性陷阱**:
   - 禅道 `0` 表示空值，入库前必须转为 `NULL`。
   - **子资源韧性**: Detail API 报 404 时，必须降级为空集合处理，严禁中断全量任务。人员降级失败则保留原始字符串。
 - **状态归一化**: 必须通过 Transformer 将不同业务状态映射为标准 5 状态 (Backlog, InProgress, Testing, Completed, Cancelled)。

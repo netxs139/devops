@@ -113,8 +113,8 @@ const PmMatrixHandler = {
             if (keyword) {
                 // Combine searchable text
                 const searchStr = `
-                    ${req.iid} 
-                    ${req.title} 
+                    ${req.iid}
+                    ${req.title}
                     ${(item.merge_requests || []).map(m => m.title).join(' ')}
                     ${(item.commits || []).map(c => c.short_id).join(' ')}
                 `.toLowerCase();

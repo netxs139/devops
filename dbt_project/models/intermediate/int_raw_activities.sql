@@ -6,7 +6,7 @@
     )
 }}
 
-with 
+with
 
 -- 1. 开发活动 (Commits)
 commit_activities as (
@@ -50,7 +50,7 @@ mr_activities as (
     {% endif %}
 
     union all
-    
+
     select
         'GITLAB-MR-MERGE-' || m.merge_request_id::text as activity_id,
         m.merged_at as occurred_at,
@@ -92,7 +92,7 @@ issue_activities as (
     {% endif %}
 
     union all
-    
+
     select
         'GITLAB-ISSUE-CLOSE-' || i.issue_id::text as activity_id,
         i.closed_at as occurred_at,
@@ -141,7 +141,7 @@ zentao_activities as (
         i.created_at as occurred_at,
         i.opened_by_user_id::text as external_author_id,
         'EXTERNAL_ID' as identifier_type,
-        case 
+        case
             when i.issue_type = 'story' then 'STORY'
             when i.issue_type = 'bug' then 'BUG'
             else 'TASK'
@@ -165,7 +165,7 @@ zentao_activities as (
         i.closed_at as occurred_at,
         i.assigned_to_user_id::text as external_author_id,
         'EXTERNAL_ID' as identifier_type,
-        case 
+        case
             when i.issue_type = 'story' then 'STORY'
             when i.issue_type = 'bug' then 'BUG'
             else 'TASK'

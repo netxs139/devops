@@ -5,7 +5,7 @@
 CREATE OR REPLACE VIEW view_gitprime_metrics AS
 WITH user_metrics AS (
     -- 1. 聚合提交相关的核心指标
-    SELECT 
+    SELECT
         u.global_user_id,
         u.full_name,
         u.primary_email,
@@ -27,16 +27,16 @@ WITH user_metrics AS (
 ),
 rankings AS (
     -- 2. 计算派生指标与排名
-    SELECT 
+    SELECT
         *,
         DENSE_RANK() OVER (ORDER BY total_impact DESC) as rank_position, -- 以 Impact 排名更能体现价值
-        CASE 
+        CASE
             WHEN raw_additions > 0 THEN ROUND((total_churn * 100.0 / raw_additions), 1)
-            ELSE 0 
+            ELSE 0
         END as churn_rate_percent
     FROM user_metrics
 )
-SELECT 
+SELECT
     rank_position,
     full_name,
     department_id,
@@ -46,7 +46,7 @@ SELECT
     ROUND(total_impact, 1) as impact_score,
     churn_rate_percent as "churn_rate%",
     ROUND((avg_refactor_ratio * 100), 1) as "refactor_intensity%",
-    CASE 
+    CASE
         WHEN rank_position <= 3 THEN 'Elite'
         WHEN rank_position <= 10 THEN 'Core'
         WHEN rank_position <= 30 THEN 'Contributor'

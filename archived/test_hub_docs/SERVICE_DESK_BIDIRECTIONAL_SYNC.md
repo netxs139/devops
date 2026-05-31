@@ -273,13 +273,13 @@ def update_ticket_status(tracking_code, new_status, comment=None):
         "new_status": new_status,
         "comment": comment
     }
-    
+
     response = requests.patch(url, params=params)
     return response.json()
 
 # 使用示例
 result = update_ticket_status(
-    "BUG-20251227-001", 
+    "BUG-20251227-001",
     "in-progress",
     "技术团队已开始处理此问题"
 )
@@ -297,11 +297,11 @@ async function updateTicketStatus(trackingCode, newStatus, comment) {
         new_status: newStatus,
         comment: comment || ''
     });
-    
+
     const response = await fetch(`${url}?${params}`, {
         method: 'PATCH'
     });
-    
+
     return await response.json();
 }
 

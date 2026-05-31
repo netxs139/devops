@@ -54,9 +54,9 @@
 > **背景**: MDM 核心实体间存在天然的业务循环。例如：用户归属于地点 (`User.location_id`), 而地点负责人又是该用户 (`Location.manager_user_id`)。这种“鸡生蛋，蛋生鸡”的逻辑在数据库物理层面会引发删表顺序死锁。
 
 - **1. ORM 层面声明 (ORM-Level Declaration)**:
-  - 针对所有已知的循环外键（如：User <-> Organization, User <-> Location），**必须**在 `ForeignKey` 定义中显式指定 `use_alter=True` 并通过 `name` 参数给出全局唯一的约束名称。
+  - 针对所有已知的循环外键（如：User \<-> Organization, User \<-> Location），**必须**在 `ForeignKey` 定义中显式指定 `use_alter=True` 并通过 `name` 参数给出全局唯一的约束名称。
   - 示例：`ForeignKey("mdm_identities.global_user_id", use_alter=True, name="fk_location_manager")`。
-- **2. 同步逻辑的两阶段协议 (Two-Phase Alignment Protocol)** [MANDATORY]:
+- **2. 同步逻辑的两阶段协议 (Two-Phase Alignment Protocol)** \[MANDATORY\]:
   - **第一阶段 (Ingestion)**: Worker 在同步带外键循环的实体时，仅入库基础非空字段。如果关联的目标对象（如负责人）尚未入库，**严禁**触发递归查询或报错。
   - **暂存标识**: 将外部源提供的原始标识（如 LDAP ID）存入专门的 `manager_raw_id` 字符串字段。
   - **第二阶段 (Self-Healing)**: 在全量同步任务结束时，由应用级 Service 触发 `realign_all_managers()`。该方法统一将 `manager_raw_id` 解析为真正的 `manager_user_id` (UUID) 物理外键，实现最终一致性。
@@ -120,11 +120,11 @@
 ### 3.2 企业级主数据管理 (Enterprise MDM) 六大金科玉律 [MANDATORY]
 
 1. **黄金记录与幸存者规则 (Golden Record & Survivorship)**：多路数据对齐时，必须基于权威优先级配置（如 HR > WeCom > GitLab）判定合并写入权。
-2. **全局身份解耦 (OneID Cross-Reference)**：外部账户标识必须统一存入 `mdm_identity_mappings`，`User` 表主键仅保留平台生成的 `global_user_id`。
-3. **隔离暂存区 (Staging Area & Promotion)**：源系统原始数据必须先落入 `mdm_staging`，由 `PromotionService` 清洗合并后再直写主数据表。
-4. **数据血缘 (Data Lineage)**：`User` 或 `Organization` 创建/更新时必须强制记录 `source_system` 与 `correlation_id`，支持按批次回滚。
-5. **慢变维追踪 (SCD Type 2)**：属性变更严禁 `UPDATE` 覆盖，必须置位 `is_current=False` 并 `INSERT` 新行。
-6. **异步对齐与自愈 (Async Auto-Alignment)**：同步带循环引用的对象时执行两阶段对齐协议（第一阶段暂存，第二阶段通过 `realign_org_managers` 合并）。
+1. **全局身份解耦 (OneID Cross-Reference)**：外部账户标识必须统一存入 `mdm_identity_mappings`，`User` 表主键仅保留平台生成的 `global_user_id`。
+1. **隔离暂存区 (Staging Area & Promotion)**：源系统原始数据必须先落入 `mdm_staging`，由 `PromotionService` 清洗合并后再直写主数据表。
+1. **数据血缘 (Data Lineage)**：`User` 或 `Organization` 创建/更新时必须强制记录 `source_system` 与 `correlation_id`，支持按批次回滚。
+1. **慢变维追踪 (SCD Type 2)**：属性变更严禁 `UPDATE` 覆盖，必须置位 `is_current=False` 并 `INSERT` 新行。
+1. **异步对齐与自愈 (Async Auto-Alignment)**：同步带循环引用的对象时执行两阶段对齐协议（第一阶段暂存，第二阶段通过 `realign_org_managers` 合并）。
 
 ## 4. 数据隐私与合规治理 (Data Privacy & Governance)
 

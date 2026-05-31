@@ -1,12 +1,12 @@
 
 /*
     统一工作项引擎 (Unified Work Items Engine)
-    
+
     该模型整合了来自 Jira 和 GitLab 的所有任务、需求和缺陷。
     它是进行跨部门进度分析、交付节奏度量和 ROI 核算的核心基础。
 */
 
-with 
+with
 
 -- 1. 来自 Jira 的工作项
 jira_items as (
@@ -56,7 +56,7 @@ zentao_items as (
         issue_title as title,
         issue_status as current_status,
         -- 将禅道类型映射到通用类型
-        case 
+        case
             when issue_type = 'story' then 'Story'
             when issue_type = 'bug' then 'Bug'
             when issue_type = 'task' then 'Task'
