@@ -4,16 +4,30 @@
 
 ## 1. dbt 数据建模与分层 (Data Transformation)
 
-> 📘 **开发指南**: 详细的模型开发手册及代码模式请参见 `docs/guides/DBT_MODELING_GUIDE.md`。
+
 
 ### 1.1 分层逻辑
 
-| 层级 | 前缀 | 说明 |
-| :--- | :--- | :--- |
-| **Staging** | `stg_` | 原始数据清洗，1:1 映射源表。**强制性规则**：严禁在 Staging 层执行业务过滤（如 `where is_current=true`），必须完整保留源表历史快照以支撑 SCD Type 2。 |
-| **Intermediate** | `int_` | 中间转换，跨源关联与过滤。 |
-| **Marts (维度)** | `dim_` | 业务维度表，描述性属性。 |
-| **Marts (事实)** | `fct_` | 业务事实表，度量指标，直接对接报表层。 |
+| 层级 | 前缀 | 说明 | 数据形态 |
+| :--- | :--- | :--- | :--- |
+| **Staging** | `stg_` | 原始数据清洗，1:1 映射源表。**强制性规则**：严禁在 Staging 层执行业务过滤（如 `where is_current=true`），必须完整保留源表历史快照以支撑 SCD Type 2。 | 扁平模型，与源系统同构 |
+| **Intermediate** | `int_` | 中间转换，跨源关联、身份/组织归一化、复杂业务逻辑组合与过滤。 | 归一化后的业务实体片段 |
+| **Marts (维度)** | `dim_` | 业务维度表，描述性属性。 | 星型/雪花型建模 |
+| **Marts (事实)** | `fct_` | 业务事实表，度量指标，直接对接报表层。 | 星型/雪花型建模 |
+
+### 1.4 命名契约 (Naming Convention) [NEW]
+
+#### 1.4.1 模型文件命名
+- **Staging**: `stg_{source}_{resource}.sql` （例：`stg_gitlab_commits.sql`）
+- **Intermediate**: `int_{domain}_{logic}.sql` （例：`int_org_normalization.sql`）
+- **Marts**: `dim_{entity}.sql` 或 `fct_{metric_event}.sql` （例：`fct_dora_metrics_v2.sql`）
+
+#### 1.4.2 字段命名
+- **布尔值**: 强制使用 `is_` 或 `has_` 前缀（如 `is_deleted`, `has_incident`）。
+- **时间戳**: 统一使用 `_at` 后缀（如 `created_at`）。日期（不含时间）使用 `_date`。
+- **ID 标识符**:
+  - 主键统一命名为 `{resource}_id`。
+  - 跨系统主键在 `int_` 层必须归一化为 `global_user_id` 或 `master_project_id`。
 
 ### 1.2 ID 归一化与自愈协议 (Normalization & Self-Healing) [MANDATORY]
 
@@ -31,8 +45,17 @@
 ## 2. dbt 性能与类型守卫 (Performance & Type Safety) [NEW]
 
 - **JSONB 强类型转换 (Defensive JSONB)** [MANDATORY]:
-  - 从 `JSONB` 提取字段进行转型时，必须执行 `nullif(trim(both '"' from field), '')`。
-  - **逻辑原因**: 防止 Postgres 解析带物理引号的 JSON 字符串（如 `"true"`, `"123"`) 时触发语法错误导致流水线熔断。
+  - 针对从源系统 `raw_data` (JSONB) 提取的字段进行转型时，必须执行以下“三板斧”清理：
+    ```sql
+    -- 推荐模板
+    coalesce(
+        nullif(trim(both '"' from raw_data->>'resolvedDate'), ''),
+        '1970-01-01'::text
+    )::timestamp as resolved_at
+    ```
+    1. **`trim(both '"' from field)`**: 清除 JSON 字面量中可能残留的物理引号，防止触发语法错误导致流水线熔断。
+    2. **`nullif(..., '')`**: 将空字符串转换为真正的 `NULL`。
+    3. **`coalesce`**: 为关键计算字段提供默认值。
 - **时区归一化 (UTC Sync)**: 所有 Staging 层的时间戳必须显式执行 `at time zone 'UTC'`，并统一使用 `_at` 后缀（如 `committed_at`, `closed_at`）。
 - **ID 语义一致性 (String IDs)**: 所有跨源关联的业务主键在 dbt 语义层强制统一为 `String (character varying)` 类型。严禁在中间层混用 `Integer` 与 `String` 导致关联报错。
 - **Staging 透明度**: Staging 模型必须完成所有字段语义对齐（如 `ncloc` -> `lines_of_code`）。严禁在 `int_` 或 `fct_` 层继续直接使用源系统的非标缩写。
@@ -79,3 +102,32 @@
 - **4. 性能与安全**:
   - 看板 SQL 必须包含 `LIMIT`（如果是在列表显示中）。
   - 必须使用 `sqlalchemy.sql.text` 并通过 `params` 传参，严禁 f-string 拼接 SQL。
+
+## 6. 数据生命周期与清理 (Data Lifecycle)
+
+### 6.1 软删除与存续性检查
+- **僵尸数据过滤**: 所有 Marts 层模型必须基于 `mdm_systems_registry` 或拓扑表的存续性标志。
+- **一致性**: 严禁在报表中展示已在源系统物理删除的“幽灵记录”，除非该记录被明确标注为 `is_historical_archive`。
+
+### 6.2 主数据刷新规范
+- **定向重置**: 主数据（组织/产品/项目）变更时，必须使用标准工具 `scripts/refresh_master_data.py` 进行定向重置，严禁手动 `TRUNCATE` 导致外键引用崩溃。
+
+## 7. 测试分级与 CI 门禁 (Testing & CI/CD)
+
+### 7.1 测试严重性 (Severity)
+- **Error (阻断)**: 主键冲突、关键 ID 为空、数据类型溢出。必须中断 CI 流水线，禁止物化下游模型。
+- **Warn (预警)**: 业务逻辑异常（如单次工时 > 24h）。允许执行完毕，但必须在大屏展示数据风险警告。
+
+### 7.2 单元测试强制化
+- 针对涉及 DORA MTTR 计算、资本化 ROI 逻辑的 `int_` 层模型，必须编写 `singular tests` 或使用模拟数据的 `unit tests` 覆盖边界场景。
+
+## 8. 数据治理与 Schema 监控 (Governance)
+
+### 8.1 Schema Drift 防御
+- 核心 Source 必须配置 `freshness` 检查。
+- 关键 Staging 模型应包含字段存续性审计，防止源端 API 结构变更导致数据静默丢失（Silent Failure）。
+
+## 9. 高阶业务语义标准 (Advanced Semantics)
+
+### 9.1 SCD2 冲突处理标准
+- 身份与组织关联必须统一遵循：`优先查找 is_current=True` -> `失败则回溯最近历史版本` -> `仍失败则回填业务桩记录(Stub)` 的流水线逻辑。

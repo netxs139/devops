@@ -31,6 +31,40 @@
 - **核心**: 确保在同步任务中断重启后，数据不会重复。
 - **测试强制**: 任何数据采集 Worker 必须编写一个单元测试，连续运行两次 `worker.run()`（提供相同的模拟数据源），断言第二次执行后数据库物理记录数不变。
 
+### 1.4 全链路仿真测试 (Full-system Simulation) 🌟
+
+- **路径**: `tests/simulations/run_full_integration.py`
+- **逻辑**: 模拟 7 大系统（GitLab, Jira, Sonar, Jenkins, ZenTao, Nexus, JFrog）的完整 API 响应。
+- **关键验证项**:
+  - **流水线追踪**: 验证 Jenkins Build 的 `commit_sha` 是否能精准关联到 GitLab 对应的提交记录。
+  - **身份扇出**: 验证修改 `IdentityMapping` 后，是否所有关联系统的 Activity 全部归并至同一 User 下。
+  - **依赖图谱**: 验证 `issuelinks` 导出的 `traceability_links` 是否能正确呈现跨项目阻塞逻辑。
+
+### 1.5 数据重播验证 (Data Replay & Reprocessing)
+
+- **脚本**: `scripts/reprocess_staging_data.py`
+- **验证流程**:
+  1. 清空事实表 (Fact Tables)。
+  2. 保持 `raw_data_staging` 原始数据不变。
+  3. 修改 Transform 映射逻辑（如调整 `ai_category` 判定准则）。
+  4. 运行重播脚本。
+  5. 校验事实表中的分类是否符合新准则。
+
+### 1.6 专项测试场景 (Special Scenarios)
+
+- **容错与重试**:
+  - 模拟 API 429 (Rate Limit) 响应，验证 Worker 是否正确执行指数退避。
+  - 模拟 API 500 错误，验证任务是否正确放回 RabbitMQ 延迟队列。
+- **性能压力**:
+  - 模拟 10 万级 Commit 的同步，验证 `Generator` 和 `Batch Commit` 机制下内存占用是否保持在 500MB 以下。
+
+### 1.7 验收指南 (Acceptance Criteria)
+
+任何发布版本必须通过以下“三道关卡”：
+1. **静默期**: 在沙箱环境运行全量同步任务，且无 ERROR 日志。
+2. **数据穿透**: 随机抽取 5 个项目，手动核对页面指标与看板指标是否一致。
+3. **多端推送**: 确认异常告警能正确触达飞书/企微/钉钉机器人。
+
 ## 2. 代码质量与 Ruff 规范 (Code Quality & Ruff)
 
 ### 2.1 统一工具链
