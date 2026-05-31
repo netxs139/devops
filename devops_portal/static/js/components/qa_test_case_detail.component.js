@@ -36,14 +36,14 @@ class QaTestCaseDetail extends HTMLElement {
                     grid-template-columns: 1fr 280px;
                     height: 100%;
                 }
-                
+
                 /* Main Content Area */
                 .main-content {
                     padding: 32px 40px;
                     border-right: 1px solid #F0F0F0;
                     overflow-y: auto;
                 }
-                
+
                 .header {
                     margin-bottom: 32px;
                     border-bottom: 1px solid #F0F0F0;
@@ -61,7 +61,7 @@ class QaTestCaseDetail extends HTMLElement {
                     color: #1d1d1f;
                     line-height: 1.3;
                 }
-                
+
                 .section {
                     margin-bottom: 32px;
                 }
@@ -76,7 +76,7 @@ class QaTestCaseDetail extends HTMLElement {
                     align-items: center;
                     gap: 8px;
                 }
-                
+
                 .content-box {
                     font-size: 15px;
                     line-height: 1.6;
@@ -99,7 +99,7 @@ class QaTestCaseDetail extends HTMLElement {
                 }
                 .step-item:last-child { border-bottom: none; }
                 .step-item.is-completed { opacity: 0.5; }
-                
+
                 .step-check {
                     width: 20px;
                     height: 20px;
@@ -119,7 +119,7 @@ class QaTestCaseDetail extends HTMLElement {
                     border-color: #34C759;
                     color: white;
                 }
-                
+
                 .step-num {
                     counter-increment: step;
                     width: 24px;
@@ -148,7 +148,7 @@ class QaTestCaseDetail extends HTMLElement {
                     display: flex;
                     flex-direction: column;
                 }
-                
+
                 .sidebar-group {
                     margin-bottom: 24px;
                 }
@@ -164,7 +164,7 @@ class QaTestCaseDetail extends HTMLElement {
                     color: #1d1d1f;
                     font-weight: 500;
                 }
-                
+
                 .status-badge {
                     display: inline-flex;
                     padding: 4px 12px;
@@ -302,7 +302,7 @@ class QaTestCaseDetail extends HTMLElement {
 
                     <div class="exec-toolbar">
                         <div class="sidebar-label" style="text-align: center; margin-bottom: 8px;">Execution Feedback</div>
-                        
+
                         <select class="exec-env-selector js-exec-env">
                             <option value="Dev">Environment: Development</option>
                             <option value="QA" selected>Environment: QA / Testing</option>
@@ -311,7 +311,7 @@ class QaTestCaseDetail extends HTMLElement {
                         </select>
 
                         <textarea class="exec-comment js-exec-comment" placeholder="Add execution notes or evidence (required for failure)..."></textarea>
-                        
+
                         <button class="btn-exec btn-pass js-exec" data-result="passed">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
                             Mark as Passed

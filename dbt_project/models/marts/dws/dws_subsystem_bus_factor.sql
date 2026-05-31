@@ -9,7 +9,7 @@ subsystem_stats as (
         project_id,
         author_user_id,
         -- 取路径的前两级作为子系统标识
-        case 
+        case
             when position('/' in file_path) > 0 then split_part(file_path, '/', 1)
             else 'root'
         end as subsystem,
@@ -43,7 +43,7 @@ ownership_details as (
 
 select
     *,
-    case 
+    case
         when subsystem_ownership_pct > 80 then 'KNOWLEDGE_SILO'
         when contributor_count = 1 then 'TRUCK_FACTOR_ONE'
         else 'HEALTHY_DISTRIBUTION'

@@ -1,13 +1,13 @@
 
 /*
     交付成本度量衡 (The FinOps Bridge / Cost-to-Value) - Refactored v2
-    
+
     逻辑：
     1. 整合重构后的 DWS 层项目周成本。
     2. 计算每个项目的“单个 MR 成本”及“单位产出价值”。
 */
 
-with 
+with
 
 project_costs as (
     select
@@ -29,12 +29,12 @@ project_output as (
 ),
 
 projects as (
-    select 
+    select
         p.*,
         rm.master_project_id
     from {{ ref('stg_gitlab_projects') }} p
-    left join {{ ref('int_project_resource_map') }} rm 
-        on p.gitlab_project_id::text = rm.external_resource_id 
+    left join {{ ref('int_project_resource_map') }} rm
+        on p.gitlab_project_id::text = rm.external_resource_id
         and rm.system_code = 'gitlab-prod'
 )
 
@@ -43,18 +43,18 @@ select
     p.project_name,
     p.master_project_id,
     coalesce(pc.total_accrued_cost, 0) as total_cost,
-    
+
     -- 效率指标
-    case 
-        when coalesce(po.total_mrs, 0) > 0 
+    case
+        when coalesce(po.total_mrs, 0) > 0
         then round((pc.total_accrued_cost / po.total_mrs)::numeric, 2)
-        else null 
+        else null
     end as cost_per_mr,
-    
+
     coalesce(po.total_deploys, 0) as prod_deploys,
-    
+
     -- 成本效益等级
-    case 
+    case
         when (pc.total_accrued_cost / nullif(po.total_mrs, 0)) < 500 then 'High Efficiency'
         when (pc.total_accrued_cost / nullif(po.total_mrs, 0)) > 2000 then 'Heavy Investment'
         else 'Optimal'

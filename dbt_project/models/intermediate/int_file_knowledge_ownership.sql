@@ -33,9 +33,9 @@ select
     c.author_user_id,
     c.lines_added,
     t.total_lines_added,
-    case 
+    case
         when t.total_lines_added > 0 then round(c.lines_added * 100.0 / t.total_lines_added, 2)
-        else 0 
+        else 0
     end as ownership_pct
 from file_contributions c
 join file_totals t on c.file_path = t.file_path and c.project_id = t.project_id

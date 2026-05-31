@@ -33,11 +33,11 @@ final as (
         round((s.success_count::numeric / nullif(s.total_sync_tasks, 0)) * 100, 2) as success_rate_pct,
         s.last_sync_time,
         now() - s.last_sync_time as freshness_gap,
-        
+
         -- 组合审计指标 (模拟)
         a.anomaly_count as total_anomalies,
         a.total_records as audit_total
-        
+
     from sync_stats s
     cross join audit_stats a
 )

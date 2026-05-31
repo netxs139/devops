@@ -5,7 +5,7 @@ WITH projects AS (
 ),
 
 latest_measures AS (
-    SELECT 
+    SELECT
         *,
         ROW_NUMBER() OVER(PARTITION BY project_id ORDER BY analysis_date DESC) as rank
     FROM {{ ref('stg_sonar_measures') }}
@@ -29,7 +29,7 @@ SELECT
     -- 增量风险评估
     m.new_coverage,
     m.new_bugs,
-    CASE 
+    CASE
         WHEN m.new_bugs > 0 OR m.new_vulnerabilities > 0 THEN 'RISKY'
         WHEN m.quality_gate_status = 'ERROR' THEN 'FAILED'
         ELSE 'STABLE'

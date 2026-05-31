@@ -4,8 +4,6 @@
 
 ## 1. dbt 数据建模与分层 (Data Transformation)
 
-
-
 ### 1.1 分层逻辑
 
 | 层级 | 前缀 | 说明 | 数据形态 |
@@ -18,11 +16,13 @@
 ### 1.4 命名契约 (Naming Convention) [NEW]
 
 #### 1.4.1 模型文件命名
+
 - **Staging**: `stg_{source}_{resource}.sql` （例：`stg_gitlab_commits.sql`）
 - **Intermediate**: `int_{domain}_{logic}.sql` （例：`int_org_normalization.sql`）
 - **Marts**: `dim_{entity}.sql` 或 `fct_{metric_event}.sql` （例：`fct_dora_metrics_v2.sql`）
 
 #### 1.4.2 字段命名
+
 - **布尔值**: 强制使用 `is_` 或 `has_` 前缀（如 `is_deleted`, `has_incident`）。
 - **时间戳**: 统一使用 `_at` 后缀（如 `created_at`）。日期（不含时间）使用 `_date`。
 - **ID 标识符**:
@@ -44,7 +44,7 @@
 
 ## 2. dbt 性能与类型守卫 (Performance & Type Safety) [NEW]
 
-- **JSONB 强类型转换 (Defensive JSONB)** [MANDATORY]:
+- **JSONB 强类型转换 (Defensive JSONB)** \[MANDATORY\]:
   - 针对从源系统 `raw_data` (JSONB) 提取的字段进行转型时，必须执行以下“三板斧”清理：
     ```sql
     -- 推荐模板
@@ -54,8 +54,8 @@
     )::timestamp as resolved_at
     ```
     1. **`trim(both '"' from field)`**: 清除 JSON 字面量中可能残留的物理引号，防止触发语法错误导致流水线熔断。
-    2. **`nullif(..., '')`**: 将空字符串转换为真正的 `NULL`。
-    3. **`coalesce`**: 为关键计算字段提供默认值。
+    1. **`nullif(..., '')`**: 将空字符串转换为真正的 `NULL`。
+    1. **`coalesce`**: 为关键计算字段提供默认值。
 - **时区归一化 (UTC Sync)**: 所有 Staging 层的时间戳必须显式执行 `at time zone 'UTC'`，并统一使用 `_at` 后缀（如 `committed_at`, `closed_at`）。
 - **ID 语义一致性 (String IDs)**: 所有跨源关联的业务主键在 dbt 语义层强制统一为 `String (character varying)` 类型。严禁在中间层混用 `Integer` 与 `String` 导致关联报错。
 - **Staging 透明度**: Staging 模型必须完成所有字段语义对齐（如 `ncloc` -> `lines_of_code`）。严禁在 `int_` 或 `fct_` 层继续直接使用源系统的非标缩写。
@@ -82,7 +82,7 @@
   - **Streamlit (已集成 ✅)**: 核心 BI 交互平台。用于轻量级、交互式数据应用开发，特别是涉及 Python 逻辑的动态看板。
   - **Superset**: 企业级可视化大盘，用于处理大规模 SQL 聚合报表。
   - **Metabase**: 用于业务侧自服务查询 (Self-service BI) 与快速简单看板搭建。
-- **数据源接入 (Data Source Access)** [MANDATORY]:
+- **数据源接入 (Data Source Access)** \[MANDATORY\]:
   - **逻辑层对齐**: 所有的看板查询必须严格区分底层。
   - **ORM/物理表优先**: Streamlit 看板连接 PostgreSQL 业务库时，**必须**直接使用 ORM 定义的物理表名（如 `gitlab_commits`），严禁使用 dbt 专属的 `stg_` 前缀，除非该视图已被显式物化。
   - **隔离性**: 严禁在看板 SQL 中硬编码 schema 名称，统一直连 public schema。
@@ -91,7 +91,7 @@
 
 > **背景**: 为了防止开发者混淆 dbt 的 stg(Staging) 层视图与 PostgreSQL 业务物理表，特制定此强制对齐协议。
 
-- **1. 命名空间禁令 (Naming Prohibition)** [MANDATORY]:
+- **1. 命名空间禁令 (Naming Prohibition)** \[MANDATORY\]:
   - 在 `dashboard/pages/` 下的所有 Python 脚本中，SQL 查询语句中**严禁出现**以 `stg_` 开头的表名（这些是 dbt 的临时/中间视图，属于 Analytics 层，对 Dashboard 往往不可见或不稳定）。
 - **2. 物理表对齐清单 (Physical Table Mapping)**:
   - 凡是查询 GitLab 数据，必须对应表：`gitlab_commits`, `gitlab_merge_requests`, `gitlab_projects`。
@@ -106,28 +106,34 @@
 ## 6. 数据生命周期与清理 (Data Lifecycle)
 
 ### 6.1 软删除与存续性检查
+
 - **僵尸数据过滤**: 所有 Marts 层模型必须基于 `mdm_systems_registry` 或拓扑表的存续性标志。
 - **一致性**: 严禁在报表中展示已在源系统物理删除的“幽灵记录”，除非该记录被明确标注为 `is_historical_archive`。
 
 ### 6.2 主数据刷新规范
+
 - **定向重置**: 主数据（组织/产品/项目）变更时，必须使用标准工具 `scripts/refresh_master_data.py` 进行定向重置，严禁手动 `TRUNCATE` 导致外键引用崩溃。
 
 ## 7. 测试分级与 CI 门禁 (Testing & CI/CD)
 
 ### 7.1 测试严重性 (Severity)
+
 - **Error (阻断)**: 主键冲突、关键 ID 为空、数据类型溢出。必须中断 CI 流水线，禁止物化下游模型。
 - **Warn (预警)**: 业务逻辑异常（如单次工时 > 24h）。允许执行完毕，但必须在大屏展示数据风险警告。
 
 ### 7.2 单元测试强制化
+
 - 针对涉及 DORA MTTR 计算、资本化 ROI 逻辑的 `int_` 层模型，必须编写 `singular tests` 或使用模拟数据的 `unit tests` 覆盖边界场景。
 
 ## 8. 数据治理与 Schema 监控 (Governance)
 
 ### 8.1 Schema Drift 防御
+
 - 核心 Source 必须配置 `freshness` 检查。
 - 关键 Staging 模型应包含字段存续性审计，防止源端 API 结构变更导致数据静默丢失（Silent Failure）。
 
 ## 9. 高阶业务语义标准 (Advanced Semantics)
 
 ### 9.1 SCD2 冲突处理标准
+
 - 身份与组织关联必须统一遵循：`优先查找 is_current=True` -> `失败则回溯最近历史版本` -> `仍失败则回填业务桩记录(Stub)` 的流水线逻辑。

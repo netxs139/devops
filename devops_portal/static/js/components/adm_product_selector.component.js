@@ -150,9 +150,9 @@ class AdmProductSelector extends HTMLElement {
             </style>
             <div class="container">
                 <div class="segmented-control">
-                    <div class="segment ${selectedType === 'product' ? 'active' : ''}" 
+                    <div class="segment ${selectedType === 'product' ? 'active' : ''}"
                          data-type="product">产品</div>
-                    <div class="segment ${selectedType === 'org' ? 'active' : ''}" 
+                    <div class="segment ${selectedType === 'org' ? 'active' : ''}"
                          data-type="org">部门</div>
                 </div>
                 <div class="divider"></div>

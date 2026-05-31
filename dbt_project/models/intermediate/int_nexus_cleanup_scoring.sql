@@ -38,29 +38,29 @@ base_info as (
         agg.last_downloaded_at,
         m.mdm_product_id,
         t.commit_sha,
-        
+
         -- --- 打分逻辑开始 ---
-        
+
         -- 1. 是否是“孤儿包”（未在产品资产表中登记）
         case when m.mdm_product_id is null then 40 else 0 end as score_orphan,
-        
+
         -- 2. 是否是“临时包”（Snapshot 库）
         case when lower(c.repository_name) like '%snapshot%' then 30 else 0 end as score_snapshot,
-        
+
         -- 3. 是否是“陈年旧包”（180天没人下过）
-        case 
+        case
             when agg.last_downloaded_at is null then 50 -- 从来没人下过，最危险
             when agg.last_downloaded_at < (current_date - interval '180 days') then 30
-            else 0 
+            else 0
         end as score_idle,
-        
+
         -- 4. 是否“身份不明”（没能关联到 Git 代码提交）
         case when t.commit_sha is null then 20 else 0 end as score_untraced
 
     from components c
     left join assets_agg agg on c.component_id = agg.component_id
     left join seed_map m
-        on (coalesce(c.component_name, '') = coalesce(cast(m.name as {{ dbt.type_string() }}), '') 
+        on (coalesce(c.component_name, '') = coalesce(cast(m.name as {{ dbt.type_string() }}), '')
             and coalesce(c.component_group, '') = coalesce(cast(m."group" as {{ dbt.type_string() }}), ''))
     left join trace_info t on c.component_id = t.component_id
 ),
@@ -74,12 +74,12 @@ final_scoring as (
 
 select
     *,
-    case 
+    case
         when total_risk_score >= 80 then 'CRITICAL_DELETE' -- 高危：建议立即执行硬删除
         when total_risk_score >= 50 then 'WARNING_CLEANUP' -- 中危：建议人工核对或归档
         else 'KEEP_SAFE'                                  -- 安全：核心资产或近期使用过
     end as cleanup_priority_level,
-    
+
     -- 产出一个“清理理由”方便小白理解
     concat_ws(' | ',
         case when score_orphan > 0 then '孤儿包(无主)' end,

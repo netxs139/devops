@@ -9,7 +9,7 @@
 -- 维度：产出(Commits), 影响(Merged MRs), 协作(Reviews), 质量(Bugs), 投入(Active Days)
 CREATE OR REPLACE VIEW view_hr_user_capability_profile AS
 WITH user_commits AS (
-    SELECT 
+    SELECT
         gitlab_user_id,
         COUNT(*) as commit_count,
         SUM(additions) as total_additions,
@@ -19,7 +19,7 @@ WITH user_commits AS (
     GROUP BY gitlab_user_id
 ),
 mr_activity AS (
-    SELECT 
+    SELECT
         author_id,
         COUNT(*) as mr_created,
         SUM(CASE WHEN state = 'merged' THEN 1 ELSE 0 END) as mr_merged
@@ -28,17 +28,17 @@ mr_activity AS (
     GROUP BY author_id
 ),
 review_activity AS (
-    SELECT 
+    SELECT
         author_id,
         COUNT(*) as comments_made,
         COUNT(DISTINCT noteable_iid) as issues_mrs_touched
     FROM notes
     WHERE created_at >= NOW() - INTERVAL '90 days'
-    AND system = false 
+    AND system = false
     GROUP BY author_id
 ),
 quality_metric AS (
-    SELECT 
+    SELECT
         author,
         COUNT(*) as total_issues,
         SUM(CASE WHEN severity IN ('BLOCKER', 'CRITICAL') THEN 1 ELSE 0 END) as critical_issues
@@ -46,12 +46,12 @@ quality_metric AS (
     WHERE creation_date >= NOW() - INTERVAL '90 days'
     GROUP BY author
 )
-SELECT 
+SELECT
     u.id as user_id,
     u.name,
     u.department,
     o.name as group_name,
-    
+
     COALESCE(uc.commit_count, 0) as metric_commits,
     COALESCE(uc.total_additions, 0) as metric_code_lines,
     COALESCE(ma.mr_merged, 0) as metric_mr_merged,
@@ -71,7 +71,7 @@ WHERE u.state = 'active' AND u.is_virtual = false;
 -- 2. 技术栈分布 (Tech Stack Radar)
 -- 用途：识别技术专家和团队技能短板
 CREATE OR REPLACE VIEW view_hr_user_tech_stack AS
-SELECT 
+SELECT
     u.name as user_name,
     u.department,
     cfs.language,
@@ -92,39 +92,39 @@ ORDER BY u.name, lines_added DESC;
 -- 用途：识别加班严重 (Burnout) 或 活跃度断崖 (Disengaged) 的员工
 CREATE OR REPLACE VIEW view_hr_retention_risk AS
 WITH monthly_stats AS (
-    SELECT 
+    SELECT
         gitlab_user_id,
         TO_CHAR(committed_date, 'YYYY-MM') as month_str,
         COUNT(*) as commit_count,
-        SUM(CASE 
-            WHEN EXTRACT(HOUR FROM committed_date) >= 22 OR EXTRACT(HOUR FROM committed_date) < 6 
-            THEN 1 ELSE 0 
+        SUM(CASE
+            WHEN EXTRACT(HOUR FROM committed_date) >= 22 OR EXTRACT(HOUR FROM committed_date) < 6
+            THEN 1 ELSE 0
         END) as late_night_commits,
-        SUM(CASE 
-            WHEN EXTRACT(ISODOW FROM committed_date) IN (6, 7) 
-            THEN 1 ELSE 0 
+        SUM(CASE
+            WHEN EXTRACT(ISODOW FROM committed_date) IN (6, 7)
+            THEN 1 ELSE 0
         END) as weekend_commits
     FROM commits
     WHERE committed_date >= NOW() - INTERVAL '4 months'
     GROUP BY gitlab_user_id, TO_CHAR(committed_date, 'YYYY-MM')
 )
-SELECT 
+SELECT
     u.name,
     u.department,
     curr.month_str as current_month,
     curr.commit_count,
-    
+
     -- Burnout Risk (Overtime %)
     ROUND((curr.late_night_commits + curr.weekend_commits)::numeric / NULLIF(curr.commit_count, 0) * 100, 1) as overtime_ratio_pct,
-    CASE 
+    CASE
         WHEN (curr.late_night_commits + curr.weekend_commits)::numeric / NULLIF(curr.commit_count, 0) > 0.3 THEN 'HIGH_BURNOUT'
         ELSE 'NORMAL'
     END as burnout_risk_level,
-    
+
     -- Disengagement Risk (MoM Drop)
     prev.commit_count as prev_month_commit,
     ROUND((curr.commit_count - prev.commit_count)::numeric / NULLIF(prev.commit_count, 0) * 100, 1) as mom_change_pct,
-    CASE 
+    CASE
         WHEN prev.commit_count > 10 AND curr.commit_count < (prev.commit_count * 0.2) THEN 'HIGH_DROP_OFF'
         WHEN prev.commit_count > 10 AND curr.commit_count < (prev.commit_count * 0.5) THEN 'MEDIUM_DROP_OFF'
         ELSE 'STABLE'
@@ -132,7 +132,7 @@ SELECT
 
 FROM users u
 JOIN monthly_stats curr ON u.id = curr.gitlab_user_id
-LEFT JOIN monthly_stats prev ON curr.gitlab_user_id = prev.gitlab_user_id 
+LEFT JOIN monthly_stats prev ON curr.gitlab_user_id = prev.gitlab_user_id
     AND prev.month_str = TO_CHAR(TO_DATE(curr.month_str, 'YYYY-MM') - INTERVAL '1 month', 'YYYY-MM')
 WHERE u.state = 'active'
 AND curr.month_str = TO_CHAR(NOW(), 'YYYY-MM');
@@ -143,7 +143,7 @@ AND curr.month_str = TO_CHAR(NOW(), 'YYYY-MM');
 -- 注意：依赖 SonarQube 同步的 sonar_issues 表数据
 CREATE OR REPLACE VIEW view_hr_user_quality_scorecard AS
 WITH issue_stats AS (
-    SELECT 
+    SELECT
         author, -- SonarQube 中的用户名通常是 Email 前缀或 GitLab Username
         COUNT(*) as total_issues,
         SUM(CASE WHEN type = 'BUG' THEN 1 ELSE 0 END) as bugs,
@@ -157,16 +157,16 @@ WITH issue_stats AS (
     WHERE status != 'CLOSED' -- 仅统计存量问题
     GROUP BY author
 )
-SELECT 
+SELECT
     u.name,
     u.department,
     COALESCE(ist.total_issues, 0) as active_issues,
     COALESCE(ist.bugs, 0) as active_bugs,
     COALESCE(ist.vulnerabilities, 0) as active_vulnerabilities,
     COALESCE(ist.critical_issues, 0) as active_critical_issues,
-    
+
     -- 质量评级
-    CASE 
+    CASE
         WHEN COALESCE(ist.critical_issues, 0) > 5 THEN 'D (High Risk)'
         WHEN COALESCE(ist.bugs, 0) > 20 THEN 'C (Needs Improvement)'
         WHEN COALESCE(ist.bugs, 0) > 5 THEN 'B (Good)'
@@ -197,7 +197,7 @@ process_guard_activity AS (
         SELECT user_id FROM gitlab_issue_events WHERE event_type IN ('label', 'milestone')
         UNION ALL
         -- 假设 author_name 可以关联到 user，这里简化逻辑
-        SELECT u.id FROM jira_issue_histories jh JOIN users u ON jh.author_name = u.name 
+        SELECT u.id FROM jira_issue_histories jh JOIN users u ON jh.author_name = u.name
         WHERE jh.field IN ('status', 'labels', 'duedate')
     ) sub
     GROUP BY user_id
@@ -209,7 +209,7 @@ help_activity AS (
     WHERE created_at >= NOW() - INTERVAL '90 days' AND system = false
     GROUP BY author_id
 )
-SELECT 
+SELECT
     u.name,
     u.department,
     COALESCE(wa.wiki_actions, 0) as wiki_score,
@@ -217,12 +217,12 @@ SELECT
     COALESCE(ha.comment_count, 0) as help_score,
     -- GPI 综合得分 (加权)
     ROUND(
-        (COALESCE(wa.wiki_actions, 0) * 5.0) + 
-        (COALESCE(pa.meta_updates, 0) * 2.0) + 
+        (COALESCE(wa.wiki_actions, 0) * 5.0) +
+        (COALESCE(pa.meta_updates, 0) * 2.0) +
         (COALESCE(ha.comment_count, 0) * 0.5)
     ) as gpi_score,
-    
-    CASE 
+
+    CASE
         WHEN (COALESCE(wa.wiki_actions, 0) * 5.0 + COALESCE(pa.meta_updates, 0) * 2.0 + COALESCE(ha.comment_count, 0) * 0.5) > 100 THEN 'Team Catalyst (Star)'
         WHEN (COALESCE(wa.wiki_actions, 0) * 5.0 + COALESCE(pa.meta_updates, 0) * 2.0 + COALESCE(ha.comment_count, 0) * 0.5) > 50 THEN 'Bridge Builder'
         WHEN (COALESCE(wa.wiki_actions, 0) * 5.0 + COALESCE(pa.meta_updates, 0) * 2.0 + COALESCE(ha.comment_count, 0) * 0.5) > 20 THEN 'Supportive Member'

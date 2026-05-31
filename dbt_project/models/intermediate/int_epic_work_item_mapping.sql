@@ -1,12 +1,12 @@
 
 /*
     Epic 与工作项关联映射 (Epic to Work Item Mapping)
-    
+
     逻辑：
     通过工作项的关联 ID 或标签，将其映射到战略 Epic。
 */
 
-with 
+with
 
 work_items as (
     select * from {{ ref('int_unified_work_items') }}

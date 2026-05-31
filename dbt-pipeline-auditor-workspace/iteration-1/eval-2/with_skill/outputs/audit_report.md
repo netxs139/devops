@@ -20,7 +20,7 @@ orgs as (
     select * from {{ ref('stg_mdm_organizations') }}
     where is_current = true  -- 必须锁定当前版本
 )
-select 
+select
     p.*,
     o.full_name as org_name
 from projects p

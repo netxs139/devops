@@ -1,26 +1,26 @@
 
 /*
     身份归属推断模型 (Identity Attribution Inference) - v9
-    
+
     设计逻辑：
     1. 基于行为归因：通过 int_raw_activities 分析各个外部账号在项目中的活跃度。
     2. 穿透对齐：
-       Activity (project_id) -> 
-       GitLabProject (path_with_namespace) -> 
-       EntityTopology (external_resource_id) -> 
-       MasterProject -> 
+       Activity (project_id) ->
+       GitLabProject (path_with_namespace) ->
+       EntityTopology (external_resource_id) ->
+       MasterProject ->
        Organization (org_id)
     3. 解析 Master ID：匹配电子邮件 (EMAIL) 或 外部 ID (EXTERNAL_ID)。
 */
 
-with 
+with
 
 raw_activities as (
     select * from {{ ref('int_raw_activities') }}
 ),
 
 gitlab_projects as (
-    select 
+    select
         gitlab_project_id,
         path_with_namespace
     from {{ ref('stg_gitlab_projects') }}
@@ -28,7 +28,7 @@ gitlab_projects as (
 
 topology as (
     -- 资产拓扑：找到 GitLab 项目所对应的业务资产
-    select 
+    select
         external_resource_id,
         master_project_id
     from {{ ref('stg_mdm_entity_topology') }}
@@ -37,7 +37,7 @@ topology as (
 
 projects as (
     -- 业务项目：其所属的业务部门
-    select 
+    select
         project_id as master_project_id,
         org_id
     from {{ source('raw', 'mdm_projects') }}
@@ -75,17 +75,17 @@ best_signals as (
         m.user_id as global_user_id
     from ranked_signals s
     -- 多模式匹配：根据推断出的 identifier_type 进行关联
-    left join mappings m 
+    left join mappings m
         on lower(trim(s.source_system)) = lower(trim(m.source_system))
         and (
             (s.identifier_type = 'EMAIL' and lower(trim(m.external_email)) = lower(trim(s.external_author_id)))
-            or 
+            or
             (s.identifier_type = 'EXTERNAL_ID' and lower(trim(m.external_user_id)) = lower(trim(s.external_author_id)))
         )
     where rank = 1
 )
 
-select 
+select
     global_user_id,
     source_system,
     identifier_type,

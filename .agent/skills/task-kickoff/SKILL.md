@@ -1,7 +1,6 @@
----
-name: task-kickoff
-description: Workflow for task-kickoff
----
+______________________________________________________________________
+
+## name: task-kickoff description: Workflow for task-kickoff
 
 # Workflow: /task-kickoff (Task Kickoff)
 
@@ -68,8 +67,8 @@ ______________________________________________________________________
 AI 将向用户输出以下卡片，等待放行信号：
 
 ```text
-[Kickoff Complete] 
-- Level: L{x} 
+[Kickoff Complete]
+- Level: L{x}
 - Strategy: [Normal] / [SPIKE-FIRST]
 - TDD Intent: 已明确 (需优先构建 XX 测试契约/探针)
 - Target Skill: {需要调用的 Skill}

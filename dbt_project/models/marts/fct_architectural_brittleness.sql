@@ -1,18 +1,18 @@
 
 /*
     架构脆性指数 (Architectural Brittleness Index - ABI)
-    
+
     逻辑：
     1. 计算 In-Degree: 该项目产出的包被多少外部项目引用（影响力）。
     2. 结合复杂度 (Complexity) 和 覆盖率 (Coverage)。
     3. 识别“脆性核心”：高影响力、高复杂度、低覆盖率。
 */
 
-with 
+with
 
 -- 1. 计算被引用情况
 provision as (
-    select 
+    select
         package_name,
         project_id
     from {{ ref('stg_gitlab_packages') }}
@@ -37,13 +37,13 @@ in_degree as (
 
 -- 2. 质量指标
 quality as (
-    select 
+    select
         master_entity_id,
         complexity,
         cognitive_complexity,
         coverage
     from (
-        select 
+        select
             sp.mdm_project_id as master_entity_id,
             sm.complexity,
             sm.cognitive_complexity,
@@ -69,15 +69,15 @@ select
     coalesce(q.complexity, 0) as complexity_score,
     coalesce(q.cognitive_complexity, 0) as cognitive_complexity,
     coalesce(q.coverage, 0) as coverage_pct,
-    
+
     -- ABI 算法 (演示逻辑)
     round(
-        (coalesce(i.total_in_degree, 0) * 10.0) + 
-        (coalesce(q.cognitive_complexity, 0) / 2.0) - 
+        (coalesce(i.total_in_degree, 0) * 10.0) +
+        (coalesce(q.cognitive_complexity, 0) / 2.0) -
         (coalesce(q.coverage, 0))
     ) as brittleness_index,
-    
-    case 
+
+    case
         when coalesce(i.total_in_degree, 0) > 5 and coalesce(q.coverage, 0) < 30 then 'CRITICAL_BRITTLE_CORE'
         when coalesce(i.total_in_degree, 0) > 2 then 'STABLE_INFRA'
         else 'NORMAL'

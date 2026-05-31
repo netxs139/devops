@@ -68,7 +68,7 @@ WITH project_groups AS (
     JOIN gitlab_groups g ON p.group_id = g.id
 ),
 deployment_stats AS (
-    SELECT 
+    SELECT
         project_id,
         DATE_TRUNC('month', created_at) as month_date,
         COUNT(*) as deploy_count,
@@ -79,7 +79,7 @@ deployment_stats AS (
     GROUP BY project_id, DATE_TRUNC('month', created_at)
 ),
 lead_time_stats AS (
-    SELECT 
+    SELECT
         project_id,
         DATE_TRUNC('month', merged_at) as month_date,
         AVG(EXTRACT(EPOCH FROM (merged_at - created_at))/60) as avg_lead_time_minutes
@@ -88,7 +88,7 @@ lead_time_stats AS (
     AND merged_at >= NOW() - INTERVAL '6 months'
     GROUP BY project_id, DATE_TRUNC('month', merged_at)
 )
-SELECT 
+SELECT
     pg.group_name,
     ds.month_date,
     SUM(ds.deploy_count) as total_deploys,
@@ -108,7 +108,7 @@ ORDER BY pg.group_name, ds.month_date DESC;
 ```sql
 CREATE OR REPLACE VIEW view_team_collaboration_health AS
 WITH group_stats AS (
-    SELECT 
+    SELECT
         g.name as group_name,
         count(distinct c.gitlab_user_id) as active_devs,
         count(distinct mr.id) as total_mrs,
@@ -116,21 +116,21 @@ WITH group_stats AS (
     FROM gitlab_groups g
     JOIN projects p ON g.id = p.group_id
     JOIN merge_requests mr ON p.id = mr.project_id
-    LEFT JOIN commits c ON p.id = c.project_id 
+    LEFT JOIN commits c ON p.id = c.project_id
         AND c.committed_date >= NOW() - INTERVAL '90 days'
-    LEFT JOIN notes n ON mr.iid = n.noteable_iid 
-        AND mr.project_id = n.project_id 
+    LEFT JOIN notes n ON mr.iid = n.noteable_iid
+        AND mr.project_id = n.project_id
         AND n.system = false
     WHERE mr.created_at >= NOW() - INTERVAL '90 days'
     GROUP BY g.name
 )
-SELECT 
+SELECT
     group_name,
     active_devs,
     total_mrs,
     reviewed_mrs,
     ROUND(reviewed_mrs::numeric / NULLIF(total_mrs, 0) * 100, 1) as review_coverage_pct,
-    CASE 
+    CASE
         WHEN reviewed_mrs::numeric / NULLIF(total_mrs, 0) < 0.3 THEN 'RISK: Isolation'
         WHEN reviewed_mrs::numeric / NULLIF(total_mrs, 0) > 0.8 THEN 'HEALTHY'
         ELSE 'NEEDS_IMPROVEMENT'
@@ -145,7 +145,7 @@ ORDER BY review_coverage_pct ASC;
 
 ```sql
 CREATE OR REPLACE VIEW view_team_quality_debt AS
-SELECT 
+SELECT
     g.name as group_name,
     SUM(sm.ncloc) as total_lines_of_code,
     COUNT(distinct p.id) as project_count,
@@ -174,7 +174,7 @@ ORDER BY total_debt_hours DESC;
 ```sql
 CREATE OR REPLACE VIEW view_team_process_culture AS
 WITH commit_stats AS (
-    SELECT 
+    SELECT
         p.id as project_id,
         COUNT(*) as total_commits,
         -- 游离代码: Message 中不包含 Issue ID (简单正则示例)
@@ -187,7 +187,7 @@ WITH commit_stats AS (
 innersource_stats AS (
     -- 简化的内源贡献: 统计该团队成员向其他 Group 项目的提交 (需结合 User 归属)
     -- 此处仅为示例逻辑
-    SELECT 
+    SELECT
         g.id as group_id,
         COUNT(distinct c.id) as cross_contributions
     FROM gitlab_groups g
@@ -199,14 +199,14 @@ innersource_stats AS (
     AND c.committed_date >= NOW() - INTERVAL '90 days'
     GROUP BY g.id
 )
-SELECT 
+SELECT
     g.name as group_name,
     -- 流程合规
     ROUND(SUM(cs.unmanaged_commits)::numeric / NULLIF(SUM(cs.total_commits), 0) * 100, 1) as unmanaged_code_ratio_pct,
-    
+
     -- 内源文化
     COALESCE(ins.cross_contributions, 0) as innersource_commits_count
-    
+
 FROM gitlab_groups g
 JOIN projects p ON g.id = p.group_id
 LEFT JOIN commit_stats cs ON p.id = cs.project_id

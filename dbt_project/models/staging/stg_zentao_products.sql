@@ -9,8 +9,8 @@ renamed AS (
         name AS product_name,
         code AS product_code,
         status AS product_status,
-        case 
-            when mdm_product_id is not null and mdm_product_id not like 'PROJ-%' 
+        case
+            when mdm_product_id is not null and mdm_product_id not like 'PROJ-%'
                 then 'PROJ-' || mdm_product_id
             else mdm_product_id
         end as mdm_product_id,

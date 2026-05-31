@@ -215,7 +215,7 @@ function renderVSM(containerId, data) {
 function drawELOC(canvasId, data) {
     const canvas = document.getElementById(canvasId);
     if (!canvas || !window.Chart) return;
-    
+
     // Clear existing chart instance if any
     if (window._elocChart) window._elocChart.destroy();
 

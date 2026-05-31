@@ -52,7 +52,7 @@ SELECT
     p.id as project_id,
     p.name as project_name,
     -- Calculate relative week number (1 = current week, 32 = 32 weeks ago)
-    EXTRACT(WEEK FROM NOW())::int - EXTRACT(WEEK FROM c.committed_date)::int + 
+    EXTRACT(WEEK FROM NOW())::int - EXTRACT(WEEK FROM c.committed_date)::int +
         (EXTRACT(YEAR FROM NOW())::int - EXTRACT(YEAR FROM c.committed_date)::int) * 52 as weeks_ago,
     DATE_TRUNC('week', c.committed_date) as week_start,
     COUNT(*) as commit_count

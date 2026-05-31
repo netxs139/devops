@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS dependency_scans (
     vulnerable_dependencies INTEGER DEFAULT 0,
     high_risk_licenses INTEGER DEFAULT 0,
     scan_status VARCHAR(20) DEFAULT 'completed',  -- completed, failed, in_progress
-    
+
     -- [新增] CI/CD 上下文
     ci_job_id VARCHAR(50),
     ci_job_url VARCHAR(500),
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS dependency_scans (
     branch VARCHAR(100),
     report_url VARCHAR(500),
     scan_duration_seconds FLOAT,
-    
+
     raw_json JSONB,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
@@ -67,19 +67,19 @@ CREATE TABLE IF NOT EXISTS dependencies (
     id SERIAL PRIMARY KEY,
     scan_id INTEGER NOT NULL REFERENCES dependency_scans(id) ON DELETE CASCADE,
     project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-    
+
     -- 依赖基本信息
     package_name VARCHAR(500) NOT NULL,
     package_version VARCHAR(100),
     package_manager VARCHAR(50),  -- maven, npm, pypi, nuget, etc.
     dependency_type VARCHAR(20) DEFAULT 'direct',  -- direct, transitive
-    
+
     -- 许可证信息
     license_name VARCHAR(200),
     license_spdx_id VARCHAR(100),
     license_url TEXT,
     license_risk_level VARCHAR(20),
-    
+
     -- 漏洞信息
     has_vulnerabilities BOOLEAN DEFAULT FALSE,
     highest_cvss_score FLOAT,
@@ -93,16 +93,16 @@ CREATE TABLE IF NOT EXISTS dependencies (
     ignore_reason TEXT,
     ignore_by VARCHAR(50),
     ignore_at TIMESTAMP,
-    
+
     -- 元数据
     file_path TEXT,
     description TEXT,
     homepage_url TEXT,
     raw_data JSONB,
-    
+
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
-    
+
     UNIQUE(scan_id, package_name, package_version)
 );
 
@@ -120,31 +120,31 @@ COMMENT ON COLUMN dependencies.dependency_type IS '依赖类型: direct(直接�
 CREATE TABLE IF NOT EXISTS dependency_cves (
     id SERIAL PRIMARY KEY,
     dependency_id INTEGER NOT NULL REFERENCES dependencies(id) ON DELETE CASCADE,
-    
+
     -- CVE 信息
     cve_id VARCHAR(50) NOT NULL,
     cvss_score FLOAT,
     cvss_vector VARCHAR(200),
     severity VARCHAR(20),  -- CRITICAL, HIGH, MEDIUM, LOW
-    
+
     -- 漏洞描述
     description TEXT,
     published_date DATE,
     last_modified_date DATE,
-    
+
     -- 修复建议
     fixed_version VARCHAR(100),
     remediation TEXT,
-    
+
     -- 引用链接
     references JSONB,
-    
+
     -- [新增] 误报管理
     is_ignored BOOLEAN DEFAULT FALSE,
     ignore_reason TEXT,
 
     created_at TIMESTAMP DEFAULT NOW(),
-    
+
     UNIQUE(dependency_id, cve_id)
 );
 
@@ -191,7 +191,7 @@ WITH latest_scans AS (
     ORDER BY project_id, scan_date DESC
 ),
 dependency_risk_summary AS (
-    SELECT 
+    SELECT
         d.project_id,
         d.license_risk_level,
         COUNT(*) as dependency_count,
@@ -201,7 +201,7 @@ dependency_risk_summary AS (
     JOIN latest_scans ls ON d.scan_id = ls.scan_id
     GROUP BY d.project_id, d.license_risk_level
 )
-SELECT 
+SELECT
     p.name as project_name,
     g.name as group_name,
     ls.scan_date as last_scan_date,
@@ -216,17 +216,17 @@ SELECT
     COALESCE(SUM(drs.total_high_cves), 0) as total_high_cves,
     -- 高风险许可证占比
     ROUND(
-        COALESCE(SUM(CASE WHEN drs.license_risk_level IN ('critical', 'high') THEN drs.dependency_count END), 0)::numeric 
+        COALESCE(SUM(CASE WHEN drs.license_risk_level IN ('critical', 'high') THEN drs.dependency_count END), 0)::numeric
         / NULLIF(ls.total_dependencies, 0) * 100, 2
     ) as high_risk_rate_pct,
     -- 合规状态
-    CASE 
-        WHEN COALESCE(SUM(CASE WHEN drs.license_risk_level = 'critical' THEN drs.dependency_count END), 0) > 0 
+    CASE
+        WHEN COALESCE(SUM(CASE WHEN drs.license_risk_level = 'critical' THEN drs.dependency_count END), 0) > 0
         THEN 'Critical: GPL/AGPL Detected'
-        WHEN COALESCE(SUM(CASE WHEN drs.license_risk_level = 'high' THEN drs.dependency_count END), 0) > 5 
+        WHEN COALESCE(SUM(CASE WHEN drs.license_risk_level = 'high' THEN drs.dependency_count END), 0) > 5
         THEN 'High Risk: Multiple LGPL/MPL'
-        WHEN COALESCE(SUM(CASE WHEN drs.license_risk_level = 'unknown' THEN drs.dependency_count END), 0)::numeric 
-             / NULLIF(ls.total_dependencies, 0) > 0.3 
+        WHEN COALESCE(SUM(CASE WHEN drs.license_risk_level = 'unknown' THEN drs.dependency_count END), 0)::numeric
+             / NULLIF(ls.total_dependencies, 0) > 0.3
         THEN 'Warning: Many Unknown Licenses'
         WHEN COALESCE(SUM(drs.total_critical_cves), 0) > 0
         THEN 'Critical: Security Vulnerabilities'
@@ -238,8 +238,8 @@ JOIN latest_scans ls ON p.id = ls.project_id
 LEFT JOIN dependency_risk_summary drs ON p.id = drs.project_id
 WHERE p.archived = false
 GROUP BY p.name, g.name, ls.scan_date, ls.total_dependencies
-ORDER BY 
-    CASE 
+ORDER BY
+    CASE
         WHEN COALESCE(SUM(CASE WHEN drs.license_risk_level = 'critical' THEN drs.dependency_count END), 0) > 0 THEN 1
         WHEN COALESCE(SUM(drs.total_critical_cves), 0) > 0 THEN 2
         ELSE 3

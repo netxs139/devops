@@ -59,7 +59,7 @@ const SDPortalHandler = {
             if (!Auth.getToken()) {
                 alert("请先登录");
                 // Trigger global login modal if available, or redirect
-                // document.dispatchEvent(new CustomEvent('sys:login-req')); 
+                // document.dispatchEvent(new CustomEvent('sys:login-req'));
                 return;
             }
         }

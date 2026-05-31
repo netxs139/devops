@@ -51,19 +51,19 @@ class SdRequestForm extends HTMLElement {
                 @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
                 .form-container { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.05); overflow: hidden; }
-                
+
                 .header { padding: 40px; background: ${isBug ? 'linear-gradient(135deg, #FFF0F0 0%, #FFF 100%)' : 'linear-gradient(135deg, #F0F8FF 0%, #FFF 100%)'}; border-bottom: 1px solid rgba(0,0,0,0.05); }
                 .title { font-size: 32px; font-weight: 700; margin: 0 0 8px 0; color: #1d1d1f; }
                 .subtitle { font-size: 16px; color: #86868b; margin: 0; }
-                
+
                 .body { padding: 40px; }
-                
+
                 .form-group { margin-bottom: 24px; }
                 .label { display: block; font-size: 13px; font-weight: 600; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
                 .input, .textarea, .select { width: 100%; box-sizing: border-box; padding: 14px; font-size: 16px; border: 1px solid #d2d2d7; border-radius: 12px; background: #fff; transition: border-color 0.2s; font-family: inherit; }
                 .input:focus, .textarea:focus, .select:focus { outline: none; border-color: ${themeColor}; box-shadow: 0 0 0 3px ${isBug ? 'rgba(255, 59, 48, 0.1)' : 'rgba(0, 113, 227, 0.1)'}; }
                 .textarea { min-height: 120px; resize: vertical; }
-                
+
                 .actions { display: flex; justify-content: flex-end; gap: 16px; margin-top: 40px; }
                 .btn { padding: 12px 28px; border-radius: 20px; font-size: 16px; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; }
                 .btn-cancel { background: #f5f5f7; color: #1d1d1f; }

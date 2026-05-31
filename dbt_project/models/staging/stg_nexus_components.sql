@@ -11,7 +11,7 @@ select
     cast(name as {{ dbt.type_string() }}) as component_name,
     cast(version as {{ dbt.type_string() }}) as component_version,
     cast(commit_sha as {{ dbt.type_string() }}) as commit_sha,
-    
+
     created_at,
     updated_at,
     is_deleted,

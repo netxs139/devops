@@ -37,10 +37,10 @@ issue_lifecycle as (
         min(committed_at) as first_commit_at,
         max(committed_at) as last_commit_at,
         count(distinct commit_sha) as total_commits,
-        
+
         -- 计算从需求创建到开始写代码的“响应延迟”
         extract(epoch from (min(committed_at) - issue_created_at)) / 3600.0 as response_lead_hours,
-        
+
         -- 计算从第一行代码到最后一行代码的“开发时长”
         extract(epoch from (max(committed_at) - min(committed_at))) / 3600.0 as dev_duration_hours
     from joined

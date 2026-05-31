@@ -10,7 +10,7 @@
     )
 }}
 
-select 
+select
     project_id,
     project_name,
     project_type,

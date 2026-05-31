@@ -1,7 +1,7 @@
 -- int_zentao_execution_efforts.sql
 WITH tasks AS (
     -- 提取所有任务及其工时负载
-    SELECT 
+    SELECT
         issue_unique_id,
         execution_id,
         remaining_hours,
@@ -31,7 +31,7 @@ execution_aggregation AS (
 
 executions_with_mdm AS (
     -- 关联到 MDM 项目维度
-    SELECT 
+    SELECT
         e.execution_id,
         e.execution_name,
         e.mdm_project_id,
@@ -41,12 +41,12 @@ executions_with_mdm AS (
         a.devel_hours,
         a.test_hours,
         -- 计算偏差率 (预计 vs 实际)
-        CASE 
+        CASE
             WHEN a.total_estimated_hours = 0 THEN 0
             ELSE ROUND(
                 CAST(
-                    (a.total_consumed_hours - a.total_estimated_hours) * 1.0 / NULLIF(a.total_estimated_hours, 0) 
-                AS NUMERIC), 
+                    (a.total_consumed_hours - a.total_estimated_hours) * 1.0 / NULLIF(a.total_estimated_hours, 0)
+                AS NUMERIC),
                 4
             )
         END AS effort_variance_rate

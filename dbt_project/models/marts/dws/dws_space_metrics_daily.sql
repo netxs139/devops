@@ -1,12 +1,12 @@
 
 /*
     DWS: SPACE 框架每日指标汇总 (SPACE Framework Daily Metrics)
-    
+
     整合 SPACE 框架的五个维度数据，为开发者个人和团队提供平衡度量。
     事实表粒度：用户 + 日期
 */
 
-with 
+with
 
 -- 1. Activity & Performance & Collaboration (从现有开发者 DWS 获取)
 dev_dws as (
@@ -45,19 +45,19 @@ efficiency as (
 select
     d.user_id,
     d.metric_date,
-    
+
     -- S: Satisfaction
     coalesce(s.avg_satisfaction_score, 0) as s_satisfaction,
-    
+
     -- P: Performance
     coalesce(d.performance_count, 0) as p_performance,
-    
+
     -- A: Activity
     coalesce(d.activity_score, 0) as a_activity,
-    
+
     -- C: Collaboration
     coalesce(d.review_count, 0) as c_collaboration,
-    
+
     -- E: Efficiency
     round(coalesce(e.avg_lead_time_hours, 0)::numeric, 2) as e_efficiency_hours,
 
@@ -69,7 +69,7 @@ select
             coalesce(d.activity_score, 0) +
             coalesce(d.review_count, 0) +
             round(coalesce(e.avg_lead_time_hours, 0)::numeric, 2)
-        ) / 5.0, 
+        ) / 5.0,
     2) as total_space_score
 
 from dev_dws d

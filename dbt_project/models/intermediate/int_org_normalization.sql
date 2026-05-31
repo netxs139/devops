@@ -1,19 +1,19 @@
 
 /*
     组织机构 ID 归一化模型 (Organization ID Normalization)
-    
+
     解决痛点：
     1. 同一部门在不同系统有不同编码 (如 CTR-政务研发中心 vs zentao_dept_198)。
     2. “名字对齐”优先级：HR 编码 (CTR-/DEP-) > 禅道编码 (zentao_dept_*)。
 */
 
-with 
+with
 
 raw_orgs as (
-    select 
+    select
         org_id,
         org_name,
-        case 
+        case
             when org_id like 'CTR-%' or org_id like 'DEP-%' then 1
             when org_id like 'zentao_dept_%' then 2
             else 3

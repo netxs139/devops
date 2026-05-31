@@ -10,7 +10,7 @@
     )
 }}
 
-select 
+select
     global_user_id as user_id,
     primary_email as email,
     employee_id,

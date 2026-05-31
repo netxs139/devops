@@ -64,10 +64,10 @@ async def get_province_quality(project_id: int):
 ```python
 async def get_province_quality(project_id: int, current_user = Depends(get_current_user)):
     """获取各省份的质量分布数据（已实现部门级数据隔离）"""
-    
+
     # 获取当前用户的省份权限范围
     user_province = getattr(current_user, 'province', 'nationwide') or 'nationwide'
-    
+
     # 数据隔离逻辑：根据用户省份过滤
     if user_province != 'nationwide' and province != user_province:
         continue  # 跳过非当前用户省份的数据
@@ -96,11 +96,11 @@ async def get_province_benchmarking(project_id: int):
 ```python
 async def get_province_benchmarking(project_id: int, current_user = Depends(get_current_user)):
     """获取地域质量横向对标数据（已实现部门级数据隔离）"""
-    
+
     # 获取当前用户的省份权限范围
     user_province = getattr(current_user, 'province', 'nationwide') or 'nationwide'
     logger.info(f"User {current_user.primary_email} accessing province data with scope: {user_province}")
-    
+
     # 数据隔离逻辑：根据用户省份过滤
     if user_province != 'nationwide' and province != user_province:
         continue  # 跳过非当前用户省份的数据

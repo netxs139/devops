@@ -17,7 +17,7 @@ Returns:
 try:
     # 1. 生成追踪码
     tracking_code = f"BUG-{datetime.now().strftime('%Y%m%d')}-{len(SERVICE_DESK_TICKETS) + 1:03d}"
-    
+
     # 2. 构造 GitLab Issue 描述
     description = f"""## 🐛 业务方缺陷报告 (Service Desk)
 ```
@@ -57,17 +57,17 @@ ______________________________________________________________________
     # 3. 在 GitLab 创建 Issue
     url = f"{Config.GITLAB_URL}/api/v4/projects/{project_id}/issues"
     headers = {"PRIVATE-TOKEN": Config.GITLAB_PRIVATE_TOKEN}
-    
+
     payload = {
         "title": f"[Service Desk] {data.title}",
         "description": description,
         "labels": f"type::bug,severity::{data.severity},priority::{data.priority},province::{data.province},origin::service-desk"
     }
-    
+
     response = requests.post(url, json=payload, headers=headers)
     response.raise_for_status()
     issue_data = response.json()
-    
+
     # 4. 保存工单记录
     ticket = {
         "tracking_code": tracking_code,
@@ -82,9 +82,9 @@ ______________________________________________________________________
         "updated_at": datetime.now().isoformat()
     }
     SERVICE_DESK_TICKETS[tracking_code] = ticket
-    
+
     logger.info(f"Service Desk Bug created: {tracking_code} -> Issue #{issue_data.get('iid')}")
-    
+
     return {
         "status": "success",
         "tracking_code": tracking_code,
@@ -92,7 +92,7 @@ ______________________________________________________________________
         "gitlab_issue_url": issue_data.get("web_url"),
         "message": f"缺陷已提交成功！追踪码: {tracking_code}，我们会尽快处理并通过邮件通知您。"
     }
-    
+
 except Exception as e:
     logger.error(f"Service Desk Bug submission failed: {e}")
     raise HTTPException(status_code=500, detail=str(e))
@@ -115,7 +115,7 @@ Returns:
 try:
     # 1. 生成追踪码
     tracking_code = f"REQ-{datetime.now().strftime('%Y%m%d')}-{len(SERVICE_DESK_TICKETS) + 1:03d}"
-    
+
     # 2. 构造 GitLab Issue 描述
     description = f"""## 📋 业务方需求提交 (Service Desk)
 ```
@@ -143,17 +143,17 @@ ______________________________________________________________________
     # 3. 在 GitLab 创建 Issue
     url = f"{Config.GITLAB_URL}/api/v4/projects/{project_id}/issues"
     headers = {"PRIVATE-TOKEN": Config.GITLAB_PRIVATE_TOKEN}
-    
+
     payload = {
         "title": f"[Service Desk] {data.title}",
         "description": description,
         "labels": f"type::requirement,req-type::{data.req_type},priority::{data.priority},province::{data.province},origin::service-desk,review-state::draft"
     }
-    
+
     response = requests.post(url, json=payload, headers=headers)
     response.raise_for_status()
     issue_data = response.json()
-    
+
     # 4. 保存工单记录
     ticket = {
         "tracking_code": tracking_code,
@@ -168,9 +168,9 @@ ______________________________________________________________________
         "updated_at": datetime.now().isoformat()
     }
     SERVICE_DESK_TICKETS[tracking_code] = ticket
-    
+
     logger.info(f"Service Desk Requirement created: {tracking_code} -> Issue #{issue_data.get('iid')}")
-    
+
     return {
         "status": "success",
         "tracking_code": tracking_code,
@@ -178,7 +178,7 @@ ______________________________________________________________________
         "gitlab_issue_url": issue_data.get("web_url"),
         "message": f"需求已提交成功！追踪码: {tracking_code}，我们会进行评审并通过邮件通知您。"
     }
-    
+
 except Exception as e:
     logger.error(f"Service Desk Requirement submission failed: {e}")
     raise HTTPException(status_code=500, detail=str(e))
@@ -209,12 +209,12 @@ if ticket.get("gitlab_issue_iid"):
         # 这里假设从 URL 中提取
         url_parts = ticket["gitlab_issue_url"].split("/")
         project_id = url_parts[url_parts.index("projects") + 1] if "projects" in url_parts else None
-        
+
         if project_id:
             issue_url = f"{Config.GITLAB_URL}/api/v4/projects/{project_id}/issues/{ticket['gitlab_issue_iid']}"
             headers = {"PRIVATE-TOKEN": Config.GITLAB_PRIVATE_TOKEN}
             response = requests.get(issue_url, headers=headers)
-            
+
             if response.status_code == 200:
                 issue = response.json()
                 # 更新状态
@@ -222,7 +222,7 @@ if ticket.get("gitlab_issue_iid"):
                     ticket["status"] = "completed"
                 elif "in-progress" in issue.get("labels", []):
                     ticket["status"] = "in-progress"
-                
+
                 ticket["updated_at"] = issue.get("updated_at", ticket["updated_at"])
     except Exception as e:
         logger.warning(f"Failed to sync ticket status from GitLab: {e}")

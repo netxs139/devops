@@ -8,15 +8,15 @@
 
 /*
     DWS: 项目每日质量快照 (Project Daily Quality Snapshot)
-    
+
     逻辑：
     1. 针对每个项目，取每一天中最后一次（最新）的扫描结果作为该日的质量记录。
     2. 计算核心维度的日环比变化。
-    
+
     事实表粒度：master_entity_id + analysis_day
 */
 
-with 
+with
 
 {% if is_incremental() %}
 max_scan as (
@@ -57,7 +57,7 @@ select
     gitlab_project_id,
     sonar_project_key,
     analysis_day,
-    
+
     quality_gate_status,
     bugs,
     vulnerabilities,
@@ -66,7 +66,7 @@ select
     tech_debt_hours,
     complexity,
     lines_of_code,
-    
+
     -- 计算趋势
     (bugs - coalesce(prev_day_bugs, bugs)) as daily_bugs_net_change,
     (tech_debt_hours - coalesce(prev_day_tech_debt, tech_debt_hours)) as daily_tech_debt_net_change

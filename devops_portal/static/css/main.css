@@ -147,7 +147,7 @@
     /* ==========================================
        DARK MODE TOKENS (Apple HIG)
        ========================================== */
-    
+
     /* Backgrounds: Deep black/slate with high contrast */
     --sys-bg-app: #000000;
     --sys-bg-sidebar: rgba(28, 28, 30, 0.72);
@@ -168,12 +168,12 @@
     --g-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
     --g-shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.6);
     --g-shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.8);
-    
+
     /* Primary / Accent tweaks for better contrast */
     --sys-primary: #0a84ff;
     --sys-primary-hover: #409cff;
     --sys-accent: #0a84ff;
-    
+
     /* Status Tweaks */
     --status-success: #32d74b;
     --status-error: #ff453a;

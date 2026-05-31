@@ -70,18 +70,18 @@ class CommitMetrics(Base):
 ```python
 class DailyDevStats(Base):
     __tablename__ = 'daily_dev_stats'
-    
+
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('mdm_identities.id'))
     date = Column(Date, index=True)
-    
+
     first_commit_time = Column(DateTime)
     last_commit_time = Column(DateTime)
     commit_count = Column(Integer, default=0)
-    
+
     total_impact = Column(Float, default=0.0)
     total_churn = Column(Integer, default=0)
-    
+
     review_count = Column(Integer, default=0)   # 参与评审数
     review_comments = Column(Integer, default=0) # 评论数
 ```

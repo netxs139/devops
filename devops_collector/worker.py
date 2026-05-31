@@ -17,10 +17,10 @@ from sqlalchemy.orm import sessionmaker
 
 # 触发插件自动发现
 from .config import Config
-from .services.plugin_loader import PluginLoader
-from .services.registry import PluginRegistry
 from .models.base_models import Base
 from .mq import MessageQueue
+from .services.plugin_loader import PluginLoader
+from .services.registry import PluginRegistry
 
 
 logging.basicConfig(level=Config.LOG_LEVEL)

@@ -18,11 +18,11 @@
 ### 1.2 测试原子性与准入原则 [MANDATORY]
 
 1. **100ms 准则**: 单个 Unit Test 文件执行时间严禁超过 100ms。
-2. **超时熔断 (Timeout)**: 每个测试用例由 `pytest-timeout` 强制守护，上限为 **30s**。超过阈值的任务必须被物理杀死。
-3. **测试 I/O 性能守卫**: 集成测试的数据库 Engine 必须设置为 `scope="session"`。表 (Base.metadata) 只需在会话开始时创建一次。
-4. **默认运行策略**: `addopts` 必须默认包含 `-m "not slow"`。耗时超过 2s 的脚本必须手动标记 `@pytest.mark.slow`。
-5. **模型导入警告**: 在 `conftest.py` 中执行 `create_all` 前，必须显式导入所有相关 `models` 模块，否则 `sqlite` 报错。
-6. **依赖级联注入规范 (Dependency Seeding)**:
+1. **超时熔断 (Timeout)**: 每个测试用例由 `pytest-timeout` 强制守护，上限为 **30s**。超过阈值的任务必须被物理杀死。
+1. **测试 I/O 性能守卫**: 集成测试的数据库 Engine 必须设置为 `scope="session"`。表 (Base.metadata) 只需在会话开始时创建一次。
+1. **默认运行策略**: `addopts` 必须默认包含 `-m "not slow"`。耗时超过 2s 的脚本必须手动标记 `@pytest.mark.slow`。
+1. **模型导入警告**: 在 `conftest.py` 中执行 `create_all` 前，必须显式导入所有相关 `models` 模块，否则 `sqlite` 报错。
+1. **依赖级联注入规范 (Dependency Seeding)**:
    - 集成测试**严禁**假设数据库中已有现成底数。
    - 任何涉及外键约束的操作，测试 Setup 阶段必须显式创建并 `flush()` 其关联的父表实体。严禁 Mock 不存在的外键 ID。
 
@@ -45,10 +45,10 @@
 - **脚本**: `scripts/reprocess_staging_data.py`
 - **验证流程**:
   1. 清空事实表 (Fact Tables)。
-  2. 保持 `raw_data_staging` 原始数据不变。
-  3. 修改 Transform 映射逻辑（如调整 `ai_category` 判定准则）。
-  4. 运行重播脚本。
-  5. 校验事实表中的分类是否符合新准则。
+  1. 保持 `raw_data_staging` 原始数据不变。
+  1. 修改 Transform 映射逻辑（如调整 `ai_category` 判定准则）。
+  1. 运行重播脚本。
+  1. 校验事实表中的分类是否符合新准则。
 
 ### 1.6 专项测试场景 (Special Scenarios)
 
@@ -61,9 +61,10 @@
 ### 1.7 验收指南 (Acceptance Criteria)
 
 任何发布版本必须通过以下“三道关卡”：
+
 1. **静默期**: 在沙箱环境运行全量同步任务，且无 ERROR 日志。
-2. **数据穿透**: 随机抽取 5 个项目，手动核对页面指标与看板指标是否一致。
-3. **多端推送**: 确认异常告警能正确触达飞书/企微/钉钉机器人。
+1. **数据穿透**: 随机抽取 5 个项目，手动核对页面指标与看板指标是否一致。
+1. **多端推送**: 确认异常告警能正确触达飞书/企微/钉钉机器人。
 
 ## 2. 代码质量与 Ruff 规范 (Code Quality & Ruff)
 

@@ -1,7 +1,7 @@
 
 /*
     组织架构递归平铺模型 (Organization Hierarchy Flattening)
-    
+
     实现目标：
     1. 为每个部门计算其全路径名称 (e.g., 研发部 > 技术中台 > 架构组)
     2. 标识根部门 (Root Department)
@@ -10,7 +10,7 @@
 
 with recursive org_tree as (
     -- 锚点：顶层部门
-    select 
+    select
         org_id,
         org_name,
         org_level,
@@ -24,7 +24,7 @@ with recursive org_tree as (
     union all
 
     -- 递归：关联子部门
-    select 
+    select
         child.org_id,
         child.org_name,
         child.org_level,

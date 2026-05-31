@@ -29,13 +29,13 @@ ______________________________________________________________________
 
 ```python
 async def push_notification(
-    user_ids: Union[str, List[str]], 
-    message: str, 
+    user_ids: Union[str, List[str]],
+    message: str,
     type: str = 'info',
     metadata: Optional[Dict] = None
 ):
     \"\"\"推送通知到 SSE（支持单播/多播/广播）。
-    
+
     Args:
         user_ids: 接收者ID（单个str或List，特殊值 "ALL" 表示广播）
         message: 通知消息内容
@@ -50,14 +50,14 @@ async def push_notification(
             target_users = [user_ids]
     else:
         target_users = user_ids
-    
+
     data = json.dumps({
-        "message": message, 
+        "message": message,
         "type": type,
         "metadata": metadata or {},
         "timestamp": datetime.now().isoformat()
     })
-    
+
     success_count = 0
     for user_id in target_users:
         if user_id in NOTIFICATION_QUEUES:
@@ -69,7 +69,7 @@ async def push_notification(
                     logger.error(f"Failed to push notification to user {user_id}: {e}")
         else:
             logger.debug(f"User {user_id} not connected to SSE stream, skipping notification")
-    
+
     logger.info(f"Pushed notification to {success_count} queues (target: {len(target_users)} users)")
 ```
 
@@ -96,7 +96,7 @@ if not is_all_passed:
     notify_users = await get_project_stakeholders(project_id)
     if not notify_users:
         notify_users = "ALL"  # 兜底：全员广播
-    
+
     asyncio.create_task(push_notification(
         notify_users,
         f"🚨 项目 {project_id} 质量门禁拦截: {summary}",
@@ -119,18 +119,18 @@ ______________________________________________________________________
 if final_result == "failed":
     # 通知相关人员
     notify_users = []
-    
+
     # 1. 通知用例创建者
     tc_author_id = getattr(tc_obj, 'author_id', None)
     if tc_author_id:
         notify_users.append(str(tc_author_id))
-    
+
     # 2. 如果关联了需求，通知需求负责人
     if tc_obj.requirement_id:
         req_author = await get_requirement_author(project_id, tc_obj.requirement_id)
         if req_author:
             notify_users.append(str(req_author))
-    
+
     if notify_users:
         asyncio.create_task(push_notification(
             notify_users,
@@ -153,13 +153,13 @@ ______________________________________________________________________
 ```python
 @app.post("/projects/{project_id}/requirements/{req_iid}/review")
 async def update_requirement_review_state(
-    project_id: int, 
-    req_iid: int, 
+    project_id: int,
+    req_iid: int,
     new_state: str,
     current_user = Depends(get_current_user)
 ):
     # ... 更新逻辑 ...
-    
+
     # 通知需求提出者
     req_author = await get_requirement_author(project_id, req_iid)
     if req_author and str(req_author) != str(current_user.global_user_id):

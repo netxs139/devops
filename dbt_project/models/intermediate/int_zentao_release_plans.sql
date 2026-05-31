@@ -21,7 +21,7 @@ release_plan_cross AS (
         -- 找出包含需求最多的计划作为主关联计划
         ROW_NUMBER() OVER(PARTITION BY r.release_id ORDER BY COUNT(s.issue_unique_id) DESC) as rank
     FROM releases r
-    JOIN stories s ON 
+    JOIN stories s ON
         -- 检查 Release 所属的 Build ID 是否在 Story 关联的 Build 列表中
         -- 适配 JSON 数组或逗号分隔字符串
         (s.raw_data->>'build')::text LIKE concat('%', r.build_id::text, '%')

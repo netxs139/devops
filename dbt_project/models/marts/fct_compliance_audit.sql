@@ -1,24 +1,24 @@
 
 /*
     合规与内控审计 (Governance & Compliance Audit)
-    
+
     逻辑：
     1. 四眼原则 (Four-Eyes Principle): 统计未经过独立评审（除作者外无评论）就合并的 MR。
     2. 直连推送 (Direct Pushes): 识别未通过 MR 流程直接进入主干的代码行为（演示逻辑）。
     3. 职责分离 (SoD): 识别既是开发者又是审批者的风险（简化版）。
 */
 
-with 
+with
 
 -- 1. 四眼原则分析
 mr_reviews as (
-    select 
+    select
         mr.merge_request_id,
         mr.author_user_id,
         count(distinct n.author_user_id) filter (where n.author_user_id != mr.author_user_id) as independent_reviewer_count
     from {{ ref('stg_gitlab_merge_requests') }} mr
-    left join {{ ref('stg_gitlab_notes') }} n 
-        on mr.iid = n.noteable_iid 
+    left join {{ ref('stg_gitlab_notes') }} n
+        on mr.iid = n.noteable_iid
         and mr.project_id = n.project_id
         and n.noteable_type = 'MergeRequest'
     where mr.state = 'merged'
@@ -28,7 +28,7 @@ mr_reviews as (
 -- 2. 直连推送分析 (基于 Commit 且不在任何 MR 的 Merge SHA 中)
 -- 这是一个简化的启发式逻辑
 direct_pushes as (
-    select 
+    select
         c.project_id,
         count(*) as direct_push_count
     from {{ ref('stg_gitlab_commits') }} c
@@ -41,20 +41,20 @@ direct_pushes as (
 select
     p.project_name,
     p.path_with_namespace,
-    
+
     -- 四眼原则
     count(mr.merge_request_id) as total_merged_mrs,
     count(mr.merge_request_id) filter (where rev.independent_reviewer_count = 0) as suspicious_bypass_mrs,
     round(
-        (count(mr.merge_request_id) filter (where rev.independent_reviewer_count = 0))::numeric 
+        (count(mr.merge_request_id) filter (where rev.independent_reviewer_count = 0))::numeric
         / nullif(count(mr.merge_request_id), 0) * 100, 2
     ) as bypass_rate_pct,
-    
+
     -- 直连推送
     coalesce(dp.direct_push_count, 0) as direct_push_incidents,
-    
+
     -- 合规评级
-    case 
+    case
         when (count(mr.merge_request_id) filter (where rev.independent_reviewer_count = 0))::numeric / nullif(count(mr.merge_request_id), 0) > 0.3 then 'NON_COMPLIANT'
         when coalesce(dp.direct_push_count, 0) > 10 then 'PROCESS_RISK'
         else 'COMPLIANT'

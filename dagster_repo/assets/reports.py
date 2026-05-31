@@ -1,7 +1,6 @@
 import logging
 
 from dagster import AssetIn, asset
-
 from scripts.executive_audit_report import ExecutiveAuditBot
 
 

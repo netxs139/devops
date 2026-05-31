@@ -58,4 +58,3 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 EXPOSE 8000
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["uvicorn", "devops_portal.main:app", "--host", "0.0.0.0", "--port", "8000"]
-

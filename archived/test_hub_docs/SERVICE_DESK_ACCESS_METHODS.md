@@ -58,26 +58,26 @@ from email.header import decode_header
 
 def monitor_service_desk_email():
     """监听 Service Desk 邮箱，自动创建工单"""
-    
+
     # 连接邮箱
     mail = imaplib.IMAP4_SSL("imap.example.com")
     mail.login("service-desk@example.com", "password")
     mail.select("INBOX")
-    
+
     # 搜索未读邮件
     status, messages = mail.search(None, "UNSEEN")
-    
+
     for msg_num in messages[0].split():
         # 获取邮件
         status, msg_data = mail.fetch(msg_num, "(RFC822)")
         email_body = msg_data[0][1]
         email_message = email.message_from_bytes(email_body)
-        
+
         # 解析邮件
         subject = decode_header(email_message["Subject"])[0][0]
         from_email = email.utils.parseaddr(email_message["From"])[1]
         body = get_email_body(email_message)
-        
+
         # 判断是 Bug 还是需求（根据主题关键词）
         if "[Bug]" in subject or "缺陷" in subject:
             create_bug_from_email(from_email, subject, body)
@@ -130,55 +130,55 @@ from email.mime.multipart import MIMEMultipart
 
 def send_ticket_notification(ticket, event_type):
     """发送工单通知邮件
-    
+
     Args:
         ticket: 工单信息
         event_type: 事件类型（created, updated, completed）
     """
-    
+
     # 配置 SMTP
     smtp_server = "smtp.example.com"
     smtp_port = 587
     sender_email = "service-desk@example.com"
     sender_password = "password"
-    
+
     # 构造邮件
     msg = MIMEMultipart("alternative")
     msg["Subject"] = f"[Service Desk] 工单 {ticket['tracking_code']} - {event_type}"
     msg["From"] = sender_email
     msg["To"] = ticket['requester_email']
-    
+
     # HTML 邮件内容
     html = f"""
     <html>
       <body>
         <h2>Service Desk 工单通知</h2>
         <p>尊敬的 {ticket['requester_name']}，</p>
-        
+
         <p>您的工单状态已更新：</p>
-        
+
         <table border="1" cellpadding="10">
           <tr><td><b>追踪码</b></td><td>{ticket['tracking_code']}</td></tr>
           <tr><td><b>标题</b></td><td>{ticket['title']}</td></tr>
           <tr><td><b>状态</b></td><td>{ticket['status']}</td></tr>
           <tr><td><b>更新时间</b></td><td>{ticket['updated_at']}</td></tr>
         </table>
-        
+
         <p>
           <a href="http://your-server:8000/static/service_desk_track.html?code={ticket['tracking_code']}">
             点击查看工单详情
           </a>
         </p>
-        
+
         <p>如有疑问，请回复此邮件。</p>
-        
+
         <p>---<br>Service Desk 自动通知</p>
       </body>
     </html>
     """
-    
+
     msg.attach(MIMEText(html, "html"))
-    
+
     # 发送邮件
     with smtplib.SMTP(smtp_server, smtp_port) as server:
         server.starttls()
@@ -220,32 +220,32 @@ async def login_with_email(email: str):
     """邮箱登录（发送验证码）"""
     # 生成 6 位验证码
     code = random.randint(100000, 999999)
-    
+
     # 发送验证码邮件
     send_verification_code(email, code)
-    
+
     # 临时存储验证码（5分钟有效）
     VERIFICATION_CODES[email] = {
         "code": code,
         "expires_at": datetime.now() + timedelta(minutes=5)
     }
-    
+
     return {"message": "验证码已发送到您的邮箱"}
 
 @app.post("/service-desk/verify")
 async def verify_code(email: str, code: int):
     """验证码验证"""
     stored = VERIFICATION_CODES.get(email)
-    
+
     if not stored or stored["code"] != code:
         raise HTTPException(status_code=400, detail="验证码错误")
-    
+
     if datetime.now() > stored["expires_at"]:
         raise HTTPException(status_code=400, detail="验证码已过期")
-    
+
     # 生成访问令牌
     token = generate_token(email)
-    
+
     return {"token": token, "email": email}
 
 @app.get("/service-desk/my-tickets")
@@ -254,7 +254,7 @@ async def get_my_tickets(credentials: HTTPAuthorizationCredentials = Depends(sec
     # 验证令牌
     payload = jwt.decode(credentials.credentials, "secret_key", algorithms=["HS256"])
     email = payload["email"]
-    
+
     # 返回该邮箱的所有工单
     tickets = [t for t in SERVICE_DESK_TICKETS.values() if t["requester_email"] == email]
     return tickets

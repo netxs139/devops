@@ -4,13 +4,13 @@
 -- 1. Deployment Frequency
 -- Count of successful deployments to production per day
 CREATE OR REPLACE VIEW dora_deployment_frequency AS
-SELECT 
+SELECT
     date_trunc('day', created_at) as deployment_date,
     project_id,
     count(*) as successful_deployments
 FROM deployments
-WHERE 
-    status = 'success' 
+WHERE
+    status = 'success'
     AND environment IN ('prod', 'production', 'prd', 'main') -- Standardized production environments
 GROUP BY 1, 2
 ORDER BY 1 DESC;
@@ -19,7 +19,7 @@ ORDER BY 1 DESC;
 -- Refined calculation: breakdown into coding, review, and deploy time
 CREATE OR REPLACE VIEW dora_lead_time_for_changes AS
 WITH mr_metrics AS (
-    SELECT 
+    SELECT
         mr.project_id,
         mr.iid as mr_iid,
         mr.merge_commit_sha,
@@ -30,7 +30,7 @@ WITH mr_metrics AS (
     FROM merge_requests mr
     WHERE mr.state = 'merged' AND mr.merged_at IS NOT NULL
 )
-SELECT 
+SELECT
     d.project_id,
     d.id as deployment_id,
     m.mr_iid,
@@ -48,7 +48,7 @@ SELECT
     EXTRACT(EPOCH FROM (d.created_at - m.mr_merged_at)) as deploy_time_seconds
 FROM deployments d
 JOIN mr_metrics m ON d.sha = m.merge_commit_sha AND d.project_id = m.project_id
-WHERE 
+WHERE
     d.status = 'success'
     AND d.environment IN ('prod', 'production', 'prd', 'main');
 
@@ -67,7 +67,7 @@ incidents AS (
     WHERE labels::text LIKE '%bug-source::production%'
     GROUP BY project_id
 )
-SELECT 
+SELECT
     pd.project_id,
     pd.total_count as total_deployments,
     COALESCE(i.incident_count, 0) as production_incidents,
@@ -78,12 +78,12 @@ LEFT JOIN incidents i ON pd.project_id = i.project_id;
 -- 4. Time to Restore Service (MTTR)
 -- Average time to resolve 'bug-source::production' issues
 CREATE OR REPLACE VIEW dora_time_to_restore_service AS
-SELECT 
+SELECT
     project_id,
     avg(EXTRACT(EPOCH FROM (closed_at - created_at))) as mttr_seconds,
     count(*) as incidents_count
 FROM issues
-WHERE 
+WHERE
     state = 'closed'
     AND closed_at IS NOT NULL
     AND labels::text LIKE '%bug-source::production%'

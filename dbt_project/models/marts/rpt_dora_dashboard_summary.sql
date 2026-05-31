@@ -37,31 +37,31 @@ latest_metrics as (
 select
     product_name,
     coalesce(audit_month, CURRENT_DATE) as last_updated_month,
-    
+
     -- DORA 4 Core
     deployment_frequency,
-    case 
+    case
         when deployment_frequency > coalesce(prev_deploy_freq, 0) then '↑'
         when deployment_frequency < coalesce(prev_deploy_freq, 0) then '↓'
         else '→'
     end as deploy_trend_icon,
-    
+
     mttr_hours,
-    case 
+    case
         when mttr_hours < coalesce(prev_mttr, 9999) then '↑' -- 向上箭头表示“优化”
         when mttr_hours > coalesce(prev_mttr, 0) then '↓'    -- 向下表示“恶化”
         else '→'
     end as mttr_trend_icon,
-    
+
     lead_time_hours,
-    case 
+    case
         when lead_time_hours < coalesce(prev_lead_time, 9999) then '↑'
         when lead_time_hours > coalesce(prev_lead_time, 0) then '↓'
         else '→'
     end as lead_time_trend_icon,
-    
+
     change_failure_rate_pct,
-    case 
+    case
         when change_failure_rate_pct < coalesce(prev_cfr, 100) then '↑'
         when change_failure_rate_pct > coalesce(prev_cfr, 0) then '↓'
         else '→'
@@ -69,29 +69,29 @@ select
 
     -- 工程节奏 (Engineering Rhythm)
     avg_lines_per_commit,
-    case 
+    case
         when avg_lines_per_commit < coalesce(prev_alpc, 9999) then '↑' -- 向上表示代码更原子
         when avg_lines_per_commit > coalesce(prev_alpc, 0) then '↓'
         else '→'
     end as alpc_trend_icon,
 
     mr_commit_ratio,
-    case 
+    case
         when mr_commit_ratio > coalesce(prev_mcr, 0) then '↑' -- 向上表示协作密度增加
         when mr_commit_ratio < coalesce(prev_mcr, 999) then '↓'
         else '→'
     end as mcr_trend_icon,
 
     -- 效能评级 (基于 Lead Time)
-    case 
+    case
         when lead_time_hours > 0 and lead_time_hours < 24 then 'ELITE'
         when lead_time_hours >= 24 and lead_time_hours < 168 then 'HIGH'
         when lead_time_hours >= 168 and lead_time_hours < 744 then 'MEDIUM'
         else 'LOW'
     end as performance_rating,
-    
+
     -- 视觉健康度 (Apple Style Semantic Colors)
-    case 
+    case
         when lead_time_hours > 0 and lead_time_hours < 24 then '#34C759' -- Green
         when lead_time_hours >= 24 and lead_time_hours < 168 then '#5856D6' -- Indigo
         when lead_time_hours >= 168 and lead_time_hours < 744 then '#FF9500' -- Orange

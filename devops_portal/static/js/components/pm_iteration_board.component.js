@@ -114,7 +114,7 @@ class PmIterationBoard extends HTMLElement {
         this.shadowRoot.innerHTML = `
             <style>
                 :host { display: flex; flex-direction: column; height: 100%; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; }
-                
+
                 /* Header */
                 .header { padding: 24px 0; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 24px; }
                 .header-title { font-size: 28px; font-weight: 700; color: #1d1d1f; margin: 0 0 20px 0; }
@@ -137,7 +137,7 @@ class PmIterationBoard extends HTMLElement {
                 .col-header { padding: 20px; border-bottom: 1px solid rgba(0,0,0,0.05); }
                 .col-title { font-weight: 600; font-size: 16px; color: #1d1d1f; display: flex; justify-content: space-between; align-items: center; }
                 .badge { background: #E5E5EA; color: #1d1d1f; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
-                
+
                 .col-body { flex: 1; overflow-y: auto; padding: 16px; min-height: 200px; }
                 .col-body.drag-over { background: rgba(0, 113, 227, 0.05); border: 2px dashed #0071e3; border-radius: 12px; }
 
@@ -163,9 +163,9 @@ class PmIterationBoard extends HTMLElement {
                 .checklist { list-style: none; padding: 0; margin: 0 0 20px 0; }
                 .checklist li { padding: 6px 0; color: #86868b; font-size: 13px; }
                 .checklist li::before { content: "•"; margin-right: 8px; color: #0071e3; }
-                
+
                 .modal-title.error { color: #FF3B30; }
-                
+
                 .empty-state { padding: 40px; text-align: center; color: #86868b; font-size: 14px; }
             </style>
 
@@ -327,11 +327,11 @@ class PmIterationBoard extends HTMLElement {
     }
 
     renderCard(item) {
-        return `<pm-issue-card 
-            title="${item.title}" 
-            iid="${item.iid}" 
-            status="${item.state}" 
-            author="${item.author?.name || 'Unknown'}" 
+        return `<pm-issue-card
+            title="${item.title}"
+            iid="${item.iid}"
+            status="${item.state}"
+            author="${item.author?.name || 'Unknown'}"
             weight="${item.weight || 0}"
             type="${(item.labels || []).includes('type::bug') ? 'bug' : 'feature'}"
             draggable="true"

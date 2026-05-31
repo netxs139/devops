@@ -70,28 +70,28 @@ ______________________________________________________________________
 @app.post("/service-desk/auth/request-code")
 async def request_verification_code(email: str):
     """请求登录验证码（模拟版本，使用固定验证码）
-    
+
     Args:
         email: 用户邮箱
-    
+
     Returns:
         dict: 包含提示信息
     """
     # 生成固定验证码（演示用）
     code = 123456
-    
+
     # 存储验证码（5分钟有效）
     VERIFICATION_CODES[email] = {
         "code": code,
         "expires_at": datetime.now() + timedelta(minutes=5),
         "created_at": datetime.now()
     }
-    
+
     logger.info(f"Generated verification code for {email}: {code}")
-    
+
     # 在生产环境中，这里应该发送邮件
     # send_verification_email(email, code)
-    
+
     return {
         "status": "success",
         "message": f"验证码已生成（演示模式）",
@@ -106,29 +106,29 @@ async def request_verification_code(email: str):
 @app.post("/service-desk/auth/login")
 async def login_with_code(email: str, code: int):
     """使用验证码登录
-    
+
     Args:
         email: 用户邮箱
         code: 验证码
-    
+
     Returns:
         dict: 包含访问令牌
     """
     # 检查验证码是否存在
     if email not in VERIFICATION_CODES:
         raise HTTPException(status_code=400, detail="请先请求验证码")
-    
+
     stored = VERIFICATION_CODES[email]
-    
+
     # 检查验证码是否正确
     if stored["code"] != code:
         raise HTTPException(status_code=400, detail="验证码错误")
-    
+
     # 检查是否过期
     if datetime.now() > stored["expires_at"]:
         del VERIFICATION_CODES[email]
         raise HTTPException(status_code=400, detail="验证码已过期，请重新获取")
-    
+
     # 生成访问令牌（7天有效）
     token = secrets.token_urlsafe(32)
     SESSION_TOKENS[token] = {
@@ -136,12 +136,12 @@ async def login_with_code(email: str, code: int):
         "expires_at": datetime.now() + timedelta(days=7),
         "created_at": datetime.now()
     }
-    
+
     # 删除已使用的验证码
     del VERIFICATION_CODES[email]
-    
+
     logger.info(f"User {email} logged in successfully")
-    
+
     return {
         "status": "success",
         "token": token,
@@ -156,35 +156,35 @@ async def login_with_code(email: str, code: int):
 @app.get("/service-desk/my-tickets")
 async def get_my_tickets(token: str):
     """获取当前用户的工单列表
-    
+
     Args:
         token: 访问令牌
-    
+
     Returns:
         List[dict]: 工单列表
     """
     # 验证令牌
     if token not in SESSION_TOKENS:
         raise HTTPException(status_code=401, detail="未登录或令牌无效")
-    
+
     session = SESSION_TOKENS[token]
-    
+
     # 检查是否过期
     if datetime.now() > session["expires_at"]:
         del SESSION_TOKENS[token]
         raise HTTPException(status_code=401, detail="登录已过期，请重新登录")
-    
+
     email = session["email"]
-    
+
     # 获取该邮箱的所有工单
     my_tickets = [
         ticket for ticket in SERVICE_DESK_TICKETS.values()
         if ticket.get("requester_email") == email
     ]
-    
+
     # 按创建时间倒序
     my_tickets.sort(key=lambda x: x.get("created_at", ""), reverse=True)
-    
+
     return {
         "status": "success",
         "email": email,
@@ -199,10 +199,10 @@ async def get_my_tickets(token: str):
 @app.post("/service-desk/auth/logout")
 async def logout(token: str):
     """登出
-    
+
     Args:
         token: 访问令牌
-    
+
     Returns:
         dict: 登出结果
     """
@@ -211,7 +211,7 @@ async def logout(token: str):
         del SESSION_TOKENS[token]
         logger.info(f"User {email} logged out")
         return {"status": "success", "message": "已登出"}
-    
+
     return {"status": "success", "message": "令牌不存在或已失效"}
 ```
 
@@ -221,26 +221,26 @@ async def logout(token: str):
 @app.get("/service-desk/auth/me")
 async def get_current_user(token: str):
     """获取当前登录用户信息
-    
+
     Args:
         token: 访问令牌
-    
+
     Returns:
         dict: 用户信息
     """
     if token not in SESSION_TOKENS:
         raise HTTPException(status_code=401, detail="未登录")
-    
+
     session = SESSION_TOKENS[token]
-    
+
     if datetime.now() > session["expires_at"]:
         del SESSION_TOKENS[token]
         raise HTTPException(status_code=401, detail="登录已过期")
-    
+
     # 统计用户工单
     email = session["email"]
     tickets = [t for t in SERVICE_DESK_TICKETS.values() if t.get("requester_email") == email]
-    
+
     stats = {
         "total": len(tickets),
         "pending": len([t for t in tickets if t.get("status") == "pending"]),
@@ -248,7 +248,7 @@ async def get_current_user(token: str):
         "completed": len([t for t in tickets if t.get("status") == "completed"]),
         "rejected": len([t for t in tickets if t.get("status") == "rejected"])
     }
-    
+
     return {
         "email": email,
         "logged_in_at": session["created_at"],
@@ -355,11 +355,11 @@ ______________________________________________________________________
 // 1. 请求验证码
 async function requestCode() {
     const email = document.getElementById('email').value;
-    
+
     const response = await fetch(`/service-desk/auth/request-code?email=${email}`, {
         method: 'POST'
     });
-    
+
     const result = await response.json();
     alert(`验证码: ${result.demo_code}`);  // 演示模式显示验证码
 }
@@ -368,18 +368,18 @@ async function requestCode() {
 async function login() {
     const email = document.getElementById('email').value;
     const code = document.getElementById('code').value;
-    
+
     const response = await fetch(`/service-desk/auth/login?email=${email}&code=${code}`, {
         method: 'POST'
     });
-    
+
     const result = await response.json();
-    
+
     if (result.status === 'success') {
         // 保存令牌
         localStorage.setItem('sd_token', result.token);
         localStorage.setItem('sd_email', result.email);
-        
+
         // 跳转到我的工单
         window.location.href = 'service_desk_my_tickets.html';
     }
@@ -388,21 +388,21 @@ async function login() {
 // 3. 获取我的工单
 async function loadMyTickets() {
     const token = localStorage.getItem('sd_token');
-    
+
     if (!token) {
         window.location.href = 'service_desk_login.html';
         return;
     }
-    
+
     const response = await fetch(`/service-desk/my-tickets?token=${token}`);
-    
+
     if (response.status === 401) {
         // 登录过期
         localStorage.removeItem('sd_token');
         window.location.href = 'service_desk_login.html';
         return;
     }
-    
+
     const result = await response.json();
     displayTickets(result.tickets);
 }
@@ -410,11 +410,11 @@ async function loadMyTickets() {
 // 4. 登出
 function logout() {
     const token = localStorage.getItem('sd_token');
-    
+
     fetch(`/service-desk/auth/logout?token=${token}`, {
         method: 'POST'
     });
-    
+
     localStorage.removeItem('sd_token');
     localStorage.removeItem('sd_email');
     window.location.href = 'service_desk.html';

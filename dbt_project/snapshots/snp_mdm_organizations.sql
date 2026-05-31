@@ -10,7 +10,7 @@
     )
 }}
 
-select 
+select
     org_id,
     org_name,
     org_level,

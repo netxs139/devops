@@ -81,14 +81,14 @@ graph TD
     Sources[(Raw DB)] --> Staging[Staging Layer: stg_]
     Staging --> Intermediate[Intermediate Layer: int_]
     Intermediate --> Marts[Marts Layer: dws_ / fct_]
-    
+
     subgraph "Marts Layer"
         fct_dora[fct_dora_metrics]
         fct_hotspots[fct_code_hotspots]
         fct_talent[fct_talent_radar]
         fct_fin[fct_capitalization_audit]
     end
-    
+
     Marts --> Dashboard[Streamlit Dashboard Pages]
 ```
 

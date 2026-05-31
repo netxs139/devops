@@ -1,7 +1,7 @@
 -- fct_pm_requirement_traceability.sql
 -- 整合需求(Story)及其对应的测试状态与发布计划
 WITH stories AS (
-    SELECT 
+    SELECT
         issue_unique_id,
         raw_id AS story_id,
         issue_title,

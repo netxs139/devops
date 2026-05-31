@@ -46,9 +46,9 @@ class SysPulse extends HTMLElement {
                     justify-content: center;
                     height: 100%;
                     font-family: 'Inter', system-ui, sans-serif;
-                    background: transparent; 
+                    background: transparent;
                 }
-                
+
                 .container {
                     background: rgba(255, 255, 255, 0.8);
                     backdrop-filter: blur(20px);

@@ -1,7 +1,7 @@
 -- DORA 2.0 核心指标模型 (基于禅道发布记录与生产事故规则)
 -- 小白版逻辑：集成最真实的上报数据，滤除开发过程噪音。
 
-with 
+with
 -- 1. 部署记录 (以禅道发布为准)
 deployments as (
     select
@@ -56,8 +56,8 @@ gitlab_mrs as (
 
 -- 基础信息
 products as (
-    select 
-        product_id, 
+    select
+        product_id,
         product_name,
         gitlab_project_id
     from {{ ref('stg_zentao_products') }}
@@ -66,26 +66,26 @@ products as (
 select
     p.product_name,
     coalesce(d.month, i.month, l.month, ga.month, gm.month) as audit_month,
-    
+
     -- DORA Core 4
     coalesce(d.deployment_frequency, 0) as deployment_frequency,
     round(coalesce(i.mttr_hours, 0)::numeric, 2) as mttr_hours,
     round(coalesce(l.avg_work_hours, 0)::numeric, 2) as lead_time_hours,
-    
+
     -- 变更失败率 (事故数 / 发布数)
     round(
-        (coalesce(i.incident_count, 0)::numeric / nullif(d.deployment_frequency, 0) * 100), 
+        (coalesce(i.incident_count, 0)::numeric / nullif(d.deployment_frequency, 0) * 100),
         2
     ) as change_failure_rate_pct,
-    
+
     -- 工程节奏 (新增)
     round(
-        (coalesce(ga.total_churn, 0)::numeric / nullif(ga.commit_count, 0)), 
+        (coalesce(ga.total_churn, 0)::numeric / nullif(ga.commit_count, 0)),
         2
     ) as avg_lines_per_commit,
-    
+
     round(
-        (coalesce(gm.mr_count, 0)::numeric / nullif(ga.commit_count, 0)), 
+        (coalesce(gm.mr_count, 0)::numeric / nullif(ga.commit_count, 0)),
         2
     ) as mr_commit_ratio,
 

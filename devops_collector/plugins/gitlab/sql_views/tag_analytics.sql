@@ -1,6 +1,6 @@
 -- Tag Analytics View
 -- Approximates the "Release Content" by associating commits with the nearest preceding tag.
--- 
+--
 -- Logic:
 -- 1. Order tags by creation date.
 -- 2. Define "Release Window" for a tag as (Previous Tag Date, Current Tag Date].
@@ -8,7 +8,7 @@
 
 CREATE OR REPLACE VIEW view_tag_analytics AS
 WITH tag_windows AS (
-    SELECT 
+    SELECT
         t.project_id,
         t.name as tag_name,
         t.created_at as tag_date,
@@ -16,7 +16,7 @@ WITH tag_windows AS (
     FROM tags t
 ),
 tag_stats AS (
-    SELECT 
+    SELECT
         tw.project_id,
         tw.tag_name,
         tw.tag_date,
@@ -24,8 +24,8 @@ tag_stats AS (
         COUNT(DISTINCT c.author_name) as author_count,
         STRING_AGG(DISTINCT c.author_name, ', ') as author_list
     FROM tag_windows tw
-    LEFT JOIN commits c ON c.project_id = tw.project_id 
-        AND c.committed_date <= tw.tag_date 
+    LEFT JOIN commits c ON c.project_id = tw.project_id
+        AND c.committed_date <= tw.tag_date
         AND (tw.prev_tag_date IS NULL OR c.committed_date > tw.prev_tag_date)
     GROUP BY tw.project_id, tw.tag_name, tw.tag_date
 )

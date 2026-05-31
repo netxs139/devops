@@ -19,11 +19,11 @@ joined as (
         n.component_version,
         n.commit_sha,
         n.created_at as nexus_created_at, -- Nexus 发现制品的时间
-        
+
         g.project_id as gitlab_project_id,
         g.committed_at as git_committed_at, -- 代码提交时间
         g.author_email,
-        
+
         -- 2. 计算打包延迟 (Nexus 创建时间 - 代码提交时间)
         -- 用来衡量从代码写完到包飞进仓库要等多久
         extract(epoch from (n.created_at - g.committed_at)) / 60.0 as build_latency_minutes

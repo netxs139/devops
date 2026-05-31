@@ -9,10 +9,10 @@ select
     cast(path as {{ dbt.type_string() }}) as asset_path,
     cast(download_url as {{ dbt.type_string() }}) as download_url,
     cast(size_bytes as numeric) as file_size_bytes,
-    
+
     last_modified as last_modified_at,
     last_downloaded as last_downloaded_at,
-    
+
     created_at,
     updated_at,
     is_deleted,
