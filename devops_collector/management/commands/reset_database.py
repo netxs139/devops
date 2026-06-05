@@ -13,6 +13,8 @@ logger = logging.getLogger("DBReset")
 
 
 class Command(BaseCommand):
+    """数据库重置工具命令，强制清空并重建所有数据库表。"""
+
     help = "数据库重置工具 (PostgreSQL 增强版). 强制清空并重建所有表。"
 
     def handle(
@@ -20,6 +22,7 @@ class Command(BaseCommand):
         session: Session,
         yes: Annotated[bool, typer.Option("--yes", help="强制执行，跳过所有安全确认提示")] = False,
     ):
+        """处理数据库重置的业务逻辑。"""
         if not yes:
             self.stdout.write("！！！警告：正在重置数据库，全量数据将被清空！！！\n")
             confirm = input("确定要继续吗？(y/N): ")
@@ -29,7 +32,17 @@ class Command(BaseCommand):
 
         try:
             # 1. 强制断开其他连接
-            db_name = self.session.bind.url.database
+            bind = self.session.bind
+            if bind is None:
+                raise ValueError("Database session bind is None")
+
+            from sqlalchemy.engine import Connection
+
+            if isinstance(bind, Connection):
+                db_name = bind.engine.url.database
+            else:
+                db_name = bind.url.database
+
             terminate_sql = f"""
             SELECT pg_terminate_backend(pg_stat_activity.pid)
             FROM pg_stat_activity
@@ -52,7 +65,7 @@ class Command(BaseCommand):
             self.stdout.write("public schema 已重置。\n")
 
             # 3. 重新创建所有表
-            Base.metadata.create_all(self.session.bind)
+            Base.metadata.create_all(bind)
             self.stdout.write("数据库 Schema 已根据当前模型重建。\n")
             return True
 

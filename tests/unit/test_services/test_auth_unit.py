@@ -114,9 +114,9 @@ def test_auth_authenticate_user_failure(db_session):
     password = "correct_password"
 
     # 1. 尝试认证不存在的用户
-    assert auth_service.auth_authenticate_user(db_session, "nonexistent@tjhq.com", password) is False
+    assert auth_service.auth_authenticate_user(db_session, "nonexistent@tjhq.com", password) is None
 
-    # 2. 注册用户但输入错误密码
+    # 2. 注册用户导致输入错误密码
     user_id = uuid.uuid4()
     user = User(global_user_id=user_id, primary_email=email, is_active=True, is_current=True, is_deleted=False)
     db_session.add(user)
@@ -126,4 +126,4 @@ def test_auth_authenticate_user_failure(db_session):
     db_session.add(cred)
     db_session.commit()
 
-    assert auth_service.auth_authenticate_user(db_session, email, "wrong_password") is False
+    assert auth_service.auth_authenticate_user(db_session, email, "wrong_password") is None

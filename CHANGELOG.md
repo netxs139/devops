@@ -4,7 +4,12 @@
 
 ## [Unreleased]
 
+- **Docker Compose 兼容性修复 (2026-06-01)**:
+
+  - **动态命令探测**: 在 `justfile` 中引入动态 `COMPOSE_BIN` 探测机制，优先使用旧版 `docker-compose`，若不存在则降级为新版插件化 `docker compose`。修复了云端 GitHub Actions 等现代 CI/CD 容器运行时因缺少 `docker-compose` 独立二进制导致 fullgate 执行失败的问题。
+
 - **Git Hooks 体系标准化升级 (A+B) (2026-05-31)**:
+
   - **Ruff 原生 Pydocstyle**: 淘汰脆弱的 AST 内联脚本 `check-docstrings`，启用 Ruff `D101/D102/D103/D105` 规则，执行速度提升百倍，同时引入格式校验能力。
   - **标准防呆护栏**: 新增 `trailing-whitespace`, `end-of-file-fixer`, `check-yaml`, `check-toml`, `check-merge-conflict` 五项官方 pre-commit-hooks 防止低级错误入库。
   - **Layer 1 本地类型门禁**: 在 pre-commit 中接入 `mypy` 静态类型检查，确保 AI 生成的代码在 `git commit` 时即被类型防线拦截。
@@ -12,12 +17,17 @@
   - **Layer 2 CI/CD 类型验收门禁**: 在 `.gitlab-ci.yml` 新增独立 `static-analysis` stage，在 MR 和 `main` 分支触发 `mypy` 全局扫描，作为组织级验收防线（当前 `allow_failure: true` 观测模式，待 Tech-Debt 清零后切换为强制拦截）。
 
 - **FastAPI 路由与 Service 层深度集成 (Phase 1)**:
+
   - **解耦中转层**: 完成了 `admin`, `iteration`, `plugin`, `security`, `devex_pulse`, `service_desk` 等 7+ 个核心路由的重构，由 `devops_collector.core` 映射切换为直接引用 `devops_collector.services`。
   - **双轨调用对齐**: 确保 Web 端与 CLI 端共享同一套重构后的业务逻辑服务，通过了全量单元测试 (`tests/unit/test_portal/`)。
+
 - **诊断总线事务安全性修复 (Bug Fix)**:
+
   - **原子回滚保护**: 在 `DiagHelper.run_check` 中注入了 Session 回滚机制，确保单项诊断 SQL 失败时能及时释放锁并清理状态，彻底解决了审计日志写入时的“事务锁定”崩溃。
   - **状态传播修复**: 修正了 `sys_diagnose` 的返回逻辑，使其能正确透传子诊断项的聚合状态。
+
 - **管理命令现代化迁移 (Progressing)**:
+
   - **签名即文档**: 已完成 `realign_org_managers`, `init_organizations`, `init_products`, `export_sonar_report`, `export_project_map`, `export_data_dict`, `init_okrs`, `init_locations`, `init_mdm_location`，插件映射类命令（`init_gitlab_mappings`, `init_zentao_mappings`, `init_sonarqube_links`, `init_jenkins_links`, `init_nexus_links`），基础主数据类命令（`init_catalog`, `init_calendar`, `init_cost_codes`, `init_labor_rates`, `init_purchase_contracts`, `init_revenue_contracts`），以及数据诊断类命令（`check_data_dict_freshness`, `check_identity_alignment`）等核心命令的现代化重构，采用 `Annotated` 类型提示实现参数的自动解析与 Rich 进度条集成。同时移除了所有过时的 `add_arguments` 定义。
 
 ### 新增 (Added)

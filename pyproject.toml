@@ -161,7 +161,6 @@ exclude = [
     'devops_collector/plugins/jfrog/.*',
     'devops_collector/plugins/wecom/.*',
     'devops_collector/alembic/.*',
-    'devops_collector/core/schemas\.py',
 ]
 
 [[tool.mypy.overrides]]

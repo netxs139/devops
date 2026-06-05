@@ -13,8 +13,9 @@ NEXUS_DOCKER_REGISTRY := env_var_or_default("NEXUS_DOCKER_REGISTRY", "192.168.5.
 
 
 # 动态环境判定 (SSOT: 环境变量优先)
+COMPOSE_BIN         := `if command -v docker-compose >/dev/null 2>&1; then echo "docker-compose"; else echo "docker compose"; fi`
 COMPOSE_FILE        := if env_var_or_default("PROD", "false") == "true" { "docker-compose.prod.yml" } else { "docker-compose.yml" }
-COMPOSE_CMD         := "docker-compose -f " + COMPOSE_FILE
+COMPOSE_CMD         := COMPOSE_BIN + " -f " + COMPOSE_FILE
 EXEC_CMD            := COMPOSE_CMD + " exec -T api uv run"
 SHELL_EXEC          := COMPOSE_CMD + " exec -T api"
 

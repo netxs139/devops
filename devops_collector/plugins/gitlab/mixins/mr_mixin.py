@@ -82,7 +82,7 @@ class MergeRequestMixin:
                     mr.author_id = uid
 
             # 使用 merge 确保幂等性且不抛出 Duplicate Key 错误
-            self.session.merge(mr)
+            mr = self.session.merge(mr)
             if hasattr(self, "_apply_traceability_extraction"):
                 self._apply_traceability_extraction(mr)
             if self.enable_deep_analysis or mr.state in ("merged", "opened"):

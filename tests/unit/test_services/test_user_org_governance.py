@@ -9,7 +9,6 @@ from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
-from scripts.run_identity_resolver import IdentityResolver
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
@@ -28,6 +27,7 @@ from devops_collector.models.base_models import (
     UserRole,
 )
 from devops_portal.main import app
+from scripts.run_identity_resolver import IdentityResolver
 
 
 # --- 数据库配置 ---

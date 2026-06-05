@@ -60,18 +60,7 @@ class GitLabMRSchema(BaseModel):
     @field_validator("state")
     @classmethod
     def validate_state(cls, v):
-        '''"""TODO: Add description.
-
-        Args:
-            cls: TODO
-            v: TODO
-
-        Returns:
-            TODO
-
-        Raises:
-            TODO
-        """'''
+        """验证 MR 状态"""
         allowed = {"opened", "closed", "merged", "locked"}
         if v not in allowed:
             raise ValueError(f"Invalid MR state: {v}")

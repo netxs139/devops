@@ -2,11 +2,24 @@
 
 import csv
 from pathlib import Path
+from re import Pattern
+from typing import TypedDict
 
 from sqlalchemy.orm import Session
 
 from devops_collector.models import Product, ProjectMaster
 from devops_collector.plugins.sonarqube.models import SonarProject
+
+
+class NexusLinkRule(TypedDict):
+    """Nexus 组件与产品关联规则的数据结构定义。"""
+
+    group: str
+    name: str
+    pid: int
+    type: str
+    group_re: Pattern[str] | None
+    name_re: Pattern[str] | None
 
 
 class TopologyService:
@@ -92,11 +105,11 @@ class TopologyService:
                 for job in target_jobs:
                     _update_job(job, mdm_proj, mdm_prod, is_deploy, env)
             else:
-                job = self.session.query(JenkinsJob).filter_by(full_name=job_name).first()
-                if not job:
-                    job = JenkinsJob(full_name=job_name, name=job_name.split("/")[-1])
-                    self.session.add(job)
-                _update_job(job, mdm_proj, mdm_prod, is_deploy, env)
+                single_job = self.session.query(JenkinsJob).filter_by(full_name=job_name).first()
+                if not single_job:
+                    single_job = JenkinsJob(full_name=job_name, name=job_name.split("/")[-1])
+                    self.session.add(single_job)
+                _update_job(single_job, mdm_proj, mdm_prod, is_deploy, env)
 
             if progress_callback:
                 progress_callback()
@@ -113,7 +126,7 @@ class TopologyService:
         product_code_map = {p.product_code: p.id for p in all_products}
         product_id_set = {p.id for p in all_products}
 
-        rules = []
+        rules: list[NexusLinkRule] = []
         with open(csv_path, encoding="utf-8-sig") as f:
             for row in csv.DictReader(f):
                 group_pat = row.get("group", "").strip()
@@ -133,14 +146,14 @@ class TopologyService:
                     continue
 
                 rules.append(
-                    {
-                        "group": group_pat,
-                        "name": name_pat,
-                        "pid": actual_pid,
-                        "type": match_type,
-                        "group_re": re.compile(group_pat) if match_type == "regex" and group_pat else None,
-                        "name_re": re.compile(name_pat) if match_type == "regex" and name_pat else None,
-                    }
+                    NexusLinkRule(
+                        group=group_pat,
+                        name=name_pat,
+                        pid=actual_pid,
+                        type=match_type,
+                        group_re=re.compile(group_pat) if match_type == "regex" and group_pat else None,
+                        name_re=re.compile(name_pat) if match_type == "regex" and name_pat else None,
+                    )
                 )
 
         all_components = self.session.query(NexusComponent).all()
@@ -150,9 +163,9 @@ class TopologyService:
             for rule in rules:
                 match = True
                 if rule["type"] == "regex":
-                    if rule["group"] and not rule["group_re"].search(comp.group or ""):
+                    if rule["group"] and rule["group_re"] is not None and not rule["group_re"].search(comp.group or ""):
                         match = False
-                    if rule["name"] and not rule["name_re"].search(comp.name or ""):
+                    if rule["name"] and rule["name_re"] is not None and not rule["name_re"].search(comp.name or ""):
                         match = False
                 else:
                     if rule["group"] and comp.group != rule["group"]:
