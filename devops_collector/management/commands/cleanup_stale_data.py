@@ -1,4 +1,4 @@
-"""数据清理命令 (Data Cleanup)。
+"""Stale data cleanup command.
 
 调用 RetentionManager 执行原始采集数据的清理任务。
 """
@@ -8,12 +8,16 @@ from devops_collector.services.retention_manager import RetentionManager
 
 
 class Command(BaseCommand):
+    """Cleanup stale raw collection data according to the retention policy."""
+
     help = "数据清理：根据保留策略删除过期的 Staging/原始采集数据"
 
     def add_arguments(self, parser):
+        """Register the --days override option."""
         parser.add_argument("--days", type=int, help="覆盖默认保留天数")
 
     def handle(self, *args, **options):
+        """Execute the retention cleanup and report deleted record count."""
         options.get("days")
 
         try:

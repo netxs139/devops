@@ -1,3 +1,5 @@
+"""Executive audit and efficiency report generation command."""
+
 import logging
 import os
 from datetime import datetime
@@ -12,9 +14,12 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
+    """Generate monthly R&D efficiency and audit reports and push via WeCom bot."""
+
     help = "研发体系月度效能与审计自动播报脚本 (Executive Audit & Efficiency Report)"
 
     def handle(self, *args, **options):
+        """Collect hotspots, bus-factor risks, financial audit, and talent data; send report."""
         report_date = datetime.now().strftime("%Y-%m-%d")
 
         # 初始化机器人

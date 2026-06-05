@@ -1,4 +1,4 @@
-"""数据对齐审计报告 (Orphan Alignment Audit) 生成命令。
+"""Orphan alignment audit report generation command.
 
 扫描目前未关联到 MDM 项目主数据的 GitLab 仓库和禅道迭代，生成 Markdown 格式的审计报告。
 """
@@ -9,12 +9,16 @@ from devops_collector.core.management import BaseCommand
 
 
 class Command(BaseCommand):
+    """Export an alignment audit report identifying unlinked project assets."""
+
     help = "导出对齐审计报告：识别未对齐的项目资产并生成修复建议"
 
     def add_arguments(self, parser):
+        """Register the -o / --output CLI argument."""
         parser.add_argument("-o", "--output", default="alignment_audit_report.md", help="输出路径 (默认: alignment_audit_report.md)")
 
     def handle(self, *args, **options):
+        """Query unlinked GitLab repos and ZenTao iterations; write Markdown audit report."""
         output_path = options["output"]
 
         self.stdout.write("正在分析跨系统资产对齐情况...\n")

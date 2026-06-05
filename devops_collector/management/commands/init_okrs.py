@@ -1,3 +1,5 @@
+"""OKR master data initialization command (CSV-driven)."""
+
 from pathlib import Path
 from typing import Annotated
 
@@ -13,9 +15,12 @@ DEFAULT_CSV = SAMPLE_DATA_DIR / "okrs.csv"
 
 
 class Command(BaseCommand):
+    """Initialize OKR Objectives and Key Results from a CSV file via OKRService."""
+
     help = "从 CSV 初始化 OKR 主数据（Objective + Key Results）"
 
     def check(self, **options) -> list[tuple[str, str]]:
+        """Verify that the OKR CSV source file exists before running handle."""
         csv_path = Path(options.get("csv", DEFAULT_CSV))
         if not csv_path.exists():
             return [("ERROR", f"缺少 OKR 初始化数据源文件: {csv_path}")]
@@ -26,6 +31,7 @@ class Command(BaseCommand):
         session: Session,
         csv_path: Annotated[Path, typer.Option("--csv", help="OKR CSV 路径")] = DEFAULT_CSV,
     ):
+        """Sync OKR objectives and key results from CSV into the database."""
         service = OKRService(session)
 
         self.stdout.write(f"从 {csv_path} 同步 OKR 数据 (通过 Service 层)...\n")

@@ -1,3 +1,5 @@
+"""GitLab Issue label integrity check command."""
+
 import csv
 import logging
 
@@ -10,14 +12,18 @@ logger = logging.getLogger("LabelChecker")
 
 
 class Command(BaseCommand):
+    """Scan GitLab issues for missing mandatory label categories."""
+
     help = "GitLab Issue 标签完整性检查工具：自动识别不符合规范的 Issue。"
 
     def add_arguments(self, parser):
+        """Register --project-id, --auto-fix, and --report CLI arguments."""
         parser.add_argument("--project-id", type=int, required=True, help="GitLab 项目 ID")
         parser.add_argument("--auto-fix", action="store_true", help="自动添加 needs-labels 标签和评论")
         parser.add_argument("--report", help="保存 CSV 报告路径")
 
     def handle(self, *args, **options):
+        """Fetch open issues, check label completeness, optionally fix and report."""
         # 1. 初始化客户端
         client = GitLabClient(self.settings.gitlab.url, self.settings.gitlab.token)
 

@@ -1,3 +1,5 @@
+"""Employee master data import command."""
+
 import csv
 import logging
 import uuid
@@ -16,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
+    """Import full employee roster and link each employee to the organization hierarchy."""
+
     help = "导入全量员工信息并关联组织架构。"
 
     def handle(
@@ -23,6 +27,7 @@ class Command(BaseCommand):
         session: Session,
         csv_file: Annotated[str | None, typer.Option("--csv", help="员工信息 CSV 文件的物理路径")] = None,
     ):
+        """Read employees CSV, upsert User records, and link to Organization."""
         csv_path = Path(csv_file) if csv_file else Path("docs/assets/sample_data/employees.csv")
 
         if not csv_path.exists():

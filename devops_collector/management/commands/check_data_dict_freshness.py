@@ -1,11 +1,16 @@
+"""Data dictionary freshness check command."""
+
 from devops_collector.core.management import BaseCommand
 from devops_collector.services.diagnostic_service import DiagnosticService
 
 
 class Command(BaseCommand):
+    """Check whether the data dictionary has been updated after model changes."""
+
     help = "数据字典新鲜度检测脚本：检测模型变更后数据字典是否已更新。"
 
     def handle(self):
+        """Run the data dictionary freshness check and report results."""
         self.stdout.write("Checking Data Dictionary freshness (via Service)...\n")
 
         service = DiagnosticService()
