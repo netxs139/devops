@@ -8,6 +8,7 @@
 
 | Timestamp | Domain | Phenomenon | Root Cause | Universal Rule (The Defense) |
 | :--- | :--- | :--- | :--- | :--- |
+| 2026-06-01 | [Env/CI] | github上执行fullgate报错 docker-compose command not found | 现代 CI/CD 容器运行时环境（如 GitHub Actions Runner）已默认将 Docker Compose V2 插件作为 docker compose 执行，而不提供独立的 docker-compose 命令行工具。 | **跨平台 Docker 容器指令适配律 (Dynamic Docker Compose CLI)**：在构建脚本或 `justfile` 中，必须通过动态探测 `command -v docker-compose` 来选择可用的二进制命令名，实现 `docker-compose` 与 `docker compose` 的透明过渡兼容。 |
 | 2026-05-22 | [Workflow/CI] | pre-commit mdformat 拦截并自动格式化导致 git commit 中断 | 预提交钩子对 `.agent/skills/` 下的 Markdown 文件进行了自动化排版，拦截了首次 Commit。 | **格式化门禁顺从律 (Formatter Gate Obedience)**: 1. 严禁使用 `--no-verify` 绕过检查。2. 面对钩子的自动修复，必须再次 `git add` 并重新提交，确保入库 100% 符合项目标准。 |
 | 2026-05-20 | [Env/Docker] | 本地虚拟环境权限丢失导致 uv sync 失败 | 容器（Docker Compose）以 root 身份挂载共享卷，在容器内产生或更新的 `.venv/` 包文件覆盖了宿主机权限，导致宿主机执行 `uv` 时报 Permission Denied。 | **容器卷宿主机提权自愈 (Volume Permission Self-healing)**：严禁在宿主机使用 sudo 强行越权修复。必须通过容器内部映射当前宿主机用户的身份（`UID:GID`）执行 `chown` 将所有权归还宿主机。 |
 | 2026-05-20 | [CI/Type] | MyPy 泛型推断报错 (dict / callable) | 重构 Service 层并应用强类型审查时，字典变量或列表结构引发 MyPy 报 `error: Value of type "object" is not indexable` 和 `error: "object" not callable`。 | **泛型深层强类型约束 (Deep Type Constraints)**：1. 严禁使用裸 `dict` 或 `list` 作为注解，必须向下穿透显式定义如 `dict[str, Any]`。2. 数组内嵌套 Callable 字典结构时，需通过显式类型标注或局部 `# type: ignore` 进行受控豁免，防止级联泛型降级。 |

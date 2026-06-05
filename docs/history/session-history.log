@@ -8,6 +8,8 @@
 
 | Session ID | Start Time | End Time | End Commit | Status | Key Deliverables / Next Steps |
 | :--- | :--- | :--- | :--- | :--- | :--- |
+| 61ab2357 | 2026-06-02 09:15 | 09:18 | N/A (Local) | SUCCESS | **下班例行会话交接审计**: 1. 完成环境状态嗅探与只读健康度检查；2. 运行物理清理；3. 同步完成 `session-history.log` 会话历史审计与下班交接对齐（无业务逻辑或模型变更）。 |
+| 9ca85124 | 2026-06-01 08:54 | 09:35 | N/A (Local) | SUCCESS | **Docker Compose 兼容性修复**：1. 在 `justfile` 引入 `COMPOSE_BIN` 动态探测，优先选择 `docker-compose`，无此命令时降级为 `docker compose` 插件；2. 修复了现代 CI 环境 (GitHub Actions) 缺少 `docker-compose` 导致 fullgate 报错失败的问题。 |
 | f0ce382c | 2026-05-31 21:46 | 22:25 | N/A (Local) | SUCCESS | **Git Hooks 体系升级 (A+B)**：1. 将旧版脆弱的 AST `check-docstrings` 迁移至 Ruff 原生 Pydocstyle (D101/102/103/105)；2. 新增 `trailing-whitespace`, `end-of-file-fixer`, `check-yaml`, `check-toml`, `check-merge-conflict` 标准防呆护栏；3. 新增 `mypy` 静态类型 pre-commit hook（Layer 1 本地门禁）；4. 新增 `commitizen` Conventional Commits 规范拦截；5. 在 `.gitlab-ci.yml` 新增独立 `static-analysis` stage 运行 mypy（Layer 2 CI/CD 组织验收门禁，当前 `allow_failure: true` 观测模式）；6. 全量验证触发（`pre-commit run --all-files`）捕获 21 处遗留 Docstring 缺失与模块重名 tech-debt，护栏物理验证成功。 |
 | d7bbdebe | 2026-05-30 23:35 | 23:42 | N/A (Local) | SUCCESS | **下班例行会话交接审计**: 1. 完成环境状态嗅探与只读健康度检查；2. 运行物理清理指令；3. 同步完成 `session-history.log` 会话历史审计与下班交接对齐（无业务逻辑或模型变更）。 |
 | f4765df3 | 2026-05-22 18:14 | 18:18 | fed1d59 | SUCCESS | **Agent Skill Linux 兼容性迁移闭环**: 1. 完成 `.agent/skills/` 下 5 个核心技能脚本当中 PowerShell 到 Bash 的平台迁移；2. 验证并顺从了 mdformat 预提交规则；3. 进行了状态归档与进度跟踪对齐。 |

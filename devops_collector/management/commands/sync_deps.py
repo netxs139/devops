@@ -15,9 +15,12 @@ logger = logging.getLogger("SyncDeps")
 
 
 class Command(BaseCommand):
+    """依赖同步命令，支持多镜像切换与重试逻辑。"""
+
     help = "依赖同步工具：实现 uv sync 的多级重试与镜像切换逻辑 (Nexus -> Tsinghua)。"
 
     def check(self, **options) -> list[tuple[str, str]]:
+        """系统预检：检查 Nexus 与 Tsinghua 镜像连接性。"""
         results = []
         nexus_url = self.settings.pypi.nexus_url if hasattr(self.settings.pypi, "nexus_url") else "http://192.168.5.64:8081/repository/pypi-all/simple"
         tsinghua_url = "https://pypi.tuna.tsinghua.edu.cn/simple"
@@ -41,6 +44,7 @@ class Command(BaseCommand):
         attempts: Annotated[int, typer.Option("--attempts", help="Number of attempts for primary index")] = 3,
         dev: Annotated[bool, typer.Option("--dev", help="Include dev dependencies and extras")] = False,
     ):
+        """执行依赖同步。"""
         nexus_url = self.settings.pypi.nexus_url if hasattr(self.settings.pypi, "nexus_url") else "http://192.168.5.64:8081/repository/pypi-all/simple"
         tsinghua_url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
@@ -55,7 +59,7 @@ class Command(BaseCommand):
             base_cmd.append("--all-groups")
 
         # 1. 尝试主镜像 (Nexus)
-        nexus_host = urlparse(nexus_url).hostname
+        nexus_host = urlparse(nexus_url).hostname or ""
         self.stdout.write(f"🚀 开始同步依赖 (主镜像: {nexus_url})...\n")
 
         success = False

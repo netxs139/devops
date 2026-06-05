@@ -136,6 +136,7 @@ services:
     profiles: [ "core" ]
     volumes:
       - .:/app
+      - /app/.venv
     env_file:
       - .env
     depends_on:

@@ -30,14 +30,14 @@
 1. **执行锁 (Execution Lock)**: 仅在显式信号（“OK/开始”）后修改代码；“？”判定为咨询态，禁止物理编码。→ *规则定义继承自 `GEMINI.md §二.2`，本项目无覆盖；项目级 DoD 扩展见 `contexts.md §1.1`。*
 1. **交接审计自进化**: [L2-L4] 离场 DoD 强制执行 `/evolve-skill`；严禁在未持久化日志时宣告完工。
 1. **偏航必锚与计划外资产**: 偏离 Focus > 1 回合必须同步文档；临时优化标记为 `[Ad-hoc]` 并沉淀入 ADR。
-1. **中断恢复嗅探**: 启动/收尾强制 `git status -u`；发现未跟踪脚本必须汇报并整合进 `progress.txt`。
+1. **中断恢复嗅探**: 启动/收尾强制 `git status -u` 并前置读取 `git log -n 3` 对齐物理提交线；发现未跟踪脚本必须汇报并整合进 `progress.txt`。
 1. **临时脚本隔离**: 严禁在业务目录排错，必须写入 `.agent/scratch/`。
 1. **统一运维入口 (CLI Mandate)**: **绝对严禁**直接执行 `python scripts/xxx.py`。所有运维任务、初始化、诊断及数据导出操作，必须通过 `uv run scripts/cli.py <group> --module <name>` 触发。**新功能优先采用类模式实现**（存放在 `devops_collector/management/commands/`），以确保日志轨迹、数据库连接池及事务的一致性。
 1. **管理命令规范 (Command Framework)**: 新增运维逻辑必须继承 `BaseCommand` 基类。禁止在 `scripts/` 下创建新的独立 Python 脚本。执行前应先运行 `uv run scripts/cli.py list` 核实已存在的命令。
 1. **修订记录一致性协议 (Changelog Integrity) [MANDATORY]**: 历史进度归档已彻底并入 `CHANGELOG.md`。**严禁**使用已废弃的 `progress_archive.md`。执行归档时，必须将 `progress.txt` 中的任务摘要提炼并置顶于 `CHANGELOG.md` 的最新版本或 `[Unreleased]` 节段。
 1. **导入完整性与预飞行 (Import Integrity & Pre-flight)**: 任何 Model/Service 变更必须首先通过 `python -c "import ..."` 冒烟测试。严禁在宿主机环境未安装依赖时强行运行 `pytest`，必须使用沙箱模式。
 1. **文码同行律 (Code-Doc Co-evolution) [MANDATORY]**: 任何涉及业务逻辑、模型 Schema、指标口径或 UI 架构的变更，**必须**在提交代码的同时完成相关文档（如 `docs/`, `contexts.md`, `AGENTS.md`, `GLOSSARY.md`）的同步更新。严禁在文档滞后的情况下宣告完工。
-1. **交付闭环律 (Delivery Closure) [MANDATORY]**: 建立认知卡点：今后但凡一个核心逻辑切片（Focus）宣告完成并 Commit 落库，无论是否处于会话离场态，都必须主动且静默地完成 `progress.txt` 的焦点切换与 `lessons-learned.log` 的沉淀，做到“交付即闭环”。
+1. **交付闭环律 (Delivery Closure)**: 建立物理卡点：任何核心逻辑切片（Focus）宣告完成且 `just verify` 100% 通过后，**必须立即执行本地 `git commit` 落库**（使用 Conventional Commits 格式），并将 Hash 登记入交付日志，无论是否处于离场态，做到“验证通过即 commit，交付即闭环”。
 
 ## 3. 工程严谨性基准 (Engineering Rigor) [MANDATORY]
 
@@ -78,20 +78,8 @@
 
 ## 6. 工具执行与安全规范 (Tool Execution & Safety) [MANDATORY]
 
-1. **默认自动执行 (Auto-run by Default)**:
-   除下方"强制确认红线"列举的4类操作外，**所有其他命令均自动执行，无需用户确认**。涵盖但不限于：
+1. **强制确认红线 [仅此3类，不得扩展]**: 以下操作**严禁自动执行**，必须等待用户明确点击确认：
 
-   - **只读探查**: `ls`, `pwd`, `cat`, `head`, `tail`, `grep`, `find`, `git status/log/diff/show/branch` 等所有只读操作。
-   - **代码构建与测试**: `pytest`, `just test`, `just verify`, `just lint`, `ruff`, `uv run` (非敏感操作), `docker-compose build` 等。
-   - **git commit**: 代码提交视为常规开发动作，**自动执行**，无需确认。
-   - **文件写入与移动**: 创建/修改代码文件、文档、配置模板（`.env` 本体除外）均自动执行。
-   - **AI 清理战场**: AI 发起的临时文件清理（`.agent/scratch/`、`tmp/`、`*.log` 等）**自动执行**，无需确认。
-   - **服务启动与重启**: `docker-compose up/restart`, `just dev`, `just start` 等开发环境操作自动执行。
-   - **依赖安装**: `uv pip install`, `npm install` 等包管理操作自动执行。
-
-1. **强制确认红线 [仅此4类，不得扩展]**: 以下操作**严禁自动执行**，必须等待用户明确点击确认：
-
-   - **危险删除**: `rm -rf` 指向**业务目录或非临时数据**（如 `src/`, `data/`, 数据库文件）。AI 自动清理战场（`tmp/`, `scratch/`, `*.log`）**不在此列**，可自动执行。
    - **环境配置**: 任何对 `.env` 文件（含 `.env.prod`, `.env.staging` 等所有变体）的写入或覆盖操作。
    - **密钥操作**: 任何明文出现或写入 `password`, `token`, `api_key`, `secret` 字段的操作。
    - **远程推送**: `git push`（含 `--force`）。跨设备同步时，须用户显式触发。

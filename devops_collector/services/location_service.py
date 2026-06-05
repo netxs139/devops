@@ -1,5 +1,7 @@
 """地理位置主数据服务。"""
 
+from typing import Any
+
 from sqlalchemy.orm import Session
 
 from devops_collector.models.base_models import Location
@@ -13,7 +15,7 @@ class LocationService:
 
     def init_base_locations(self) -> None:
         """初始化全国省份及特殊地理位置主数据。"""
-        locations_data = [
+        locations_data: list[dict[str, Any]] = [
             # --- 特殊位置 ---
             {
                 "location_code": "LOC-NATIONWIDE",

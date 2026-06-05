@@ -170,7 +170,7 @@ class BaseCommand(ABC):
             return False
 
         # 2. 执行核心逻辑
-        success = False
+        success: bool | None = False
         try:
             # 动态解析 handle 签名，实现参数智能映射
             import inspect
@@ -259,24 +259,29 @@ class DiagHelper:
 
     @classmethod
     def print_header(cls, title: str, width: int = 60):
+        """打印带有 Cyan 颜色的诊断分块标题面板。"""
         from rich.panel import Panel
 
         cls._console.print(Panel(f"[bold cyan]{title}[/bold cyan]", width=width, expand=False))
 
     @classmethod
     def print_footer(cls, width: int = 60):
+        """打印诊断块的结束横线。"""
         cls._console.print(f"[dim]{'=' * width}[/dim]\n")
 
     @classmethod
     def log_success(cls, msg: str):
+        """打印表示成功的诊断日志，前缀为绿色对勾。"""
         cls._console.print(f"   [green]✓[/green] {msg}")
 
     @classmethod
     def log_failure(cls, msg: str):
+        """打印表示失败的诊断日志，前缀为红色叉号。"""
         cls._console.print(f"   [red]✗[/red] {msg}")
 
     @classmethod
     def log_warning(cls, msg: str):
+        """打印表示警告的诊断日志，前缀为黄色警告符号。"""
         cls._console.print(f"   [yellow]⚠[/yellow] {msg}")
 
     @classmethod

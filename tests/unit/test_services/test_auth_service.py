@@ -92,7 +92,7 @@ def test_authenticate_user_failure(db_session):
     password = "correct_password"
 
     # 场景 1: 用户不存在
-    assert services.auth_authenticate_user(db_session, "none@example.com", password) is False
+    assert services.auth_authenticate_user(db_session, "none@example.com", password) is None
 
     # 注册用户
     user_id = uuid.uuid4()
@@ -105,4 +105,4 @@ def test_authenticate_user_failure(db_session):
     db_session.add(cred)
     db_session.commit()
 
-    assert services.auth_authenticate_user(db_session, email, "wrong_password") is False
+    assert services.auth_authenticate_user(db_session, email, "wrong_password") is None
