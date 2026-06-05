@@ -1,3 +1,5 @@
+"""Data dictionary export command."""
+
 from pathlib import Path
 from typing import Annotated
 
@@ -8,12 +10,15 @@ from devops_collector.services.data_dict_service import DataDictService
 
 
 class Command(BaseCommand):
+    """Generate a Markdown data dictionary from ORM model definitions."""
+
     help = "导出数据字典：基于 ORM 模型生成 Markdown 格式的数据库结构说明"
 
     def handle(
         self,
         output_path: Annotated[str, typer.Option("--output", "-o", help="输出路径")] = "docs/api/DATA_DICTIONARY.md",
     ):
+        """Scan all ORM models and write Markdown data dictionary to the output path."""
         output_file = Path(output_path)
         output_file.parent.mkdir(parents=True, exist_ok=True)
 

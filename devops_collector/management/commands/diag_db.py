@@ -1,3 +1,5 @@
+"""Database diagnostics command."""
+
 import logging
 
 from sqlalchemy import text
@@ -10,12 +12,12 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    """数据库专项诊断命令。"""
+    """Database specialist diagnostics command."""
 
     help = "数据库专项诊断脚本。"
 
     def handle(self, session: Session):
-        """执行数据库各项诊断检查。"""
+        """Execute database connectivity and core table record count checks."""
         DiagHelper.print_header("数据库专项诊断")
 
         success = True

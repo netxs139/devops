@@ -1,3 +1,5 @@
+"""Geographic location master data (mdm_locations) initialization command."""
+
 import logging
 
 from sqlalchemy.orm import Session
@@ -10,9 +12,12 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
+    """Initialize base geographic location records via LocationService."""
+
     help = "初始化地理位置主数据 (mdm_locations)"
 
     def handle(self, session: Session):
+        """Call LocationService to seed base location records."""
         service = LocationService(session)
 
         try:

@@ -38,6 +38,12 @@
 1. **导入完整性与预飞行 (Import Integrity & Pre-flight)**: 任何 Model/Service 变更必须首先通过 `python -c "import ..."` 冒烟测试。严禁在宿主机环境未安装依赖时强行运行 `pytest`，必须使用沙箱模式。
 1. **文码同行律 (Code-Doc Co-evolution) [MANDATORY]**: 任何涉及业务逻辑、模型 Schema、指标口径或 UI 架构的变更，**必须**在提交代码的同时完成相关文档（如 `docs/`, `contexts.md`, `AGENTS.md`, `GLOSSARY.md`）的同步更新。严禁在文档滞后的情况下宣告完工。
 1. **交付闭环律 (Delivery Closure)**: 建立物理卡点：任何核心逻辑切片（Focus）宣告完成且 `just verify` 100% 通过后，**必须立即执行本地 `git commit` 落库**（使用 Conventional Commits 格式），并将 Hash 登记入交付日志，无论是否处于离场态，做到“验证通过即 commit，交付即闭环”。
+1. **记忆闭环律 (KI Closure) [MANDATORY]**: 每个 L2+ Focus 完工（`git commit` 落库后），AI **必须主动**执行以下知识沉淀动作，这是 DoD 的物理检查点，不可跳过、不可推迟至离场时：
+
+- **事实提炼**：从本次 Focus 中提取 3-5 条 Key Facts（架构决策、已知 Bug 修复方式、新增模式、反面教材等），用自然语言写入 KI artifact（路径：`<appDataDir>/knowledge/<topic>/artifacts/`）。
+- **KI 元数据更新**：同步更新对应 KI 的 `metadata.json`（`updated_at`、`summary` 字段）。
+- **禁止遗漏**：严禁以"会话已长"、"任务紧急"为由跳过此步骤。若 KI 目录不存在，AI 必须新建并初始化。
+- **验收标准**：KI 文件写入完毕后，AI 在回复中明确报告："✅ KI 已更新：`<path>`"。
 
 ## 3. 工程严谨性基准 (Engineering Rigor) [MANDATORY]
 

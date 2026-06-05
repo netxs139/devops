@@ -1,3 +1,5 @@
+"""ZenTao connectivity and model diagnostics command."""
+
 import logging
 
 import requests
@@ -12,9 +14,12 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
+    """ZenTao API connectivity and ORM mapping diagnostics."""
+
     help = "禅道 (ZenTao) 连接与模型诊断脚本。"
 
     def handle(self, session: Session):
+        """Check ZenTao API reachability and database model mapping."""
         DiagHelper.print_header("禅道专项诊断")
 
         # 1. 配置检查

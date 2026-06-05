@@ -1,3 +1,5 @@
+"""DependencyCheck HTML report parser and CSV exporter command."""
+
 import csv
 import logging
 from pathlib import Path
@@ -11,13 +13,17 @@ logger = logging.getLogger("DependencyCheck")
 
 
 class Command(BaseCommand):
+    """Parse DependencyCheck HTML reports and convert vulnerability data to CSV."""
+
     help = "解析 DependencyCheck HTML 报告并转换为 CSV 格式。"
 
     def add_arguments(self, parser):
+        """Register --dir and --output CLI arguments."""
         parser.add_argument("--dir", type=str, default="reports", help="HTML 报告所在目录")
         parser.add_argument("--output", type=str, help="输出 CSV 文件路径")
 
     def handle(self, *args, **options):
+        """Locate the HTML report, parse vulnerability rows, and write CSV output."""
         report_dir = Path(options.get("dir"))
         if not report_dir.exists():
             self.stdout.write(f"❌ 目录不存在: {report_dir}\n")

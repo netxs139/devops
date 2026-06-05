@@ -1,3 +1,5 @@
+"""Organization master data (MDM_ORGANIZATION) initialization command."""
+
 from pathlib import Path
 from typing import Annotated
 
@@ -13,6 +15,8 @@ DEFAULT_CSV = SAMPLE_DATA_DIR / "organizations.csv"
 
 
 class Command(BaseCommand):
+    """Initialize organization hierarchy master data from CSV via OrganizationService."""
+
     help = "初始化组织架构主数据 (MDM_ORGANIZATION)"
 
     def handle(
@@ -20,7 +24,7 @@ class Command(BaseCommand):
         session: Session,
         csv_path: Annotated[Path, typer.Option("--csv", help="组织架构 CSV 路径")] = DEFAULT_CSV,
     ):
-        """现代化初始化入口。"""
+        """Sync organization hierarchy from CSV file."""
         service = OrganizationService(session)
 
         if not csv_path.exists():

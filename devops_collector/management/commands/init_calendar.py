@@ -1,3 +1,5 @@
+"""Calendar dimension master data (MDM_CALENDAR) initialization command."""
+
 from datetime import date
 from typing import Annotated
 
@@ -9,6 +11,8 @@ from devops_collector.services.calendar_service import CalendarService
 
 
 class Command(BaseCommand):
+    """Initialize the MDM_CALENDAR time-dimension table for a given year range."""
+
     help = "日历与时间维度主数据 (MDM_CALENDAR) 初始化"
 
     def handle(
@@ -17,6 +21,7 @@ class Command(BaseCommand):
         start_year: Annotated[int, typer.Option("--start-year", help="起始年份")] = 2024,
         end_year: Annotated[int, typer.Option("--end-year", help="结束年份")] = 2026,
     ):
+        """Generate calendar rows for each day between start_year and end_year."""
         service = CalendarService(session)
 
         try:

@@ -1,3 +1,5 @@
+"""GitLab Issue resolution label check command."""
+
 import logging
 
 from devops_collector.core.management import BaseCommand
@@ -8,13 +10,17 @@ logger = logging.getLogger("ResolutionChecker")
 
 
 class Command(BaseCommand):
+    """Check closed GitLab issues for missing resolution::* labels."""
+
     help = "GitLab Issue 关闭原因检查工具：自动提醒负责人补充 resolution::* 标签。"
 
     def add_arguments(self, parser):
+        """Register --project-id and --auto-comment CLI arguments."""
         parser.add_argument("--project-id", type=int, required=True, help="GitLab 项目 ID")
         parser.add_argument("--auto-comment", action="store_true", help="是否自动添加提醒评论")
 
     def handle(self, *args, **options):
+        """Scan closed issues, identify missing resolution labels, and optionally add comments."""
         client = GitLabClient(self.settings.gitlab.url, self.settings.gitlab.token)
         project_id = options.get("project_id")
         self.stdout.write(f"正在扫描项目 {project_id} 中缺失关闭原因的 Issue...\n")

@@ -1,3 +1,5 @@
+"""Architecture auditor command: runs full architecture rule audit across the codebase."""
+
 import logging
 import os
 import re
@@ -127,9 +129,12 @@ RULES = [
 
 
 class Command(BaseCommand):
+    """Architecture guardian command: scans the codebase for architecture rule violations."""
+
     help = "架构守卫：运行全量架构规则审计。"
 
     def handle(self, *args, **options):
+        """Walk the project tree, apply all RULES to every Python file, and report violations."""
         errors = 0
         warnings = 0
         project_root = "."

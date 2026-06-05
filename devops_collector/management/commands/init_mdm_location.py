@@ -1,3 +1,5 @@
+"""MDM_LOCATION table initialization command (CSV-driven)."""
+
 import logging
 from pathlib import Path
 from typing import Annotated
@@ -13,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
+    """Initialize the MDM_LOCATION table from a CSV file via LocationService."""
+
     help = "初始化 MDM_LOCATION 表并加载位置数据。"
 
     def handle(
@@ -20,6 +24,7 @@ class Command(BaseCommand):
         session: Session,
         csv_path: Annotated[Path, typer.Option("--csv", help="Path to locations CSV")] = Path("docs/assets/sample_data/locations.csv"),
     ):
+        """Read locations CSV and upsert records into mdm_locations."""
         if not csv_path.exists():
             self.stdout.write(f"WARN: 跳过位置初始化：未找到 {csv_path}\n")
             return True

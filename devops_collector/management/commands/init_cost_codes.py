@@ -1,3 +1,5 @@
+"""Financial cost code (CBS) initialization command."""
+
 import csv
 import logging
 from pathlib import Path
@@ -14,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
+    """Load and sync financial cost codes from a CSV file via FinanceService."""
+
     help = "财务成本科目 (CBS) 初始化脚本。"
 
     def handle(
@@ -21,6 +25,7 @@ class Command(BaseCommand):
         session: Session,
         csv_path: Annotated[Path, typer.Option("--csv", help="成本科目 CSV 路径")] = Path("docs/assets/sample_data/cost_codes.csv"),
     ):
+        """Sync cost codes from the CSV file into the database."""
         if not csv_path.exists():
             self.stdout.write(f"WARN: 跳过成本科目初始化：未找到 {csv_path}\n")
             return True

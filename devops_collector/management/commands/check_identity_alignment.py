@@ -1,3 +1,5 @@
+"""Identity alignment check command."""
+
 import logging
 from pathlib import Path
 from typing import Annotated
@@ -12,12 +14,15 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
+    """Check cross-system identity alignment between GitLab, ZenTao, and employee MDM."""
+
     help = "身份对齐检查脚本 (Identity Alignment Checker)"
 
     def handle(
         self,
         docs_dir: Annotated[Path, typer.Option("--docs-dir", help="文档数据目录")] = Path("docs/assets/sample_data"),
     ):
+        """Load employee, GitLab, and ZenTao user data and report alignment issues."""
         employees_csv = docs_dir / "employees.csv"
         gitlab_csv = docs_dir / "gitlab-user.csv"
         zentao_csv = docs_dir / "zentao-user.csv"
