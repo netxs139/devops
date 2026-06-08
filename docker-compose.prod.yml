@@ -122,6 +122,8 @@ services:
       - /etc/localtime:/etc/localtime:ro
     env_file:
       - .env
+    environment:
+      - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
     depends_on:
       db:
         condition: service_healthy
