@@ -2,8 +2,6 @@
 
 > **SSOT (Single Source of Truth)**: 本文档是前端开发的**唯一权威规范**，覆盖设计原则、样式规范、脚本规范、Web Components 规范和组件契约。
 >
-> - `docs/frontend/CONVENTIONS.md` — ⚠️ **已废弃**，内容已迁移至本文档。
-> - `docs/frontend/COMPONENTS.md` — ⚠️ **已废弃**，内容已迁移至本文档。
 > - 当进行任何 `devops_portal/static/` 相关的变更时，**必须**以本文档为准。
 >
 > *优先级*: 本文档 (业务真相) > `AGENTS.md` (AI调度) > 全局配置。
