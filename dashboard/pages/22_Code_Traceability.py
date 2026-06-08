@@ -48,6 +48,7 @@ with col2:
 # --- 数据拉取与渲染 ---
 @st.cache_data(ttl=60)
 def fetch_traceability(issue_id: str):
+    """Fetch traceability."""
     engine = get_db_engine()
     query = text("""
         SELECT

@@ -1,5 +1,5 @@
 import os
-from typing import Any
+from typing import Any, cast
 
 import requests
 import streamlit as st
@@ -20,7 +20,7 @@ class ApiClient:
         try:
             response = requests.get(url, params=params, timeout=10)
             response.raise_for_status()
-            return response.json()
+            return cast(dict[str, Any], response.json())
         except requests.exceptions.RequestException as e:
             st.error(f"Backend API Error [{endpoint}]: {e}")
             return None
@@ -31,7 +31,7 @@ class ApiClient:
         try:
             response = requests.post(url, json=data, timeout=10)
             response.raise_for_status()
-            return response.json()
+            return cast(dict[str, Any], response.json())
         except requests.exceptions.RequestException as e:
             st.error(f"Backend API Error [{endpoint}]: {e}")
             return None

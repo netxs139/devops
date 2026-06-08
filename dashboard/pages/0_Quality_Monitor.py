@@ -81,6 +81,7 @@ st.markdown(
 # Data Fetching
 @st.cache_data(ttl=60)
 def fetch_quality_metrics():
+    """Fetch quality metrics."""
     try:
         # 强制查询 Marts 层 (符合 contexts.md#7.4.2)
         df = run_query("SELECT * FROM public_marts.rpt_system_data_quality")

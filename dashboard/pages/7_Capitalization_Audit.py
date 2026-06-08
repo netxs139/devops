@@ -59,12 +59,13 @@ st.markdown(
 # --- Data Loading ---
 @st.cache_data(ttl=600)
 def load_data():
+    """Load data."""
     engine = get_db_engine()
     try:
         query = "SELECT * FROM public_marts.fct_capitalization_audit"
         with engine.connect() as conn:
             return pd.read_sql(text(query), conn)
-    except:
+    except Exception:
         return pd.DataFrame()
 
 

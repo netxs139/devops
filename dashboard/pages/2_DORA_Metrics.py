@@ -61,12 +61,13 @@ st.markdown(
 # --- Data Loading ---
 @st.cache_data(ttl=600)
 def load_dora_data():
+    """Load DORA data."""
     engine = get_db_engine()
     try:
         query = "SELECT * FROM public_marts.fct_dora_metrics"
         with engine.connect() as conn:
             return pd.read_sql(text(query), conn)
-    except:
+    except Exception:
         return pd.DataFrame()
 
 

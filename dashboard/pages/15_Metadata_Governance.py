@@ -39,7 +39,7 @@ def run():
             try:
                 s.connect((host, port))
                 return True
-            except:
+            except Exception:
                 return False
 
     if is_port_open("localhost", 9002):
