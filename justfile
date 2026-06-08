@@ -307,7 +307,7 @@ pull-images:
 clean:
     @echo "Cleaning temporary files..."
     find . -type d -name "__pycache__" -not -path "./.venv/*" -exec rm -rf {} + 2>/dev/null || true
-    find . -type f \( -name "*.pyc" -o -name "*.pyo" \) -not -path "./.venv/*" -delete
+    find . -type f \( -name "*.pyc" -o -name "*.pyo" \) -not -path "./.venv/*" -delete 2>/dev/null || true
     rm -rf .coverage .pytest_cache .ruff_cache test-results
     @echo "Done."
 
@@ -322,20 +322,20 @@ docs:
 
 # 添加新任务到进度表
 progress-add task:
-    @uv run devops-progress --add "{{task}}"
+    @PYTHONPATH=. uv run devops-progress --add "{{task}}"
 
 # 标记任务为已完成 (输入任务编号)
 progress-done id:
-    @uv run devops-progress --done {{id}}
+    @PYTHONPATH=. uv run devops-progress --done {{id}}
 
 # 更新当前重点 (Focus)
 progress-focus content:
-    @uv run devops-progress --update-focus "{{content}}"
+    @PYTHONPATH=. uv run devops-progress --update-focus "{{content}}"
 
 # 镜像未选选项到任务列表 (用分号分隔多个任务)
 progress-mirror tasks:
-    @uv run devops-progress --mirror-tasks "{{tasks}}"
+    @PYTHONPATH=. uv run devops-progress --mirror-tasks "{{tasks}}"
 
 # 归档超过 5 条的已完成任务
 progress-archive:
-    @uv run devops-progress --archive
+    @PYTHONPATH=. uv run devops-progress --archive
