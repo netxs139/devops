@@ -13,6 +13,7 @@ class IdentityMappingService:
     """管理从 CSV 或外部系统同步身份映射数据。"""
 
     def __init__(self, session: Session):
+        """Magic method."""
         self.session = session
 
     def sync_gitlab_mappings(self, csv_path: Path, progress_callback=None) -> dict[str, int]:

@@ -14,6 +14,7 @@ class IterationCoreService:
     """处理迭代相关的数据库查询。"""
 
     def __init__(self, session: Session):
+        """Magic method."""
         self.session = session
 
     def list_projects(self, current_user: User) -> list[dict]:

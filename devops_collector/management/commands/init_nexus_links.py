@@ -1,4 +1,4 @@
-"""初始化 Nexus 组件与 MDM 产品关联（支持 exact/regex 双模式匹配）。"""
+"""初始化 Nexus 组件与 MDM 产品关联（支持 exact/regex 双模式匹配）。."""
 
 from pathlib import Path
 from typing import Annotated
@@ -16,6 +16,8 @@ DEFAULT_CSV = SAMPLE_DATA_DIR / "nexus_component_map.csv"
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "从 CSV 规则初始化 Nexus 组件与 MDM 产品关联（exact/regex 双模式）"
 
     def handle(
@@ -23,6 +25,7 @@ class Command(BaseCommand):
         session: Session,
         csv_path: Annotated[Path, typer.Option("--csv", help="Nexus 映射 CSV 路径")] = DEFAULT_CSV,
     ):
+        """Execute command."""
         if not csv_path.exists():
             self.stdout.write(f"WARN: 找不到 Nexus 映射文件: {csv_path}\n")
             return True

@@ -1,4 +1,4 @@
-"""禅道基础资产导出命令。
+"""禅道基础资产导出命令。.
 
 导出禅道产品和执行/迭代的对应关系及 MDM 映射状态，方便离线核对和批量修正。
 """
@@ -12,12 +12,16 @@ from devops_collector.core.management import BaseCommand
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "导出禅道数据：将禅道产品和迭代记录导出为 CSV 文件"
 
     def add_arguments(self, parser):
+        """Configure command arguments."""
         parser.add_argument("-d", "--dir", default=".", help="输出目录 (默认: 当前目录)")
 
     def handle(self, *args, **options):
+        """Execute command."""
         output_dir = Path(options["dir"])
         output_dir.mkdir(parents=True, exist_ok=True)
 

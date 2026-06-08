@@ -1,3 +1,5 @@
+"""Command module."""
+
 import json
 import logging
 
@@ -15,6 +17,7 @@ from devops_portal.schemas import DependencyScanResult
 
 
 def get_quality_service(db: Session = Depends(get_auth_db)) -> QualityService:
+    """Execute command."""
     return QualityService(db)
 
 

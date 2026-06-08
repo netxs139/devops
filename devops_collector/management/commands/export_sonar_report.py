@@ -1,4 +1,4 @@
-"""SonarQube 质量中心导出命令。
+"""SonarQube 质量中心导出命令。.
 
 导出 CSV 格式的详细质量报告，包含行数、Bug、漏洞、覆盖率等指标。
 """
@@ -13,6 +13,8 @@ from devops_collector.services.quality_service import QualityService
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "导出 SonarQube 质量报表：生成包含详细度量指标的 CSV 报告"
 
     def handle(
@@ -20,6 +22,7 @@ class Command(BaseCommand):
         session: Session,
         output_path: Annotated[str, typer.Option("--output", "-o", help="输出路径")] = "sonarqube_quality_report.csv",
     ):
+        """Execute command."""
         self.stdout.write("正在收集所有项目的最新质量指标...\n")
 
         try:

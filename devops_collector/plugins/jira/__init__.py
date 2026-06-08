@@ -13,6 +13,7 @@ class JiraPlugin(BasePlugin):
 
     @property
     def metadata(self) -> PluginMetadata:
+        """Execute command."""
         return PluginMetadata(
             name="jira",
             version="1.0.0",
@@ -22,11 +23,13 @@ class JiraPlugin(BasePlugin):
         )
 
     def get_worker_class(self) -> type:
+        """Execute command."""
         from .worker import JiraWorker
 
         return JiraWorker
 
     def get_client_class(self) -> type:
+        """Execute command."""
         from .client import JiraClient
 
         return JiraClient

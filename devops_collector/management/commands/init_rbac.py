@@ -1,3 +1,5 @@
+"""Command module."""
+
 import csv
 import logging
 import uuid
@@ -54,6 +56,8 @@ DEFAULT_MENUS = [
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "初始化 RBAC 权限 system 脚本（内置默认值 + 业务自适应版）"
 
     def handle(
@@ -61,6 +65,7 @@ class Command(BaseCommand):
         session: Session,
         force_admin: Annotated[bool, typer.Option("--force-admin", help="强制更新 admin 用户的密码")] = False,
     ):
+        """Execute command."""
         try:
             # 1. 确保 admin 用户
             admin_email = "admin@tjhq.com"
@@ -104,7 +109,7 @@ class Command(BaseCommand):
             return False
 
     def _ensure_auto_permissions(self):
-        """【业务常识授权】超管拥有一切，业务经理拥有非敏感菜单。"""
+        """【业务常识授权】超管拥有一切，业务经理拥有非敏感菜单。."""
         admin_role = self.session.query(SysRole).filter_by(role_key="SYSTEM_ADMIN").first()
         business_roles = self.session.query(SysRole).filter(SysRole.role_key.in_(["EXECUTIVE_MANAGER", "DEPT_MANAGER"])).all()
 
@@ -137,6 +142,7 @@ class Command(BaseCommand):
             self.stdout.write(f"已自动分配 {len(to_add)} 项系统权限关联。\n")
 
     def _load_menus(self):
+        """Execute command."""
         csv_path = Path("docs/assets/sample_data/sys_menus.csv")
         if csv_path.exists():
             self.stdout.write("从 CSV 加载菜单配置...\n")
@@ -160,6 +166,7 @@ class Command(BaseCommand):
         self.session.flush()
 
     def _load_roles(self):
+        """Execute command."""
         csv_path = Path("docs/assets/sample_data/sys_roles.csv")
         if csv_path.exists():
             self.stdout.write("从 CSV 加载角色配置...\n")

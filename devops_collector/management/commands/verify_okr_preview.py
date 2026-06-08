@@ -1,3 +1,5 @@
+"""Command module."""
+
 import uuid
 
 from sqlalchemy import create_engine
@@ -9,12 +11,16 @@ from devops_collector.services.admin_service import AdminService
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "验证 OKR 预览逻辑 (支持内存模式与物理库模式)。"
 
     def add_arguments(self, parser):
+        """Configure command arguments."""
         parser.add_argument("--real-db", action="store_true", help="Use real database instead of in-memory SQLite")
 
     def handle(self, *args, **options):
+        """Execute command."""
         if options.get("real_db"):
             self.stdout.write("Running verification on REAL database...\n")
             session = self.session

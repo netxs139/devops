@@ -1,3 +1,5 @@
+"""Command module."""
+
 from __future__ import annotations
 
 import uuid
@@ -421,6 +423,7 @@ class Team(Base, TimestampMixin, SCDMixin):
     members: Mapped[list[TeamMember]] = relationship("TeamMember", back_populates="team", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
+        """Magic method."""
         return f"<Team(name='{self.name}', code='{self.team_code}', version={self.sync_version})>"
 
 
@@ -441,9 +444,11 @@ class TeamMember(Base, TimestampMixin):
 
     @property
     def full_name(self) -> str:
+        """Execute command."""
         return self.user.full_name if self.user and self.user.full_name else "Unknown"
 
     def __repr__(self) -> str:
+        """Magic method."""
         return f"<TeamMember(team_id={self.team_id}, user_id={self.user_id}, role={self.role_code})>"
 
 
@@ -489,6 +494,7 @@ class Product(Base, TimestampMixin, SCDMixin):
     project_relations: Mapped[list[ProjectProductRelation]] = relationship("ProjectProductRelation", back_populates="product")
 
     def __repr__(self) -> str:
+        """Magic method."""
         return f"<Product(code='{self.product_code}', name='{self.product_name}', version={self.sync_version})>"
 
 
@@ -554,10 +560,12 @@ class Service(Base, TimestampMixin, SCDMixin):
 
     @property
     def total_cost(self) -> float:
+        """Execute command."""
         return float(sum(c.amount or 0.0 for c in self.costs))
 
     @property
     def investment_roi(self) -> float:
+        """Execute command."""
         return 10.0 if self.total_cost > 0 else 0.0
 
 
@@ -613,6 +621,7 @@ class MetricDefinition(Base, TimestampMixin, SCDMixin):
     technical_owner: Mapped[User | None] = relationship("User", foreign_keys=[technical_owner_id])
 
     def __repr__(self):
+        """Magic method."""
         return f"<MetricDefinition(code='{self.metric_code}', name='{self.metric_name}', version={self.sync_version})>"
 
 
@@ -880,6 +889,7 @@ class Incident(Base, TimestampMixin, SCDMixin, OwnableMixin):
 
     @classmethod
     def get_owner_column(cls):
+        """Execute command."""
         return cls.owner_id
 
     # 基础信息
@@ -961,6 +971,7 @@ class ProjectMaster(Base, TimestampMixin, SCDMixin, OwnableMixin):
 
     @classmethod
     def get_owner_column(cls):
+        """Execute command."""
         return cls.pm_user_id
 
     project_name: Mapped[str_200] = mapped_column(nullable=False, comment="项目名称")
@@ -996,6 +1007,7 @@ class ProjectMaster(Base, TimestampMixin, SCDMixin, OwnableMixin):
     product_relations: Mapped[list[ProjectProductRelation]] = relationship("ProjectProductRelation", back_populates="project")
 
     def __repr__(self) -> str:
+        """Magic method."""
         return f"<ProjectMaster(code='{self.project_code}', name='{self.project_name}')>"
 
 

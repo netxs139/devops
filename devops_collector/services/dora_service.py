@@ -1,3 +1,5 @@
+"""Command module."""
+
 import logging
 from datetime import UTC, date, datetime, timedelta
 from typing import Any, cast

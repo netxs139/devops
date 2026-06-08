@@ -1,3 +1,5 @@
+"""Command module."""
+
 from pathlib import Path
 from typing import Annotated
 
@@ -13,6 +15,8 @@ DEFAULT_CSV = SAMPLE_DATA_DIR / "products.csv"
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "初始化产品主数据 (MDM_PRODUCT)"
 
     def handle(
@@ -20,7 +24,7 @@ class Command(BaseCommand):
         session: Session,
         csv_path: Annotated[Path, typer.Option("--csv", help="产品 CSV 路径")] = DEFAULT_CSV,
     ):
-        """现代化产品初始化入口。"""
+        """现代化产品初始化入口。."""
         service = ProductService(session)
 
         if not csv_path.exists():

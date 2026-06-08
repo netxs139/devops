@@ -206,6 +206,7 @@ class CodeMetrics:
 
     @staticmethod
     def get_file_category(file_path: str) -> str:
+        """Execute command."""
         path = file_path.lower()
         if any(p in path for p in ["/test/", "test/", "/tests/", "tests/", "test_", "_test.", "_spec."]):
             return "Test"

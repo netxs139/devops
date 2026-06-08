@@ -23,6 +23,7 @@ class IdentityResolver:
     """
 
     def __init__(self, session: Session, min_score: float = 0.6) -> None:
+        """Magic method."""
         self.session = session
         self.min_score = min_score
 

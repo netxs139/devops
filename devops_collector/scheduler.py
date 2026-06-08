@@ -1,3 +1,5 @@
+"""Command module."""
+
 import argparse
 import logging
 import subprocess

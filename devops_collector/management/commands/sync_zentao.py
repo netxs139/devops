@@ -1,3 +1,5 @@
+"""Command module."""
+
 import logging
 
 from sqlalchemy.orm import configure_mappers
@@ -13,12 +15,16 @@ logger = logging.getLogger("SyncZenTao")
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "手动触发禅道数据同步脚本 (支持 Task 与 Effort)"
 
     def add_arguments(self, parser):
+        """Configure command arguments."""
         parser.add_argument("--product-id", type=int, help="只同步特定产品 ID")
 
     def check(self, **options) -> list[tuple[str, str]]:
+        """Check prerequisites."""
         results = []
         conn_err = self.check_url_connectivity(self.settings.zentao.url, label="ZenTao API")
         if conn_err:
@@ -27,6 +33,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # 强制加载所有插件模型
+        """Execute command."""
         PluginLoader.load_models()
         try:
             configure_mappers()

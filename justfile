@@ -137,7 +137,7 @@ arch-audit:
 # 数据字典一致性校验
 docs-verify:
     @echo "Verifying Data Dictionary freshness..."
-    {{EXEC_CMD}} python scripts/check_data_dict_freshness.py
+    {{EXEC_CMD}} devops check data-dict-freshness
 
 # [MANDATORY] 核心卡点：代码合并前全量校验 (Lint -> Test -> Build)
 full-gate:

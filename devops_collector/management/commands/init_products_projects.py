@@ -1,3 +1,5 @@
+"""Command module."""
+
 import csv
 import logging
 import uuid
@@ -23,6 +25,8 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "初始化产品与项目主数据。"
 
     def handle(
@@ -31,6 +35,7 @@ class Command(BaseCommand):
         prd_csv_file: Annotated[str | None, typer.Option("--prd-csv", help="产品信息 CSV 路径")] = None,
         proj_csv_file: Annotated[str | None, typer.Option("--proj-csv", help="项目信息 CSV 路径")] = None,
     ):
+        """Execute command."""
         sample_dir = Path("docs/assets/sample_data")
         prd_csv = Path(prd_csv_file) if prd_csv_file else sample_dir / "products.csv"
         proj_csv = Path(proj_csv_file) if proj_csv_file else sample_dir / "projects.csv"
@@ -48,6 +53,7 @@ class Command(BaseCommand):
             return False
 
     def _ensure_system_registry(self, code="gitlab-prod", name="生产环境GitLab"):
+        """Execute command."""
         system = self.session.query(SystemRegistry).filter_by(system_code=code).first()
         if not system:
             system = SystemRegistry(system_code=code, system_name=name, system_type="VCS", is_active=True)
@@ -56,6 +62,7 @@ class Command(BaseCommand):
         return system
 
     def _init_products(self, prd_csv: Path):
+        """Execute command."""
         if not prd_csv.exists():
             self.stdout.write(f"WARN: 跳过产品初始化：找不到文件 {prd_csv}\n")
             return {}
@@ -125,6 +132,7 @@ class Command(BaseCommand):
         return prod_map_id
 
     def _init_projects(self, proj_csv: Path, prod_map_id):
+        """Execute command."""
         if not proj_csv.exists():
             self.stdout.write(f"WARN: 跳过项目初始化：找不到文件 {proj_csv}\n")
             return

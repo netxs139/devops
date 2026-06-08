@@ -1,4 +1,4 @@
-"""Nexus 资产生命周期分析命令。
+"""Nexus 资产生命周期分析命令。.
 
 抽样分析 Nexus 仓库中的组件下载活跃度、存储占用及从公网拉取的频率。
 
@@ -13,16 +13,16 @@ from devops_collector.plugins.nexus.config import get_config
 
 
 class Command(BaseCommand):
-    """Nexus 资产生命周期分析命令：统计组件下载活跃度与存储分布。"""
+    """Nexus 资产生命周期分析命令：统计组件下载活跃度与存储分布。."""
 
     help = "分析 Nexus 资产生命周期：统计各仓库的组件活跃度与存储分布"
 
     def add_arguments(self, parser):
-        """注册命令行参数 --limit。"""
+        """注册命令行参数 --limit。."""
         parser.add_argument("--limit", type=int, default=100, help="每个仓库的抽样组件上限 (默认: 100)")
 
     def handle(self, *args, **options):
-        """执行 Nexus 组件生命周期抽样分析并输出报表。"""
+        """执行 Nexus 组件生命周期抽样分析并输出报表。."""
         limit = options.get("limit", 100)
 
         config = get_config()["client"]

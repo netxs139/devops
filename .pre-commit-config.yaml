@@ -38,7 +38,7 @@ repos:
       # 数据字典新鲜度检查
       - id: check-data-dict
         name: Check Data Dictionary Freshness
-        entry: uv run python scripts/check_data_dict_freshness.py
+        entry: uv run python devops_collector/management/commands/check_data_dict_freshness.py
         language: python
         files: 'devops_collector/models/.*\.py$|devops_collector/plugins/.*/models\.py$'
         pass_filenames: false

@@ -1,4 +1,4 @@
-"""初始化 ZenTao 产品/项目与 MDM 资产的拓扑映射。"""
+"""初始化 ZenTao 产品/项目与 MDM 资产的拓扑映射。."""
 
 import csv
 from pathlib import Path
@@ -16,6 +16,8 @@ SAMPLE_DATA_DIR = Path("docs/assets/sample_data")
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "从 CSV 初始化 ZenTao 产品/项目与 MDM 资产的拓扑映射"
 
     def handle(
@@ -24,6 +26,7 @@ class Command(BaseCommand):
         product_csv_file: Annotated[str | None, typer.Option("--product-csv", help="ZenTao 产品映射 CSV")] = None,
         project_csv_file: Annotated[str | None, typer.Option("--project-csv", help="ZenTao 项目映射 CSV")] = None,
     ):
+        """Execute command."""
         product_csv = Path(product_csv_file) if product_csv_file else SAMPLE_DATA_DIR / "zentao_product_map.csv"
         project_csv = Path(project_csv_file) if project_csv_file else SAMPLE_DATA_DIR / "zentao_project_map.csv"
 
@@ -39,6 +42,7 @@ class Command(BaseCommand):
             return False
 
     def _ensure_system_registry(self) -> SystemRegistry:
+        """Execute command."""
         system = self.session.query(SystemRegistry).filter_by(system_code="zentao-prod").first()
         if not system:
             system = SystemRegistry(
@@ -53,6 +57,7 @@ class Command(BaseCommand):
         return system
 
     def _init_product_links(self, csv_path: Path, system_id: int) -> None:
+        """Execute command."""
         if not csv_path.exists():
             self.stdout.write(f"WARN: 跳过 ZenTao 产品关联：找不到 {csv_path}\n")
             return
@@ -110,6 +115,7 @@ class Command(BaseCommand):
                 progress.advance(task)
 
     def _init_project_links(self, csv_path: Path, system_id: int) -> None:
+        """Execute command."""
         if not csv_path.exists():
             self.stdout.write(f"WARN: 跳过 ZenTao 项目关联：找不到 {csv_path}\n")
             return

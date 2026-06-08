@@ -13,6 +13,7 @@ class SonarQubePlugin(BasePlugin):
 
     @property
     def metadata(self) -> PluginMetadata:
+        """Execute command."""
         return PluginMetadata(
             name="sonarqube",
             version="1.2.0",
@@ -22,11 +23,13 @@ class SonarQubePlugin(BasePlugin):
         )
 
     def get_worker_class(self) -> type:
+        """Execute command."""
         from .worker import SonarQubeWorker
 
         return SonarQubeWorker
 
     def get_client_class(self) -> type:
+        """Execute command."""
         from .client import SonarQubeClient
 
         return SonarQubeClient

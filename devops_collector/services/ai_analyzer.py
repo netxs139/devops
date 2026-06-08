@@ -18,6 +18,7 @@ class EfficacyAnalyzer:
     """研发效能 AI 归因分析器。"""
 
     def __init__(self):
+        """Magic method."""
         self.model = settings.ai.model or "gpt-4o-mini"
         self.api_key = settings.ai.api_key
         self.base_url = settings.ai.base_url

@@ -1,4 +1,4 @@
-"""身份自动治理引擎 (Identity Resolver Engine) 命令。
+"""身份自动治理引擎 (Identity Resolver Engine) 命令。.
 
 扫描 mdm_identity_mappings 表中尚未验证或自动生成的身份，
 通过模糊匹配与启发式规则计算置信度，并将外部帐号对齐到 HR 金数据用户。
@@ -11,17 +11,17 @@ from devops_collector.services.identity_resolver import IdentityResolver
 
 
 class Command(BaseCommand):
-    """身份自动治理引擎命令。"""
+    """身份自动治理引擎命令。."""
 
     help = "身份自动治理引擎：将外部帐号对齐到 HR 主数据用户"
 
     def add_arguments(self, parser):
-        """添加命令行参数。"""
+        """添加命令行参数。."""
         parser.add_argument("--apply", action="store_true", help="执行实际更新（默认仅为 Dry Run）")
         parser.add_argument("--min-score", type=float, default=0.6, help="最低匹配置信度阈值 (默认: 0.6)")
 
     def handle(self, *args, **options):
-        """执行主处理逻辑。"""
+        """执行主处理逻辑。."""
         apply_changes = options.get("apply", False)
         min_score = options.get("min_score", 0.6)
 

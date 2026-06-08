@@ -1,4 +1,4 @@
-"""项目资源拓扑图 (Project Map) 生成命令。
+"""项目资源拓扑图 (Project Map) 生成命令。.
 
 生成项目核心目录拓扑图，并标注 Client, Worker, Service 等核心职责，辅助开发者快速定位资源。
 """
@@ -13,12 +13,15 @@ from devops_collector.core.management import BaseCommand
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "导出项目地图：生成项目核心目录的职责拓扑图 (Markdown)"
 
     def handle(
         self,
         output_path: Annotated[str, typer.Option("--output", "-o", help="输出路径")] = "docs/PROJECT_MAP.md",
     ):
+        """Execute command."""
         output_file = Path(output_path)
         output_file.parent.mkdir(parents=True, exist_ok=True)
 
@@ -63,7 +66,7 @@ class Command(BaseCommand):
             return False
 
     def _get_role_label(self, filename):
-        """标注核心职责标识。"""
+        """标注核心职责标识。."""
         if "client" in filename:
             return " [⚡ CLIENT: API Connection]"
         if "worker" in filename:

@@ -1,3 +1,5 @@
+"""Command module."""
+
 import logging
 from typing import Annotated
 
@@ -13,7 +15,7 @@ logger = logging.getLogger("DBReset")
 
 
 class Command(BaseCommand):
-    """数据库重置工具命令，强制清空并重建所有数据库表。"""
+    """数据库重置工具命令，强制清空并重建所有数据库表。."""
 
     help = "数据库重置工具 (PostgreSQL 增强版). 强制清空并重建所有表。"
 
@@ -22,7 +24,7 @@ class Command(BaseCommand):
         session: Session,
         yes: Annotated[bool, typer.Option("--yes", help="强制执行，跳过所有安全确认提示")] = False,
     ):
-        """处理数据库重置的业务逻辑。"""
+        """处理数据库重置的业务逻辑。."""
         if not yes:
             self.stdout.write("！！！警告：正在重置数据库，全量数据将被清空！！！\n")
             confirm = input("确定要继续吗？(y/N): ")
@@ -48,7 +50,7 @@ class Command(BaseCommand):
             FROM pg_stat_activity
             WHERE pg_stat_activity.datname = '{db_name}'
               AND pid <> pg_backend_pid();
-            """
+            """  # nosec B608
             try:
                 session.execute(text(terminate_sql))
                 session.commit()

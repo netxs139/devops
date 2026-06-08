@@ -1,3 +1,5 @@
+"""Command module."""
+
 import asyncio
 import logging
 
@@ -11,9 +13,12 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "系统综合诊断主调度脚本。"
 
     def handle(self, session: Session):
+        """Execute command."""
         DiagHelper.print_header("DevOps 平台全项体检")
 
         # 1. 基础 API 检查 (异步)
@@ -47,7 +52,7 @@ class Command(BaseCommand):
         return overall_success
 
     async def _check_api_health(self):
-        """检查 API 服务是否在线。"""
+        """检查 API 服务是否在线。."""
         base_url = "http://localhost:8000"
         async with httpx.AsyncClient() as client:
             try:

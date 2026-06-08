@@ -269,6 +269,7 @@ def _make_command_callback(cmd_class: type[BaseCommand], original_stem: str):
     params, is_modern = _introspect_command_params(cmd_class)
 
     def callback(**kwargs):
+        """Execute command."""
         _run_base_command(cmd_class, original_stem, kwargs)
 
     callback.__doc__ = cmd_class.help or f"执行 {original_stem}"
@@ -299,7 +300,7 @@ def _make_command_callback(cmd_class: type[BaseCommand], original_stem: str):
 
         sig_params.append(inspect.Parameter(p["name"], inspect.Parameter.KEYWORD_ONLY, default=default, annotation=annotation))
 
-    callback.__signature__ = inspect.Signature(sig_params)
+    setattr(callback, "__signature__", inspect.Signature(sig_params))  # noqa: B010
     return callback
 
 

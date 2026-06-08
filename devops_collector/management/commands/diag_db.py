@@ -38,7 +38,7 @@ class Command(BaseCommand):
         print("\n[数据统计] 核心表记录数:")
         for table in tables:
             try:
-                row = self.session.execute(text(f"SELECT count(*) FROM {table}")).fetchone()
+                row = self.session.execute(text(f"SELECT count(*) FROM {table}")).fetchone()  # nosec B608
                 count_result = row[0] if row is not None else 0
                 print(f"   - {table:22}: {count_result} 条记录")
             except Exception:

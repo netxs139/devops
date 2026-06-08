@@ -46,6 +46,7 @@ class ELOCAnalyzer:
     """Core analyzer for calculating Code Equivalent & GitPrime-Style scores."""
 
     def __init__(self, options: ELOCOptions = ELOCOptions()):
+        """Magic method."""
         self.options = options
         # Regex for identifying comments in various languages
         self.comment_patterns = {
@@ -167,9 +168,11 @@ class ELOCAnalyzer:
         return 1.0  # Core Logic
 
     def _is_generated(self, file_path: str) -> bool:
+        """Execute command."""
         return bool(re.search(self.options.generated_file_pattern, file_path, re.IGNORECASE))
 
     def _is_test_file(self, file_path: str) -> bool:
+        """Execute command."""
         return bool(re.search(self.options.test_file_pattern, file_path, re.IGNORECASE))
 
     def _is_comment_line(self, file_path: str, content: str) -> bool:
@@ -187,7 +190,9 @@ class ELOCAnalyzer:
         return bool(re.match(patterns["line"], content))
 
     def _is_high_value_comment(self, content: str) -> bool:
+        """Execute command."""
         return bool(self.high_value_comment_re.search(content))
 
     def _is_dead_code(self, content: str) -> bool:
+        """Execute command."""
         return bool(self.dead_code_re.search(content))

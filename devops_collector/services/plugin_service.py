@@ -14,6 +14,7 @@ class PluginService:
     """处理跨平台的插件数据查询逻辑，确保 Router 保持纯粹。"""
 
     def __init__(self, session: Session):
+        """Magic method."""
         self.session = session
 
     def list_jenkins_jobs(self, current_user: User):

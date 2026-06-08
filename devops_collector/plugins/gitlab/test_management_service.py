@@ -278,6 +278,7 @@ class TestManagementService:
         creator: str = "System",
     ) -> dict:
         # 构建符合 TestCase.md 模板规范的 Markdown 描述
+        """Execute command asynchronously."""
         description = f"# 🧪 测试用例: {title}\n\n"
         description += "---\n\n"
 

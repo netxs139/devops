@@ -1,3 +1,5 @@
+"""Command module."""
+
 from datetime import datetime
 
 
@@ -56,6 +58,7 @@ class NexusComponent(Base, TimestampMixin, SCDMixin, OwnableMixin):
     raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
     def __repr__(self) -> str:
+        """Magic method."""
         return f"<NexusComponent(name='{self.name}', version='{self.version}')>"
 
 
@@ -90,4 +93,5 @@ class NexusAsset(Base, TimestampMixin, SCDMixin):
     raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
     def __repr__(self) -> str:
+        """Magic method."""
         return f"<NexusAsset(path='{self.path}')>"

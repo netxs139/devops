@@ -11,6 +11,7 @@ class DependencyCheckPlugin(BasePlugin):
 
     @property
     def metadata(self) -> PluginMetadata:
+        """Execute command."""
         return PluginMetadata(
             name="dependency_check",
             version="1.0.0",
@@ -20,12 +21,14 @@ class DependencyCheckPlugin(BasePlugin):
         )
 
     def get_worker_class(self) -> type:
+        """Execute command."""
         from .worker import DependencyCheckWorker
 
         return DependencyCheckWorker
 
     def get_client_class(self) -> type | None:
         # 该插件仅接收推送报告，无需客户端
+        """Execute command."""
         return None
 
 

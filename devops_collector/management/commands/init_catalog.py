@@ -1,4 +1,4 @@
-"""初始化系统注册表 (SystemRegistry) 和服务目录 (Service Catalog)。"""
+"""初始化系统注册表 (SystemRegistry) 和服务目录 (Service Catalog)。."""
 
 import csv
 from pathlib import Path
@@ -15,6 +15,8 @@ SAMPLE_DATA_DIR = Path("docs/assets/sample_data")
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "从 CSV 初始化系统注册表和服务目录"
 
     def handle(
@@ -23,6 +25,7 @@ class Command(BaseCommand):
         systems_csv: Annotated[Path, typer.Option("--systems-csv", help="系统注册表 CSV")] = SAMPLE_DATA_DIR / "mdm_systems_registry.csv",
         services_csv: Annotated[Path, typer.Option("--services-csv", help="服务目录 CSV")] = SAMPLE_DATA_DIR / "mdm_services.csv",
     ):
+        """Execute command."""
         service = CatalogService(session)
 
         try:

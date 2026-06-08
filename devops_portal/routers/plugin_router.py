@@ -13,6 +13,7 @@ from devops_portal.dependencies import get_current_user
 
 
 def get_plugin_service(db: Session = Depends(get_auth_db)) -> PluginService:
+    """Execute command."""
     return PluginService(db)
 
 

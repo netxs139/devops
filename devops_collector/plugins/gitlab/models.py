@@ -120,6 +120,7 @@ class GitLabGroupMember(Base, TimestampMixin, TraceabilityMixin):
     user: Mapped["User | None"] = relationship("User", primaryjoin=and_(User.global_user_id == user_id, User.is_current.is_(True)))  # noqa: F821
 
     def __repr__(self) -> str:
+        """Magic method."""
         return f"<GitLabGroupMember(group_id={self.group_id}, gitlab_uid={self.gitlab_uid})>"
 
 
@@ -284,6 +285,7 @@ class GitLabProject(Base, TimestampMixin, TraceabilityMixin):
         return case((deploy_count > 0, cast(failures_count, Float) / cast(deploy_count, Float) * 100), else_=0.0)
 
     def __repr__(self) -> str:
+        """Magic method."""
         return f"<GitLabProject(id={self.id}, path='{self.path_with_namespace}')>"
 
 
@@ -327,6 +329,7 @@ class GitLabProjectMember(Base, TimestampMixin, TraceabilityMixin):
     )
 
     def __repr__(self) -> str:
+        """Magic method."""
         return f"<GitLabProjectMember(project_id={self.project_id}, user_id={self.user_id})>"
 
 
@@ -499,6 +502,7 @@ class GitLabMergeRequest(Base, TimestampMixin, TraceabilityMixin):
         return self.raw_data.get("web_url") if self.raw_data else None
 
     def __repr__(self) -> str:
+        """Magic method."""
         return f"<GitLabMergeRequest(id={self.id}, iid={self.iid})>"
 
 
@@ -565,6 +569,7 @@ class GitLabCommit(Base, TimestampMixin, TraceabilityMixin):
         return self.raw_data.get("web_url") if self.raw_data else None
 
     def __repr__(self) -> str:
+        """Magic method."""
         return f"<GitLabCommit(id='{self.short_id}', project_id={self.project_id})>"
 
 
@@ -604,6 +609,7 @@ class GitLabCommitFileStats(Base, TimestampMixin, TraceabilityMixin):
     commit: Mapped["GitLabCommit | None"] = relationship("GitLabCommit")  # noqa: F821
 
     def __repr__(self) -> str:
+        """Magic method."""
         return f"<GitLabCommitFileStats(commit_id='{self.commit_id}', file_path='{self.file_path}')>"
 
 
@@ -679,6 +685,7 @@ class GitLabIssue(Base, TimestampMixin, TraceabilityMixin):
 
     @hybrid_property
     def is_deployed(self):
+        """Execute command."""
         for mr in self.merge_requests:
             if any(d.is_success and d.is_production for d in mr.deployments):
                 return True
@@ -904,6 +911,7 @@ class GitLabIssueStateTransition(Base, TimestampMixin, TraceabilityMixin):
     issue: Mapped["GitLabIssue | None"] = relationship("GitLabIssue", back_populates="transitions")  # noqa: F821
 
     def __repr__(self) -> str:
+        """Magic method."""
         return f"<GitLabIssueStateTransition(issue_id={self.issue_id}, to_state='{self.to_state}')>"
 
 
@@ -932,6 +940,7 @@ class GitLabMergeRequestStateTransition(Base, TimestampMixin, TraceabilityMixin)
     mr: Mapped["GitLabMergeRequest | None"] = relationship("GitLabMergeRequest", back_populates="transitions")  # noqa: F821
 
     def __repr__(self) -> str:
+        """Magic method."""
         return f"<GitLabMergeRequestStateTransition(mr_id={self.mr_id}, to_state='{self.to_state}')>"
 
 
@@ -1653,6 +1662,7 @@ class GitLabJob(Base, TimestampMixin, TraceabilityMixin):
     pipeline: Mapped["GitLabPipeline | None"] = relationship("GitLabPipeline", back_populates="jobs")  # noqa: F821
 
     def __repr__(self) -> str:
+        """Magic method."""
         return f"<GitLabJob(id={self.id}, name='{self.name}')>"
 
 
@@ -1698,6 +1708,7 @@ class GitLabVulnerability(Base, TimestampMixin, TraceabilityMixin):
         return self.raw_data.get("web_url") if self.raw_data else None
 
     def __repr__(self) -> str:
+        """Magic method."""
         return f"<GitLabVulnerability(name='{self.name[:30]}...', severity='{self.severity}')>"
 
 

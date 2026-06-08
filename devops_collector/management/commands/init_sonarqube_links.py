@@ -1,4 +1,4 @@
-"""初始化 SonarQube 项目与 MDM 资产的关联。"""
+"""初始化 SonarQube 项目与 MDM 资产的关联。."""
 
 import csv
 from pathlib import Path
@@ -16,6 +16,8 @@ DEFAULT_CSV = SAMPLE_DATA_DIR / "sonarqube_project_map.csv"
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "从 CSV 初始化 SonarQube 项目与 MDM 项目/产品关联"
 
     def handle(
@@ -23,6 +25,7 @@ class Command(BaseCommand):
         session: Session,
         csv_path: Annotated[Path, typer.Option("--csv", help="SonarQube 映射 CSV 路径")] = DEFAULT_CSV,
     ):
+        """Execute command."""
         if not csv_path.exists():
             self.stdout.write(f"WARN: 找不到 SonarQube 映射文件: {csv_path}\n")
             return True

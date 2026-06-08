@@ -1,4 +1,4 @@
-"""收入合同 (Revenue Contract) 主数据初始化命令。"""
+"""收入合同 (Revenue Contract) 主数据初始化命令。."""
 
 import csv
 from pathlib import Path
@@ -16,6 +16,8 @@ DEFAULT_CSV = SAMPLE_DATA_DIR / "revenue_contracts.csv"
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "从 CSV 初始化收入合同主数据，并生成默认首付款节点"
 
     def handle(
@@ -24,6 +26,7 @@ class Command(BaseCommand):
         csv_path: Annotated[Path, typer.Option("--csv", help="收入合同 CSV 路径")] = DEFAULT_CSV,
         down_pct: Annotated[float, typer.Option("--down-pct", help="首付款比例 %")] = 30.0,
     ):
+        """Execute command."""
         if not csv_path.exists():
             self.stdout.write(f"WARN: 跳过收入合同初始化：未找到 {csv_path}\n")
             return True

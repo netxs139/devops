@@ -70,6 +70,7 @@ def RoleRequired(allowed_roles: list[str]):
         current_user: User = Depends(get_current_user),
     ) -> User:
         # 提取角色：优先从 relationship 获取，支持从 legacy .role 属性回退（适配测试 Mock）
+        """Execute command asynchronously."""
         user_roles = [r.role_key for r in getattr(current_user, "roles", []) if hasattr(r, "role_key")]
         if not user_roles and hasattr(current_user, "role") and isinstance(current_user.role, str):
             user_roles = [current_user.role]
@@ -111,6 +112,7 @@ def PermissionRequired(required_perms: list[str]):
         db: Session = Depends(get_auth_db),
     ) -> User:
         # 提取角色：优先从 relationship 获取，支持从 legacy .role 属性回退（适配测试 Mock）
+        """Execute command asynchronously."""
         user_roles = [r.role_key for r in getattr(current_user, "roles", []) if hasattr(r, "role_key")]
         if not user_roles and hasattr(current_user, "role") and isinstance(current_user.role, str):
             user_roles = [current_user.role]

@@ -1,4 +1,4 @@
-"""初始化禅道 (ZenTao) 身份映射 (IdentityMapping) 数据。"""
+"""初始化禅道 (ZenTao) 身份映射 (IdentityMapping) 数据。."""
 
 import csv
 from pathlib import Path
@@ -16,6 +16,8 @@ DEFAULT_CSV = SAMPLE_DATA_DIR / "zentao-user.csv"
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "从 CSV 初始化禅道身份映射（工号/Email 优先策略）"
 
     def handle(
@@ -23,6 +25,7 @@ class Command(BaseCommand):
         session: Session,
         csv_path: Annotated[Path, typer.Option("--csv", help="禅道用户 CSV 路径")] = DEFAULT_CSV,
     ):
+        """Execute command."""
         if not csv_path.exists():
             self.stderr.write(f"❌ 找不到禅道用户 CSV 文件: {csv_path}\n")
             return False

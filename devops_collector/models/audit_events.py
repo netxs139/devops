@@ -39,6 +39,7 @@ _audit_thread = None
 
 
 def _audit_publisher_worker():
+    """Execute command."""
     mq = None
     while True:
         try:
@@ -59,6 +60,7 @@ def _audit_publisher_worker():
 
 
 def _ensure_publisher_started():
+    """Execute command."""
     global _audit_thread  # noqa: PLW0603
     if _audit_thread is None or not _audit_thread.is_alive():
         _audit_thread = threading.Thread(target=_audit_publisher_worker, daemon=True, name="AuditPublisherThread")

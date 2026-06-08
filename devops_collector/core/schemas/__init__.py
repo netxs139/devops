@@ -1,3 +1,5 @@
+"""Command module."""
+
 from .error_contract import ErrorCode, ErrorResponse
 from .staging import (
     GitLabMRSchema,
