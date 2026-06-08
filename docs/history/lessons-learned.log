@@ -8,6 +8,7 @@
 
 | Timestamp | Domain | Phenomenon | Root Cause | Universal Rule (The Defense) |
 | :--- | :--- | :--- | :--- | :--- |
+| 2026-06-08 | [justfile/Env] | 运行 `just progress-focus` 报 `ModuleNotFoundError: No module named 'scripts'` 崩溃 | 宿主机直接调用宿主虚拟环境的 entry-point 脚本时，默认搜索路径未包含当前项目根目录，导致无法解析顶级模块。 | **脚本执行路径依赖防御 (Explicit PYTHONPATH Injection)**：在 `justfile` 中执行依赖本地目录的 standalone 脚本命令时，应当显式将 PYTHONPATH 注入（如 `PYTHONPATH=. uv run ...`）以确保在任何工作目录下执行均能正确寻址。 |
 | 2026-06-08 | [Env/Permission] | 执行 `just clean` 时由于容器生成的 `__pycache__` 权限为 root 导致清理指令报 Permission Denied 中断 | 挂载卷中由容器内 root 用户动态生成的 Python 缓存文件，在宿主机无写权限，导致宿主机 `find -delete` 发生物理阻断。 | **清场命令容错与提权归还原则**：在 `justfile` 中对于 `clean` 等清场指令必须做好容错（如 `|| true` 或屏蔽 stderr），避免因非业务缓存文件清理失败导致流程死锁。对于硬性权限冲突，必须通过容器提权执行 `chown` 重置所有权。 |
 | 2026-06-01 | [Env/CI] | github上执行fullgate报错 docker-compose command not found | 现代 CI/CD 容器运行时环境（如 GitHub Actions Runner）已默认将 Docker Compose V2 插件作为 docker compose 执行，而不提供独立的 docker-compose 命令行工具。 | **跨平台 Docker 容器指令适配律 (Dynamic Docker Compose CLI)**：在构建脚本或 `justfile` 中，必须通过动态探测 `command -v docker-compose` 来选择可用的二进制命令名，实现 `docker-compose` 与 `docker compose` 的透明过渡兼容。 |
 | 2026-05-22 | [Workflow/CI] | pre-commit mdformat 拦截并自动格式化导致 git commit 中断 | 预提交钩子对 `.agent/skills/` 下的 Markdown 文件进行了自动化排版，拦截了首次 Commit。 | **格式化门禁顺从律 (Formatter Gate Obedience)**: 1. 严禁使用 `--no-verify` 绕过检查。2. 面对钩子的自动修复，必须再次 `git add` 并重新提交，确保入库 100% 符合项目标准。 |
