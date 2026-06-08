@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+- **工程严谨性规则演进与教训归档 (2026-06-08)**:
+
+  - **技能文档演进**: 演进了 `engineering-rigor-arbiter` 技能文档，补充了脚本路径依赖防御 (Explicit PYTHONPATH Injection) 与清场指令精确打击与容错原则 (Clean Target Precision & Tolerance) 等两项核心红线规范。
+  - **教训沉淀归档**: 主动回顾终端中有关 scripts 模块 ModuleNotFoundError 及 pytest 缓存权限不足 clean 卡死的错误，并在 `lessons-learned.log` 完成归档。
+
 - **Docker Compose 兼容性修复 (2026-06-01)**:
 
   - **动态命令探测**: 在 `justfile` 中引入动态 `COMPOSE_BIN` 探测机制，优先使用旧版 `docker-compose`，若不存在则降级为新版插件化 `docker compose`。修复了云端 GitHub Actions 等现代 CI/CD 容器运行时因缺少 `docker-compose` 独立二进制导致 fullgate 执行失败的问题。
