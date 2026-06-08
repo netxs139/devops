@@ -24,10 +24,10 @@ set_page_config()
 st.markdown(
     """
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap');
+
 
     html, body, [class*="css"] {
-        font-family: 'Outfit', sans-serif;
+        font-family: sans-serif;
     }
 
     .main {

@@ -178,7 +178,7 @@ const QaRadarHandler = {
             text.setAttribute("x", centerX + (radius + 25) * Math.cos(angle));
             text.setAttribute("y", centerY + (radius + 25) * Math.sin(angle));
             text.setAttribute("fill", "#45A29E");
-            text.setAttribute("font-family", "Outfit");
+            text.setAttribute("font-family", sans-serif);
             text.setAttribute("font-size", "10");
             text.setAttribute("text-anchor", "middle");
             text.textContent = ax.label;
