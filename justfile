@@ -104,10 +104,18 @@ verify: lint typecheck check-imports docs-verify scan-sast
     @echo "Running tests with coverage audit (Target: 80%)..."
     {{EXEC_CMD}} pytest tests/unit/ tests/integration/ --cov=devops_collector --cov=devops_portal --cov-report=term-missing --cov-fail-under=70
 
-# 代码质量检查 (Ruff)
-lint:
-    @echo "Running Ruff check..."
-    uv run ruff check devops_collector/ devops_portal/ tests/ scripts/
+# 代码质量检查 (Ruff & Oxlint)
+lint: lint-py lint-js
+
+# 仅检查 Python 代码
+lint-py:
+	@echo "Running Ruff check..."
+	uv run ruff check devops_collector/ devops_portal/ tests/ scripts/
+
+# 仅检查 JS 代码
+lint-js:
+	@echo "Running Oxlint check..."
+	./node_modules/.bin/oxlint devops_portal/static/js --ignore-pattern "**/vendor/**"
 
 # 代码格式化
 fmt:
