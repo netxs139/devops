@@ -52,6 +52,7 @@ st.markdown(
 # --- Data Loading ---
 @st.cache_data(ttl=600)
 def load_space_data():
+    """Load space data."""
     # v3.0 Use dws_space_metrics_daily
     query = """
     SELECT

@@ -45,6 +45,7 @@ st.markdown(
 # --- Data Loading ---
 @st.cache_data(ttl=600)
 def load_flow_data():
+    """Load flow data."""
     engine = get_db_engine()
 
     try:

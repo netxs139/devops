@@ -60,23 +60,25 @@ st.markdown(
 # --- Data Loading ---
 @st.cache_data(ttl=600)
 def load_talent_data():
+    """Load talent data."""
     engine = get_db_engine()
     try:
         query = "SELECT * FROM public_marts.fct_talent_radar"
         with engine.connect() as conn:
             return pd.read_sql(text(query), conn)
-    except:
+    except Exception:
         return pd.DataFrame()
 
 
 @st.cache_data(ttl=600)
 def load_bus_factor():
+    """Load bus factor data."""
     engine = get_db_engine()
     try:
         query = "SELECT * FROM public_marts.dws_subsystem_bus_factor WHERE knowledge_risk_status != 'HEALTHY_DISTRIBUTION'"
         with engine.connect() as conn:
             return pd.read_sql(text(query), conn)
-    except:
+    except Exception:
         return pd.DataFrame()
 
 

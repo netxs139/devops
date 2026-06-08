@@ -64,6 +64,7 @@ st.markdown(
 # --- Data Loading ---
 @st.cache_data(ttl=600)
 def load_data():
+    """Load data."""
     engine = get_db_engine()
     query = "SELECT * FROM public_marts.fct_code_hotspots"
     with engine.connect() as conn:

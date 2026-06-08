@@ -103,6 +103,7 @@ m1, m2, m3, m4 = st.columns(4)
 
 
 def set_drilldown(m_type):
+    """Set drilldown type."""
     st.session_state.drilldown_type = m_type
 
 
