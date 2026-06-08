@@ -2,9 +2,9 @@
 
 ## 🎯 当前重点 (Current Focus)
 
-- **核心重点**: Mypy Tech-Debt 清零 (修复 21 处遗留 Docstring 缺失)
-- **状态**: 🚧 进行中
-- **后续**: 解决后为 CI `allow_failure: false` 做准备。
+- **核心重点**: 暂无 (待下一次确认方案后启动)
+- **状态**: 🟢 空闲
+- **后续**: 暂无。
 
 ## 🛠️ 任务清单 (Tasks)
 
@@ -12,7 +12,8 @@
 
 ## 📋 最近完成 (Recently Completed)
 
-1. [2026-06-08] **Oxlint JS Linter 接入 (Portal 前端静态门禁)**: 新增 `package.json` 锁定 oxlint@1.10.0；扩展 `justfile` 为 `lint-py` + `lint-js` 双轨；注册 pre-commit hook 扫描 `devops_portal/static/js/`；发现存量 45 条代码质量警告（tech-debt）。commit: `a9fcd25`。
+1. [2026-06-08] **AGENTS.md 离场协议加固 (教训归档门禁)**: 在离场协议 §3.4 中增加了“教训归档”硬性 DoD，强制 AI 离场前主动扫描终端报错并向 `lessons-learned.log` 倒序沉淀踩坑教训。commit: `69d5863`。
+2. [2026-06-08] **Oxlint JS Linter 接入 (Portal 前端静态门禁)**: 新增 `package.json` 锁定 oxlint@1.10.0；扩展 `justfile` 为 `lint-py` + `lint-js` 双轨；注册 pre-commit hook 扫描 `devops_portal/static/js/`；发现存量 45 条代码质量警告（tech-debt）。commit: `a9fcd25`。
 2. [2026-06-08] **schemas 模块重名解决**: 合并了同名模块，消除 mypy 歧义并修复导入。
 3. [2026-05-31] **Git Hooks 体系升级 (A+B)**: 迁移 Docstring 检查至 Ruff D规则；新增 5 项标准防呆护栏；新增 mypy + commitizen 本地门禁；在 GitLab CI 新增独立 `static-analysis` stage 完成 Layer 2 CI 类型验收。
 4. [2026-05-22] **Agent Skill Linux 兼容性迁移**: 移除了残留的 PowerShell 指令，替换为 bash 和 curl。
