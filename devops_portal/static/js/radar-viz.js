@@ -143,7 +143,7 @@ function drawRadar(svgId, data) {
         text.setAttribute("x", centerX + (radius + 25) * Math.cos(angle));
         text.setAttribute("y", centerY + (radius + 25) * Math.sin(angle));
         text.setAttribute("fill", UI_CONFIG.colors.blue);
-        text.setAttribute("font-family", "JetBrains Mono");
+        text.setAttribute("font-family", monospace);
         text.setAttribute("font-size", "10");
         text.setAttribute("text-anchor", "middle");
         text.textContent = item.label;

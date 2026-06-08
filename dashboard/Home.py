@@ -9,13 +9,13 @@ st.markdown(
     """
 <style>
     .main-header {
-        font-family: 'Outfit', sans-serif;
+        font-family: sans-serif;
         color: #FFFFFF;
         text-align: center;
         padding: 2rem 0;
     }
     .sub-header {
-        font-family: 'Inter', sans-serif;
+        font-family: sans-serif;
         color: #B0B0B0;
         text-align: center;
         margin-bottom: 3rem;

@@ -42,7 +42,7 @@ st.markdown(
         font-size: 2.2rem;
         font-weight: 700;
         margin: 10px 0;
-        font-family: 'Outfit', sans-serif;
+        font-family: sans-serif;
     }
 
     .metric-label {
