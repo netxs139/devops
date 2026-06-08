@@ -74,6 +74,7 @@ services:
         condition: service_healthy
       mq:
         condition: service_healthy
+    restart: unless-stopped
 
   # 4. PostgreSQL 数据库
   db:
