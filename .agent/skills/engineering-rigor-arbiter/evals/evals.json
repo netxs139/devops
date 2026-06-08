@@ -57,6 +57,20 @@
           "check": "拦截在 ORM 循环内执行 commit 并继续操作对象的行为"
         }
       ]
+    },
+    {
+      "id": 5,
+      "name": "mock-attribute-shadowing-defense",
+      "domain": "Hygiene-8 (Mock Attribute Isolation)",
+      "prompt": "看下这个测试代码：\n\nfrom unittest.mock import MagicMock\n\ndef test_mock_hasattr():\n    mock_obj = MagicMock()\n    assert hasattr(mock_obj, 'some_attribute') is False",
+      "expected_output": "必须下达 Blocker 判决：[Ref LL#2026-04-24] Mock 属性精确隔离律 (Mock Attribute Isolation)。MagicMock 默认对任何属性访问都返回一个新的 Mock 对象，因此 hasattr() 总是返回 True。必须显式使用 `del mock_obj.some_attribute` 模拟属性缺失或使用 spec 约束。",
+      "assertions": [
+        {
+          "id": "e5-1",
+          "name": "识别 MagicMock attribute hasattr 漏洞",
+          "check": "输出必须拦截盲目 hasattr 判断并要求使用 delattr 或 spec"
+        }
+      ]
     }
   ]
 }
