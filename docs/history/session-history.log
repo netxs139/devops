@@ -8,7 +8,8 @@
 
 | Session ID | Start Time | End Time | End Commit | Status | Key Deliverables / Next Steps |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| 046233b5 | 2026-06-08 17:48 | 17:54 | 4f4850b | SUCCESS | **加固离场审计教训归档门禁**: 1. 在 `AGENTS.md` 离场协议中硬化教训归档拦截；2. 离场自动扫描并追加了一条 `PYTHONPATH` 依赖引起的 `ModuleNotFoundError` 教训。 |
+| 046233b5 | 2026-06-08 18:07 | 18:10 | fdbf0c4 | SUCCESS | **修补 justfile 物理缺陷**: 1. 在 `just clean` 删除命令中增加 `2>/dev/null || true` 屏蔽权限冲突，防止 `Permission denied` 错误卡死构建；2. 对 `progress-*` 等宿主机运维命令前强制注入 `PYTHONPATH=.`，根除 Python 解释器对顶级模块 `scripts` 的寻址崩溃。 |
+| 046233b5 | 2026-06-08 17:48 | 17:54 | bc61d13 | SUCCESS | **加固离场审计教训归档门禁**: 1. 在 `AGENTS.md` 离场协议中硬化教训归档拦截；2. 离场自动扫描并追加了一条 `PYTHONPATH` 依赖引起的 `ModuleNotFoundError` 教训。 |
 | 046233b5 | 2026-06-08 16:26 | 16:51 | f14843e | SUCCESS | **加固执行态解锁序列约束**: 1. 在 `AGENTS.md` §5.1 中增加了强制三步操作序列：`just progress-focus` 锁定 Current Focus -> 创建 `task.md` 拆解子任务 -> 开始物理编码；2. 将不执行 `progress-focus` 即编码的行为定义为违反执行锁红线。 |
 | caae419e | 2026-06-08 14:40 | 15:15 | 6981105 | SUCCESS | **下班例行会话交接审计**: 1. 对用户 GitLab/GitHub 双远端推送配置进行审计与一致性检查，给出“一键双推”优化建议；2. 尝试运行物理清理并校验系统测试状态；3. 完成 `session-history.log` 审计与下班交接对齐（无业务逻辑 or 模型变更）。 |
 | 61ab2357 | 2026-06-02 09:15 | 09:18 | N/A (Local) | SUCCESS | **下班例行会话交接审计**: 1. 完成环境状态嗅探与只读健康度检查；2. 运行物理清理；3. 同步完成 `session-history.log` 会话历史审计与下班交接对齐（无业务逻辑或模型变更）。 |
