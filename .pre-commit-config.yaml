@@ -26,6 +26,14 @@ repos:
         language: system
         types: [python]
 
+      # JS 静态检查 (Oxlint)
+      - id: oxlint
+        name: Oxlint JS Lint
+        entry: ./node_modules/.bin/oxlint --ignore-pattern "**/vendor/**"
+        language: system
+        files: 'devops_portal/static/js/.*\.js$'
+        pass_filenames: true
+
       # 敏感信息扫描 (Left-shifted to Host)
       - id: detect-secrets
         name: Detect Secrets
