@@ -23,13 +23,15 @@ def test_fetch_traceability_query(db_session):
     )
 
     db_session.execute(
-        text("INSERT INTO gitlab_commits (id, title, author_name, project_id, created_at) VALUES (:id, :title, :author, :pid, :now)"),
-        {"id": commit_id, "title": "feat: traceability fix", "author": "Antigravity", "pid": 1, "now": now},
+        text("INSERT INTO gitlab_commits (id, title, author_name, project_id, created_at, is_off_hours) VALUES (:id, :title, :author, :pid, :now, :off)"),
+        {"id": commit_id, "title": "feat: traceability fix", "author": "Antigravity", "pid": 1, "now": now, "off": False},
     )
 
     db_session.execute(
-        text("INSERT INTO gitlab_merge_requests (id, iid, title, state, project_id, created_at) VALUES (:id, :iid, :title, :state, :pid, :now)"),
-        {"id": 55, "iid": 55, "title": "MR 55", "state": "merged", "pid": 1, "now": now},
+        text(
+            "INSERT INTO gitlab_merge_requests (id, iid, title, state, project_id, created_at, is_draft, rubber_stamp) VALUES (:id, :iid, :title, :state, :pid, :now, :draft, :rs)"
+        ),
+        {"id": 55, "iid": 55, "title": "MR 55", "state": "merged", "pid": 1, "now": now, "draft": False, "rs": False},
     )
 
     db_session.execute(
