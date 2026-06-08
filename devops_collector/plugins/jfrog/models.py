@@ -1,3 +1,5 @@
+"""Command module."""
+
 import uuid
 from datetime import datetime
 

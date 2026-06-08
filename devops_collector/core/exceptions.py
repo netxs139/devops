@@ -12,6 +12,7 @@ class AppException(Exception):
     """基于契约的受控异常基类"""
 
     def __init__(self, code: ErrorCode, message: str, detail: dict[str, Any] | None = None, status_code: int = 400):
+        """Magic method."""
         self.code = code
         self.message = message
         self.detail = detail
@@ -28,6 +29,7 @@ class BusinessException(AppException):
 
     def __init__(self, message: str, code: str = "ERR_1000", status_code: int = 400):
         # 尝试将旧的字符串 code 映射为 ErrorCode，如果失败则使用系统错误
+        """Magic method."""
         try:
             e_code = ErrorCode(code)
         except ValueError:
@@ -39,6 +41,7 @@ class ValidationException(AppException):
     """参数校验异常。"""
 
     def __init__(self, message: str, detail: dict[str, Any] | None = None):
+        """Magic method."""
         super().__init__(code=ErrorCode.VALIDATION_FAILED, message=message, detail=detail, status_code=400)
 
 
@@ -46,6 +49,7 @@ class NotFoundException(AppException):
     """资源不存在异常。"""
 
     def __init__(self, message: str):
+        """Magic method."""
         super().__init__(code=ErrorCode.RESOURCE_NOT_FOUND, message=message, status_code=404)
 
 
@@ -53,6 +57,7 @@ class PermissionException(AppException):
     """权限不足异常。"""
 
     def __init__(self, message: str):
+        """Magic method."""
         super().__init__(code=ErrorCode.PERMISSION_DENIED, message=message, status_code=403)
 
 
@@ -60,4 +65,5 @@ class CircuitBreakerOpenError(AppException):
     """当熔断器处于开启状态时抛出的异常。"""
 
     def __init__(self, message: str):
+        """Magic method."""
         super().__init__(code=ErrorCode.CIRCUIT_BREAKER_OPEN, message=message, status_code=503)

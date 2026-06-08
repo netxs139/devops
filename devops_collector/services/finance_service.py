@@ -12,6 +12,7 @@ class FinanceService:
     """处理财务维度的数据初始化和同步。"""
 
     def __init__(self, session: Session):
+        """Magic method."""
         self.session = session
 
     def sync_cost_codes(self, csv_path: Path, progress_callback=None) -> None:

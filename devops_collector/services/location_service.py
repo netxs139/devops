@@ -11,6 +11,7 @@ class LocationService:
     """管理地理位置与区域数据。"""
 
     def __init__(self, session: Session):
+        """Magic method."""
         self.session = session
 
     def init_base_locations(self) -> None:

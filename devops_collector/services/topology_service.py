@@ -26,6 +26,7 @@ class TopologyService:
     """管理外部系统（如 SonarQube, Jenkins, Nexus 等）与内部 MDM 资产（Product, Project）的绑定关系。"""
 
     def __init__(self, session: Session):
+        """Magic method."""
         self.session = session
 
     def sync_sonarqube_links(self, csv_path: Path, progress_callback=None) -> None:
@@ -79,6 +80,7 @@ class TopologyService:
             rows = list(csv.DictReader(f))
 
         def _update_job(job: JenkinsJob, proj_id, prod_id, deploy: bool, env_str) -> None:
+            """Execute command."""
             if proj_id:
                 job.mdm_project_id = proj_id
             if prod_id:

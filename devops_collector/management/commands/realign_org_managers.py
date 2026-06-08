@@ -1,3 +1,5 @@
+"""Command module."""
+
 from sqlalchemy.orm import Session
 
 from devops_collector.core.management import BaseCommand
@@ -5,10 +7,12 @@ from devops_collector.services.organization_service import OrganizationService
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "组织负责人对齐维护脚本 (Organization Manager Alignment Tool)。解决数据同步顺序导致的负责人缺失。"
 
     def handle(self, session: Session):
-        """现代化对齐入口，直接透传至 OrganizationService。"""
+        """现代化对齐入口，直接透传至 OrganizationService。."""
         service = OrganizationService(session)
 
         with self.get_progress() as progress:

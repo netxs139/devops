@@ -13,6 +13,8 @@ from devops_collector.models.base_models import Base
 
 
 class DataDictService:
+    """Management command."""
+
     def generate_markdown(self) -> tuple[str, int]:
         """生成 Markdown 格式的数据字典内容。"""
         all_models = self._get_all_models()
@@ -58,6 +60,7 @@ class DataDictService:
         return md, len(all_models)
 
     def _get_all_models(self):
+        """Execute command."""
         all_models = []
         for _name, obj in inspect.getmembers(models):
             if inspect.isclass(obj) and hasattr(obj, "__tablename__") and obj != Base:
@@ -66,6 +69,7 @@ class DataDictService:
         return all_models
 
     def _categorize_models(self, all_models):
+        """Execute command."""
         categories = {
             "核心主数据域": [],
             "测试管理域": [],
@@ -91,6 +95,7 @@ class DataDictService:
         return categories
 
     def _get_column_type_description(self, column) -> str:
+        """Execute command."""
         col_type = str(column.type)
         type_mapping = {
             "VARCHAR": "String",
@@ -114,6 +119,7 @@ class DataDictService:
         return col_type
 
     def _get_column_constraints(self, column) -> list[str]:
+        """Execute command."""
         constraints = []
         if column.primary_key:
             constraints.append("PK")
@@ -126,6 +132,7 @@ class DataDictService:
         return constraints
 
     def _extract_docstring_description(self, model_class) -> str:
+        """Execute command."""
         doc = inspect.getdoc(model_class)
         if not doc:
             return "无描述"

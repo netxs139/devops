@@ -13,14 +13,15 @@ from alembic import op
 
 
 # revision identifiers, used by Alembic.
-revision: str = "f1e2d3c4b5a6"
-down_revision: str | None = "a1b2c3d4e5f6"
+revision: str = "f1e2d3c4b5a6"  # pragma: allowlist secret
+down_revision: str | None = "a1b2c3d4e5f6"  # pragma: allowlist secret
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     # 1. 表重命名与前缀补全
+    """Execute command."""
     op.rename_table("mdm_company", "mdm_companies")
     op.rename_table("mdm_vendor", "mdm_vendors")
     op.rename_table("mdm_epic", "mdm_epics")
@@ -126,6 +127,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     # 回退索引
     # (简略，生产环境应补全)
+    """Execute command."""
     pass
 
     # 回退列

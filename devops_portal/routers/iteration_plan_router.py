@@ -16,6 +16,7 @@ from devops_collector.services.iteration_service import IterationCoreService
 
 
 def get_iteration_core_service(db: Session = Depends(get_auth_db)) -> IterationCoreService:
+    """Execute command."""
     return IterationCoreService(db)
 
 

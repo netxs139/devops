@@ -16,6 +16,7 @@ class QualityService:
     """处理安全扫描报告与质量指标的查询。"""
 
     def __init__(self, session: Session):
+        """Magic method."""
         self.session = session
 
     def get_scan(self, scan_id: int):

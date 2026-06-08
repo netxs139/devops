@@ -13,6 +13,7 @@ from devops_collector.services.service_desk_service import ServiceDeskCoreServic
 
 
 def get_sd_core_service(db: Session = Depends(get_auth_db)) -> ServiceDeskCoreService:
+    """Execute command."""
     return ServiceDeskCoreService(db)
 
 

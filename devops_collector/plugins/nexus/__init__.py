@@ -11,6 +11,7 @@ class NexusPlugin(BasePlugin):
 
     @property
     def metadata(self) -> PluginMetadata:
+        """Execute command."""
         return PluginMetadata(
             name="nexus",
             version="1.0.2",
@@ -20,11 +21,13 @@ class NexusPlugin(BasePlugin):
         )
 
     def get_worker_class(self) -> type:
+        """Execute command."""
         from .worker import NexusWorker
 
         return NexusWorker
 
     def get_client_class(self) -> type:
+        """Execute command."""
         from .client import NexusClient
 
         return NexusClient

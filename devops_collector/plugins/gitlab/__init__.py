@@ -13,6 +13,7 @@ class GitLabPlugin(BasePlugin):
 
     @property
     def metadata(self) -> PluginMetadata:
+        """Execute command."""
         return PluginMetadata(
             name="gitlab",
             version="2.1.0",
@@ -23,11 +24,13 @@ class GitLabPlugin(BasePlugin):
 
     def get_worker_class(self) -> type:
         # 延迟导入，彻底消除 Side-effect
+        """Execute command."""
         from .worker import GitLabWorker
 
         return GitLabWorker
 
     def get_client_class(self) -> type:
+        """Execute command."""
         from .gitlab_client import GitLabClient
 
         return GitLabClient

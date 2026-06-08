@@ -1,4 +1,4 @@
-"""多渠道风险预警推送命令 (Multi-channel Risk Bot)。
+"""多渠道风险预警推送命令 (Multi-channel Risk Bot)。.
 
 从数据库风险宽表中获取异常记录，并推送到企业微信、飞书、钉钉。
 """
@@ -11,16 +11,16 @@ from devops_collector.services.notifiers import DingTalkBot, FeishuBot, WeComBot
 
 
 class Command(BaseCommand):
-    """风险预警推送命令类。"""
+    """风险预警推送命令类。."""
 
     help = "风险预警推送：扫描数据库风险视图并发送 IM 卡片告警"
 
     def add_arguments(self, parser):
-        """添加命令行参数。"""
+        """添加命令行参数。."""
         parser.add_argument("--dry-run", action="store_true", help="仅打印告警内容，不执行实际推送")
 
     def handle(self, *args, **options):
-        """执行风险扫描与多渠道推送业务逻辑。"""
+        """执行风险扫描与多渠道推送业务逻辑。."""
         dry_run = options.get("dry_run", False)
 
         bots = []

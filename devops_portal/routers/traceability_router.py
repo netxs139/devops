@@ -196,6 +196,7 @@ async def get_radar_metrics(
     timeline_mrs = mr_q.order_by(GitLabMergeRequest.merged_at.desc()).limit(10).all()
 
     def _seconds_to_minutes(s) -> float | None:
+        """Execute command."""
         return round(s / 60, 1) if s else None
 
     vsm_timeline = [

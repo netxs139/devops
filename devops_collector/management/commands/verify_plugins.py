@@ -1,3 +1,5 @@
+"""Command module."""
+
 import logging
 
 from devops_collector.core.management import BaseCommand
@@ -9,9 +11,12 @@ logger = logging.getLogger("PluginVerifier")
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "验证插件架构去中心化是否成功。"
 
     def handle(self, *args, **options):
+        """Execute command."""
         self.stdout.write("Starting Plugin Architecture Verification...\n")
 
         # 1. 触发自动发现

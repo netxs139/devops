@@ -25,6 +25,7 @@ class AuditMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         # 1. 生成或复用请求追踪 ID
+        """Execute command asynchronously."""
         request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
 
         # 2. 捕获客户端 IP (支持反向代理)

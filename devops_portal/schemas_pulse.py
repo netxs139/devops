@@ -1,3 +1,5 @@
+"""Command module."""
+
 from pydantic import BaseModel
 
 

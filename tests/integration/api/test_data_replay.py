@@ -9,7 +9,6 @@ from devops_collector.config import Config
 
 
 Config.DB_URI = "sqlite:///:memory:"
-from scripts.reprocess_staging_data import reprocess_by_source
 
 from devops_collector.models.base_models import Base, RawDataStaging
 from devops_collector.plugins.gitlab.models import GitLabMergeRequest, GitLabProject
@@ -54,7 +53,10 @@ def test_gitlab_mr_replay():
         session.commit()
         logger.info("Inserted mock staging record.")
         logger.info("Executing reprocess logic...")
-        reprocess_by_source("gitlab", "merge_request")
+        from devops_collector.management.commands.reprocess_staging_data import Command as ReprocessCommand
+
+        cmd = ReprocessCommand()
+        cmd.execute(session, source="gitlab", type="merge_request")
         session.expire_all()
         session.query(GitLabMergeRequest).get(test_mr_id)
     except Exception as e:

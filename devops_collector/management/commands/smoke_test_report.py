@@ -1,3 +1,5 @@
+"""Command module."""
+
 import logging
 from unittest.mock import MagicMock
 
@@ -8,15 +10,21 @@ logger = logging.getLogger(__name__)
 
 
 class MockRow:
+    """Management command."""
+
     def __init__(self, **kwargs):
+        """Magic method."""
         for k, v in kwargs.items():
             setattr(self, k, v)
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "冒烟测试脚本：研发效能报告格式预览 (Mock Mode)"
 
     def handle(self, *args, **options):
+        """Execute command."""
         self.stdout.write("=== [SMOKE TEST] Executive Audit Report - Mock Mode ===\n")
 
         # 我们通过动态 import 获取 Command 类，然后手动实例化它进行 Mock

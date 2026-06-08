@@ -135,6 +135,7 @@ class WeComWorker(BaseWorker):
         dept_map = {str(d["id"]): d for d in all_depts}
 
         def is_id_excluded(d_id: str) -> bool:
+            """Execute command."""
             if d_id in self.excluded_ids:
                 return True
             curr = dept_map.get(d_id)
@@ -149,6 +150,7 @@ class WeComWorker(BaseWorker):
         return filtered
 
     def _infer_org_level(self, dept: dict) -> int:
+        """Execute command."""
         dept_id = dept.get("id")
         parent_id = dept.get("parentid", 0)
         return 1 if dept_id == 1 else (2 if parent_id in (0, 1) else 3)

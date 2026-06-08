@@ -13,6 +13,7 @@ class JenkinsPlugin(BasePlugin):
 
     @property
     def metadata(self) -> PluginMetadata:
+        """Execute command."""
         return PluginMetadata(
             name="jenkins",
             version="1.1.5",
@@ -22,11 +23,13 @@ class JenkinsPlugin(BasePlugin):
         )
 
     def get_worker_class(self) -> type:
+        """Execute command."""
         from .worker import JenkinsWorker
 
         return JenkinsWorker
 
     def get_client_class(self) -> type:
+        """Execute command."""
         from .client import JenkinsClient
 
         return JenkinsClient

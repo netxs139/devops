@@ -1,4 +1,4 @@
-"""AI 效能归因命令。
+"""AI 效能归因命令。.
 
 调用 EfficacyAnalyzer 对系统效能异常指标进行大模型智能归因分析。
 """
@@ -8,12 +8,12 @@ from devops_collector.services.ai_analyzer import EfficacyAnalyzer
 
 
 class Command(BaseCommand):
-    """AI 效能归因命令：抓取效能异常指标并调用 LiteLLM 大模型进行归因。"""
+    """AI 效能归因命令：抓取效能异常指标并调用 LiteLLM 大模型进行归因。."""
 
     help = "抓取系统效能异常指标，并使用大模型进行智能归因分析"
 
     def handle(self, *args, **options) -> bool | None:
-        """执行效能归因分析并打印报告。"""
+        """执行效能归因分析并打印报告。."""
         DiagHelper.print_header("AI 效能诊断与归因 (LiteLLM)")
 
         with self.get_progress() as progress:

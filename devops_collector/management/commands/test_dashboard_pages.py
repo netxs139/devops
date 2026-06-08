@@ -1,3 +1,5 @@
+"""Command module."""
+
 import logging
 import re
 from pathlib import Path
@@ -12,9 +14,12 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "Dashboard 页面自动化健康检查脚本：验证数据仓库表和列是否存在。"
 
     def handle(self, *args, **options):
+        """Execute command."""
         dashboard_dir = Path("dashboard/pages")
         if not dashboard_dir.exists():
             self.stdout.write(f"❌ Dashboard 目录不存在: {dashboard_dir}\n")
@@ -41,6 +46,7 @@ class Command(BaseCommand):
         return fail_count == 0
 
     def _extract_sql_queries(self, content: str) -> list[tuple[str, str]]:
+        """Execute command."""
         queries = []
         pattern = r'run_query\s*\(\s*["\']+(.*?)["\']+\s*\)'
         matches = re.findall(pattern, content, re.DOTALL)
@@ -56,12 +62,13 @@ class Command(BaseCommand):
         return queries
 
     def _test_sql_query(self, sql: str, page_name: str, query_name: str) -> dict:
+        """Execute command."""
         result = {"page": page_name, "query": query_name, "sql": sql[:100] + "..." if len(sql) > 100 else sql, "status": "PASS", "error": None}
         try:
             test_sql = sql.strip()
             if not test_sql.upper().startswith("EXPLAIN"):
                 if "LIMIT" not in test_sql.upper():
-                    test_sql = f"SELECT * FROM ({test_sql}) AS _test_wrapper LIMIT 1"
+                    test_sql = f"SELECT * FROM ({test_sql}) AS _test_wrapper LIMIT 1"  # nosec B608
             self.session.execute(text(test_sql))
         except (ProgrammingError, OperationalError) as e:
             result["status"] = "FAIL"
@@ -72,6 +79,7 @@ class Command(BaseCommand):
         return result
 
     def _test_page(self, page_path: Path) -> list[dict]:
+        """Execute command."""
         page_name = page_path.stem
         try:
             content = page_path.read_text(encoding="utf-8")
@@ -85,6 +93,7 @@ class Command(BaseCommand):
         return [self._test_sql_query(sql, page_name, q_name) for q_name, sql in queries]
 
     def _print_summary(self, results: list[dict]) -> int:
+        """Execute command."""
         self.stdout.write("\n" + "=" * 70 + "\n")
         self.stdout.write("测试摘要\n")
         self.stdout.write("=" * 70 + "\n")

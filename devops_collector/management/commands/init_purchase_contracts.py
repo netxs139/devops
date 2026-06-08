@@ -1,4 +1,4 @@
-"""采购合同 (Purchase Contract) 主数据初始化命令。"""
+"""采购合同 (Purchase Contract) 主数据初始化命令。."""
 
 import csv
 from pathlib import Path
@@ -16,6 +16,8 @@ DEFAULT_CSV = SAMPLE_DATA_DIR / "purchase_contracts.csv"
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "从 CSV 初始化采购合同主数据，并生成演示流水记录"
 
     def handle(
@@ -24,6 +26,7 @@ class Command(BaseCommand):
         csv_path: Annotated[Path, typer.Option("--csv", help="采购合同 CSV 路径")] = DEFAULT_CSV,
         demo_period: Annotated[str, typer.Option("--demo-period", help="演示流水账期")] = "2025-01",
     ):
+        """Execute command."""
         if not csv_path.exists():
             self.stdout.write(f"WARN: 跳过采购合同初始化：未找到 {csv_path}\n")
             return True

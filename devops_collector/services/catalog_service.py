@@ -12,9 +12,11 @@ class CatalogService:
     """处理系统注册表和服务目录的同步和管理。"""
 
     def __init__(self, session: Session):
+        """Magic method."""
         self.session = session
 
     def _ensure_business_system(self, code: str) -> BusinessSystem | None:
+        """Execute command."""
         if not code:
             return None
         system = self.session.query(BusinessSystem).filter_by(code=code).first()

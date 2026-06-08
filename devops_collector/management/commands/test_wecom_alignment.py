@@ -1,3 +1,5 @@
+"""Command module."""
+
 import logging
 import uuid
 
@@ -13,9 +15,12 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "企业微信身份对齐仿真测试 (Simulation Test)"
 
     def handle(self, *args, **options):
+        """Execute command."""
         self.stdout.write(">>> Starting Simulation Test (v3-Framework)...\n")
 
         # 使用内存 SQLite 进行仿真

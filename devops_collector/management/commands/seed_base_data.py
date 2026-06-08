@@ -1,3 +1,5 @@
+"""Command module."""
+
 import csv
 import hashlib
 import logging
@@ -13,13 +15,17 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "Seed base data (Organizations & Products) from CSV files."
 
     def add_arguments(self, parser):
+        """Configure command arguments."""
         parser.add_argument("--org-csv", type=str, help="Path to organizations CSV")
         parser.add_argument("--product-csv", type=str, help="Path to products CSV")
 
     def handle(self, *args, **options):
+        """Execute command."""
         docs_dir = Path("docs/assets/sample_data")
         org_csv = Path(options.get("org_csv")) if options.get("org_csv") else docs_dir / "organizations.csv"
         product_csv = Path(options.get("product_csv")) if options.get("product_csv") else docs_dir / "products.csv"
@@ -34,9 +40,11 @@ class Command(BaseCommand):
             return False
 
     def _generate_org_code(self, name: str) -> str:
-        return "ORG_" + hashlib.md5(name.encode()).hexdigest()[:8].upper()
+        """Execute command."""
+        return "ORG_" + hashlib.md5(name.encode(), usedforsecurity=False).hexdigest()[:8].upper()
 
     def _seed_organizations(self, csv_path: Path):
+        """Execute command."""
         self.stdout.write(f"\n--- Seeding Organizations from {csv_path} ---\n")
 
         if not csv_path.exists():
@@ -115,6 +123,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Organizations: {stats['created']} created.\n")
 
     def _seed_products(self, csv_path: Path):
+        """Execute command."""
         self.stdout.write(f"\n--- Seeding Products from {csv_path} ---\n")
         if not csv_path.exists():
             return

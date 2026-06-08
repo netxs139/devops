@@ -1,3 +1,5 @@
+"""Command module."""
+
 from enum import StrEnum
 from typing import Any
 

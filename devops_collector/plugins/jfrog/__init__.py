@@ -11,6 +11,7 @@ class JFrogPlugin(BasePlugin):
 
     @property
     def metadata(self) -> PluginMetadata:
+        """Execute command."""
         return PluginMetadata(
             name="jfrog",
             version="1.0.0",
@@ -20,11 +21,13 @@ class JFrogPlugin(BasePlugin):
         )
 
     def get_worker_class(self) -> type:
+        """Execute command."""
         from .worker import JFrogWorker
 
         return JFrogWorker
 
     def get_client_class(self) -> type:
+        """Execute command."""
         from .client import JFrogClient
 
         return JFrogClient

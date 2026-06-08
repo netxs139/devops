@@ -11,6 +11,7 @@ class ZenTaoPlugin(BasePlugin):
 
     @property
     def metadata(self) -> PluginMetadata:
+        """Execute command."""
         return PluginMetadata(
             name="zentao",
             version="2.0.1",
@@ -20,11 +21,13 @@ class ZenTaoPlugin(BasePlugin):
         )
 
     def get_worker_class(self) -> type:
+        """Execute command."""
         from .worker import ZenTaoWorker
 
         return ZenTaoWorker
 
     def get_client_class(self) -> type:
+        """Execute command."""
         from .client import ZenTaoClient
 
         return ZenTaoClient

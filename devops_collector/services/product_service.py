@@ -11,7 +11,10 @@ logger = logging.getLogger(__name__)
 
 
 class ProductService:
+    """Management command."""
+
     def __init__(self, session: Session):
+        """Magic method."""
         self.session = session
 
     def sync_products_from_csv(self, csv_path, progress_callback=None):

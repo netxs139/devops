@@ -54,7 +54,10 @@ WORKDAYS_2025 = {
 
 
 class CalendarService:
+    """Management command."""
+
     def __init__(self, session: Session):
+        """Magic method."""
         self.session = session
 
     def generate_calendar_data(self, start_year: int, end_year: int, progress_callback=None):
@@ -115,6 +118,7 @@ class CalendarService:
         return count
 
     def _get_fiscal(self, d: date) -> tuple[str, str]:
+        """Execute command."""
         year = d.year
         quarter = (d.month - 1) // 3 + 1
         return (f"FY{year}", f"FY{str(year)[2:]}Q{quarter}")

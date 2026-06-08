@@ -1,4 +1,4 @@
-"""自动发现外部系统资产（GitLab / SonarQube / ZenTao）。"""
+"""自动发现外部系统资产（GitLab / SonarQube / ZenTao）。."""
 
 from devops_collector.config import settings
 from devops_collector.core.management import BaseCommand
@@ -11,14 +11,18 @@ from devops_collector.plugins.zentao.models import ZenTaoProduct
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "连接外部系统执行资产自动发现（GitLab / SonarQube / ZenTao）"
 
     def add_arguments(self, parser):
+        """Configure command arguments."""
         parser.add_argument("--skip-gitlab", action="store_true", help="跳过 GitLab 发现")
         parser.add_argument("--skip-sonar", action="store_true", help="跳过 SonarQube 发现")
         parser.add_argument("--skip-zentao", action="store_true", help="跳过禅道发现")
 
     def handle(self, *args, **options):
+        """Execute command."""
         try:
             if not options.get("skip_gitlab"):
                 self._discover_gitlab()
@@ -34,6 +38,7 @@ class Command(BaseCommand):
             return False
 
     def _discover_gitlab(self) -> None:
+        """Execute command."""
         if not settings.gitlab.url or not settings.gitlab.private_token:
             self.stdout.write("WARN: GitLab 配置缺失，跳过发现。\n")
             return
@@ -78,6 +83,7 @@ class Command(BaseCommand):
         self.stdout.write(f"  GitLab 发现完成，共处理 {total} 个项目。\n")
 
     def _discover_sonarqube(self) -> None:
+        """Execute command."""
         if not settings.sonarqube.url or not settings.sonarqube.token:
             self.stdout.write("WARN: SonarQube 配置缺失，跳过发现。\n")
             return
@@ -103,6 +109,7 @@ class Command(BaseCommand):
             self.stderr.write(f"SonarQube 发现失败: {e}\n")
 
     def _discover_zentao(self) -> None:
+        """Execute command."""
         if not settings.zentao.url or not settings.zentao.account:
             self.stdout.write("WARN: ZenTao 配置缺失，跳过发现。\n")
             return

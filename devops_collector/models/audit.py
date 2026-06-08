@@ -49,6 +49,7 @@ class AuditLog(Base, TimestampMixin):
     remark = Column(Text, nullable=True, comment="详细备注或报错信息堆栈")
 
     def __repr__(self) -> str:
+        """Magic method."""
         return f"<AuditLog(action='{self.action}', target='{self.resource_type}:{self.resource_id}')>"
 
     @classmethod

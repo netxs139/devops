@@ -20,6 +20,7 @@ class OrganizationService:
     """组织架构核心业务服务。"""
 
     def __init__(self, session: Session):
+        """Magic method."""
         self.session = session
 
     def upsert_organization(

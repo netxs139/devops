@@ -1,3 +1,5 @@
+"""Command module."""
+
 import logging
 import socket
 import subprocess
@@ -15,12 +17,12 @@ logger = logging.getLogger("SyncDeps")
 
 
 class Command(BaseCommand):
-    """依赖同步命令，支持多镜像切换与重试逻辑。"""
+    """依赖同步命令，支持多镜像切换与重试逻辑。."""
 
     help = "依赖同步工具：实现 uv sync 的多级重试与镜像切换逻辑 (Nexus -> Tsinghua)。"
 
     def check(self, **options) -> list[tuple[str, str]]:
-        """系统预检：检查 Nexus 与 Tsinghua 镜像连接性。"""
+        """系统预检：检查 Nexus 与 Tsinghua 镜像连接性。."""
         results = []
         nexus_url = self.settings.pypi.nexus_url if hasattr(self.settings.pypi, "nexus_url") else "http://192.168.5.64:8081/repository/pypi-all/simple"
         tsinghua_url = "https://pypi.tuna.tsinghua.edu.cn/simple"
@@ -44,7 +46,7 @@ class Command(BaseCommand):
         attempts: Annotated[int, typer.Option("--attempts", help="Number of attempts for primary index")] = 3,
         dev: Annotated[bool, typer.Option("--dev", help="Include dev dependencies and extras")] = False,
     ):
-        """执行依赖同步。"""
+        """执行依赖同步。."""
         nexus_url = self.settings.pypi.nexus_url if hasattr(self.settings.pypi, "nexus_url") else "http://192.168.5.64:8081/repository/pypi-all/simple"
         tsinghua_url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
@@ -94,6 +96,7 @@ class Command(BaseCommand):
         return success
 
     def _check_port(self, host, port, timeout=2):
+        """Execute command."""
         try:
             socket.setdefaulttimeout(timeout)
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -103,6 +106,7 @@ class Command(BaseCommand):
             return False
 
     def _run_sync(self, cmd):
+        """Execute command."""
         self.stdout.write(f"   执行命令: {' '.join(cmd)}\n")
         try:
             # 使用 Popen 实时捕获输出并转发到 self.stdout

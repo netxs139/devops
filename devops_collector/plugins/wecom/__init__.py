@@ -11,6 +11,7 @@ class WeComPlugin(BasePlugin):
 
     @property
     def metadata(self) -> PluginMetadata:
+        """Execute command."""
         return PluginMetadata(
             name="wecom",
             version="1.5.0",
@@ -20,11 +21,13 @@ class WeComPlugin(BasePlugin):
         )
 
     def get_worker_class(self) -> type:
+        """Execute command."""
         from .worker import WeComWorker
 
         return WeComWorker
 
     def get_client_class(self) -> type:
+        """Execute command."""
         from .client import WeComClient
 
         return WeComClient

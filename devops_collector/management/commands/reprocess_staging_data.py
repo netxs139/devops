@@ -1,4 +1,4 @@
-"""数据补偿同步 (Reprocess) 命令。
+"""数据补偿同步 (Reprocess) 命令。.
 
 读取 raw_data_staging 表中的原始 JSON，并调用对应插件的业务转换逻辑。
 """
@@ -9,9 +9,10 @@ from devops_collector.services.registry import PluginRegistry
 
 
 class MockClient:
-    """Mock Client 用于 Worker 实例化，防止触发网络请求。"""
+    """Mock Client 用于 Worker 实例化，防止触发网络请求。."""
 
     def __init__(self, *args, **kwargs):
+        """Magic method."""
         pass
 
 
@@ -33,14 +34,18 @@ HANDLER_MAPPING = {
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "数据补偿同步：从 Staging 原始数据重新生成业务表"
 
     def add_arguments(self, parser):
+        """Configure command arguments."""
         parser.add_argument("source", help="数据源名称 (如: gitlab, sonarqube, zentao)")
         parser.add_argument("--type", help="限制实体类型 (如: merge_request)")
         parser.add_argument("--batch-size", type=int, default=50, help="批处理大小 (默认: 50)")
 
     def handle(self, *args, **options):
+        """Execute command."""
         source_name = options["source"]
         entity_type = options.get("type")
         batch_size = options.get("batch_size", 50)
@@ -124,7 +129,7 @@ class Command(BaseCommand):
         return True
 
     def _ensure_plugins_loaded(self):
-        """确保所有 Worker 已注册。"""
+        """确保所有 Worker 已注册。."""
         try:
             import devops_collector.plugins.gitlab.worker  # noqa: F401
             import devops_collector.plugins.jenkins.worker  # noqa: F401
@@ -135,6 +140,7 @@ class Command(BaseCommand):
             pass
 
     def _resolve_context(self, source, payload):
+        """Execute command."""
         if source == "gitlab":
             from devops_collector.plugins.gitlab.models import GitLabProject
 
@@ -153,6 +159,7 @@ class Command(BaseCommand):
         return None
 
     def _resolve_context_by_id(self, source, pid):
+        """Execute command."""
         if source == "gitlab":
             from devops_collector.plugins.gitlab.models import GitLabProject
 

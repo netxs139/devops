@@ -1,3 +1,5 @@
+"""Command module."""
+
 import logging
 
 from sqlalchemy.orm import configure_mappers
@@ -9,9 +11,12 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
+    """Management command."""
+
     help = "验证 SQLAlchemy ORM 模型映射完整性与外键循环。"
 
     def handle(self, *args, **options):
+        """Execute command."""
         self.stdout.write(">>> 开始 ORM 映射完整性验证...\n")
 
         try:

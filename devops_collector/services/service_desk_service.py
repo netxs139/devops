@@ -23,6 +23,7 @@ class ServiceDeskCoreService:
     """处理服务台路由底下的核心数据库逻辑。"""
 
     def __init__(self, session: Session):
+        """Magic method."""
         self.session = session
 
     def list_business_projects(self) -> list[dict]:

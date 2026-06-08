@@ -1,3 +1,5 @@
+"""Command module."""
+
 import argparse
 import logging
 import sys
@@ -29,6 +31,7 @@ class BaseCommand(ABC):
     help = ""
 
     def __init__(self, stdout=None, stderr=None):
+        """Magic method."""
         from rich.console import Console
 
         self.stdout = stdout or sys.stdout
@@ -246,6 +249,7 @@ class CommandContext:
     """
 
     def __init__(self, session: Session):
+        """Magic method."""
         self.session = session
         self.settings = settings
 

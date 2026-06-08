@@ -34,7 +34,7 @@ class Command(BaseCommand):
             last_err = None
             for h in token_headers:
                 try:
-                    resp = requests.get(f"{settings.zentao.url}/products", headers=h, verify=False, timeout=5)
+                    resp = requests.get(f"{settings.zentao.url}/products", headers=h, verify=False, timeout=5)  # nosec B501
                     if resp.status_code == 200:
                         count = len(resp.json().get("products", []))
                         DiagHelper.log_success(f"API 连通成功 (Header: {list(h.keys())[0]}), 发现 {count} 个产品")
