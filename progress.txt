@@ -1,7 +1,7 @@
 # DevOps 平台建设进度跟踪 (Progress Tracker)
 
 ## 🎯 当前重点 (Current Focus)
-- **核心重点**: 无
+- **核心重点**: [SCD2 索引防御]: 固化 PostgreSQL 部分索引隔离律到 mdm-integrity-arbiter 技能包。
 - **状态**: 🟢 空闲
 
 ## 🛠️ 任务清单 (Tasks)

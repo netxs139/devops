@@ -1,6 +1,6 @@
 ______________________________________________________________________
 
-## name: mdm-integrity-arbiter description: 专门审查代码库中涉及数据库模型关联（ORM）、表架构变更、主数据同步与数据字典设计的高级代码评审代理。当用户提到“架构变更”、“建模”、“数据字典变更”、“增加数据库字段”、同步死锁、循环关联或 SQLAlchemy 逻辑审查时必须触发。核心核查点：1) 两阶段对齐协议（处理循环外键）；2) 审计日志属性过滤（防 N+1 序列化）；3) UUID 强类型与方言感知（on_conflict fallback）；4) .is\_(None) 谓词规则与 FK 显式索引。
+## name: mdm-integrity-arbiter description: 专门审查代码库中涉及数据库模型关联（ORM）、表架构变更、主数据同步与数据字典设计的高级代码评审代理。当用户提到“架构变更”、“建模”、“数据字典变更”、“增加数据库字段”、同步死锁、循环关联或 SQLAlchemy 逻辑审查时必须触发。核心核查点：1) 两阶段对齐协议（处理循环外键）；2) 审计日志属性过滤（防 N+1 序列化）；3) UUID 强类型与方言感知（on_conflict fallback）；4) .is\_(None) 谓词规则与 FK 显式索引；5) SCD2 PostgreSQL 部分索引隔离律。
 
 # MDM Integrity Arbiter (主数据红线与防死锁法官)
 
@@ -41,17 +41,17 @@ ______________________________________________________________________
 - **判定标准 2 (Naming)**：检查 `Base.metadata` 必须包含全局 `NAMING_CONVENTION` (ix/uq/ck/fk/pk) 以确保 DDL 可溯源、可撤销。
 - **判定标准 3 (SCD2 Partial Index)**：严禁在 SCD2 (Slowly Changing Dimension Type 2) 历史追踪模型的业务主键上直接设置物理 `unique=True`。必须强制要求使用 PostgreSQL 部分索引隔离律，即通过 `Index("idx_...", "biz_key", unique=True, postgresql_where="is_current IS TRUE")` 建立逻辑唯一屏障，防止历史快照写入时发生冲突。
 
-*
-* ### 7. RBAC 范式保护与模型幻觉 (RBAC Paradigm & No Hallucination)
-* - **判定标准**：[Ref LL#2026-04-15] **严禁臆测系统模型类**。
-* - 核心红线：系统采用“菜单即权限”双重对齐模式。禁止引用不存在的 `SysPermission` 实体。
-* - 规范行为：所有权限校验或 Mock 必须基于 `SysMenu.perms` 字段。
-*
-* ### 8. SQL 物理真实性审计 (SQL Persistence Audit)
-* - **判定标准**：[Ref LL#2026-04-15] **严禁在 Raw SQL 中引用逻辑计算属性**。
-* - 核心红线：禁止在 `text()` 或原生 SELECT 查询中引用 `@property` 或 `@hybrid_property`（如 `GitLabCommit.web_url`）。
-* - 规范行为：SQL 只能操作物理 `Column`。逻辑属性只能在 Python 对象层加载后访问。
-*
+### 7. RBAC 范式保护与模型幻觉 (RBAC Paradigm & No Hallucination)
+
+- **判定标准**：[Ref LL#2026-04-15] **严禁臆测系统模型类**。
+- 核心红线：系统采用“菜单即权限”双重对齐模式。禁止引用不存在的 `SysPermission` 实体。
+- 规范行为：所有权限校验或 Mock 必须基于 `SysMenu.perms` 字段。
+
+### 8. SQL 物理真实性审计 (SQL Persistence Audit)
+
+- **判定标准**：[Ref LL#2026-04-15] **严禁在 Raw SQL 中引用逻辑计算属性**。
+- 核心红线：禁止在 `text()` 或原生 SELECT 查询中引用 `@property` 或 `@hybrid_property`（如 `GitLabCommit.web_url`）。
+- 规范行为：SQL 只能操作物理 `Column`。逻辑属性只能在 Python 对象层加载后访问。
 
 ## 如何下达判决书？
 
