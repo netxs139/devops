@@ -1,6 +1,6 @@
 ______________________________________________________________________
 
-## name: dbt-pipeline-auditor description: Trigger this skill when the user asks to review, audit, or check dbt SQL models (files in `dbt_project/models/`) for architectural compliance and data integrity. Use this skill for: 1) Reviewing PRs involving `stg_`, `int_`, or `fct_` models. 2) Auditing SQL logic for specific risks: JSONB safe extraction (trim/nullif), Postgres-specific numeric traps (round/numeric cast, integer division truncation), SCD Type 2 `is_current` filters, `UNION ALL` type width alignment, and cross-source ID mapping via bridge tables. 3) Enforcing dbt best practices like `ref()` macros instead of hardcoded schemas and maintaining staging purity (no joins in `stg_` models). Avoid this skill for Python development, ORM modeling, Grafana dashboards, or dbt performance tuning/infrastructure unless it relates directly to SQL logic audit.
+## name: dbt-pipeline-auditor description: Trigger this skill when the user asks to review, audit, or check dbt SQL models (files in `dbt_project/models/`) for architectural compliance and data integrity. Use this skill for: 1) Reviewing PRs involving `stg_`, `int_`, or `fct_` models. 2) Auditing SQL logic for specific risks: JSONB safe extraction (trim/nullif/quote-strip), explicit type casting for all JSONB-sourced fields, zero-date string interception (0000-00-00 / ZenTao null representation), Postgres-specific numeric traps (round/numeric cast, integer division truncation), SCD Type 2 `is_current` filters, `UNION ALL` type width alignment, and cross-source ID mapping via bridge tables. 3) Enforcing dbt best practices like `ref()` macros instead of hardcoded schemas and maintaining staging purity (no joins in `stg_` models). Trigger keywords: "dbt 报错", "JSONB 转换", "零日期", "0000-00-00", "禅道时间戳", "类型对齐", "数据口径", "Staging 污染", "血缘分析". Avoid this skill for Python development, ORM modeling, Grafana dashboards, or dbt performance tuning/infrastructure unless it relates directly to SQL logic audit.
 
 # dbt Pipeline Auditor (数仓口径与血缘精算师)
 
@@ -10,12 +10,67 @@ ______________________________________________________________________
 
 ## The Audit Defense Lines (五大核查防线)
 
-### 1. JSONB 安全拆解防线 (Safe JSONB Extraction)
+### 1a. JSONB 数值/字符串防御拆解 (Safe JSONB Extraction — Quote & Null Cleanup) [Ref LL#2026-04-09, LL#2026-03-14]
 
-DevOps Collector 的 Raw 表包含大量 JSONB 字段，直接转型极易报错。
+DevOps Collector 的 Raw 表包含大量 JSONB 字段，上游序列化不规范导致字段值可能携带字面量双引号（如 `"123.4"`）或空字符串，直接转型必然崩溃。
 
-- **违规**：`cast(raw_data->>'cost' as numeric)` 或直接使用 `raw_data->>'cost'` 参与计算。
-- **合法**：必须清理潜在的字面量双引号并处理空值。如：`cast(nullif(trim(both '"' from (raw_data->>'cost')), '') as numeric)`
+**违规模式清单：**
+
+```sql
+-- ❌ 违规：直接转型，遇到 `"123.4"` 立即报 invalid input syntax for numeric
+cast(raw_data->>'cost' as numeric)
+
+-- ❌ 违规：未清空字符串直接参与计算
+raw_data->>'hours' + raw_data->>'bonus'
+
+-- ❌ 违规：仅用 nullif 过滤空串，未处理字面量双引号
+cast(nullif(raw_data->>'cost', '') as numeric)
+```
+
+**合法强制模板：**
+
+```sql
+-- ✅ 合法：先剥引号，再过滤空串，最后转型
+cast(
+    nullif(
+        trim(both '"' from (raw_data->>'cost')),
+    '')
+as numeric)
+
+-- ✅ 简写形式（数值类字段）
+nullif(trim(both '"' from (raw_data->>'cost')), '')::numeric
+```
+
+**审计判决**：凡在 `stg_` 层或 `int_` 层对 JSONB 字段执行 `::numeric` / `::integer` / `::text` 转型时，若未包含 `trim(both '"' from ...)` 清洗步骤，判定为 **Blocker**。
+
+### 1b. JSONB 强类型 Cast 律 (JSONB Explicit Type Cast) [Ref LL#2026-03-06]
+
+JSONB 提取结果（`->>'field'`）在 PostgreSQL 中默认为 `text` 类型，直接参与数值运算（加减乘除、`round()`、聚合）将报类型错误或发生静默截断。
+
+**违规模式：**
+
+```sql
+-- ❌ 违规：text 类型直接相加，报 operator does not exist: text + text
+raw_data->>'actual_hours' + raw_data->>'overtime_hours'
+
+-- ❌ 违规：text 参与 round()，报 function round(text, integer) does not exist
+round(raw_data->>'cost', 2)
+```
+
+**合法强制模板：**
+
+```sql
+-- ✅ 工时/计数类字段：先清洗再 ::numeric
+nullif(trim(both '"' from (raw_data->>'actual_hours')), '')::numeric
++ nullif(trim(both '"' from (raw_data->>'overtime_hours')), '')::numeric
+
+-- ✅ round() 前必须显式 Cast
+round(
+    nullif(trim(both '"' from (raw_data->>'cost')), '')::numeric,
+2)
+```
+
+**审计判决**：所有来自 JSONB 的工时、计数、金额类字段，凡未经 `::numeric` 或 `::integer` 显式转型即参与计算，判定为 **Blocker**。
 
 ### 2. 跨源 ID 桥接与类型对齐 (Cross-Source ID Alignment)
 
@@ -75,6 +130,51 @@ MDM 主数据和部分事实表采用了慢变维Type 2。
 - **风险**：Lead Time 或 MTTR 计算中，若仅使用 `closed_at`，会因为外部源状态机未流转而导致统计结果长期为空。
 - **规则**：涉及耗时计算的时间戳，必须执行级联兜底。
 - **推荐写法**：`coalesce(i.closed_at, i.resolved_date, i.updated_at, {{ dbt.current_timestamp() }})`。
+
+### 8. 禅道零日期拦截律 (Zero-Date Attack Defense — ZenTao Null Sentinel) [Ref LL#2026-04-09]
+
+禅道（ZenTao）使用 `0000-00-00 00:00:00` 字符串表示"空日期"（而非标准 SQL `NULL`）。PostgreSQL 对此字符串执行 `::timestamp` 转型时**直接崩溃**，报：
+
+```
+invalid input syntax for type timestamp: "0000-00-00 00:00:00"
+```
+
+**违规模式：**
+
+```sql
+-- ❌ 违规：直接转型，0000-00-00 00:00:00 必然报错崩溃 dbt build
+(raw_data->>'closed_date')::timestamp
+
+-- ❌ 违规：仅过滤空串，未拦截零日期哨兵值
+nullif(raw_data->>'closed_date', '')::timestamp
+
+-- ❌ 违规：仅做单层 nullif，禅道零日期能穿透
+nullif(raw_data->>'begin_date', '0000-00-00 00:00:00')::timestamp
+-- （若字段本身是 '' 空串，仍会在 ::timestamp 处崩溃）
+```
+
+**合法强制模板（双重 nullif 标准）：**
+
+```sql
+-- ✅ 合法：先过滤空串，再过滤零日期哨兵，最后转型
+nullif(
+    nullif(raw_data->>'closed_date', ''),
+    '0000-00-00 00:00:00'
+)::timestamp
+
+-- ✅ 多种零日期变体的完整防御（推荐用于 stg_zentao_* 模型）
+nullif(
+    nullif(
+        nullif(raw_data->>'begin_date', ''),
+        '0000-00-00 00:00:00'
+    ),
+    '0000-00-00'
+)::timestamp
+```
+
+**触发范围**：凡 `stg_zentao_*` 系列模型（如 `stg_zentao_bugs`, `stg_zentao_stories`, `stg_zentao_tasks`）中的所有时间戳字段均适用此律。其他来源若存在类似哨兵值约定，同等处理。
+
+**审计判决**：凡处理 ZenTao 来源的 JSONB 时间戳字段，未使用双重 `nullif` 拦截零日期，判定为 **Blocker**。
 
 ## 如何生成审计报告 (Audit Report Format)
 
