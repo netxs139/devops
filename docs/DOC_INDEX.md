@@ -62,6 +62,7 @@ ______________________________________________________________________
 | :--- | :--- |
 | `docs/history/lessons-learned.log` | **避坑指南**：倒序记录踩坑经验、根因分析与规则固化。 |
 | `docs/history/session-history.log` | **审计轨迹**：记录每次会话的关键决策、物理证据与交接状态。 |
+| `docs/history/collaboration_patterns.md` | **协作默契**：沉淀用户的交互用词特点、高价值 Prompt 模板及 AI 继承指南。 |
 | `CHANGELOG.md` | **修订记录**：正式的项目履历，收口所有已完成任务的归档记录。 |
 | `docs/history/dev_logs/` | **开发日志**：记录 netxs.md 等个人开发心路历程与日结总结。 |
 
