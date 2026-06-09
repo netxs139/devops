@@ -67,6 +67,25 @@
           "check": "输出确指出 web_url 是逻辑属性，不能在 Raw SQL 中直接 SELECT"
         }
       ]
+    },
+    {
+      "id": 5,
+      "name": "scd2-unique-index-defense",
+      "domain": "Defense-6 (SCD2 Partial Index)",
+      "prompt": "Review 这段 ORM 模型设计，它需要追踪用户随时间改变的历史快照（SCD2）：\n\nclass UserSCD(Base):\n    __tablename__ = 'mdm_users_scd'\n    id = Column(Integer, primary_key=True)\n    user_code = Column(String(50), unique=True)\n    email = Column(String(100))\n    is_current = Column(Boolean, default=True)",
+      "expected_output": "必须下达 Blocker 判决：[Ref LL#2026-04-30] 严禁在 SCD2 历史追踪模型的业务主键（user_code）上直接设置物理 unique=True，否则无法写入多版本历史记录。必须改为使用 PostgreSQL 部分唯一索引：Index('idx_user_code_current', 'user_code', unique=True, postgresql_where='is_current IS TRUE')。",
+      "assertions": [
+        {
+          "id": "m5-1",
+          "name": "识别 SCD2 物理唯一约束冲突",
+          "check": "输出指出在 user_code 上使用 unique=True 会导致历史记录无法共存，必须移除"
+        },
+        {
+          "id": "m5-2",
+          "name": "推荐部分唯一索引隔离",
+          "check": "输出明确要求改用 Index 并指定 postgresql_where='is_current IS TRUE' 或 is_current 为 true 时的部分索引"
+        }
+      ]
     }
   ]
 }
