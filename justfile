@@ -119,9 +119,11 @@ lint-js:
 
 # 代码格式化
 fmt:
-    @echo "Formatting code with Ruff..."
+    @echo "Formatting Python code with Ruff..."
     uv run ruff format devops_collector/ devops_portal/ tests/ scripts/
     uv run ruff check --select I --fix devops_collector/ devops_portal/ tests/ scripts/
+    @echo "Formatting Markdown documents with mdformat..."
+    uv run mdformat README.md CONTRIBUTING.md CHANGELOG.md docs/architecture/ docs/features/ docs/analytics/ docs/guides/
 
 # 自动修复 Ruff 发现的逻辑问题
 ruff-fix:

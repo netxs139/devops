@@ -122,3 +122,4 @@ repos:
         language: system
         types: [markdown]
         pass_filenames: true
+        exclude: '^(docs/history/|progress\.txt)'
