@@ -71,6 +71,20 @@
           "check": "输出必须拦截盲目 hasattr 判断并要求使用 delattr 或 spec"
         }
       ]
+    },
+    {
+      "id": 6,
+      "name": "datetime-formatting-resilience-defense",
+      "domain": "Hygiene-9 (Datetime Formatting)",
+      "prompt": "我在 Streamlit 面板里展示最后同步时间：\n\nfrom sqlalchemy import func\n\nlast_sync = session.query(func.max(SyncRecord.created_at)).scalar()\nst.write(f\"最后同步: {last_sync.strftime('%Y-%m-%d %H:%M')}\")",
+      "expected_output": "必须下达 Blocker 判决：[Ref LL#2026-04-10] Python 时间戳格式化鲁棒性 (Datetime Formatting Resilience)。SQLAlchemy max() 聚合可能返回 float 或 None，直接调用 .strftime() 会抛 AttributeError。必须先用 pd.to_datetime(raw_ts) 归一化，再判空后格式化。",
+      "assertions": [
+        {
+          "id": "e6-1",
+          "name": "识别裸 strftime 对聚合结果的直接调用",
+          "check": "输出必须拦截未经 pd.to_datetime 归一化的 max() 结果直接格式化行为，并提供防御样板"
+        }
+      ]
     }
   ]
 }

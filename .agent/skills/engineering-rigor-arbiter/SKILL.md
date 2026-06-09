@@ -1,6 +1,6 @@
 ______________________________________________________________________
 
-## name: engineering-rigor-arbiter description: 专门审查代码库中涉及测试环境隔离、独立脚本运行环境、ORM 事务嵌套以及数据库方言兼容性的高级工程严谨性评审代理。当用户提到“测试污染”、“依赖隔离”、“独立脚本加载”、“事务嵌套失效”或“方言冲突”时必须触发。核心核查点：1) 测试固件局部隔离；2) 数据库方言隔离与物理 Schema 发现；3) 独立脚本全模型加载律；4) Pydantic 配置强类型防线；5) 嵌套事务重拉取律；6) 脚本执行路径依赖防御；7) 清场指令精确打击与容错原则；8) Mock 属性精确隔离律。
+## name: engineering-rigor-arbiter description: 专门审查代码库中涉及测试环境隔离、独立脚本运行环境、ORM 事务嵌套以及数据库方言兼容性的高级工程严谨性评审代理。当用户提到“测试污染”、“依赖隔离”、“独立脚本加载”、“事务嵌套失效”、“方言冲突”、“时间戳格式化”或“datetime 类型断裂”时必须触发。核心核查点：1) 测试固件局部隔离；2) 数据库方言隔离与物理 Schema 发现；3) 独立脚本全模型加载律；4) Pydantic 配置强类型防线；5) 嵌套事务重拉取律；6) 脚本执行路径依赖防御；7) 清场指令精确打击与容错原则；8) Mock 属性精确隔离律；9) Python 时间戳格式化鲁棒性。
 
 # Engineering Rigor Arbiter (工程严谨性仲裁官)
 
@@ -57,6 +57,39 @@ ______________________________________________________________________
 - **判定标准**：防御使用 `MagicMock` 时属性全响应特性对 `hasattr()` 判断逻辑的穿透欺骗。
 - **违规特征**：直接对 `MagicMock` 实例使用 `hasattr(mock, "attr")`，而未对该属性做显式删除或未对 Mock 定义限制（如 `spec`）。
 - **强制规程**：在测试依赖 `hasattr` 的逻辑分支时，如果使用 `MagicMock`，必须显式通过 `del mock.attr`（或 `delattr(mock, "attr")`）模拟属性缺失，或者实例化时通过 `spec=Class` 来约束 Mock 的属性范围。
+
+### 9. Python 时间戳格式化鲁棒性 (Datetime Formatting Resilience) [Ref LL#2026-04-10]
+
+- **判定标准**：防御数据库查询结果（尤其是聚合函数 `max()`, `min()`）返回的时间戳字段在 Python 层调用 `.strftime()` 时发生 `AttributeError` 崩溃。
+- **违规特征**：直接对 ORM 查询结果或 Pandas DataFrame 中的时间字段调用 `.strftime()`，而未事先验证类型；或对来自 SQLAlchemy `max(column)` 聚合结果做格式化展示时，未考虑某些 DB 驱动/Pandas 版本可能将其返回为 `float`（Unix 时间戳数字）而非 `datetime` 对象。
+
+**违规模式：**
+
+```python
+# ❌ 违规：直接 strftime，数据库可能返回 float 类型，导致 AttributeError
+last_sync_time = session.query(func.max(SyncRecord.created_at)).scalar()
+print(last_sync_time.strftime("%Y-%m-%d %H:%M"))  # 若 last_sync_time 为 float，崩溃
+
+# ❌ 违规：DataFrame 列未经 to_datetime 转换，直接按时间格式化
+df["last_update"].dt.strftime("%Y-%m-%d")  # 若列含 float/None，抛 AttributeError
+```
+
+**合法强制模板：**
+
+```python
+# ✅ ORM 聚合结果：强制 pd.to_datetime 归一化，处理 None/float 均安全
+import pandas as pd
+
+raw_ts = session.query(func.max(SyncRecord.created_at)).scalar()
+last_sync_time = pd.to_datetime(raw_ts) if raw_ts is not None else None
+display = last_sync_time.strftime("%Y-%m-%d %H:%M") if last_sync_time else "N/A"
+
+# ✅ DataFrame 列：先 to_datetime 显式归一化，再做格式化
+df["last_update"] = pd.to_datetime(df["last_update"], errors="coerce")
+df["last_update_str"] = df["last_update"].dt.strftime("%Y-%m-%d").fillna("N/A")
+```
+
+**审计判决**：凡在 UI 层（Streamlit 面板、FastAPI 响应格式化）或报告输出中，对数据库聚合函数结果直接调用 `.strftime()` 而未进行 `pd.to_datetime()` 归一化保护，判定为 **Blocker**。
 
 ## 如何下达判决书？
 
