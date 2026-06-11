@@ -70,7 +70,7 @@ project-full-gate:
 deploy-staging:
   stage: deploy
   script:
-    - echo "TODO: 添加自动部署到 Staging 环境的脚本"
+    - echo "TODO:添加自动部署到 Staging 环境的脚本"
   environment:
     name: staging
   rules:
@@ -80,7 +80,7 @@ deploy-staging:
 deploy-production:
   stage: deploy
   script:
-    - echo "TODO: 添加自动部署到 Production 环境的脚本"
+    - echo "TODO:添加自动部署到 Production 环境的脚本"
   environment:
     name: production
   rules:
