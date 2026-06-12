@@ -3,6 +3,8 @@ FROM python:3.11-slim-bookworm AS builder
 
 WORKDIR /app
 
+ENV UV_PROJECT_ENVIRONMENT=/venv
+
 # 安装编译时依赖
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -16,14 +18,24 @@ RUN pip install uv -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 # 预安装 Python 依赖 (利用缓存层)
 ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+ARG INSTALL_DEV=true
 COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --no-dev --index-url ${PIP_INDEX_URL}
+    if [ "$INSTALL_DEV" = "true" ]; then \
+        uv sync --frozen --no-install-project --all-extras --index-url ${PIP_INDEX_URL}; \
+    else \
+        uv sync --frozen --no-install-project --no-dev --index-url ${PIP_INDEX_URL}; \
+    fi
 
 # 拷贝项目源码并执行安装 (非开发模式)
 COPY . .
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
+    if [ "$INSTALL_DEV" = "true" ]; then \
+        uv sync --frozen --all-extras; \
+    else \
+        uv sync --frozen --no-dev; \
+    fi
+
 
 # --- 阶段 2: 运行环境 (Final) ---
 FROM python:3.11-slim-bookworm
@@ -43,11 +55,13 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 RUN pip install uv -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 # 从 Builder 阶段拷贝虚拟环境和代码
-COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /venv /venv
 COPY --from=builder /app /app
 
 # 设置环境变量
-ENV PATH="/app/.venv/bin:$PATH"
+ENV PATH="/venv/bin:$PATH"
+ENV VIRTUAL_ENV=/venv
+ENV UV_PROJECT_ENVIRONMENT=/venv
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 

@@ -238,7 +238,7 @@ security-audit: scan-secrets scan-sast scan-deps
 # 构建并打包镜像为 tar 文件
 package: pull-images
     @echo "Packaging images to devops-platform.tar..."
-    docker build -t devops-platform:latest .
+    docker build --build-arg INSTALL_DEV=false -t devops-platform:latest .
     docker save -o devops-platform.tar devops-platform:latest
 
 # 服务器专用：离线加载并部署

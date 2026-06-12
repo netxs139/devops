@@ -1,7 +1,7 @@
 # DevOps 平台建设进度跟踪 (Progress Tracker)
 
 ## 🎯 当前重点 (Current Focus)
-- **核心重点**: 无
+- **核心重点**: 重构虚拟环境路径至容器外部 (/venv)
 - **状态**: 🟢 空闲
 
 ## 🛠️ 任务清单 (Tasks)

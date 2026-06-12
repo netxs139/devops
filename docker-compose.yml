@@ -11,7 +11,6 @@ services:
     profiles: [ "core" ]
     volumes:
       - .:/app
-      - /app/.venv
       - ./persistence_data:/app/data
     env_file:
       - .env
@@ -44,7 +43,6 @@ services:
     profiles: [ "core" ]
     volumes:
       - .:/app
-      - /app/.venv
       - ./persistence_data:/app/data
     entrypoint: [ "uv", "run", "python", "-m", "devops_collector.worker" ]
     env_file:
@@ -65,7 +63,6 @@ services:
     profiles: [ "core" ]
     volumes:
       - .:/app
-      - /app/.venv
       - ./persistence_data:/app/data
     entrypoint: [ "uv", "run", "python", "-m", "devops_collector.scheduler" ]
     env_file:
@@ -140,7 +137,6 @@ services:
     profiles: [ "core" ]
     volumes:
       - .:/app
-      - /app/.venv
     env_file:
       - .env
     restart: unless-stopped
