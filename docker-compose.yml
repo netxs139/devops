@@ -20,6 +20,7 @@ services:
         condition: service_healthy
       mq:
         condition: service_healthy
+    restart: unless-stopped
     healthcheck:
       test: [ "CMD", "nc", "-z", "localhost", "8000" ]
       interval: 10s
@@ -83,6 +84,7 @@ services:
     profiles: [ "core" ]
     env_file:
       - .env
+    restart: unless-stopped
     ports:
       - "5432:5432"
     tmpfs:
@@ -100,6 +102,7 @@ services:
     profiles: [ "core" ]
     env_file:
       - .env
+    restart: unless-stopped
     environment:
       - RABBITMQ_VM_MEMORY_HIGH_WATERMARK_RELATIVE=0.7
     ports:
@@ -140,6 +143,7 @@ services:
       - /app/.venv
     env_file:
       - .env
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
@@ -161,6 +165,7 @@ services:
     image: traefik:v3.0
     container_name: devops-traefik
     profiles: [ "core" ]
+    restart: unless-stopped
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
