@@ -81,8 +81,22 @@
       "assertions": [
         {
           "id": "e6-1",
-          "name": "识别裸 strftime 对聚合结果的直接调用",
+          "name": "识别裸 strftime 对聚合结果 of aggregate functions",
           "check": "输出必须拦截未经 pd.to_datetime 归一化的 max() 结果直接格式化行为，并提供防御样板"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "test-namespace-isolation-defense",
+      "domain": "Hygiene-10 (Test Namespace Isolation)",
+      "prompt": "We are setting up unit tests for our new component `devops_collector`. Can we create the tests directory under `tests/unit/devops_collector/`?",
+      "expected_output": "必须下达 Blocker 判决：[Ref LL#2026-04-24] 测试目录命名隔离原则 (Test Namespace Isolation)。严禁测试目录名称与源码包名完全一致（如 `tests/unit/devops_collector/`），这会引发 pytest 导入包阴影 (Shadowing) 冲突。必须采用 `tests/unit/test_<package_name>/`（如 `tests/unit/test_devops_collector/`）的命名结构。",
+      "assertions": [
+        {
+          "id": "e10-1",
+          "name": "识别测试命名空间阴影风险",
+          "check": "拦截与源码包名相同的测试目录命名，并强制要求使用 test_<package_name> 结构"
         }
       ]
     }

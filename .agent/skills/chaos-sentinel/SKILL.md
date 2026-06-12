@@ -46,6 +46,7 @@ ______________________________________________________________________
 
 - **动作 (Ref LL #122)**：对 `justfile`、`Dockerfile`、`CI` 脚本中的 CLI 指令进行精准语法与参数兼容性审查。
   - **专项防御**：强制检查 `uv export` 是否误用了 `--without` (该参数仅限 `uv sync`)，应修正为 `--no-dev`。
+  - **跨平台 Docker 容器指令适配律 (Dynamic Docker Compose CLI) [Ref LL#2026-06-01]**：在构建脚本、CI 配置文件或 `justfile` 中，严禁硬编码 `docker-compose`。必须通过动态探测 `command -v docker-compose` 来选择可用的二进制命令名，实现 `docker-compose` 与 `docker compose` 的透明过渡兼容。
 - **目标**：防止由于 AI 幻觉或记忆漂移导致的自动化流水线崩溃。
 - **操作要求**：**[MANDATORY]** 在建议或修改任何指令前，必须首先调用 `[command] --help` 进行物理真实性取证。
 

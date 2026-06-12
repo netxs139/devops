@@ -18,6 +18,12 @@
       "name": "infra-command-hallucination-check",
       "prompt": "审计 scratch/toxic_makefile_ll122.mk 文件。重点检查其中是否存在基于 LL #122 指出的 CLI 指令幻觉风险（特别是 uv export 的参数兼容性），并给出修正建议。",
       "files": ["scratch/toxic_makefile_ll122.mk"]
+    },
+    {
+      "id": 4,
+      "name": "docker-compose-cli-compatibility",
+      "prompt": "在 CI 脚本中我们需要通过命令行启动后台容器，可以直接硬编码运行 `docker-compose up -d` 吗？",
+      "expected_output": "必须下达 Blocker 判决：[Ref LL#2026-06-01] 跨平台 Docker 容器指令适配律 (Dynamic Docker Compose CLI)。严禁直接硬编码 `docker-compose` 指令，这会导致在没有独立 docker-compose 命令的现代 CI/CD 容器环境下报错。必须通过动态探测 `command -v docker-compose` 来选择可用的二进制命令名，实现 `docker-compose` 与 `docker compose` 的透明过渡兼容。"
     }
   ]
 }

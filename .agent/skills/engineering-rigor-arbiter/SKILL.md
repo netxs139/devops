@@ -1,6 +1,6 @@
 ______________________________________________________________________
 
-## name: engineering-rigor-arbiter description: 专门审查代码库中涉及测试环境隔离、独立脚本运行环境、ORM 事务嵌套以及数据库方言兼容性的高级工程严谨性评审代理。当用户提到“测试污染”、“依赖隔离”、“独立脚本加载”、“事务嵌套失效”、“方言冲突”、“时间戳格式化”或“datetime 类型断裂”时必须触发。核心核查点：1) 测试固件局部隔离；2) 数据库方言隔离与物理 Schema 发现；3) 独立脚本全模型加载律；4) Pydantic 配置强类型防线；5) 嵌套事务重拉取律；6) 脚本执行路径依赖防御；7) 清场指令精确打击与容错原则；8) Mock 属性精确隔离律；9) Python 时间戳格式化鲁棒性。
+## name: engineering-rigor-arbiter description: 专门审查代码库中涉及测试环境隔离、独立脚本运行环境、ORM 事务嵌套以及数据库方言兼容性的高级工程严谨性评审代理。当用户提到“测试污染”、“依赖隔离”、“独立脚本加载”、“事务嵌套失效”、“方言冲突”、“时间戳格式化”或“datetime 类型断裂”时必须触发。核心核查点：1) 测试固件局部隔离；2) 数据库方言隔离与物理 Schema 发现；3) 独立脚本全模型加载律；4) Pydantic 配置强类型防线；5) 嵌套事务重拉取律；6) 脚本执行路径依赖防御；7) 清场指令精确打击与容错原则；8) Mock 属性精确隔离律；9) Python 时间戳格式化鲁棒性；10) 测试目录命名隔离。
 
 # Engineering Rigor Arbiter (工程严谨性仲裁官)
 
@@ -90,6 +90,12 @@ df["last_update_str"] = df["last_update"].dt.strftime("%Y-%m-%d").fillna("N/A")
 ```
 
 **审计判决**：凡在 UI 层（Streamlit 面板、FastAPI 响应格式化）或报告输出中，对数据库聚合函数结果直接调用 `.strftime()` 而未进行 `pd.to_datetime()` 归一化保护，判定为 **Blocker**。
+
+### 10. 测试目录命名隔离原则 (Test Namespace Isolation) [Ref LL#2026-04-24]
+
+- **判定标准**：严禁测试目录名称与源码包名完全一致，以彻底消除包阴影 (Shadowing) 冲突。
+- **违规特征**：在 `tests/unit/` 或 `tests/integration/` 下创建与顶级源码包同名的目录（例如 `tests/unit/devops_collector/`）。
+- **强制规程**：必须采用 `tests/unit/test_<package_name>/` 结构（例如 `tests/unit/test_devops_collector/`）来进行隔离。
 
 ## 如何下达判决书？
 
