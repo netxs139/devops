@@ -96,10 +96,10 @@ ______________________________________________________________________
 - **`./scratch/`**：一次性调试脚本，必须在任务结束前清理或归档，严禁混入业务逻辑。
 - **双引擎 CI/CD**:
   - GitHub Actions (`ubuntu-latest`) 用于开源防御。
-  - GitLab CI (私有化 Docker Runner, **GitLab CE 18.1**, `https://gitlab.tjhq.com`) 用于企业部署。
+  - GitLab CI (私有化 Docker Runner, **GitLab CE 18.10**, `https://gitlab.tjhq.com`) 用于企业部署。
   - **门禁解耦**: 两套 CI 仅作调度，核心逻辑 100% 封装于 `scripts/gatekeeper.py`。
 - **外部工具链版本锚定**:
   - 禅道 (ZenTao): **开源版 20.7** — API 行为与字段约定以此版本为准，见 [`docs/contracts/ops.md §3.1`](docs/contracts/ops.md)。
-  - GitLab: **CE 18.1** — CI/CD 流水线配置与 Runner 注册以此版本 API 为准，见 [`docs/contracts/gitlab-ci.md`](docs/contracts/gitlab-ci.md)。
+  - GitLab: **CE 18.10** — CI/CD 流水线配置与 Runner 注册以此版本 API 为准，见 [`docs/contracts/gitlab-ci.md`](docs/contracts/gitlab-ci.md)。
 - **CSV 编码**: 所有 CSV 强制使用 `utf-8-sig` 编码以防 Windows Excel 乱码。
 - **配置一致性**: 所有配置通过 `.env` 注入。Pydantic 映射使用双下划线 (`GITLAB__URL`)。Logger 必须屏蔽敏感字段。
