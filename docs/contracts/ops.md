@@ -84,6 +84,8 @@ plugins/{plugin_name}/
 
 ### 3.1 禅道集成防护规范 (ZenTao Guardrails) [MANDATORY]
 
+> **当前对接版本**: 禅道开源版 20.7 (ZenTao Community Edition 20.7)。API 行为与字段约定以此版本为准。
+
 - **认证防御**: 必须实现 401 异常拦截与 Token 自动刷新，重试逻辑必须包含 `is_retry` 状态位防止死循环。MQ 连接心跳 `heartbeat=600`。
 - **数据一致性陷阱**:
   - 禅道 `0` 表示空值，入库前必须转为 `NULL`。
