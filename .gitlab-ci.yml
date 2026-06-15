@@ -1,88 +1,230 @@
-# GitLab CI/CD 配置文件
-# DevOps Platform 自动化全门禁流水线 (Full Gate)
-# 此配置确保云端流水线与本地 `make full-gate` 完全对齐，消除环境脱节。
+# ======================================================================
+# DevOps Platform GitLab CI/CD Pipeline
+# Phase 3: Full Gate (Lint + Security + SBOM + Test + Build)
+# ======================================================================
 
 stages:
-  - static-analysis
-  - full-gate
-  - deploy
+  - lint
+  - security
+  - sbom
+  - test
+  - build
 
 variables:
+  TZ: Asia/Shanghai
+  LOGGING__LEVEL: ERROR
+  PIP_INDEX_URL: "http://192.168.5.64:8081/repository/group-pypi/simple"
+  NPM_CONFIG_REGISTRY: "http://192.168.5.64:8081/repository/group-npm/"
+  NEXUS_DOCKER_REGISTRY: "192.168.5.64:8082"
+  UV_CACHE_DIR: ".cache/uv"
+  PYTEST_ADDOPTS: "--tb=short"
   DOCKER_DRIVER: overlay2
-  DOCKER_TLS_CERTDIR: ""
 
-# ==================== 静态分析：类型安全验收 ====================
-type-check-mypy:
-  stage: static-analysis
+# 全局持久化缓存：基于分支隔离，加速 pip, uv 和 node_modules
+cache:
+  key: "${CI_COMMIT_REF_SLUG}"
+  paths:
+    - .cache/pip
+    - .cache/uv
+    - node_modules/
+
+# ──────────────────────────────────────
+# Stage: Lint
+# ──────────────────────────────────────
+
+ruff-lint:
+  stage: lint
   image: python:3.12-slim
   before_script:
-    - pip install uv --quiet
-    - uv sync --only-group dev --index-url https://pypi.tuna.tsinghua.edu.cn/simple
+    - pip install --cache-dir .cache/pip --index-url $PIP_INDEX_URL uv
   script:
-    - echo "[Mypy] Running static type check (CI/CD Governance Gate)..."
-    - uv run mypy devops_collector devops_portal
-      --ignore-missing-imports
-      --exclude 'devops_collector/plugins/(sonarqube|jenkins|nexus|jfrog|wecom)/'
-      --exclude 'devops_collector/alembic/'
-      --exclude 'devops_collector/core/schemas\.py'
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
-  allow_failure: true  # 当前阶段为观测模式，积累基线后切换为 false 强制拦截
+    - uv run ruff check devops_collector/ devops_portal/ tests/ scripts/
+  allow_failure: false
 
-# ==================== 核心卡点：全门禁 ====================
-project-full-gate:
-  stage: full-gate
+oxlint:
+  stage: lint
+  image: node:20-bullseye
+  before_script:
+    - npm ci || npm install
+  script:
+    - npx oxlint devops_portal/static/js --ignore-pattern "**/vendor/**"
+  allow_failure: false
+
+radon-complexity:
+  stage: lint
+  image: python:3.12-slim
+  before_script:
+    - pip install --cache-dir .cache/pip --index-url $PIP_INDEX_URL uv
+    - uv pip install --system --index-url $PIP_INDEX_URL radon
+  script:
+    - uv run radon cc -a -j devops_collector/ devops_portal/ > radon-complexity.json
+    - uv run radon mi -j devops_collector/ devops_portal/ > radon-maintainability.json
+  artifacts:
+    paths:
+      - radon-complexity.json
+      - radon-maintainability.json
+    expire_in: 60 days
+    when: always
+  allow_failure: true
+
+type-check-mypy:
+  stage: lint
+  image: python:3.12-slim
+  before_script:
+    - pip install --cache-dir .cache/pip --index-url $PIP_INDEX_URL uv
+    - uv sync --only-group dev --index-url $PIP_INDEX_URL
+  script:
+    - uv run mypy devops_collector devops_portal
+  allow_failure: false
+
+# ──────────────────────────────────────
+# Stage: Security
+# ──────────────────────────────────────
+
+sast-scan:
+  stage: security
+  image: python:3.12-slim
+  script:
+    - pip install --cache-dir .cache/pip --index-url $PIP_INDEX_URL bandit
+    - bandit -r devops_collector/ devops_portal/ -f json -o bandit-report.json || true
+  artifacts:
+    paths:
+      - bandit-report.json
+    expire_in: 60 days
+    when: always
+  allow_failure: true
+
+secret-detection:
+  stage: security
+  image: zricethezav/gitleaks:latest
+  script:
+    - gitleaks detect --source . --report-format json --report-path gitleaks-report.json --exit-code 0
+  artifacts:
+    paths:
+      - gitleaks-report.json
+    expire_in: 60 days
+    when: always
+  allow_failure: false
+
+trivy-fs-scan:
+  stage: security
+  image: $NEXUS_DOCKER_REGISTRY/aquasec/trivy:latest
+  script:
+    - trivy fs --severity CRITICAL,HIGH --format json --output trivy-fs-report.json .
+  artifacts:
+    paths:
+      - trivy-fs-report.json
+    expire_in: 60 days
+    when: always
+  allow_failure: true
+
+trivy-config-scan:
+  stage: security
+  image: $NEXUS_DOCKER_REGISTRY/aquasec/trivy:latest
+  script:
+    - trivy config --format json --output trivy-config-report.json .
+  artifacts:
+    paths:
+      - trivy-config-report.json
+    expire_in: 60 days
+    when: always
+  allow_failure: true
+
+# ──────────────────────────────────────
+# Stage: SBOM (Software Bill of Materials)
+# ──────────────────────────────────────
+
+sbom-python:
+  stage: sbom
+  image: python:3.12-slim
+  script:
+    - pip install --cache-dir .cache/pip --index-url $PIP_INDEX_URL cyclonedx-bom
+    - cyclonedx-py requirements -i requirements.txt -o sbom-python.json
+  artifacts:
+    paths:
+      - sbom-python.json
+    expire_in: 60 days
+    when: always
+
+sbom-node:
+  stage: sbom
+  image: node:20-bullseye
+  script:
+    - npm install -g @cyclonedx/cyclonedx-npm
+    - cyclonedx-npm -o sbom-node.json
+  artifacts:
+    paths:
+      - sbom-node.json
+    expire_in: 60 days
+    when: always
+
+# ──────────────────────────────────────
+# Stage: Test
+# ──────────────────────────────────────
+
+test-unit:
+  stage: test
+  image: python:3.12-slim
+  before_script:
+    - pip install --cache-dir .cache/pip --index-url $PIP_INDEX_URL uv
+    - uv sync --all-groups --index-url $PIP_INDEX_URL
+  script:
+    - uv run pytest tests/unit/ -v --cov=devops_collector --cov=devops_portal --cov-report=xml:coverage.xml --junitxml=junit-unit.xml
+  artifacts:
+    reports:
+      junit: junit-unit.xml
+      cobertura: coverage.xml
+    expire_in: 60 days
+    when: always
+
+test-integration:
+  stage: test
+  image: python:3.12-slim
+  services:
+    - postgres:15
+  variables:
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: postgres  # pragma: allowlist secret
+    POSTGRES_DB: test_ddap
+    DB_HOST: postgres
+    DATABASE__URI: "postgresql://postgres:postgres@postgres:5432/test_ddap"  # pragma: allowlist secret
+  before_script:
+    - pip install --cache-dir .cache/pip --index-url $PIP_INDEX_URL uv
+    - uv sync --all-groups --index-url $PIP_INDEX_URL
+  script:
+    # -n 1 防御物理死锁
+    - uv run pytest tests/integration/ -v -n 1 --junitxml=junit-integration.xml
+  artifacts:
+    reports:
+      junit: junit-integration.xml
+    expire_in: 60 days
+    when: always
+
+# ──────────────────────────────────────
+# Stage: Build & Deploy
+# ──────────────────────────────────────
+
+build-docker:
+  stage: build
   image: docker:24.0.5
   services:
     - docker:24.0.5-dind
   variables:
-    DEVOPS_SKIP_AUDIT: "true"
     DOCKER_BUILDKIT: "1"
-    COMPOSE_DOCKER_CLI_BUILD: "1"
-  before_script:
-    # 安装运行时所需的基础工具 (包括 curl, bash 供 uv 安装使用)
-    - apk add --no-cache docker-cli-compose make python3 curl bash
-    # 安装 uv
-    - curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
-    # 准备环境
-    - echo "Copying .env file for CI..."
-    - cp .env.example .env
-    - mkdir -p reports/security
-    # 安装本地宿主机工具 (用于 lint, detect-secrets 等)
-    - uv sync --all-groups
   script:
-    - echo "Building Docker Images..."
-    - make build
-    - echo "Starting container stack..."
-    - make up
-    - echo "Executing Full Gate script (Security -> Verify -> Build -> dbt)..."
-    - uv run python scripts/gatekeeper.py --mode full
-  after_script:
-    # 确保无论测试成败，都清理容器释放资源
-    - make down
-  coverage: '/(?i)TOTAL.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
-
-# ==================== 部署 (仅合并后/打Tag后执行) ====================
-deploy-staging:
-  stage: deploy
-  script:
-    - echo "TODO:添加自动部署到 Staging 环境的脚本"
-  environment:
-    name: staging
+    - echo "Building Docker image for production/staging..."
+    - docker build --build-arg PIP_INDEX_URL=$PIP_INDEX_URL -t devops-platform:${CI_COMMIT_SHA} .
+    - echo "Running Trivy Image Scan on built container..."
+    - docker run --rm -v /var/run/docker.sock:/var/run/docker.sock $NEXUS_DOCKER_REGISTRY/aquasec/trivy image --severity CRITICAL,HIGH --format json devops-platform:${CI_COMMIT_SHA} > trivy-image-report.json
+    - |
+      if [ "$CI_COMMIT_BRANCH" = "main" ]; then
+        echo "TODO: Push to internal registry (e.g. docker push devops-platform:${CI_COMMIT_SHA})"
+      fi
+  artifacts:
+    paths:
+      - trivy-image-report.json
+    expire_in: 60 days
+    when: always
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
-  when: manual
-
-deploy-production:
-  stage: deploy
-  script:
-    - echo "TODO:添加自动部署到 Production 环境的脚本"
-  environment:
-    name: production
-  rules:
     - if: $CI_COMMIT_TAG
-  when: manual

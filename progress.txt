@@ -1,12 +1,16 @@
 # DevOps 平台建设进度跟踪 (Progress Tracker)
 
 ## 🎯 当前重点 (Current Focus)
-- **核心重点**: 更新禅道开源版20.7版本规范
+- **核心重点**: 增加高阶工程质量与安全审计：集成 Radon 复杂度防腐与 Trivy 实体镜像漏洞扫描
 - **状态**: 🟢 空闲
 
 ## 🛠️ 任务清单 (Tasks)
 
 
+1. P0: 修复CI日志假死问题(剥离subprocess拦截或提供--ci实时输出模式) ⏳ 待实现
+2. P1: 集成测试报告与覆盖率文件收集(暴露JUnit/Cobertura供GitLab读取) ⏳ 待实现
+3. P2: 优化CI执行效率(添加UV缓存与Docker构建缓存) ⏳ 待实现
+4. P3: 流水线深度重构(将本地并发调度逐步解包至GitLab CI原生并发) ⏳ 待实现
 ## 📋 最近完成 (Recently Completed)
 
 1. [2026-06-12] **固化测试目录命名与Docker指令双重防御规范**: 将测试命名空间隔离原则固化至 `engineering-rigor-arbiter` §10，将跨平台 Docker Compose 适配律固化至 `chaos-sentinel` §T5；在对应的 `evals.json` 中注入校验用例，并完成 `lessons-learned.log` 历史条目的回标。
