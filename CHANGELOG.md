@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+- **CI 流水线原生化与高阶安全审计重构 (2026-06-15)**:
+
+  - **原生并行与缓存加速**: 重构 `.gitlab-ci.yml`，彻底剥离 `gatekeeper.py` 调度，引入 Stage 原生并行。设定 `${CI_COMMIT_REF_SLUG}` 分支级全局缓存，并全面绑定内网 Nexus (`$PIP_INDEX_URL`, `$NEXUS_DOCKER_REGISTRY`, `$NPM_CONFIG_REGISTRY`) 实现构建提速。
+  - **全量度量制品留存**: 将所有的测试与扫描动作强制输出并捕获为标准制品 (Artifacts)，包含 `coverage.xml`, `junit.xml` 等，打通 GitLab MR 可视化。
+  - **高阶审计接入**: 集成 Trivy 实体镜像扫描 (`trivy image`) 与文件级 CVE/IaC 扫描，集成 CycloneDX SBOM (含 License/PURL)，集成 Radon 代码复杂度与维护性指数提取，全面输出标准 JSON 报告供下游 DDAP 消费。
+
 - **工程严谨性规则演进与教训归档 (2026-06-08)**:
 
   - **技能文档演进**: 演进了 `engineering-rigor-arbiter` 技能文档，补充了脚本路径依赖防御 (Explicit PYTHONPATH Injection) 与清场指令精确打击与容错原则 (Clean Target Precision & Tolerance) 等两项核心红线规范。
