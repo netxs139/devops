@@ -72,7 +72,7 @@
 - **数据库**: PostgreSQL 15+ (生产环境推荐)
 - **ORM**: SQLAlchemy 2.0 (全量 Typed 声明)
 - **架构**: ELT (Extract-Load-Transform)，自研插件工厂进行统一数据抽取 (Extract) 与加载 (Load)，重度依赖 **dbt** 进行数据建模与逻辑编排，辅以 SQL Views 进行实时分析。
-- **CI/CD 引擎**: **双 CI 并行策略 (Dual CI Engine)** - 原生支持 GitHub Actions 与 GitLab CI，共享同一套核心门禁脚本 (`gatekeeper.py`)。
+- **CI/CD 引擎**: **全量原生 GitLab CI 架构** - 全面弃用单体门禁脚本，基于原生的多阶段 (Multi-Stage) 并发流水线架构。内置静态代码分析 (Ruff/Oxlint/Radon)、全链路安全防御 (Bandit/Trivy/Gitleaks)、SBOM 物料清单生成 (CycloneDX) 及前端自动化测试 (Playwright/AppTest)，并利用 Nexus 代理实现依赖拉取极速加速。
 
 ## 🚀 快速开始 (Quick Start)
 
@@ -104,9 +104,9 @@ cp .env.example .env
 
 | 模式 | 适用场景 | 配置文件 | 包含组件 |
 | :--- | :--- | :--- | :--- |
-| **A. 本地验证全门禁** | 提交代码前 | `just` (fast-gate/full-gate) | API, DB, MQ, **Lint, Pytest, detect-secrets** |
-| **B. 开发环境** | 本地持续编码 | `docker-compose.yml` | API, DB, MQ (自动挂载本地代码卷) |
-| **C. CI/CD 流水线** | 远端合并/发布 | `.github/workflows` / `.gitlab-ci.yml` | 全量自动化验证与滚动部署 |
+| **A. 本地 Pre-commit** | 每次 `git commit` 自动触发 | `.pre-commit-config.yaml` | Ruff, Oxlint, detect-secrets, MyPy, 格式化 |
+| **B. 本地全量门禁** | 提交代码前手动校验 | `just verify` | Lint, TypeCheck, SAST, Pytest (Unit+Integration) |
+| **C. 远端 CI/CD 流水线** | Push 到 GitLab 后自动触发 | `.gitlab-ci.yml` | Lint + Security (Trivy/Gitleaks) + SBOM + Test + Build |
 
 #### A. 开发环境 (Development)
 
@@ -157,7 +157,7 @@ just deploy-offline
 | :--- | :--- | :--- |
 | `just logs` | 查看实时容器日志 | `docker-compose logs -f` |
 | `just test` | 运行容器内单元测试 | `pytest tests/unit/` |
-| `just verify` | 执行全量门禁检查 | `scripts/gatekeeper.py` |
+| `just verify` | 执行本地全量门禁检查 | `uv run devops-gate` |
 | `just sync-all` | 触发全量数据同步 | `scripts/cli.py run --module sync_zentao` |
 | `just diagnose` | 执行系统综合诊断 | `scripts/cli.py diag --module sys` |
 | `just init --all` | 重置并初始化基础数据 | `scripts/cli.py init --all` |

@@ -82,7 +82,7 @@
 ### 2.3 门禁防御左移与并发提速 (Left-Shift & Concurrency)
 
 - **检查左移**: 高频静态扫描通过 `.pre-commit-config.yaml` 挂载在本地 Git Commit 阶段，严禁下沉到生产容器栈执行。
-- **并发提速**: 单元测试强制使用 `pytest-xdist (-n auto)`。流水线引擎 (`gatekeeper.py`) 利用并发组最大化资源。
+- **并发提速**: 单元测试强制使用 `pytest-xdist (-n auto)`。GitLab CI 原生多阶段并行 (`.gitlab-ci.yml`) 最大化资源利用。
 
 ## 3. 防御性编程十大守则 (Defensive Programming Mandates) [MANDATORY]
 

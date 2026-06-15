@@ -94,10 +94,10 @@ ______________________________________________________________________
 
 - **`./tmp/`**：运行时生成的临时产物，CI 构建**不包含**此目录。
 - **`./scratch/`**：一次性调试脚本，必须在任务结束前清理或归档，严禁混入业务逻辑。
-- **双引擎 CI/CD**:
-  - GitHub Actions (`ubuntu-latest`) 用于开源防御。
+- **原生 GitLab CI/CD**:
   - GitLab CI (私有化 Docker Runner, **GitLab CE 18.10**, `https://gitlab.tjhq.com`) 用于企业部署。
-  - **门禁解耦**: 两套 CI 仅作调度，核心逻辑 100% 封装于 `scripts/gatekeeper.py`。
+  - 流水线基于原生多阶段 (Multi-Stage) 并行架构，全量配置于 `.gitlab-ci.yml`，不依赖单体门禁脚本。
+  - 本地 pre-commit hooks (`.pre-commit-config.yaml`) 负责极速左移拦截；远端 CI 负责深度安全审计与全量测试。两者互补而非重复。
 - **外部工具链版本锚定**:
   - 禅道 (ZenTao): **开源版 20.7** — API 行为与字段约定以此版本为准，见 [`docs/contracts/ops.md §3.1`](docs/contracts/ops.md)。
   - GitLab: **CE 18.10** — CI/CD 流水线配置与 Runner 注册以此版本 API 为准，见 [`docs/contracts/gitlab-ci.md`](docs/contracts/gitlab-ci.md)。
