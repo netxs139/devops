@@ -200,6 +200,20 @@ test-integration:
     expire_in: 60 days
     when: always
 
+test-e2e:
+  stage: test
+  image: python:3.12-slim
+  before_script:
+    - pip install --cache-dir .cache/pip --index-url $PIP_INDEX_URL uv
+    - uv sync --all-groups --index-url $PIP_INDEX_URL
+  script:
+    - uv run pytest tests/e2e/test_dashboard_apptest.py -v --junitxml=junit-e2e.xml
+  artifacts:
+    reports:
+      junit: junit-e2e.xml
+    expire_in: 60 days
+    when: always
+
 # ──────────────────────────────────────
 # Stage: Build & Deploy
 # ──────────────────────────────────────
