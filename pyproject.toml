@@ -64,25 +64,49 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pip-tools>=7.0.0,<8.0.0",
+    # ===== 代码质量与格式 =====
+    "black>=24.10.0",
+    "ruff>=0.9.0",
+    "mypy>=1.15.0,<2.0.0",
+    "pylint>=3.3.0,<4.0.0",
+    "djhtml>=3.0.6",
+    "mdformat>=0.7.21",
+
+    # ===== 测试框架 =====
     "pytest>=9.0.0,<10.0.0",
     "pytest-cov>=4.0.0,<5.0.0",
+    "pytest-timeout>=2.3.1",
+    "pytest-instafail>=0.5.0",
+    "pytest-mock>=3.15.1",
+    "pytest-picked>=0.5.1",
+    "pytest-recording>=0.13.4",
+    "pytest-testmon>=2.2.0",
+    "pytest-xdist>=3.8.0",
     "requests-mock>=1.12.0,<2.0.0",
     "selenium>=4.27.0,<5.0.0",
     "webdriver-manager>=4.0.0,<5.0.0",
-    "black>=24.0.0,<25.0.0",
-    "pylint>=3.3.0,<4.0.0",
-    "ruff>=0.9.0",
-    "mypy>=1.15.0,<2.0.0",
+
+    # ===== 工具与辅助 =====
+    "pip-tools>=7.0.0,<8.0.0",
+    "wheel>=0.46.2",
+    "vcrpy>=8.1.1",
+    "factory-boy>=3.3.3",
+    "pre-commit>=4.0.0",
+    "pre-commit-hooks>=4.6.0",
+    "commitizen>=3.27.0",
+
+    # ===== 文档 =====
     "sphinx>=8.1.0,<9.0.0",
     "sphinx-rtd-theme>=3.0.0,<4.0.0",
-    "pytest-timeout>=2.3.1",
+
+    # ===== 安全与质量 =====
     "bandit>=1.9.4",
     "detect-secrets>=1.5.0",
     "safety>=3.7.0",
-    "wheel>=0.46.2",
-    "djhtml>=3.0.6",
-    "mdformat>=0.7.21",
+    "radon>=6.0.0",
+    "cyclonedx-bom>=4.0.0",
+
+    # ===== 类型检查 =====
     "types-requests",
     "types-python-dateutil",
     "types-pytz",
@@ -181,7 +205,7 @@ module = [
 ignore_errors = true
 
 [tool.coverage.run]
-source = ["devops_collector"]
+source = ["devops_collector", "devops_portal"]
 omit = [
     "*/tests/*",
     "*/test_*.py",
@@ -202,19 +226,7 @@ exclude_lines = [
     "if TYPE_CHECKING:",
 ]
 
-[dependency-groups]
-dev = [
-    "black>=24.10.0",
-    "factory-boy>=3.3.3",
-    "pytest>=9.0.2",
-    "pytest-instafail>=0.5.0",
-    "pytest-mock>=3.15.1",
-    "pytest-picked>=0.5.1",
-    "pytest-recording>=0.13.4",
-    "pytest-testmon>=2.2.0",
-    "pytest-xdist>=3.8.0",
-    "vcrpy>=8.1.1",
-    "pre-commit-hooks>=4.6.0",
-    "commitizen>=3.27.0",
-    "pre-commit>=4.0.0",
-]
+[tool.uv]
+index-url = "http://192.168.5.64:8081/repository/group-pypi/simple"
+extra-index-url = ["https://pypi.org/simple"]
+allow-insecure-host = ["192.168.5.64"]

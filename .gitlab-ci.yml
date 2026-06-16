@@ -3,6 +3,7 @@
 # Phase 3: Full Gate (Lint + Security + SBOM + Test + Build)
 # ======================================================================
 
+# 1. stages - 定义流水线阶段
 stages:
   - lint
   - security
@@ -10,16 +11,26 @@ stages:
   - test
   - build
 
+# 2. variables - 全局变量
 variables:
   TZ: Asia/Shanghai
   LOGGING__LEVEL: ERROR
   PIP_INDEX_URL: "http://192.168.5.64:8081/repository/group-pypi/simple"
+  PIP_TRUSTED_HOST: "192.168.5.64"
   NPM_CONFIG_REGISTRY: "http://192.168.5.64:8081/repository/group-npm/"
   NEXUS_DOCKER_REGISTRY: "192.168.5.64:8082"
   UV_CACHE_DIR: ".cache/uv"
   PYTEST_ADDOPTS: "--tb=short"
   DOCKER_DRIVER: overlay2
 
+# 3. default - 全局默认配置（所有 job 继承）（仅适用于 Python job）
+# default:
+#   before_script:
+#     - pip install --cache-dir .cache/pip --trusted-host 192.168.5.64 --index-url $PIP_INDEX_URL uv
+#     - uv sync --all-groups
+#   image: python:3.12-slim  # 也可以设置默认镜像
+
+# 4. cache - 全局缓存配置
 # 全局持久化缓存：基于分支隔离，加速 pip, uv 和 node_modules
 cache:
   key: "${CI_COMMIT_REF_SLUG}"
@@ -27,6 +38,41 @@ cache:
     - .cache/pip
     - .cache/uv
     - node_modules/
+  policy: pull-push  # 可选：pull, push, pull-push
+
+# 5. include - 导入其他配置文件（可选）
+# include:
+#   - local: /.gitlab-ci-templates.yml
+
+# 6. workflow - 工作流规则（可选）
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"       # 仅main分支的push触发
+    - if: $CI_MERGE_REQUEST_ID             # MR 也触发
+    - if: $CI_COMMIT_TAG                   # Tag 也触发
+    - when: never                       # 其他情况不运行
+
+# 7. 自定义 YAML Anchors（可选）
+# .default-before-script: &default-before-script
+#   before_script:
+#     - pip install --cache-dir .cache/pip --trusted-host 192.168.5.64 --index-url $PIP_INDEX_URL uv
+#     - uv sync --all-groups
+
+# 7-1. 定义不同的 before_script 模板
+.uv-setup-dev: &uv-setup-dev
+  before_script:
+    - pip install --cache-dir .cache/pip --trusted-host $PIP_TRUSTED_HOST --index-url $PIP_INDEX_URL uv
+    - uv sync --only-group dev
+  image: python:3.12-slim  # 也可以设置默认镜像
+
+# 7-2. 定义不同的 before_script 模板
+.uv-setup-all: &uv-setup-all
+  before_script:
+    - pip install --cache-dir .cache/pip --trusted-host $PIP_TRUSTED_HOST --index-url $PIP_INDEX_URL uv
+    - uv sync --all-groups
+  image: python:3.12-slim  # 也可以设置默认镜像
+
+# 8. Job 定义
 
 # ──────────────────────────────────────
 # Stage: Lint
@@ -34,9 +80,7 @@ cache:
 
 ruff-lint:
   stage: lint
-  image: python:3.12-slim
-  before_script:
-    - pip install --cache-dir .cache/pip --index-url $PIP_INDEX_URL uv
+  <<: *uv-setup-dev
   script:
     - uv run ruff check devops_collector/ devops_portal/ tests/ scripts/
   allow_failure: false
@@ -44,18 +88,15 @@ ruff-lint:
 oxlint:
   stage: lint
   image: node:20-bullseye
-  before_script:
-    - npm ci || npm install
+  before_script: []
   script:
+    - npm ci || npm install
     - npx oxlint devops_portal/static/js --ignore-pattern "**/vendor/**"
   allow_failure: false
 
 radon-complexity:
   stage: lint
-  image: python:3.12-slim
-  before_script:
-    - pip install --cache-dir .cache/pip --index-url $PIP_INDEX_URL uv
-    - uv pip install --system --index-url $PIP_INDEX_URL radon
+  <<: *uv-setup-dev
   script:
     - uv run radon cc -a -j devops_collector/ devops_portal/ > radon-complexity.json
     - uv run radon mi -j devops_collector/ devops_portal/ > radon-maintainability.json
@@ -69,10 +110,7 @@ radon-complexity:
 
 type-check-mypy:
   stage: lint
-  image: python:3.12-slim
-  before_script:
-    - pip install --cache-dir .cache/pip --index-url $PIP_INDEX_URL uv
-    - uv sync --only-group dev --index-url $PIP_INDEX_URL
+  <<: *uv-setup-dev
   script:
     - uv run mypy devops_collector devops_portal
   allow_failure: false
@@ -83,10 +121,9 @@ type-check-mypy:
 
 sast-scan:
   stage: security
-  image: python:3.12-slim
+  <<: *uv-setup-dev
   script:
-    - pip install --cache-dir .cache/pip --index-url $PIP_INDEX_URL bandit
-    - bandit -r devops_collector/ devops_portal/ -f json -o bandit-report.json || true
+    - uv run bandit -r devops_collector/ devops_portal/ -f json -o bandit-report.json || true
   artifacts:
     paths:
       - bandit-report.json
@@ -97,6 +134,7 @@ sast-scan:
 secret-detection:
   stage: security
   image: zricethezav/gitleaks:latest
+  before_script: []
   script:
     - gitleaks detect --source . --report-format json --report-path gitleaks-report.json --exit-code 0
   artifacts:
@@ -109,6 +147,7 @@ secret-detection:
 trivy-fs-scan:
   stage: security
   image: $NEXUS_DOCKER_REGISTRY/aquasec/trivy:latest
+  before_script: []
   script:
     - trivy fs --severity CRITICAL,HIGH --format json --output trivy-fs-report.json .
   artifacts:
@@ -121,6 +160,7 @@ trivy-fs-scan:
 trivy-config-scan:
   stage: security
   image: $NEXUS_DOCKER_REGISTRY/aquasec/trivy:latest
+  before_script: []
   script:
     - trivy config --format json --output trivy-config-report.json .
   artifacts:
@@ -136,10 +176,9 @@ trivy-config-scan:
 
 sbom-python:
   stage: sbom
-  image: python:3.12-slim
+  <<: *uv-setup-dev
   script:
-    - pip install --cache-dir .cache/pip --index-url $PIP_INDEX_URL cyclonedx-bom
-    - cyclonedx-py requirements -i requirements.txt -o sbom-python.json
+    - uv run cyclonedx-py environment --pyproject pyproject.toml -o sbom-python.json
   artifacts:
     paths:
       - sbom-python.json
@@ -149,6 +188,7 @@ sbom-python:
 sbom-node:
   stage: sbom
   image: node:20-bullseye
+  before_script: []
   script:
     - npm install -g @cyclonedx/cyclonedx-npm
     - cyclonedx-npm -o sbom-node.json
@@ -164,10 +204,7 @@ sbom-node:
 
 test-unit:
   stage: test
-  image: python:3.12-slim
-  before_script:
-    - pip install --cache-dir .cache/pip --index-url $PIP_INDEX_URL uv
-    - uv sync --all-groups --index-url $PIP_INDEX_URL
+  <<: *uv-setup-all
   script:
     - uv run pytest tests/unit/ -v --cov=devops_collector --cov=devops_portal --cov-report=xml:coverage.xml --junitxml=junit-unit.xml
   artifacts:
@@ -181,7 +218,7 @@ test-unit:
 
 test-integration:
   stage: test
-  image: python:3.12-slim
+  <<: *uv-setup-all
   services:
     - postgres:15
   variables:
@@ -190,9 +227,6 @@ test-integration:
     POSTGRES_DB: test_ddap
     DB_HOST: postgres
     DATABASE__URI: "postgresql://postgres:postgres@postgres:5432/test_ddap"  # pragma: allowlist secret
-  before_script:
-    - pip install --cache-dir .cache/pip --index-url $PIP_INDEX_URL uv
-    - uv sync --all-groups --index-url $PIP_INDEX_URL
   script:
     # -n 1 防御物理死锁
     - uv run pytest tests/integration/ -v -n 1 --junitxml=junit-integration.xml
@@ -204,10 +238,7 @@ test-integration:
 
 test-e2e:
   stage: test
-  image: python:3.12-slim
-  before_script:
-    - pip install --cache-dir .cache/pip --index-url $PIP_INDEX_URL uv
-    - uv sync --all-groups --index-url $PIP_INDEX_URL
+  <<: *uv-setup-all
   script:
     - uv run pytest tests/e2e/test_dashboard_apptest.py -v --junitxml=junit-e2e.xml
   artifacts:
@@ -223,6 +254,7 @@ test-e2e:
 build-docker:
   stage: build
   image: docker:24.0.5
+  before_script: []
   services:
     - docker:24.0.5-dind
   variables:
