@@ -13,17 +13,49 @@ stages:
 
 # 2. variables - 全局变量
 variables:
+  # ===== 包管理配置 =====
   TZ: Asia/Shanghai
   LOGGING__LEVEL: ERROR
   PIP_INDEX_URL: "http://192.168.5.64:8081/repository/group-pypi/simple"
   PIP_TRUSTED_HOST: "192.168.5.64"
-  PIP_EXTRA_INDEX_URL: "https://pypi.org/simple"
+  UV_INDEX_URL: "http://192.168.5.64:8081/repository/group-pypi/simple"
+  UV_EXTRA_INDEX_URL: "https://pypi.org/simple"
   NPM_CONFIG_REGISTRY: "http://192.168.5.64:8081/repository/group-npm/"
   NPM_CONFIG_PREFIX: "/cache/npm"
   NEXUS_DOCKER_REGISTRY: "192.168.5.64:8082"
   UV_CACHE_DIR: ".cache/uv"
   PYTEST_ADDOPTS: "--tb=short"
   DOCKER_DRIVER: overlay2
+
+  # ===== 外部系统配置（从 GitLab CI Variables 读取） =====
+  GITLAB__URL: $GITLAB_URL
+  GITLAB__PRIVATE_TOKEN: $GITLAB_PRIVATE_TOKEN
+  ZENTAO__URL: $ZENTAO_URL
+  ZENTAO__TOKEN: $ZENTAO_TOKEN
+  ZENTAO__ACCOUNT: $ZENTAO_ACCOUNT
+  ZENTAO__PASSWORD: $ZENTAO_PASSWORD
+  SONARQUBE__URL: $SONARQUBE_URL
+  SONARQUBE__TOKEN: $SONARQUBE_TOKEN
+  AI__API_KEY: $AI_API_KEY
+  AI__BASE_URL: $AI_BASE_URL
+  AI__MODEL: $AI_MODEL
+
+  # ===== 测试数据库配置 =====
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres  # pragma: allowlist secret
+  POSTGRES_DB: test_ddap
+  DB_HOST: postgres
+  DATABASE__URI: "postgresql://postgres:postgres@postgres:5432/test_ddap"  # pragma: allowlist secret
+
+  # ===== RabbitMQ 配置 =====
+  RABBITMQ_DEFAULT_USER: admin
+  RABBITMQ_DEFAULT_PASS: admin123  # pragma: allowlist secret
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: 5672
+
+  # ===== E2E 测试配置 =====
+  E2E_TEST_USER_EMAIL: "admin@tjhq.com"
+  E2E_TEST_USER_PASSWORD: $E2E_TEST_USER_PASSWORD
 
 # 3. default - 全局默认配置（所有 job 继承）
 default:
@@ -63,14 +95,14 @@ workflow:
 .uv-setup-dev: &uv-setup-dev
   before_script:
     - pip install --cache-dir .cache/pip --trusted-host $PIP_TRUSTED_HOST --index-url $PIP_INDEX_URL --extra-index-url https://pypi.org/simple --timeout 120 uv
-    - uv sync --extra dev   # ← 改用 --extra
+    - uv sync  --extra dev
   image: python:3.12-slim  # 也可以设置默认镜像
 
 # 7-2. 定义不同的 before_script 模板
 .uv-setup-all: &uv-setup-all
   before_script:
     - pip install --cache-dir .cache/pip --trusted-host $PIP_TRUSTED_HOST --index-url $PIP_INDEX_URL --extra-index-url https://pypi.org/simple --timeout 120 uv
-    - uv sync --all-extras   # ← 改用 --all-extras
+    - uv sync  --all-extras
   image: python:3.12-slim  # 也可以设置默认镜像
 
 # 8. Job 定义
@@ -98,6 +130,7 @@ oxlint:
 radon-complexity:
   stage: lint
   <<: *uv-setup-dev
+  timeout: 2h
   script:
     - uv run radon cc -a -j devops_collector/ devops_portal/ > radon-complexity.json
     - uv run radon mi -j devops_collector/ devops_portal/ > radon-maintainability.json
@@ -222,12 +255,7 @@ test-integration:
   <<: *uv-setup-all
   services:
     - postgres:15
-  variables:
-    POSTGRES_USER: postgres
-    POSTGRES_PASSWORD: postgres  # pragma: allowlist secret
-    POSTGRES_DB: test_ddap
-    DB_HOST: postgres
-    DATABASE__URI: "postgresql://postgres:postgres@postgres:5432/test_ddap"  # pragma: allowlist secret
+    - rabbitmq:3-management
   script:
     # -n 1 防御物理死锁
     - uv run pytest tests/integration/ -v -n 1 --junitxml=junit-integration.xml
