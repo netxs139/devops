@@ -36,7 +36,6 @@ MANIFEST
 
 # --- NODE.JS / FRONTEND TOOLING ---
 node_modules/
-package-lock.json
 
 # --- IDE & TOOLS ---
 .vscode/
