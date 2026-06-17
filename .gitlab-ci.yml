@@ -27,12 +27,11 @@ variables:
   PYTEST_ADDOPTS: "--tb=short"
   DOCKER_DRIVER: overlay2
 
-# 3. default - 全局默认配置（所有 job 继承）（仅适用于 Python job）
-# default:
-#   before_script:
-#     - pip install --cache-dir .cache/pip --trusted-host 192.168.5.64 --index-url $PIP_INDEX_URL uv
-#     - uv sync --all-groups
-#   image: python:3.12-slim  # 也可以设置默认镜像
+# 3. default - 全局默认配置（所有 job 继承）
+default:
+  tags:
+    - linux
+    - docker
 
 # 4. cache - 全局缓存配置
 # 全局持久化缓存：基于分支隔离，加速 pip, uv 和 node_modules
