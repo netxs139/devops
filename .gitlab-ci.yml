@@ -63,14 +63,14 @@ workflow:
 .uv-setup-dev: &uv-setup-dev
   before_script:
     - pip install --cache-dir .cache/pip --trusted-host $PIP_TRUSTED_HOST --index-url $PIP_INDEX_URL --extra-index-url https://pypi.org/simple --timeout 120 uv
-    - uv sync --only-group dev
+    - uv sync --extra dev   # ← 改用 --extra
   image: python:3.12-slim  # 也可以设置默认镜像
 
 # 7-2. 定义不同的 before_script 模板
 .uv-setup-all: &uv-setup-all
   before_script:
     - pip install --cache-dir .cache/pip --trusted-host $PIP_TRUSTED_HOST --index-url $PIP_INDEX_URL --extra-index-url https://pypi.org/simple --timeout 120 uv
-    - uv sync --all-groups
+    - uv sync --all-extras   # ← 改用 --all-extras
   image: python:3.12-slim  # 也可以设置默认镜像
 
 # 8. Job 定义
@@ -91,7 +91,6 @@ oxlint:
   image: node:20-bullseye
   before_script: []
   script:
-    - npm config set registry $NPM_CONFIG_REGISTRY
     - npm ci
     - npx oxlint devops_portal/static/js --ignore-pattern "**/vendor/**"
   allow_failure: false
@@ -192,7 +191,6 @@ sbom-node:
   image: node:20-bullseye
   before_script: []
   script:
-    - npm config set registry $NPM_CONFIG_REGISTRY
     - npm install -g @cyclonedx/cyclonedx-npm
     - cyclonedx-npm -o sbom-node.json
   artifacts:
