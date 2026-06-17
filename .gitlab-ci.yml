@@ -26,7 +26,6 @@ variables:
   UV_CACHE_DIR: ".cache/uv"
   PYTEST_ADDOPTS: "--tb=short"
   DOCKER_DRIVER: overlay2
-
   # ===== 外部系统配置（从 GitLab CI Variables 读取） =====
   GITLAB__URL: $GITLAB_URL
   GITLAB__PRIVATE_TOKEN: $GITLAB_PRIVATE_TOKEN
@@ -39,20 +38,17 @@ variables:
   AI__API_KEY: $AI_API_KEY
   AI__BASE_URL: $AI_BASE_URL
   AI__MODEL: $AI_MODEL
-
   # ===== 测试数据库配置 =====
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: postgres  # pragma: allowlist secret
   POSTGRES_DB: test_ddap
   DB_HOST: postgres
   DATABASE__URI: "postgresql://postgres:postgres@postgres:5432/test_ddap"  # pragma: allowlist secret
-
   # ===== RabbitMQ 配置 =====
   RABBITMQ_DEFAULT_USER: admin
   RABBITMQ_DEFAULT_PASS: admin123  # pragma: allowlist secret
   RABBITMQ_HOST: rabbitmq
   RABBITMQ_PORT: 5672
-
   # ===== E2E 测试配置 =====
   E2E_TEST_USER_EMAIL: "admin@tjhq.com"
   E2E_TEST_USER_PASSWORD: $E2E_TEST_USER_PASSWORD
@@ -86,24 +82,30 @@ workflow:
     - when: never                       # 其他情况不运行
 
 # 7. 自定义 YAML Anchors（可选）
-# .default-before-script: &default-before-script
-#   before_script:
-#     - pip install --cache-dir .cache/pip --trusted-host 192.168.5.64 --index-url $PIP_INDEX_URL uv
-#     - uv sync --all-groups
-
-# 7-1. 定义不同的 before_script 模板
+# 7-1. 定义不同的Anchors模板:python-base
+.python-base: &python-base
+  image: python:3.12-slim
+  tags:
+    - linux
+    - docker
+# 7-2. 定义不同的Anchors模板:uv-setup-dev
 .uv-setup-dev: &uv-setup-dev
   before_script:
-    - pip install --cache-dir .cache/pip --trusted-host $PIP_TRUSTED_HOST --index-url $PIP_INDEX_URL --extra-index-url https://pypi.org/simple --timeout 120 uv
-    - uv sync  --extra dev
-  image: python:3.12-slim  # 也可以设置默认镜像
-
-# 7-2. 定义不同的 before_script 模板
+    - pip install --cache-dir .cache/pip --trusted-host $PIP_TRUSTED_HOST --index-url $PIP_INDEX_URL --timeout 120 uv
+    - uv sync --extra dev
+# 7-3. 定义不同的Anchors模板:uv-setup-all
 .uv-setup-all: &uv-setup-all
   before_script:
-    - pip install --cache-dir .cache/pip --trusted-host $PIP_TRUSTED_HOST --index-url $PIP_INDEX_URL --extra-index-url https://pypi.org/simple --timeout 120 uv
-    - uv sync  --all-extras
-  image: python:3.12-slim  # 也可以设置默认镜像
+    - pip install --cache-dir .cache/pip --trusted-host $PIP_TRUSTED_HOST --index-url $PIP_INDEX_URL --timeout 120 uv
+    - uv sync --all-extras
+# 7-4. 定义不同的Anchors模板:test-services
+.test-services: &test-services
+  services:
+    - postgres:15
+    - rabbitmq:3-management
+# 7-5. 组合 Anchor（用于测试 Job）
+.python-full: &python-full
+  <<: [*python-base, *uv-setup-all, *test-services]
 
 # 8. Job 定义
 
@@ -113,7 +115,7 @@ workflow:
 
 ruff-lint:
   stage: lint
-  <<: *uv-setup-dev
+  <<: [*python-base, *uv-setup-dev]
   script:
     - uv run ruff check devops_collector/ devops_portal/ tests/ scripts/
   allow_failure: false
@@ -129,7 +131,7 @@ oxlint:
 
 radon-complexity:
   stage: lint
-  <<: *uv-setup-dev
+  <<: [*python-base, *uv-setup-dev]
   timeout: 2h
   script:
     - uv run radon cc -a -j devops_collector/ devops_portal/ > radon-complexity.json
@@ -144,7 +146,7 @@ radon-complexity:
 
 type-check-mypy:
   stage: lint
-  <<: *uv-setup-dev
+  <<: [*python-base, *uv-setup-dev]
   script:
     - uv run mypy devops_collector devops_portal
   allow_failure: false
@@ -155,7 +157,7 @@ type-check-mypy:
 
 sast-scan:
   stage: security
-  <<: *uv-setup-dev
+  <<: [*python-base, *uv-setup-dev]
   script:
     - uv run bandit -r devops_collector/ devops_portal/ -f json -o bandit-report.json || true
   artifacts:
@@ -167,7 +169,9 @@ sast-scan:
 
 secret-detection:
   stage: security
-  image: zricethezav/gitleaks:latest
+  image:
+    name: zricethezav/gitleaks:latest
+    entrypoint: [""]
   before_script: []
   script:
     - gitleaks detect --source . --report-format json --report-path gitleaks-report.json --exit-code 0
@@ -181,7 +185,9 @@ secret-detection:
 trivy-fs-scan:
   stage: security
   image: $NEXUS_DOCKER_REGISTRY/aquasec/trivy:latest
-  before_script: []
+  before_script:
+    - |
+      echo '{"insecure-registries": ["192.168.5.64:8082"]}' > /etc/docker/daemon.json
   script:
     - trivy fs --severity CRITICAL,HIGH --format json --output trivy-fs-report.json .
   artifacts:
@@ -194,7 +200,9 @@ trivy-fs-scan:
 trivy-config-scan:
   stage: security
   image: $NEXUS_DOCKER_REGISTRY/aquasec/trivy:latest
-  before_script: []
+  before_script:
+    - |
+      echo '{"insecure-registries": ["192.168.5.64:8082"]}' > /etc/docker/daemon.json
   script:
     - trivy config --format json --output trivy-config-report.json .
   artifacts:
@@ -210,7 +218,7 @@ trivy-config-scan:
 
 sbom-python:
   stage: sbom
-  <<: *uv-setup-dev
+  <<: [*python-base, *uv-setup-dev]
   script:
     - uv run cyclonedx-py environment --pyproject pyproject.toml -o sbom-python.json
   artifacts:
@@ -238,7 +246,7 @@ sbom-node:
 
 test-unit:
   stage: test
-  <<: *uv-setup-all
+  <<: [*python-base, *uv-setup-all]
   script:
     - uv run pytest tests/unit/ -v --cov=devops_collector --cov=devops_portal --cov-report=xml:coverage.xml --junitxml=junit-unit.xml
   artifacts:
@@ -252,10 +260,7 @@ test-unit:
 
 test-integration:
   stage: test
-  <<: *uv-setup-all
-  services:
-    - postgres:15
-    - rabbitmq:3-management
+  <<: *python-full
   script:
     # -n 1 防御物理死锁
     - uv run pytest tests/integration/ -v -n 1 --junitxml=junit-integration.xml
@@ -267,7 +272,7 @@ test-integration:
 
 test-e2e:
   stage: test
-  <<: *uv-setup-all
+  <<: *python-full
   script:
     - uv run pytest tests/e2e/test_dashboard_apptest.py -v --junitxml=junit-e2e.xml
   artifacts:
