@@ -91,7 +91,7 @@ oxlint:
   image: node:20-bullseye
   before_script: []
   script:
-    - npm ci
+    - npm ci --registry=https://registry.npmjs.org/
     - npx oxlint devops_portal/static/js --ignore-pattern "**/vendor/**"
   allow_failure: false
 
@@ -191,7 +191,7 @@ sbom-node:
   image: node:20-bullseye
   before_script: []
   script:
-    - npm install -g @cyclonedx/cyclonedx-npm
+    - npm install -g @cyclonedx/cyclonedx-npm --registry=https://registry.npmjs.org/
     - cyclonedx-npm -o sbom-node.json
   artifacts:
     paths:
