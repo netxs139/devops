@@ -17,7 +17,11 @@ variables:
   LOGGING__LEVEL: ERROR
   PIP_INDEX_URL: "http://192.168.5.64:8081/repository/group-pypi/simple"
   PIP_TRUSTED_HOST: "192.168.5.64"
+  PIP_EXTRA_INDEX_URL: "https://pypi.org/simple"
   NPM_CONFIG_REGISTRY: "http://192.168.5.64:8081/repository/group-npm/"
+  NPM_CONFIG_PREFIX: "/cache/npm"
+  NPM_CONFIG_@oxlint:registry: "https://registry.npmjs.org/"
+  NPM_CONFIG_@cyclonedx:registry: "https://registry.npmjs.org/"
   NEXUS_DOCKER_REGISTRY: "192.168.5.64:8082"
   UV_CACHE_DIR: ".cache/uv"
   PYTEST_ADDOPTS: "--tb=short"
@@ -61,14 +65,14 @@ workflow:
 # 7-1. 定义不同的 before_script 模板
 .uv-setup-dev: &uv-setup-dev
   before_script:
-    - pip install --cache-dir .cache/pip --trusted-host $PIP_TRUSTED_HOST --index-url $PIP_INDEX_URL uv
+    - pip install --cache-dir .cache/pip --trusted-host $PIP_TRUSTED_HOST --index-url $PIP_INDEX_URL --extra-index-url https://pypi.org/simple --timeout 120 uv
     - uv sync --only-group dev
   image: python:3.12-slim  # 也可以设置默认镜像
 
 # 7-2. 定义不同的 before_script 模板
 .uv-setup-all: &uv-setup-all
   before_script:
-    - pip install --cache-dir .cache/pip --trusted-host $PIP_TRUSTED_HOST --index-url $PIP_INDEX_URL uv
+    - pip install --cache-dir .cache/pip --trusted-host $PIP_TRUSTED_HOST --index-url $PIP_INDEX_URL --extra-index-url https://pypi.org/simple --timeout 120 uv
     - uv sync --all-groups
   image: python:3.12-slim  # 也可以设置默认镜像
 
@@ -90,7 +94,9 @@ oxlint:
   image: node:20-bullseye
   before_script: []
   script:
-    - npm ci || npm install
+    - npm config set registry $NPM_CONFIG_REGISTRY
+    - npm config set @oxlint:registry https://registry.npmjs.org/
+    - npm ci
     - npx oxlint devops_portal/static/js --ignore-pattern "**/vendor/**"
   allow_failure: false
 
@@ -190,6 +196,8 @@ sbom-node:
   image: node:20-bullseye
   before_script: []
   script:
+    - npm config set registry $NPM_CONFIG_REGISTRY
+    - npm config set @cyclonedx:registry https://registry.npmjs.org/
     - npm install -g @cyclonedx/cyclonedx-npm
     - cyclonedx-npm -o sbom-node.json
   artifacts:
