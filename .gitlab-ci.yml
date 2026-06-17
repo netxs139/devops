@@ -23,7 +23,6 @@ variables:
   UV_EXTRA_INDEX_URL: "https://pypi.org/simple"
   NPM_CONFIG_REGISTRY: "http://192.168.5.64:8081/repository/group-npm/"
   NPM_CONFIG_PREFIX: "/cache/npm"
-  NEXUS_DOCKER_REGISTRY: "192.168.5.64:8082"
   UV_CACHE_DIR: ".cache/uv"
   PYTEST_ADDOPTS: "--tb=short"
   DOCKER_DRIVER: overlay2
@@ -55,8 +54,9 @@ variables:
   E2E_TEST_USER_PASSWORD: $E2E_TEST_USER_PASSWORD
   # ===== Nexus 推送配置 =====
   NEXUS_URL: "http://192.168.5.64:8081"
-  NEXUS_PYPI_REPO: "pypi-hosted"
-  NEXUS_DOCKER_REPO: "docker-hosted"
+  NEXUS_DOCKER_REGISTRY: "192.168.5.64:8082"  # Docker 专用
+  NEXUS_PYPI_REPO: "zlb-pypi-hosted"  # python仓库名称
+  NEXUS_DOCKER_REPO: "docker-hosted"  # docker仓库名称
   NEXUS_USER: $NEXUS_USER          # 从 GitLab CI Variables 读取
   NEXUS_PASSWORD: $NEXUS_PASSWORD  # 从 GitLab CI Variables 读取
 
@@ -98,12 +98,12 @@ workflow:
 # 7-2. 定义不同的Anchors模板:uv-setup-dev
 .uv-setup-dev: &uv-setup-dev
   before_script:
-    - pip install --cache-dir .cache/pip --trusted-host $PIP_TRUSTED_HOST --index-url $PIP_INDEX_URL --timeout 120 uv
+    - pip install --cache-dir .cache/pip --trusted-host $PIP_TRUSTED_HOST --index-url $PIP_INDEX_URL --extra-index-url https://pypi.org/simple --timeout 120 uv
     - uv sync --extra dev
 # 7-3. 定义不同的Anchors模板:uv-setup-all
 .uv-setup-all: &uv-setup-all
   before_script:
-    - pip install --cache-dir .cache/pip --trusted-host $PIP_TRUSTED_HOST --index-url $PIP_INDEX_URL --timeout 120 uv
+    - pip install --cache-dir .cache/pip --trusted-host $PIP_TRUSTED_HOST --index-url $PIP_INDEX_URL --extra-index-url https://pypi.org/simple --timeout 120 uv
     - uv sync --all-extras
 # 7-4. 定义不同的Anchors模板:test-services
 .test-services: &test-services
