@@ -20,8 +20,6 @@ variables:
   PIP_EXTRA_INDEX_URL: "https://pypi.org/simple"
   NPM_CONFIG_REGISTRY: "http://192.168.5.64:8081/repository/group-npm/"
   NPM_CONFIG_PREFIX: "/cache/npm"
-  NPM_CONFIG_@oxlint:registry: "https://registry.npmjs.org/"
-  NPM_CONFIG_@cyclonedx:registry: "https://registry.npmjs.org/"
   NEXUS_DOCKER_REGISTRY: "192.168.5.64:8082"
   UV_CACHE_DIR: ".cache/uv"
   PYTEST_ADDOPTS: "--tb=short"
@@ -94,7 +92,6 @@ oxlint:
   before_script: []
   script:
     - npm config set registry $NPM_CONFIG_REGISTRY
-    - npm config set @oxlint:registry https://registry.npmjs.org/
     - npm ci
     - npx oxlint devops_portal/static/js --ignore-pattern "**/vendor/**"
   allow_failure: false
@@ -196,7 +193,6 @@ sbom-node:
   before_script: []
   script:
     - npm config set registry $NPM_CONFIG_REGISTRY
-    - npm config set @cyclonedx:registry https://registry.npmjs.org/
     - npm install -g @cyclonedx/cyclonedx-npm
     - cyclonedx-npm -o sbom-node.json
   artifacts:
