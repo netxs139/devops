@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+- **Vue 3 前端重构：QA Quality Domain SFC 完全迁移 (2026-06-20)**:
+
+  - **测试用例管理控制台**: `TestCaseView.vue` 完整实现用例总览、多维度筛选（按状态、优先级、关键字）、用例新建入口及侧边执行控制台抽屉。
+  - **用例详情与执行控制台**: `TestCaseDetail.vue` 与 `TestCaseForm.vue` 补全用例执行与录入组件，打通关联项目 GitLab ID 解析逻辑；`ProductSelector.vue` 提供按产品与组织部门的双轴上下文联动。
+  - **Traceability 雷达与 VSM 看板**: `RadarView.vue` 支持按项目/天数筛选、度量指标卡片（平均评审等待时间、秒批率、漏洞数）下钻明细展示；`Radar.vue` 配合 ECharts 5 渲染协作雷达及 VSM 流水线耗时时序图。
+  - **类型与规范治理**: 补全 `api.d.ts` 中的 `TestCase`, `TestSummary`, `RadarResponse` 等核心接口契约；修复所有 Vue 3 SFC 文件的 TS 类型报错与 ESLint/Stylelint 违规，成功通过 `just frontend-build` 生产环境制品打包。commit: `6d42799`。
+
 - **Vue 3 前端重构阶段二：登录与鉴权体系 SFC 完全迁移 (2026-06-20)**:
 
   - **登录页 SFC 迁移**: `LoginView.vue` 实现密码登录（`URLSearchParams` 表单体）与 GitLab OAuth 跳转两种方式，错误信息模糊化符合等保三级要求。

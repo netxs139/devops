@@ -1,8 +1,8 @@
 # DevOps 平台建设进度跟踪 (Progress Tracker)
 
 ## 🎯 当前重点 (Current Focus)
-- **核心重点**: QA Quality Domain Vue 3 refactoring type and lint fixes
-- **状态**: 🔵 进行中
+- **核心重点**: 🟢 空闲
+- **状态**: 🟢 空闲
 
 ## 🛠️ 任务清单 (Tasks)
 
@@ -13,11 +13,11 @@
 5. [阶段八-质量保障] Playwright E2E 框架落地 + 核心用户旅程冒烟测试 ⏳ 待实现
 ## 📋 最近完成 (Recently Completed)
 
-1. [2026-06-20] **前端重构阶段二：登录与鉴权体系 Vue 3 SFC 完全迁移**: 完成 LoginView.vue（密码+GitLab OAuth）、LoginCallback.vue（OAuth token 截获）、DashboardLayout.vue（权限菜单主壳）、store/auth.ts（JWT 解析+RBAC）、router/index.ts（beforeEach 三段守卫）完整迁移；补全 api.d.ts AuthToken 类型；修复 import 断行与 `\3c` HTML 实体泄漏 bug；落地 axios 合法豁免合约。commits: `d82e589`, `997c508`。
-2. [2026-06-20] **前端重构阶段一：工程脚手架与规范初始化**: 搭建 Vue 3 + Vite + TS 开发底座，通过 Flat ESLint + Stylelint 建立工程规训，完成 static/vue-assets 隔离构建制品集成，并落地 CSP 及 XSS 防御审查。
-3. [2026-06-15] **流水线原生化与安全审计重构**: 完成 `.gitlab-ci.yml` 的深度重构，解耦原生 Stage，集成 Nexus 私服，落地 Trivy 与 CycloneDX SBOM 扫描并导出标准日志与指标制品。
-4. [2026-06-12] **固化测试目录命名与Docker指令双重防御规范**: 将测试命名空间隔离原则固化至 `engineering-rigor-arbiter` §10，将跨平台 Docker Compose 适配律固化至 `chaos-sentinel` §T5；在对应的 `evals.json` 中注入校验用例，并完成 `lessons-learned.log` 历史条目的回标。
-5. [2026-06-09] **[SCD2 索引防御] 固化 PostgreSQL 部分索引隔离律**: 将 SCD2 部分索引约束隔离律固化至 `mdm-integrity-arbiter` 技能包的 §6 条目，并在 `evals.json` 中注入用例 #5 进行防御断言，对 `lessons-learned.log` 历史条目完成了 `[Codified...]` 回标。
+1. [2026-06-20] **QA Quality Domain Vue 3 重构与类型/Lint 修复**: 完成 TestCaseView.vue（用例管理与执行控制台）、RadarView.vue（效能雷达看板下钻）SFC 迁移，并集成 ProductSelector、Radar、TestCaseDetail、TestCaseForm 等子组件，修复 TS 类型与 ESLint 规范报错，前端 build 顺利编译通过。commit: `6d42799`。
+2. [2026-06-20] **前端重构阶段二：登录与鉴权体系 Vue 3 SFC 完全迁移**: 完成 LoginView.vue（密码+GitLab OAuth）、LoginCallback.vue（OAuth token 截获）、DashboardLayout.vue（权限菜单主壳）、store/auth.ts（JWT 解析+RBAC）、router/index.ts（beforeEach 三段守卫）完整迁移；补全 api.d.ts AuthToken 类型；修复 import 断行与 `\3c` HTML 实体泄漏 bug；落地 axios 合法豁免合约。commits: `d82e589`, `997c508`。
+3. [2026-06-20] **前端重构阶段一：工程脚手架与规范初始化**: 搭建 Vue 3 + Vite + TS 开发底座，通过 Flat ESLint + Stylelint 建立工程规训，完成 static/vue-assets 隔离构建制品集成，并落地 CSP 及 XSS 防御审查。
+4. [2026-06-15] **流水线原生化与安全审计重构**: 完成 `.gitlab-ci.yml` 的深度重构，解耦原生 Stage，集成 Nexus 私服，落地 Trivy 与 CycloneDX SBOM 扫描并导出标准日志与指标制品。
+5. [2026-06-12] **固化测试目录命名与Docker指令双重防御规范**: 将测试命名空间隔离原则固化至 `engineering-rigor-arbiter` §10，将跨平台 Docker Compose 适配律固化至 `chaos-sentinel` §T5；在对应的 `evals.json` 中注入校验用例，并完成 `lessons-learned.log` 历史条目的回标。
 
 ---
 
