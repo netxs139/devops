@@ -47,7 +47,7 @@ request.interceptors.request.use(
 // 响应拦截器
 // =============================================================================
 request.interceptors.response.use(
-  (response) => response,
+  (response) => response.data,
   async (error: unknown) => {
     if (!axios.isAxiosError(error)) {
       return Promise.reject(error)

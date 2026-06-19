@@ -73,31 +73,52 @@ export interface UserProfile {
 export type TestCaseStatus = 'passed' | 'failed' | 'pending' | 'blocked' | 'skipped'
 export type TestCasePriority = 'P0' | 'P1' | 'P2' | 'P3'
 
-export interface TestCase {
-  iid: number
-  title: string
-  description?: string
-  status: TestCaseStatus
-  priority: TestCasePriority
-  assignee?: string
-  created_at: string
-  updated_at: string
-  project_id: number
-  labels: string[]
+export interface TestStep {
+  step_number: number
+  action: string
+  expected_result: string
 }
 
-export interface TestCaseExecutionPayload {
+export interface TestCase {
+  id: number
   iid: number
+  title: string
+  priority?: TestCasePriority
+  test_type?: string
+  requirement_id?: string
+  pre_conditions: string[]
+  steps: TestStep[]
   result: TestCaseStatus
-  report: string
+  web_url?: string
+  linked_bugs?: Record<string, string>[]
+  project_name?: string
+}
+
+export interface TestCaseCreate {
+  title: string
+  priority: string
+  test_type: string
+  pre_conditions: string
+  steps: Array<{ action: string; expected: string }>
+  requirement_iid?: number | null
+  product_id?: string | null
+  org_id?: string | null
+}
+
+export interface ExecutionReport {
+  result?: string | null
+  executor?: string
+  comment?: string | null
+  environment?: string | null
 }
 
 export interface TestSummary {
   total: number
   passed: number
   failed: number
+  blocked?: number
   pending: number
-  pass_rate: number
+  pass_rate?: number
 }
 
 // =============================================================================
@@ -107,28 +128,70 @@ export interface TestSummary {
 export type IssueType = 'bug' | 'requirement' | 'task'
 export type IssueState = 'opened' | 'closed' | 'merged'
 
+export interface RequirementSummary {
+  iid: number
+  title: string
+  state: string
+  review_state: string
+}
+
+export interface RequirementDetail {
+  id: number
+  iid: number
+  title: string
+  description?: string | null
+  state: string
+  review_state: string
+  test_cases: TestCase[]
+}
+
+export interface BugCreate {
+  title: string
+  severity: string
+  priority?: string
+  category: string
+  source: string
+  province: string
+  environment: string
+  steps_to_repro: string
+  actual_result: string
+  expected_result: string
+  linked_case_iid: number
+  linked_req_iid?: number | null
+}
+
 export interface BugDetail {
   iid: number
   title: string
-  description: string
-  state: IssueState
-  severity: 'critical' | 'major' | 'minor' | 'trivial'
-  assignee?: string
-  project_id: number
+  state: string
   created_at: string
-  updated_at: string
+  author: string
+  web_url: string
   labels: string[]
 }
 
-export interface Requirement {
+export interface TraceabilityMRItem {
   iid: number
   title: string
-  description: string
-  state: IssueState
-  milestone?: string
-  assignee?: string
-  project_id: number
+  state: string
+  web_url: string
   created_at: string
+}
+
+export interface TraceabilityCommitItem {
+  id: string
+  short_id: string
+  title: string
+  created_at: string
+  web_url: string
+}
+
+export interface TraceabilityMatrixItem {
+  requirement: RequirementSummary
+  test_cases: TestCase[]
+  defects: BugDetail[]
+  merge_requests: TraceabilityMRItem[]
+  commits: TraceabilityCommitItem[]
 }
 
 // =============================================================================
@@ -163,30 +226,69 @@ export interface TicketSubmitPayload {
 // Traceability 雷达
 // =============================================================================
 
-export interface RadarMetric {
-  name: string
-  value: number
-  max: number
-  unit?: string
+export interface RadarMeta {
+  project_id?: number | null
+  days: number
+  total_merged_mrs: number
+}
+
+export interface RadarVSM {
+  avg_wait_minutes: number
+  avg_draft_minutes: number
+  flow_efficiency?: number | null
+}
+
+export interface RadarCollaboration {
+  rubber_stamp_rate: number
+  effective_review_rate: number
+  avg_effective_comments: number
+}
+
+export interface RadarSecurity {
+  critical: number
+  high: number
+  medium: number
+  low: number
+  total_active: number
+}
+
+export interface VSMTimelineItem {
+  id: string
+  title: string
+  draft_minutes?: number | null
+  wait_minutes?: number | null
+  review_minutes?: number | null
+  total_minutes?: number | null
+  rubber_stamp: boolean
+  effective_comments: number
+}
+
+export interface RadarELOC {
+  labels: string[]
+  values: number[]
 }
 
 export interface RadarResponse {
-  project_id: number
-  days: number
-  flow_efficiency: RadarMetric      // 流动效率
-  review_quality: RadarMetric       // 协同评审率
-  security_posture: RadarMetric     // 安全态势
-  eloc: RadarMetric                 // 代码 ELOC
-  timeline: RadarDetailItem[]       // 价值流 Timeline
+  meta: RadarMeta
+  vsm: RadarVSM
+  collaboration: RadarCollaboration
+  security: RadarSecurity
+  eloc: RadarELOC
+  vsm_timeline: VSMTimelineItem[]
 }
 
 export interface RadarDetailItem {
-  metric_type: string
+  id: string | number
   title: string
-  value: string | number
-  timestamp: string
-  actor?: string
-  project_name?: string
+  author?: string | null
+  value?: string | number | null
+  url?: string | null
+  timestamp?: string | null
+}
+
+export interface RadarDetailResponse {
+  type: string
+  items: RadarDetailItem[]
 }
 
 // =============================================================================
@@ -244,4 +346,20 @@ export interface IterationBoard {
   milestone: string
   project_id: number
   columns: Record<BoardColumn, BoardItem[]>
+}
+
+// =============================================================================
+// 主数据项目和产品 (MDM)
+// =============================================================================
+
+export interface MDMProjectProduct {
+  product_id: string
+  product_name: string
+}
+
+export interface MDMProject {
+  project_id: string
+  project_name: string
+  lead_repo_id: number | null
+  products: MDMProjectProduct[]
 }

@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+- **Vue 3 前端重构阶段二：登录与鉴权体系 SFC 完全迁移 (2026-06-20)**:
+
+  - **登录页 SFC 迁移**: `LoginView.vue` 实现密码登录（`URLSearchParams` 表单体）与 GitLab OAuth 跳转两种方式，错误信息模糊化符合等保三级要求。
+  - **OAuth 回调处理**: `LoginCallback.vue` 截获后端重定向携带的 `access_token` query 参数，写入 Auth Store 后跳转至目标页。
+  - **主壳与路由守卫**: `DashboardLayout.vue` 实现权限动态菜单过滤；`router/index.ts` 落地三段 `beforeEach` 守卫（未登录跳转、已登录回跳首页、`meta.permissions` OR 语义权限校验）。
+  - **JWT 状态机**: `store/auth.ts` Pinia Composition Store 完整实现 JWT 解析、RBAC 判定、数据隔离作用域（department/location）及 `setToken`/`logout` 行为方法。
+  - **Bug 修复**: 修复 import 语句断行错误与 `\3c` HTML 实体泄漏至 Vue 源码问题；补充 `api.d.ts` 缺失的 `AuthToken` 接口；落地 axios 合法豁免合约注释。commits: `d82e589`, `997c508`。
+
 - **Vue 3 前端重构阶段一：工程脚手架与规范初始化 (2026-06-20)**:
 
   - **Vue 3 SFC 脚手架底座**: 在 `devops_portal/frontend/` 建立了以 Vue 3 + Vite + TypeScript + Naive UI + ECharts 5 为技术栈的前端开发底座，支持 Composition API（`<script setup>`）及严格类型校验。

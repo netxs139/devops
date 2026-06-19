@@ -1,0 +1,1 @@
+import{k as o,W as n,X as t,N as s}from"./vue-vendor-8n0E5KRP.js";const a={style:{padding:"32px","text-align":"center",color:"#6B7280"}},i=o({__name:"HomeView",setup(r){return(l,e)=>(s(),n("div",a,[...e[0]||(e[0]=[t("h2",null,"HomeView",-1),t("p",null,"施工中...",-1)])]))}});export{i as default};

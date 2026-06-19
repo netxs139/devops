@@ -12,18 +12,15 @@ import pytest
 
 
 def test_portal_homepage_unauthenticated(client):
-    """测试未认证用户访问门户首页时显示登录模态框。"""
+    """测试未认证用户访问门户首页返回SPA挂载容器。"""
     response = client.get("/")
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
 
-    # 验证HTML包含登录模态框的关键元素
+    # 验证HTML包含Vue 3挂载容器和标题
     html_content = response.text
-    assert "loginModal" in html_content  # 登录模态框ID
-    assert "请登录以继续" in html_content  # 登录提示文本
-    assert "login-email" in html_content  # 邮箱输入框
-    assert "login-password" in html_content  # 密码输入框
-    assert "login-submit" in html_content  # 登录按钮
+    assert 'id="app"' in html_content or "id='app'" in html_content
+    assert "DevOps" in html_content
 
 
 def test_login_e2e_flow(client, db_session):
@@ -188,16 +185,9 @@ def test_login_and_frontend_flow(client, db_session):
     response = client.get("/", headers=headers)
     assert response.status_code == 200
 
-    # 验证页面是否包含用户界面元素（而不是登录模态框）
+    # 验证页面返回了Vue 3 SPA入口
     html_content = response.text
-    # 登录后应该显示用户侧边栏信息
-    assert "sys-user-profile" in html_content  # 用户资料区域
-    assert "user-display-name" in html_content  # 用户名显示
-
-    # 验证登录模态框应该被隐藏（通过检查u-hide类）
-    # 注意：前端JS控制显示/隐藏，但HTML结构仍然存在
-    assert "loginModal" in html_content  # 模态框仍然在HTML中
-    # 可以检查是否包含u-hide类，但取决于JS执行状态
+    assert 'id="app"' in html_content or "id='app'" in html_content
 
 
 if __name__ == "__main__":
