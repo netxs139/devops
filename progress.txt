@@ -1,7 +1,7 @@
 # DevOps 平台建设进度跟踪 (Progress Tracker)
 
 ## 🎯 当前重点 (Current Focus)
-- **核心重点**: 基于 Streamlit AppTest 落地 Dashboard 无头测试 (E2E)
+- **核心重点**: 生成API路由清单.MD
 - **状态**: 🟢 空闲
 
 ## 🛠️ 任务清单 (Tasks)
