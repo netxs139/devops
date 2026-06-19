@@ -1,0 +1,1 @@
+import{k as a,U as n,V as t,L as o}from"./vue-vendor-D3bU9dKo.js";const r={style:{padding:"32px","text-align":"center",color:"#6B7280"}},d=a({__name:"RadarView",setup(s){return(l,e)=>(o(),n("div",r,[...e[0]||(e[0]=[t("h2",null,"RadarView",-1),t("p",null,"施工中...",-1)])]))}});export{d as default};

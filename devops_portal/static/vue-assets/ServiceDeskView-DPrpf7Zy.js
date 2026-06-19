@@ -1,0 +1,1 @@
+import{k as n,U as o,V as t,L as s}from"./vue-vendor-D3bU9dKo.js";const r={style:{padding:"32px","text-align":"center",color:"#6B7280"}},c=n({__name:"ServiceDeskView",setup(a){return(i,e)=>(s(),o("div",r,[...e[0]||(e[0]=[t("h2",null,"ServiceDeskView",-1),t("p",null,"施工中...",-1)])]))}});export{c as default};

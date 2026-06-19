@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+- **Vue 3 前端重构阶段一：工程脚手架与规范初始化 (2026-06-20)**:
+
+  - **Vue 3 SFC 脚手架底座**: 在 `devops_portal/frontend/` 建立了以 Vue 3 + Vite + TypeScript + Naive UI + ECharts 5 为技术栈的前端开发底座，支持 Composition API（`<script setup>`）及严格类型校验。
+  - **等保三级安全防线**: 配置 `index.html` 强制 CSP 声明与 `X-Frame-Options: SAMEORIGIN` 阻断点击劫持；启用 Flat ESLint 配置中的 `vue/no-v-html` 以禁止 `v-html` 输出，防范 XSS 注入。
+  - **网络与权限链路规范**: 统一封装 `request.ts`，自动处理 JWT 校验与每次请求重新生成并随 Header 携带的随机 `Correlation-ID` 以追踪全链路日志；实现 `v-permission` 自定义指令物理移除无权限 DOM 以阻止展示层伪造。
+  - **Vite 自动化集成构建**: 配置 `justfile` 新增 `frontend-dev/build/lint` 全套工作流命令，支持将构建的静态资源与 HTML 模板自动输出并挂载到后端的静态托管层 `devops_portal/static/`。
+
 - **CI 流水线原生化与高阶安全审计重构 (2026-06-15)**:
 
   - **原生并行与缓存加速**: 重构 `.gitlab-ci.yml`，彻底剥离 `gatekeeper.py` 调度，引入 Stage 原生并行。设定 `${CI_COMMIT_REF_SLUG}` 分支级全局缓存，并全面绑定内网 Nexus (`$PIP_INDEX_URL`, `$NEXUS_DOCKER_REGISTRY`, `$NPM_CONFIG_REGISTRY`) 实现构建提速。

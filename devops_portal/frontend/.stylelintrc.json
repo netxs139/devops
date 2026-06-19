@@ -1,0 +1,20 @@
+{
+  "extends": ["stylelint-config-standard"],
+  "overrides": [
+    {
+      "files": ["**/*.vue"],
+      "customSyntax": "postcss-html"
+    }
+  ],
+  "rules": {
+    "color-no-invalid-hex": true,
+    "unit-no-unknown": true,
+    "color-named": "never",
+    "selector-class-pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+    "declaration-block-single-line-max-declarations": 1,
+    "selector-pseudo-class-no-unknown": [true, {
+      "ignorePseudoClasses": ["deep", "global", "slotted"]
+    }]
+  },
+  "ignoreFiles": ["../static/vue-assets/**", "node_modules/**"]
+}

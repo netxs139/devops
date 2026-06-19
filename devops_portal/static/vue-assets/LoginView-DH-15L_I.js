@@ -1,0 +1,1 @@
+import{k as t,U as o,V as n,L as s}from"./vue-vendor-D3bU9dKo.js";const a={style:{padding:"32px","text-align":"center",color:"#6B7280"}},p=t({__name:"LoginView",setup(r){return(i,e)=>(s(),o("div",a,[...e[0]||(e[0]=[n("h2",null,"LoginView",-1),n("p",null,"施工中...",-1)])]))}});export{p as default};

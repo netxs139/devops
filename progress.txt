@@ -1,13 +1,15 @@
 # DevOps 平台建设进度跟踪 (Progress Tracker)
 
 ## 🎯 当前重点 (Current Focus)
-- **核心重点**: 基于 Streamlit AppTest 落地 Dashboard 无头测试 (E2E)
+- **核心重点**: 🟢 空闲
 - **状态**: 🟢 空闲
 
 ## 🛠️ 任务清单 (Tasks)
 
 1. 探索 Playwright 真实浏览器 E2E 方案 ⏳ 待实现
 ## 📋 最近完成 (Recently Completed)
+
+1. [2026-06-20] **前端重构阶段一：工程脚手架与规范初始化**: 搭建 Vue 3 + Vite + TS 开发底座，通过 Flat ESLint + Stylelint 建立工程规训，完成 static/vue-assets 隔离构建制品集成，并落地 CSP 及 XSS 防御审查。
 
 1. [2026-06-15] **流水线原生化与安全审计重构**: 完成 `.gitlab-ci.yml` 的深度重构，解耦原生 Stage，集成 Nexus 私服，落地 Trivy 与 CycloneDX SBOM 扫描并导出标准日志与指标制品。
 

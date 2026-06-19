@@ -100,7 +100,7 @@ init-dev:
 # =============================================================================
 
 # [MANDATORY] 全量校验：Lint -> TypeCheck -> Imports -> Docs -> SAST -> Test + Cov
-verify: lint typecheck check-imports docs-verify scan-sast
+verify: lint typecheck frontend-lint check-imports docs-verify scan-sast
     @echo "Running tests with coverage audit (Target: 80%)..."
     {{EXEC_CMD}} pytest tests/unit/ tests/integration/ --cov=devops_collector --cov=devops_portal --cov-report=term-missing --cov-fail-under=70
 
@@ -112,10 +112,26 @@ lint-py:
 	@echo "Running Ruff check..."
 	uv run ruff check devops_collector/ devops_portal/ tests/ scripts/
 
-# 仅检查 JS 代码
+# 仅检查旧版 JS 代码 (Native Web Components)
 lint-js:
-	@echo "Running Oxlint check..."
+	@echo "Running Oxlint check (legacy static/js)..."
 	./node_modules/.bin/oxlint devops_portal/static/js --ignore-pattern "**/vendor/**"
+
+# [前端] Vue 3 前端 ESLint + TS 类型检查
+frontend-lint:
+	@echo "Running Vue 3 frontend lint & typecheck..."
+	cd devops_portal/frontend && npm run lint && npm run typecheck
+
+# [前端] 启动 Vite 热更新开发服务器（联调 FastAPI)
+frontend-dev:
+	@echo "🚀 Starting Vue 3 dev server (Vite Proxy → FastAPI:8000)..."
+	cd devops_portal/frontend && npm run dev
+
+# [前端] 构建并输出产物到 devops_portal/static
+frontend-build:
+	@echo "🏗️ Building Vue 3 frontend → devops_portal/static/vue-assets..."
+	cd devops_portal/frontend && npm run build
+	@echo "✅ Frontend build complete. Static assets updated."
 
 # 代码格式化
 fmt:

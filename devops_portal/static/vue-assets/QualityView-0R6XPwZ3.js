@@ -1,0 +1,1 @@
+import{k as n,U as o,V as t,L as a}from"./vue-vendor-D3bU9dKo.js";const l={style:{padding:"32px","text-align":"center",color:"#6B7280"}},p=n({__name:"QualityView",setup(s){return(r,e)=>(a(),o("div",l,[...e[0]||(e[0]=[t("h2",null,"QualityView",-1),t("p",null,"施工中...",-1)])]))}});export{p as default};
