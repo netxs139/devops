@@ -348,6 +348,18 @@ export interface IterationBoard {
   columns: Record<BoardColumn, BoardItem[]>
 }
 
+/**
+ * 团队心情打点条目（前端 localStorage 本地存储，非后端 API Schema）
+ * key 格式：pulse_<date>_<userId>
+ */
+export interface PulseEntry {
+  userId: string
+  emoji: string   // 对应 EmojiOption.key
+  date: string    // 'YYYY-MM-DD'
+  ts: number      // Unix timestamp ms
+}
+
+
 // =============================================================================
 // 主数据项目和产品 (MDM)
 // =============================================================================
