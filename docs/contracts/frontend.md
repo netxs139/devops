@@ -180,6 +180,7 @@ ______________________________________________________________________
 1. **类型定义唯一入口**：所有前后端共享类型定义于 `src/types/api.d.ts`，与后端 `devops_portal/schemas.py` 字段名**完全镜像对齐**（`snake_case`）
 1. **禁止字面量硬编码**：严禁在组件/服务层直接硬编码 API 响应结构
 1. **HTTP 客户端统一入口**：所有 API 调用必须通过 `src/utils/request.ts` 导出的 `http` 对象，严禁直接使用 `axios` 或 `fetch`
+   - **合法豁免端点**：`POST /auth/login`。该接口是 Bearer Token 的唯一来源，调用时尚无 token 可注入。`LoginView.vue` 允许直接使用 `axios` 并须在导入处注明 `[CONTRACT EXEMPTION]` 标注。
 1. **响应类型声明**：调用 API 时必须声明返回类型泛型：`http.get<TestSummary>('/test-summary')`
 
 ______________________________________________________________________
