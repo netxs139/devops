@@ -4,12 +4,8 @@
  * @description 主应用布局：侧边导航 + 顶部栏 + 内容区
  * 数据隔离作用域展示：顶部右侧显示当前用户的 department / location
  */
-import { computed, h }
-
- from 'vue'
-import { RouterView, useRouter }
-
- from 'vue-router'
+import { computed, h } from 'vue'
+import { RouterView, useRouter } from 'vue-router'
 import {
   NLayout,
   NLayoutSider,
@@ -23,15 +19,9 @@ import {
   NBadge,
   NButton,
   NText,
-}
-
- from 'naive-ui'
-import type { MenuOption }
-
- from 'naive-ui'
-import { useAuthStore }
-
- from '@/store/auth'
+} from 'naive-ui'
+import type { MenuOption } from 'naive-ui'
+import { useAuthStore } from '@/store/auth'
 import { useNotificationStore } from '@/store/notification'
 
 const router = useRouter()
@@ -72,12 +62,11 @@ function handleUserAction(key: string): void {
     router.push('/login')
   }
 }
-
 </script>
 
 <template>
   <NLayout has-sider style="height: 100vh;">
-    \3c !-- 侧边栏 -->
+    <!-- 侧边栏 -->
     <NLayoutSider
       bordered
       collapse-mode="width"
@@ -86,7 +75,7 @@ function handleUserAction(key: string): void {
       show-trigger
       style="background: var(--color-bg-card);"
     >
-      \3c !-- Logo 区域 -->
+      <!-- Logo 区域 -->
       <div class="logo-area">
         <div class="logo-icon">D</div>
         <NText strong class="logo-text">DevOps Portal</NText>
@@ -100,42 +89,37 @@ function handleUserAction(key: string): void {
     </NLayoutSider>
 
     <NLayout>
-      \3c !-- 顶部栏 -->
+      <!-- 顶部栏 -->
       <NLayoutHeader bordered class="header">
         <NSpace align="center" justify="end" style="height: 100%; padding: 0 24px;">
-          \3c !-- 数据隔离作用域标签 -->
+          <!-- 数据隔离作用域标签 -->
           <NTag v-if="user?.department" type="info" size="small">
             {{ user.department }}
-
           </NTag>
           <NTag v-if="user?.location" size="small">
             {{ user.location }}
-
           </NTag>
 
-          \3c !-- 通知 -->
+          <!-- 通知 -->
           <NBadge :value="notifyStore.unreadCount" :max="99">
             <NButton quaternary circle size="small">
               <template #icon>🔔</template>
             </NButton>
           </NBadge>
 
-          \3c !-- 用户头像 -->
+          <!-- 用户头像 -->
           <NDropdown :options="userDropdownOptions" @select="handleUserAction">
             <NSpace align="center" style="cursor: pointer;">
               <NAvatar round size="small" style="background: var(--color-primary); color: #fff;">
                 {{ user?.username?.charAt(0)?.toUpperCase() ?? 'U' }}
-
               </NAvatar>
-              <NText>{{ user?.username }}
-
-</NText>
+              <NText>{{ user?.username }}</NText>
             </NSpace>
           </NDropdown>
         </NSpace>
       </NLayoutHeader>
 
-      \3c !-- 内容区 -->
+      <!-- 内容区 -->
       <NLayoutContent
         content-style="padding: 24px; background: var(--color-bg-base);"
         :native-scrollbar="false"
@@ -146,7 +130,7 @@ function handleUserAction(key: string): void {
   </NLayout>
 </template>
 
-\3c style scoped>
+<style scoped>
 .logo-area {
   display: flex;
   align-items: center;
@@ -182,4 +166,4 @@ function handleUserAction(key: string): void {
   display: flex;
   align-items: center;
 }
-\3c /style>
+</style>

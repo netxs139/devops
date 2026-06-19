@@ -4,18 +4,10 @@
  * 后端重定向到 /login/callback?access_token=xxx
  * 本组件截获 query 参数，写入 Auth Store，然后跳转目标页
  */
-import { onMounted }
-
- from 'vue'
-import { useRoute, useRouter }
-
- from 'vue-router'
-import { NSpin }
-
- from 'naive-ui'
-import { useAuthStore }
-
- from '@/store/auth'
+import { onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { NSpin } from 'naive-ui'
+import { useAuthStore } from '@/store/auth'
 import { useNotificationStore } from '@/store/notification'
 
 const route = useRoute()

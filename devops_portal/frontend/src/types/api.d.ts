@@ -38,6 +38,12 @@ export interface BusinessException {
 // 认证与权限
 // =============================================================================
 
+/** POST /auth/login 返回的 OAuth2 Bearer Token 响应体 */
+export interface AuthToken {
+  access_token: string
+  token_type: string   // 固定为 "bearer"
+}
+
 /** JWT Payload 解析结果 */
 export interface JwtPayload {
   sub: string             // 用户 email
