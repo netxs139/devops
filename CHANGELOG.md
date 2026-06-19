@@ -4,11 +4,24 @@
 
 ## [Unreleased]
 
-- **Vue 3 前端重构：QA Quality Domain SFC 完全迁移 (2026-06-20)**:
+- **Vue 3 前端重构阶段四：迭代看板（Board）与团队心情 Pulse (2026-06-20)**:
+
+  - **HTML5 原生 Drag/Drop 看板**: `Board.vue` 实现 4 列看板（待办/进行中/测试中/已完成），支持跨列原生拖拽，WIP 超限动态闪烁警告，优先级彩条（P0=红/P1=橙/P2=蓝），Story Points 及 Assignee Avatar Chip。
+
+  - **团队心情反馈 Pulse**: `Pulse.vue` 提供 5 种 Emoji 心情投票（🚀🔥😊😐😔），单次点击投票、再次点击撤回，localStorage 持久化（key: `pulse_<date>_<userId>`），弹跳动效，今日分布进度条，Mock 历史数据可视化。
+
+  - **BoardView 页面组装**: Sprint 信息栏（名称/目标/日期区间）、线性进度条（完成率/剩余天数/待完成SP 三联统计），Board 主区 + Pulse 右侧面板响应式布局（>1280px 双栏，移动端堆叠）。
+
+  - **类型补全**: `api.d.ts` 新增 `PulseEntry` 接口（localStorage 专用，含 `userId/emoji/date/ts` 字段）。
+
+  - **工程门禁**: typecheck/ESLint 100% 通过，`just frontend-build` 2278 模块编译成功（`BoardView-CMIPCWia.js 10.12 kB`）。commit: `6042b9f`。
 
   - **测试用例管理控制台**: `TestCaseView.vue` 完整实现用例总览、多维度筛选（按状态、优先级、关键字）、用例新建入口及侧边执行控制台抽屉。
+
   - **用例详情与执行控制台**: `TestCaseDetail.vue` 与 `TestCaseForm.vue` 补全用例执行与录入组件，打通关联项目 GitLab ID 解析逻辑；`ProductSelector.vue` 提供按产品与组织部门的双轴上下文联动。
+
   - **Traceability 雷达与 VSM 看板**: `RadarView.vue` 支持按项目/天数筛选、度量指标卡片（平均评审等待时间、秒批率、漏洞数）下钻明细展示；`Radar.vue` 配合 ECharts 5 渲染协作雷达及 VSM 流水线耗时时序图。
+
   - **类型与规范治理**: 补全 `api.d.ts` 中的 `TestCase`, `TestSummary`, `RadarResponse` 等核心接口契约；修复所有 Vue 3 SFC 文件的 TS 类型报错与 ESLint/Stylelint 违规，成功通过 `just frontend-build` 生产环境制品打包。commit: `6d42799`。
 
 - **Vue 3 前端重构阶段二：登录与鉴权体系 SFC 完全迁移 (2026-06-20)**:
