@@ -53,7 +53,7 @@
 1. **离场审计与交接协议 (Exit & Handover Protocol) [MANDATORY]**: 凡用户宣告“下班”、“任务结束”或会话离场前，必须强制执行以下动作：
    - **审计登记**：按照 `docs/history/session-history.log` 规范，置顶登记本次会话的 Session ID、耗时及核心交付物。
    - **教训归档**：主动回顾/扫描本次 Session 中由于框架限制、脏数据或依赖引发的终端报错与技术阻断，提取隐蔽的非直觉教训并倒序追加至 `docs/history/lessons-learned.log` 主表。
-   - **物理清理**：执行 `just clean` 移除临时文件；若涉及模型变更，执行 `just docs-verify`。
+   - **物理清理与容灾托底**：执行 `just clean` 移除临时文件，并强制执行 `just checkpoint` 生成离场安全物理快照；若涉及模型变更，执行 `just docs-verify`。
    - **SSOT 对齐**：同步更新 `progress.txt` (当前看板) 与 `CHANGELOG.md` (版本履历)。
 
 ## 4. 架构契约原则 (Architectural Contracts) [AI-NATIVE]
