@@ -8,6 +8,8 @@
 
 | Timestamp | Domain | Phenomenon | Root Cause | Universal Rule (The Defense) |
 | :--- | :--- | :--- | :--- | :--- |
+| 2026-06-20 | Frontend/Vue | ESLint 基础 `no-unused-vars` 规则在 Vue SFC 块中与 `@typescript-eslint/no-unused-vars` 冲突导致类型导入被误判 | 基础规则不支持解析 Vue SFC 中的 ts 声明块。 | **ESLint Vue 块类型豁免律**: 在 Flat Config 中，必须专门为 `**/*.vue` 块关闭基础的 `no-unused-vars` 并启用 `@typescript-eslint/no-unused-vars`，同时配置 `argsIgnorePattern: "^_"`。 |
+| 2026-06-20 | Frontend/Vue | Naive UI `<NCard>` 与原生 `<Card>` 混用导致 Vite 编译报 `Invalid end tag` 崩溃 | 模板中存在组件标签与闭合标签不一致的情况，Vue 编译器无法自愈直接抛错。 | **模板闭合对称性物理嗅探**: Vue 模板重构时严禁纯文本替换而不对闭合标签进行成对匹配，必须保证组件标签前后对称存在。 |
 | 2026-06-15 | Security/CI | `detect-secrets` 拦截了 `.gitlab-ci.yml` 中集成测试所需的模拟数据库弱口令 (如 `POSTGRES_PASSWORD: postgres`)。 | `detect-secrets` 的默认扫描器不仅扫描源码，也会扫描 IaC 和 CI 配置文件，且对常见词缀 (如 password) 极其敏感。 | **测试机密白名单豁免律 (Test Secret Allowlisting)**: 1. 在 CI 配置文件或 docker-compose 中定义必然需要的模拟环境密码时，必须在行尾追加 `# pragma: allowlist secret`，优雅放行本地扫描。2. 严禁为了绕过扫描而在配置中刻意写错变量名。 |
 | 2026-06-08 | [justfile/Env] | 运行 `just progress-focus` 报 `ModuleNotFoundError: No module named 'scripts'` 崩溃 | 宿主机直接调用宿主虚拟环境的 entry-point 脚本时，默认搜索路径未包含当前项目根目录，导致无法解析顶级模块。 | **脚本执行路径依赖防御 (Explicit PYTHONPATH Injection)**：在 `justfile` 中执行依赖本地目录的 standalone 脚本命令时，应当显式将 PYTHONPATH 注入（如 `PYTHONPATH=. uv run ...`）以确保在任何工作目录下执行均能正确寻址。`[Codified into Skill: engineering-rigor-arbiter at 2026-06-08]` |
 | 2026-06-08 | [Env/Permission] | 执行 `just clean` 时由于容器生成的 `__pycache__` 权限为 root 导致清理指令报 Permission Denied 中断 | 挂载卷中由容器内 root 用户动态生成的 Python 缓存文件，在宿主机无写权限，导致宿主机 `find -delete` 发生物理阻断。 | **清场命令容错与提权归还原则**：在 `justfile` 中对于 `clean` 等清场指令必须做好容错（如 `|| true` 或屏蔽 stderr），避免因非业务缓存文件清理失败导致流程死锁。对于硬性权限冲突，必须通过容器提权执行 `chown` 重置所有权。`[Codified into Skill: engineering-rigor-arbiter at 2026-06-08]` |

@@ -4,7 +4,21 @@
 
 ## [Unreleased]
 
-- **Vue 3 前端重构阶段四：迭代看板（Board）与团队心情 Pulse (2026-06-20)**:
+- **Vue 3 前端重构阶段五：服务台域 SFC + 手动容灾工具 (2026-06-20)**:
+
+  - **ServiceDeskView.vue**: 双 Tab 工单列表（我的工单/全量反馈），3 张统计 NStatistic 卡片（累计/待处理/已解决），状态点徽章（CSS `::before` 彩点 + 脉冲光晕），工单行内状态流转按钮（待处理→处理中→解决→关闭 四段 PATCH），驳回 Modal（拉取 `/service-desk/track/{id}` 获取 gitlab_issue_iid → POST `/service-desk/tickets/{iid}/reject`），视图切换（列表 ↔ 表单）。
+
+  - **TicketForm.vue**: 三层 MDM 联动面板（业务产品 → 归属项目 → 受理仓库 `lead_repo_id` 实时解析），Bug/需求双段式切换（iOS-style Segmented Control），Naive UI `NUpload` 自定义上传（`UploadCustomRequestOptions` 原生类型对齐，`file.file` null 守卫），Query 参数预填（从 `TestCaseView.vue` 缺陷跳转自动回填标题/步骤/关联用例）。
+
+  - **TestCaseView.vue**: 打通 `@report-bug` handler，通过 `router.push` 携带 `type/title/steps/ref_case_iid/product_id` 跳转至服务台自动填充创建工单。
+
+  - **容灾工具**: `.agent/scripts/recovery.py` 实现 `save`（保存 `git diff` 补丁、`progress.txt`、`task.md`）与 `restore`（重放补丁还原工作区）；`justfile` 新增 `checkpoint` / `recover` 入口。
+
+  - **类型治理**: `api.d.ts` 补全 `TicketStatus`（加入 `'opened'`）、`TicketType`、`Ticket`、`ServiceDeskBugSubmit`、`ServiceDeskRequirementSubmit` 与后端 Pydantic Schema 全字段对齐；ESLint 配置 Vue SFC 块启用 `@typescript-eslint/no-unused-vars`（`argsIgnorePattern: '^_'`），禁用冲突的基础 `no-unused-vars` 规则。
+
+  - **Bug 修复**: `</Card>` → `</NCard>` 模板闭合错误（Vite 编译 `Invalid end tag` 崩溃）；`catch (err: any)` → `catch (err: unknown)` 全面替换。
+
+  - **工程门禁**: ESLint 0 errors，TypeScript 0 errors，`just frontend-build` 3482 modules，`pytest tests/unit/test_portal/test_service_desk_router.py` 8 passed。commit: `feab822`。
 
   - **HTML5 原生 Drag/Drop 看板**: `Board.vue` 实现 4 列看板（待办/进行中/测试中/已完成），支持跨列原生拖拽，WIP 超限动态闪烁警告，优先级彩条（P0=红/P1=橙/P2=蓝），Story Points 及 Assignee Avatar Chip。
 
