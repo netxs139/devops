@@ -4,6 +4,20 @@
 
 ## [Unreleased]
 
+- **Vue 3 前端重构阶段六：分析仪表盘与全地图路由注册 (2026-06-20)**:
+
+  - **HomeView.vue**: 实现全域导航大厅，读取路由元数据 `meta.domain` 对所有可用业务域模块进行自动归类与卡片化展示，支持 hoverable 交互、300ms cubic-bezier 平滑过渡及 Naive UI 动态响应式栅格布局（NGrid 4列自适应）。
+
+  - **QualityView.vue**: 交付质量监控大屏组件，包含 3 张核心度量卡片（同步成功率、审计异常数、数据新鲜度），右侧展示最新审计异常 Alert 告警列表（警告级别 NAlert）。
+
+  - **PlaceholderView.vue**: 新建通用模块占位组件，从路由元数据 `meta.title` 和 `meta.domain` 动态拉取所处业务域和模块名称，显示优雅的“此模块正在建设中...” NEmpty 状态，并提供一键返回导航大厅的交互按钮。
+
+  - **全地图路由注册**: 在 `router/index.ts` 中注册全量 24 模块路由（Index 0 - 23），将各占位页面无缝挂载为 `PlaceholderView`，并将 `QualityView` 和 `RadarView` 正式对齐至底座质量和效能溯源域，同时配置精细的 RBAC `meta.permissions` 校验数组与 `meta.domain` 侧边栏分组元数据。
+
+  - **DashboardLayout.vue**: 重构侧边菜单动态生成逻辑，在 computed `menuOptions` 中根据路由配置和当前用户的权限过滤出可用页面，按 `meta.domain` 进行 Map 分组，构造 `type: 'group'` nested menu 结构进行侧边折叠渲染；同时实现顶部 Header 用户信息 department / location 物理数据作用域展示标签。
+
+  - **工程门禁**: frontend-lint / typecheck / build 全量成功，`just frontend-build` 33s 完成 3487 modules 编译并合并静态制品输出；pytest 398passed。commit: `3dcb1a6`。
+
 - **Vue 3 前端重构阶段五：服务台域 SFC + 手动容灾工具 (2026-06-20)**:
 
   - **ServiceDeskView.vue**: 双 Tab 工单列表（我的工单/全量反馈），3 张统计 NStatistic 卡片（累计/待处理/已解决），状态点徽章（CSS `::before` 彩点 + 脉冲光晕），工单行内状态流转按钮（待处理→处理中→解决→关闭 四段 PATCH），驳回 Modal（拉取 `/service-desk/track/{id}` 获取 gitlab_issue_iid → POST `/service-desk/tickets/{iid}/reject`），视图切换（列表 ↔ 表单）。

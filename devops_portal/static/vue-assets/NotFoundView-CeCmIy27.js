@@ -1,0 +1,1 @@
+import{k as o,N as n,Z as s,_ as t}from"./vue-vendor-Bh_y7Gaq.js";const a={style:{padding:"32px","text-align":"center",color:"#6B7280"}},d=o({__name:"NotFoundView",setup(r){return(l,e)=>(n(),s("div",a,[...e[0]||(e[0]=[t("h2",null,"NotFoundView",-1),t("p",null,"施工中...",-1)])]))}});export{d as default};

@@ -30,21 +30,56 @@ const notifyStore = useNotificationStore()
 
 const user = computed(() => auth.currentUser)
 
-// 侧边导航菜单（根据权限动态过滤）
+// 侧边导航菜单（根据权限与路由配置动态生成，按 Domain 分组）
 const menuOptions = computed<MenuOption[]>(() => {
-  const all: MenuOption[] = [
-    { label: '首页总览', key: '/home', icon: () => h('span', '📊') },
-    { label: '质量监控', key: '/quality', icon: () => h('span', '🛡️'),
-      show: auth.hasPermission('rpt:quality:view') },
-    { label: 'Traceability 雷达', key: '/radar', icon: () => h('span', '📡'),
-      show: auth.hasPermission('rpt:quality:view') },
-    { label: '迭代看板', key: '/board', icon: () => h('span', '🗂️') },
-    { label: '测试用例', key: '/test-cases', icon: () => h('span', '✅') },
-    { label: '服务台', key: '/service-desk', icon: () => h('span', '💁') },
-    { label: '系统管理', key: '/admin', icon: () => h('span', '⚙️'),
-      show: auth.hasPermission('USER:MANAGE') },
-  ]
-  return all.filter((item) => item['show'] !== false)
+  const rootRoute = router.options.routes.find((r) => r.path === '/')
+  const children = rootRoute?.children || []
+
+  // 提取所有需要在菜单显示的路由，并检查权限
+  const visibleRoutes = children.filter((route) => {
+    if (!route.meta?.showInMenu) return false
+    const perms = route.meta.permissions as string[] | undefined
+    if (perms && perms.length > 0) {
+      return perms.some((p) => auth.hasPermission(p))
+    }
+    return true
+  })
+
+  // 按 Domain 分组
+  const domainGroups = new Map<string, MenuOption[]>()
+  for (const route of visibleRoutes) {
+    const domain = (route.meta?.domain as string) || '其他'
+    if (!domainGroups.has(domain)) {
+      domainGroups.set(domain, [])
+    }
+    domainGroups.get(domain)!.push({
+      label: (route.meta?.title as string) || route.name,
+      key: `/${route.path}`,
+      icon: route.meta?.icon ? () => h('span', route.meta!.icon as string) : undefined,
+    })
+  }
+
+  // 构造分组菜单结构
+  const groupedMenu: MenuOption[] = []
+
+  // 首页导航直接提升，不作为折叠组
+  const navGroup = domainGroups.get('导航')
+  if (navGroup) {
+    groupedMenu.push(...navGroup)
+  }
+
+  // 其他组作为 MenuGroup 渲染（这里为了侧边栏清晰，使用 type: 'group' 或者带 children 的节点）
+  for (const [domain, items] of domainGroups.entries()) {
+    if (domain === '导航') continue
+    groupedMenu.push({
+      type: 'group',
+      label: domain,
+      key: `group-${domain}`,
+      children: items,
+    })
+  }
+
+  return groupedMenu
 })
 
 function handleMenuSelect(key: string): void {
