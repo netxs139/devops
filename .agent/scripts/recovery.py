@@ -110,9 +110,22 @@ def restore_checkpoint():
 
     # 1. Verify branch/commit alignment
     current_branch = run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+    current_commit = run_command(["git", "rev-parse", "HEAD"])
+
     if current_branch != metadata["branch"]:
         print(f"Warning: Current branch '{current_branch}' differs from checkpoint branch '{metadata['branch']}'. Switching branch...")
         run_command(["git", "checkout", metadata["branch"]])
+
+    if current_commit != metadata.get("commit"):
+        if "--force" not in sys.argv:
+            print(
+                f"❌ 防呆拦截 (Safety Guard): 当前 Commit ({current_commit[:7]}) 与检查点 Commit ({metadata.get('commit', '')[:7]}) 不匹配！", file=sys.stderr
+            )
+            print("直接恢复可能导致较新的代码被旧的补丁和进度文件覆盖。", file=sys.stderr)
+            print("若您确认要强行时光倒流，请执行: python recovery.py restore --force 或 just recover --force", file=sys.stderr)
+            sys.exit(1)
+        else:
+            print("⚠️ 警告：检测到 --force 参数，正在强制应用跨版本的旧检查点！")
 
     # 2. Restore progress.txt
     if os.path.exists(PROGRESS_BACKUP):

@@ -367,5 +367,5 @@ checkpoint:
     @python3 .agent/scripts/recovery.py save
 
 # 从物理检查点恢复当前 Workspace 进度与 Git 修改
-recover:
-    @python3 .agent/scripts/recovery.py restore
+recover +args="":
+    @python3 .agent/scripts/recovery.py restore {{args}}
