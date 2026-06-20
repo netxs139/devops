@@ -1,0 +1,1 @@
+import{k as t,X as o,Y as n,O as s}from"./vue-vendor-0vFI7OMW.js";const a={style:{padding:"32px","text-align":"center",color:"#6B7280"}},p=t({__name:"AdminView",setup(r){return(i,e)=>(s(),o("div",a,[...e[0]||(e[0]=[n("h2",null,"AdminView",-1),n("p",null,"施工中...",-1)])]))}});export{p as default};

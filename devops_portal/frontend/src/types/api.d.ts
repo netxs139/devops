@@ -198,28 +198,49 @@ export interface TraceabilityMatrixItem {
 // 服务台工单
 // =============================================================================
 
-export type TicketStatus = 'pending' | 'processing' | 'resolved' | 'rejected' | 'closed'
+export type TicketStatus = 'opened' | 'pending' | 'processing' | 'resolved' | 'rejected' | 'closed'
 export type TicketType = 'bug' | 'requirement'
 
 export interface Ticket {
   id: number
   title: string
-  description: string
-  ticket_type: TicketType
+  description?: string
+  issue_type: TicketType
   status: TicketStatus
-  submitter_email: string
-  product_id: number
-  created_at: string
-  updated_at: string
+  origin_dept_id?: number
+  origin_dept_name?: string
+  target_dept_id?: number
+  target_dept_name?: string
+  requester_email?: string
+  gitlab_project_id?: number
   gitlab_issue_iid?: number
+  bug_category?: string
+  req_type?: string
+  created_at: string
+  updated_at?: string
 }
 
-export interface TicketSubmitPayload {
-  product_id: number
+export interface ServiceDeskBugSubmit {
+  title: string
+  severity: string
+  priority?: string
+  province?: string
+  environment: string
+  steps_to_repro: string
+  actual_result: string
+  expected_result: string
+  bug_category?: string
+  attachments?: string[]
+}
+
+export interface ServiceDeskRequirementSubmit {
   title: string
   description: string
-  ticket_type: TicketType
-  attachment_urls?: string[]
+  priority?: string
+  req_type?: string
+  province?: string
+  expected_delivery?: string
+  attachments?: string[]
 }
 
 // =============================================================================

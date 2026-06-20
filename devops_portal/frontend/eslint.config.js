@@ -67,6 +67,8 @@ export default [
       'vue/multi-word-component-names': 'off',   // 允许单词组件名（如 Board.vue）
       'vue/no-v-html': 'error',                  // 防 XSS
       'vue/component-api-style': ['error', ['script-setup']],  // 强制 <script setup>
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'error',
     },
   },

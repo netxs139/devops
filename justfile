@@ -357,3 +357,15 @@ progress-mirror tasks:
 # 归档超过 5 条的已完成任务
 progress-archive:
     @PYTHONPATH=. uv run devops-progress --archive
+
+# =============================================================================
+# 会话容灾自愈 (Recovery & Checkpoint)
+# =============================================================================
+
+# 创建物理检查点并保存当前 Workspace 进度与 Git 修改
+checkpoint:
+    @python3 .agent/scripts/recovery.py save
+
+# 从物理检查点恢复当前 Workspace 进度与 Git 修改
+recover:
+    @python3 .agent/scripts/recovery.py restore

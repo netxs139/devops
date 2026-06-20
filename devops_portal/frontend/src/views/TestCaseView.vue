@@ -4,6 +4,7 @@
  * @description 测试用例管理控制台主视图
  */
 import { ref, onMounted, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   NGrid,
   NGridItem,
@@ -25,6 +26,7 @@ import TestCaseDetail from '@/components/TestCaseDetail.vue'
 import TestCaseForm from '@/components/TestCaseForm.vue'
 
 const message = useMessage()
+const router = useRouter()
 
 // 控制主视图切换: 'list' 列表页, 'create' 新建用例页
 const currentView = ref<'list' | 'create'>('list')
@@ -207,6 +209,20 @@ function handleCaseSaved() {
   loadTestCases()
 }
 
+function handleReportBug(payload: { iid: number; title: string }) {
+  const prodId = scopeType.value === 'product' ? scopeId.value : null
+  router.push({
+    path: '/service-desk',
+    query: {
+      type: 'bug',
+      title: `[测试失败自动生成] ${payload.title}`,
+      steps: `1. 找到测试用例 #${payload.iid}\n2. 执行对应的测试步骤\n3. 观察到实际结果与预期不符`,
+      ref_case_iid: String(payload.iid),
+      product_id: prodId || undefined
+    }
+  })
+}
+
 onMounted(() => {
   loadMdmProjects()
 })
@@ -375,7 +391,7 @@ const priorityOptions = [
           :case-item="selectedCase"
           :project-id="drawerProjectId"
           @executed="handleCaseExecuted"
-          @report-bug="message.info('缺陷提报跳转开发中')"
+          @report-bug="handleReportBug"
         />
         <div v-else style="padding: 40px; text-align: center; color: var(--color-text-secondary);">
           项目上下文缺失，无法执行测试，请检查产品与项目的关联映射关系。
