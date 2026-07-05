@@ -77,6 +77,7 @@ ______________________________________________________________________
 1. **[Type] 过时类型引用**: 禁止在 Python 3.9+ 代码中使用 `from typing import Type, List, Dict`。
 1. **[Hook] 静默抽象钩子**: 在 ABC 基类中定义空的 `pass` 方法必须显式标注 `# noqa: B027`。
 1. **[Logic] 循环内 N+1 查询**: 在处理任务的循环中执行 `session.query().first()` 严禁使用。必须在循环外通过 `in_` 批量拉取数据并建立内存 Map。
+1. **[FastAPI] 隐式路由前缀陷阱**: 所有的 `APIRouter` 必须在实例化时显式声明 `prefix`（例如：`router = APIRouter(prefix="/users")`），**严禁**在 `main.py` 的 `include_router` 中才迟迟声明前缀。此红线旨在确保静态 AST 扫描能够准确定位 API 契约，并防止路由挂载混乱。
 
 ## 2. 核心技术栈 (Technology Stack)
 
