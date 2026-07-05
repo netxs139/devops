@@ -174,9 +174,13 @@ full-gate:
 fast-gate:
     uv run devops-gate --mode fast
 
-# 运行单元测试
-test:
+# 运行单元测试 (全量)
+test-all:
     {{EXEC_CMD}} pytest tests/unit/ -v
+
+# 运行单元测试 (智能增量 - TDD推荐)
+test:
+    {{EXEC_CMD}} pytest tests/unit/ -v --testmon
 
 # 运行集成测试
 test-int:

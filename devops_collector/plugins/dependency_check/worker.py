@@ -49,13 +49,15 @@ class DependencyCheckWorker(BaseWorker):
         self,
         session: Session,
         client: Any = None,
-        report_dir: str = "/var/lib/devops/dependency-reports",
+        report_dir: str | None = None,
         keep_reports: bool = True,
         retention_days: int = 90,
     ):
         """初始化"""
+        from devops_collector.config import settings
+        
         super().__init__(session, client)
-        self.report_base_dir = report_dir
+        self.report_base_dir = report_dir or f"{settings.sys.data_dir}/dependency-reports"
         self.keep_reports = keep_reports
         self.report_retention_days = retention_days
         Path(self.report_base_dir).mkdir(parents=True, exist_ok=True)

@@ -26,7 +26,7 @@ from devops_collector.models.base_models import User, UserCredential
 logger = logging.getLogger(__name__)
 
 # 安全配置使用 settings 统一管理
-SECRET_KEY = settings.auth.secret_key
+SECRET_KEY = settings.auth.secret_key.get_secret_value()
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 auth_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
