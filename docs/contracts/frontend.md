@@ -164,6 +164,17 @@ const props = defineProps({ title: String })
 - **按钮级鉴权**：使用 `v-permission` 指令，无权限时**直接从 DOM 移除**（非 CSS `display:none`）
 - **数据隔离**：组件从 `authStore.dataScopeDepartment` / `authStore.dataScopeLocation` 读取作用域，动态过滤下拉选项或隐藏按钮
 
+### 3.5 性能与内存安全 (Performance & Memory Safety) [MANDATORY]
+
+- **虚拟滚动**：所有可能超过 200 条数据的表格 (`n-data-table`) 与树形组件 (`n-tree`)，必须开启 `virtual-scroll`。
+- **销毁机制**：ECharts 图表实例、定时器 (`setInterval`)、自定义原生事件监听器，必须在 `onBeforeUnmount` 中显式释放，严防内存泄漏。
+- **逻辑抽离**：单个 `.vue` 文件的 `<script setup>` 严禁超过 400 行，复杂业务状态机（如分发链路、License 校验）必须抽离至 `composables/` 中纯 TS 实现。
+- **样式覆盖**：修改 Naive UI 默认样式必须优先使用 `theme-overrides`，严禁滥用 `:deep()` 强行修改底层内置 class。
+
+### 3.6 前端 UX 的异步感知 (UX Asynchronous Awareness)
+
+- **AI 降级适配**：为配合 LLM 降级，前端 Vue 组件的开发规范必须同步更新：对于含有 AI 模块的页面，**绝对禁止**使用全屏 Loading，应采用局部骨架屏 (Skeleton) 或内联加载提示，确保用户在等待期间仍可浏览其他内容。
+
 ______________________________________________________________________
 
 ## 4. 安全开发规范 (Security Laws) [等保三级]
