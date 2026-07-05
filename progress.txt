@@ -1,7 +1,7 @@
 # DevOps 平台建设进度跟踪 (Progress Tracker)
 
 ## 🎯 当前重点 (Current Focus)
-- **核心重点**: Refactor pydantic settings (SecretStr, Annotated, fail-fast) and remove legacy Config layer
+- **核心重点**: A+B+C 全面测试加固与TDD文化建设：补齐前端 Vitest、引入前后端 Schema 契约测试、激活后端 pytest-testmon 提效并修复遗留测试报错
 - **状态**: 🟢 空闲
 
 ## 🛠️ 任务清单 (Tasks)
