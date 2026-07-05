@@ -22,9 +22,9 @@ def get_config() -> dict[str, Any]:
             }
         }
     """
-    from devops_collector.config import Config
+    from devops_collector.config import settings
 
     return {
-        "client": {"url": Config.JENKINS_URL, "token": Config.JENKINS_TOKEN, "user": Config.JENKINS_USER},
-        "worker": {"build_limit": Config.JENKINS_BUILD_SYNC_LIMIT},
+        "client": {"url": settings.jenkins.url, "token": settings.jenkins.token.get_secret_value(), "user": settings.jenkins.user},
+        "worker": {"build_limit": settings.jenkins.build_sync_limit},
     }

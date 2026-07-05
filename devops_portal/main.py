@@ -18,8 +18,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
+import devops_collector.config as config_module
 from devops_collector.auth import auth_router
-from devops_collector.config import Config, settings
+from devops_collector.config import settings
 from devops_collector.core.exceptions import BusinessException
 from devops_portal.dependencies import get_current_user
 from devops_portal.routers import (
@@ -43,9 +44,9 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """管理应用程序生命周期。"""
-    Config.http_client = httpx.AsyncClient(timeout=settings.client.timeout)
+    config_module.http_client = httpx.AsyncClient(timeout=settings.client.timeout)
     yield
-    await Config.http_client.aclose()
+    await config_module.http_client.aclose()
 
 
 app = FastAPI(lifespan=lifespan)

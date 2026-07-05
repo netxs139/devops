@@ -24,12 +24,16 @@ class Command(BaseCommand):
 
         # 1. 配置检查
         self.stdout.write(f"   URL: {settings.zentao.url}\n")
-        self.stdout.write(f"   Token: {settings.zentao.token[:5]}***\n")
+        self.stdout.write(f"   Token: {settings.zentao.token.get_secret_value()[:5]}***\n")
 
         # 2. API 连通性
         def check_api():
             # 针对不同版本的禅道尝试不同的 Header
-            token_headers = [{"Token": settings.zentao.token}, {"x-zentao-token": settings.zentao.token}, {"Authorization": f"Bearer {settings.zentao.token}"}]
+            token_headers = [
+                {"Token": settings.zentao.token.get_secret_value()},
+                {"x-zentao-token": settings.zentao.token.get_secret_value()},
+                {"Authorization": f"Bearer {settings.zentao.token.get_secret_value()}"},
+            ]
 
             last_err = None
             for h in token_headers:

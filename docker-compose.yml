@@ -1,3 +1,8 @@
+# DDAP（DevOps 平台）应用容器
+# 依赖共享基础设施（Traefik + PostgreSQL + RabbitMQ）：
+#   docker compose -f ../amdp/docker-compose.infra.yml up -d
+#   docker compose --profile core up -d
+
 services:
   # 1. 后端 API 服务 (FastAPI + Test Hub)
   api:
@@ -14,11 +19,6 @@ services:
       - ./persistence_data:/app/data
     env_file:
       - .env
-    depends_on:
-      db:
-        condition: service_healthy
-      mq:
-        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "nc", "-z", "localhost", "8000" ]
@@ -29,13 +29,16 @@ services:
     command: uv run uvicorn devops_portal.main:app --host 0.0.0.0 --port 8000
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=PathPrefix(`/api`) || PathPrefix(`/docs`) || PathPrefix(`/openapi.json`)"
-      - "traefik.http.routers.api.entrypoints=web"
-      - "traefik.http.services.api.loadbalancer.server.port=8000"
-      - "traefik.http.middlewares.api-stripprefix.stripprefix.prefixes=/api"
-      - "traefik.http.routers.api.middlewares=api-stripprefix,ratelimit"
-      - "traefik.http.middlewares.ratelimit.ratelimit.average=100"
-      - "traefik.http.middlewares.ratelimit.ratelimit.burst=50"
+      - "traefik.http.routers.ddap-api.rule=Host(`ddap.tjhq.com`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.ddap-api.entrypoints=websecure"
+      - "traefik.http.routers.ddap-api.tls=true"
+      - "traefik.http.routers.ddap-api.priority=100"
+      - "traefik.http.services.ddap-api.loadbalancer.server.port=8000"
+      - "traefik.http.middlewares.ddap-api-stripprefix.stripprefix.prefixes=/api"
+      - "traefik.http.routers.ddap-api.middlewares=ddap-api-stripprefix"
+    networks:
+      - infra-net
+      - traefik-public
 
   # 2. 数据异步采集 Worker (多实例竞争消费)
   worker:
@@ -47,14 +50,11 @@ services:
     entrypoint: [ "uv", "run", "python", "-m", "devops_collector.worker" ]
     env_file:
       - .env
-    depends_on:
-      db:
-        condition: service_healthy
-      mq:
-        condition: service_healthy
     restart: unless-stopped
     deploy:
       replicas: 2
+    networks:
+      - infra-net
 
   # 3. 任务调度器
   scheduler:
@@ -67,70 +67,11 @@ services:
     entrypoint: [ "uv", "run", "python", "-m", "devops_collector.scheduler" ]
     env_file:
       - .env
-    depends_on:
-      db:
-        condition: service_healthy
-      mq:
-        condition: service_healthy
     restart: unless-stopped
+    networks:
+      - infra-net
 
-  # 4. PostgreSQL 数据库
-  db:
-    image: postgres:15-alpine
-    container_name: devops-db
-    profiles: [ "core" ]
-    env_file:
-      - .env
-    restart: unless-stopped
-    ports:
-      - "5432:5432"
-    tmpfs:
-      - /var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-
-  # 5. RabbitMQ 消息队列
-  mq:
-    image: rabbitmq:3-management-alpine
-    container_name: devops-mq
-    profiles: [ "core" ]
-    env_file:
-      - .env
-    restart: unless-stopped
-    environment:
-      - RABBITMQ_VM_MEMORY_HIGH_WATERMARK_RELATIVE=0.7
-    ports:
-      - "5672:5672"
-      - "15672:15672" # 管理后台
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    healthcheck:
-      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
-      interval: 10s
-      timeout: 10s
-      retries: 60
-
-  # 6. DataHub CLI (独立采集容器)
-  # datahub-cli:
-  #   build:
-  #     context: ./datahub
-  #     dockerfile: Dockerfile
-  #   image: devops-platform-datahub:latest
-  #   container_name: devops-datahub-cli
-  #   # profiles:
-  #   #   - tools
-  #   volumes:
-  #     - .:/app
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-
-  # 7. Decision Hub (Streamlit Dashboard)
+  # 4. Decision Hub (Streamlit Dashboard)
   dashboard:
     image: devops-platform:latest
     container_name: devops-dashboard
@@ -140,9 +81,6 @@ services:
     env_file:
       - .env
     restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
     healthcheck:
       test: [ "CMD", "nc", "-z", "localhost", "8501" ]
       interval: 10s
@@ -152,27 +90,17 @@ services:
     command: uv run streamlit run dashboard/Home.py
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=PathPrefix(`/`)"
-      - "traefik.http.routers.dashboard.entrypoints=web"
-      - "traefik.http.services.dashboard.loadbalancer.server.port=8501"
+      - "traefik.http.routers.ddap-dashboard.rule=Host(`ddap.tjhq.com`)"
+      - "traefik.http.routers.ddap-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.ddap-dashboard.tls=true"
+      - "traefik.http.routers.ddap-dashboard.priority=50"
+      - "traefik.http.services.ddap-dashboard.loadbalancer.server.port=8501"
+    networks:
+      - infra-net
+      - traefik-public
 
-  # 8. Traefik API Gateway (Unified Entrypoint)
-  traefik:
-    image: traefik:v3.0
-    container_name: devops-traefik
-    profiles: [ "core" ]
-    restart: unless-stopped
-    command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-    ports:
-      - "80:80"
-      - "8080:8080"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-
-volumes:
-  postgres_data:
-  rabbitmq_data:
+networks:
+  infra-net:
+    external: true
+  traefik-public:
+    external: true

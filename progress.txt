@@ -1,7 +1,7 @@
 # DevOps 平台建设进度跟踪 (Progress Tracker)
 
 ## 🎯 当前重点 (Current Focus)
-- **核心重点**: 阶段七-平台治理: AdminView.vue + 剩余业务模块占位路由(Dashboard Map Index 1-23全量注册)
+- **核心重点**: Refactor pydantic settings (SecretStr, Annotated, fail-fast) and remove legacy Config layer
 - **状态**: 🟢 空闲
 
 ## 🛠️ 任务清单 (Tasks)

@@ -22,14 +22,14 @@ def get_config() -> dict[str, Any]:
             }
         }
     """
-    from devops_collector.config import Config
+    from devops_collector.config import settings
 
     return {
         "client": {
-            "url": Config.GITLAB_URL,
-            "token": Config.GITLAB_TOKEN,
-            "rate_limit": Config.REQUESTS_PER_SECOND,
-            "verify_ssl": Config.GITLAB_VERIFY_SSL,
+            "url": settings.gitlab.url,
+            "token": settings.gitlab.private_token.get_secret_value(),
+            "rate_limit": settings.ratelimit.requests_per_second,
+            "verify_ssl": settings.gitlab.verify_ssl,
         },
-        "worker": {"enable_deep_analysis": Config.ENABLE_DEEP_ANALYSIS},
+        "worker": {"enable_deep_analysis": settings.analysis.enable_deep_analysis},
     }

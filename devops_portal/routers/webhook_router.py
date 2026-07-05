@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def get_system_gitlab_client() -> GitLabClient:
     """获取使用系统级令牌的 GitLab 客户端。"""
-    return GitLabClient(url=settings.gitlab.url, token=settings.gitlab.private_token)
+    return GitLabClient(url=settings.gitlab.url, token=settings.gitlab.private_token.get_secret_value())
 
 
 async def get_requirement_author(project_id: int, issue_iid: int) -> str | None:

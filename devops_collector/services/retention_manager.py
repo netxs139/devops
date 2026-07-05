@@ -8,7 +8,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import create_engine, delete
 from sqlalchemy.orm import sessionmaker
 
-from devops_collector.config import Config
+from devops_collector.config import settings
 from devops_collector.models.base_models import RawDataStaging
 
 
@@ -48,7 +48,7 @@ class RetentionManager:
         """'''
         if self._session:
             return self._session
-        engine = create_engine(Config.DB_URI)
+        engine = create_engine(settings.database.uri.get_secret_value())
         Session = sessionmaker(bind=engine)
         self._session = Session()
         return self._session
@@ -56,12 +56,12 @@ class RetentionManager:
     def cleanup_raw_data(self) -> int:
         """清理过期的原始采集数据。
 
-        根据 Config.RAW_DATA_RETENTION_DAYS 执行清理。
+        根据 settings.database.raw_data_retention_days 执行清理。
 
         Returns:
             int: 被删除的记录总数。
         """
-        retention_days = Config.RAW_DATA_RETENTION_DAYS
+        retention_days = settings.database.raw_data_retention_days
         if retention_days <= 0:
             logger.info("Retention days is set to 0 or less, skipping cleanup.")
             return 0

@@ -23,9 +23,14 @@ ______________________________________________________________________
 | **图表引擎** | ECharts 5 + vue-echarts | `^5.5.x` |
 | **状态管理** | Pinia（Composition Store 风格） | `^2.2.x` |
 | **客户端路由** | Vue Router 4（History Mode） | `^4.4.x` |
+| **包管理器** | pnpm | `^9.0.x` |
 | **图标库** | @vicons/ionicons5（按需导入） | `^0.12.x` |
 | **HTTP 客户端** | Axios（封装于 `utils/request.ts`） | `^1.7.x` |
 | **代码规范** | ESLint v9 Flat Config + Prettier + Stylelint | 见 §6 |
+| **组合式 API** | VueUse | `^10.9.x` |
+| **日期时间** | Day.js | `^1.11.x` |
+| **请求缓存** | TanStack Query (Vue Query) | `^5.0.x` |
+| **测试框架** | Vitest (单元/组件) + Playwright (E2E) | `^1.0.x` |
 
 ### 1.1 目录布局
 
@@ -56,6 +61,16 @@ devops_portal/frontend/
     ├── views/                  # 页面级视图（路由节点）
     └── components/             # 共享业务组件
 ```
+
+### 1.2 强制依赖约束 (Dependency Mandates)
+
+为防止自造轮子或引入冗余依赖，前端开发过程中必须严格遵循以下约束：
+
+1. **包管理器约束**：必须通过 **pnpm** 进行依赖管理（利用其硬链接与严格的扁平化隔离机制消除依赖幽灵），且禁止在 Vue 3 核心工程中使用 `npm` 安装依赖。
+1. **工具库收敛**：防抖、节流、ResizeObserver、LocalStorage 读写等通用功能，**必须**使用 [VueUse](https://vueuse.org/)，严禁在 `utils/` 目录下自行封装低效冗余代码。
+1. **日期处理**：统一使用 [Day.js](https://day.js.org/) 处理时间格式化与解析。**严禁**引入臃肿的 `moment.js` 以控制打包体积。
+1. **请求缓存管理**：对于高频轮询、请求重试、缓存失效处理等场景，强烈推荐采用 **TanStack Query (Vue Query)**，将 API 请求相关的 isLoading/isError 状态从 Pinia 中彻底剥离，使 Pinia 仅专注于纯粹的全局业务状态（如 Auth、Notification）。
+1. **自动化测试**：核心业务逻辑的单元测试必须基于 **Vitest**，端到端 (E2E) 测试基于 **Playwright**。
 
 ______________________________________________________________________
 

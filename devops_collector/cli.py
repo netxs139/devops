@@ -153,7 +153,7 @@ def discover_commands() -> dict[str, dict[str, type[BaseCommand]]]:
 
 def _get_session() -> Session:
     """创建数据库 Session。"""
-    engine = create_engine(settings.database.uri)
+    engine = create_engine(settings.database.uri.get_secret_value())
     return Session(engine)
 
 

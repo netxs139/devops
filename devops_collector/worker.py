@@ -16,22 +16,22 @@ from sqlalchemy import create_engine, insert
 from sqlalchemy.orm import sessionmaker
 
 # 触发插件自动发现
-from .config import Config
+from .config import settings
 from .models.base_models import Base
 from .mq import MessageQueue
 from .services.plugin_loader import PluginLoader
 from .services.registry import PluginRegistry
 
 
-logging.basicConfig(level=Config.LOG_LEVEL)
+logging.basicConfig(level=settings.logging.level)
 logger = logging.getLogger("Worker")
 
 # 模块级数据库连接池 (全局唯一，多任务共享)
 _engine_kwargs: dict[str, Any] = {"pool_pre_ping": True}
-if not Config.DB_URI.startswith("sqlite"):
+if not settings.database.uri.get_secret_value().startswith("sqlite"):
     _engine_kwargs.update({"pool_size": 5, "max_overflow": 10})
 
-_engine = create_engine(Config.DB_URI, **_engine_kwargs)
+_engine = create_engine(settings.database.uri.get_secret_value(), **_engine_kwargs)
 _SessionFactory = sessionmaker(bind=_engine)
 
 

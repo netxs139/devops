@@ -2,13 +2,14 @@
 
 import logging
 
+from pydantic import SecretStr
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from devops_collector.config import Config
+from devops_collector.config import settings
 
 
-Config.DB_URI = "sqlite:///:memory:"
+settings.database.uri = SecretStr("sqlite:///:memory:")
 
 from devops_collector.models.base_models import Base, RawDataStaging
 from devops_collector.plugins.gitlab.models import GitLabMergeRequest, GitLabProject
@@ -20,7 +21,7 @@ logger = logging.getLogger("Test-DataReplay")
 
 def test_gitlab_mr_replay():
     """验证 GitLab Merge Request 的数据回放逻辑。"""
-    engine = create_engine(Config.DB_URI)
+    engine = create_engine(settings.database.uri.get_secret_value())
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -72,7 +73,7 @@ if __name__ == "__main__":
     test_db_file = "test_replay.db"
     if os.path.exists(test_db_file):
         os.remove(test_db_file)
-    Config.DB_URI = f"sqlite:///{test_db_file}"
+    settings.database.uri = SecretStr(f"sqlite:///{test_db_file}")
     try:
         test_gitlab_mr_replay()
     finally:

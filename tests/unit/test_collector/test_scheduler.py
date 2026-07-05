@@ -64,7 +64,7 @@ def _run_main(argv, setup_session_fn=None):
         patch("devops_collector.plugins.gitlab.models.GitLabProject", create=True),
         patch("devops_collector.plugins.sonarqube.models.SonarProject", create=True),
         patch("devops_collector.plugins.zentao.models.ZenTaoProduct", create=True),
-        patch("devops_collector.scheduler.Config.ENABLED_PLUGINS", []),
+        patch("devops_collector.scheduler.settings.plugin.enabled_plugins", []),
     ):
         mock_engine = MagicMock()
         mock_engine_cls.return_value = mock_engine

@@ -44,7 +44,7 @@ class Command(BaseCommand):
             return
 
         self.stdout.write(f"正在连接 GitLab: {settings.gitlab.url}...\n")
-        client = GitLabClient(settings.gitlab.url, settings.gitlab.private_token, verify_ssl=settings.gitlab.verify_ssl)
+        client = GitLabClient(settings.gitlab.url, settings.gitlab.private_token.get_secret_value(), verify_ssl=settings.gitlab.verify_ssl)
         if not client.test_connection():
             self.stderr.write("❌ 无法连接 GitLab，请检查配置。\n")
             return
@@ -89,7 +89,7 @@ class Command(BaseCommand):
             return
 
         self.stdout.write(f"正在连接 SonarQube: {settings.sonarqube.url}...\n")
-        client = SonarQubeClient(settings.sonarqube.url, settings.sonarqube.token)
+        client = SonarQubeClient(settings.sonarqube.url, settings.sonarqube.token.get_secret_value())
         if not client.test_connection():
             self.stderr.write("❌ 无法连接 SonarQube，请检查配置。\n")
             return
@@ -115,7 +115,12 @@ class Command(BaseCommand):
             return
 
         self.stdout.write(f"正在连接禅道: {settings.zentao.url}...\n")
-        client = ZenTaoClient(settings.zentao.url, settings.zentao.token, settings.zentao.account, settings.zentao.password)
+        client = ZenTaoClient(
+            settings.zentao.url,
+            settings.zentao.token.get_secret_value() if settings.zentao.token else "",
+            settings.zentao.account,
+            settings.zentao.password.get_secret_value() if settings.zentao.password else None,
+        )
         try:
             if not client.test_connection():
                 self.stderr.write("❌ 无法连接禅道，请检查配置。\n")

@@ -4,12 +4,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from devops_collector.config import Config
+import devops_collector.config as config_module
 from devops_portal.routers.quality_router import get_quality_service
 
 
 # ---------------------------------------------------------------------------
-# Province Quality (Config.http_client 存在时)
+# Province Quality (http_client 存在时)
 # ---------------------------------------------------------------------------
 
 
@@ -27,7 +27,7 @@ def test_province_quality(authenticated_client, mock_user, monkeypatch):
 
     mock_client = AsyncMock()
     mock_client.get.return_value = mock_response
-    monkeypatch.setattr(Config, "http_client", mock_client)
+    monkeypatch.setattr(config_module, "http_client", mock_client)
 
     from devops_collector.models.base_models import Location
 
@@ -42,13 +42,13 @@ def test_province_quality(authenticated_client, mock_user, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# Province Quality — httpx 回退路径 (Config.http_client is None)
+# Province Quality — httpx 回退路径 (http_client is None)
 # ---------------------------------------------------------------------------
 
 
 def test_province_quality_fallback_httpx(authenticated_client, mock_user, monkeypatch):
-    """Config.http_client 为空时回退实例化 httpx.AsyncClient。"""
-    monkeypatch.setattr(Config, "http_client", None)
+    """http_client 为空时回退实例化 httpx.AsyncClient。"""
+    monkeypatch.setattr(config_module, "http_client", None)
     mock_user.location = None  # user_province = "全国"
 
     # httpx 是函数体内局部 import，patch 全局 httpx 模块的 AsyncClient 即可
@@ -72,7 +72,7 @@ def test_province_quality_fallback_httpx(authenticated_client, mock_user, monkey
 
 def test_province_quality_exception(authenticated_client, monkeypatch):
     """province-quality 异常路径，应返回 []。"""
-    monkeypatch.setattr(Config, "http_client", None)
+    monkeypatch.setattr(config_module, "http_client", None)
     with patch("httpx.AsyncClient") as mock_httpx_cls:
         mock_httpx_cls.side_effect = Exception("Network failure")
         response = authenticated_client.get("/quality/projects/1/province-quality")

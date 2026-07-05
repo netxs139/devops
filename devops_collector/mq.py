@@ -11,7 +11,7 @@ import uuid
 
 import pika
 
-from .config import Config
+from .config import settings
 
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ class MessageQueue:
 
     def __init__(self):
         """初始化 MQ 客户端，增加心跳以维持长任务连接。"""
-        self.url = Config.RABBITMQ_URL
+        self.url = settings.rabbitmq.url
         # 增加 heartbeat 以防止长任务处理期间连接被 RabbitMQ 断开 (默认 60s)
         if "?" in self.url:
             self.url += "&heartbeat=600"

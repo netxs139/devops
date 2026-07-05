@@ -10,7 +10,9 @@ from devops_collector.config import settings
 
 
 # 创建认证模块专用的数据库引擎
-auth_engine = create_engine(settings.database.uri)
+auth_engine = create_engine(
+    settings.database.uri.get_secret_value(),
+)
 
 # 创建认证模块专用的会话工厂
 AuthSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=auth_engine)

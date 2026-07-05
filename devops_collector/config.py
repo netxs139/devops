@@ -11,10 +11,24 @@
 """
 
 import os
+from typing import TYPE_CHECKING, Annotated, Any
 
 import httpx
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, BeforeValidator, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _split_comma_separated(v: Any) -> list[str]:
+    """Splits comma-separated strings into lists."""
+    if isinstance(v, str):
+        return [i.strip() for i in v.split(",") if i.strip()]
+    return v  # type: ignore[no-any-return]
+
+
+if TYPE_CHECKING:
+    CommaSeparatedList = list[str]
+else:
+    CommaSeparatedList = Annotated[str | list[str], BeforeValidator(_split_comma_separated)]
 
 
 class GitLabSettings(BaseModel):
@@ -22,16 +36,16 @@ class GitLabSettings(BaseModel):
 
     Attributes:
         url (str): The base URL of the GitLab instance.
-        private_token (str): The private access token for authentication (System-level).
+        private_token (SecretStr): The private access token for authentication (System-level).
         client_id (str): OAuth2 Application ID.
-        client_secret (str): OAuth2 Application Secret.
+        client_secret (SecretStr): OAuth2 Application Secret.
         redirect_uri (str): OAuth2 Callback URL (e.g., http://portal/auth/callback).
     """
 
     url: str = "https://gitlab.com"
-    private_token: str = ""
+    private_token: SecretStr
     client_id: str = ""
-    client_secret: str = ""
+    client_secret: SecretStr
     redirect_uri: str = ""
     verify_ssl: bool = True
 
@@ -40,11 +54,11 @@ class DatabaseSettings(BaseModel):
     """Database connection and retention settings.
 
     Attributes:
-        uri (str): The database connection URI (e.g., postgresql://user:pass@host/db).  # pragma: allowlist secret
+        uri (SecretStr): The database connection URI.
         raw_data_retention_days (int): The number of days to retain raw data.
     """
 
-    uri: str = "postgresql://gitlab_collector:password@localhost/gitlab_data"  # pragma: allowlist secret
+    uri: SecretStr
     raw_data_retention_days: int = 30
 
 
@@ -55,73 +69,38 @@ class RabbitMQSettings(BaseModel):
         host (str): The RabbitMQ server host.
         queue (str): The default queue name.
         user (str): The username for authentication.
-        password (str): The password for authentication.
+        password (SecretStr): The password for authentication.
     """
 
     host: str = "rabbitmq"
     queue: str = "gitlab_tasks"
     user: str = "user"
-    password: str = "password"
+    password: SecretStr
 
     @property
     def url(self) -> str:
-        """Constructs the AMQP URL from settings.
-
-        Returns:
-            str: The full AMQP connection string.
-        """
-        return f"amqp://{self.user}:{self.password}@{self.host}:5672/"
+        """Constructs the AMQP URL from settings."""
+        return f"amqp://{self.user}:{self.password.get_secret_value()}@{self.host}:5672/"
 
 
 class AnalysisSettings(BaseModel):
     """Code analysis configuration."""
 
     enable_deep_analysis: bool = False
-    ignored_file_patterns: str | list[str] = ["*.lock", "*.min.js", "*.min.css", "node_modules/*", "dist/*"]
-    production_env_mapping: str | list[str] = ["prod", "production", "prd", "main"]
-    incident_label_patterns: str | list[str] = ["incident", "production-error", "P0", "P1"]
-    change_failure_label_patterns: str | list[str] = ["change-failure", "rollback"]
-
-    @field_validator(
-        "ignored_file_patterns",
-        "production_env_mapping",
-        "incident_label_patterns",
-        "change_failure_label_patterns",
-        mode="before",
-    )
-    @classmethod
-    def split_str(cls, v):
-        """Splits comma-separated strings into lists.
-
-        Args:
-            v (Union[str, List[str]]): The input value.
-
-        Returns:
-            List[str]: The list of strings.
-        """
-        if isinstance(v, str):
-            return [i.strip() for i in v.split(",") if i.strip()]
-        return v
+    ignored_file_patterns: CommaSeparatedList = ["*.lock", "*.min.js", "*.min.css", "node_modules/*", "dist/*"]
+    production_env_mapping: CommaSeparatedList = ["prod", "production", "prd", "main"]
+    incident_label_patterns: CommaSeparatedList = ["incident", "production-error", "P0", "P1"]
+    change_failure_label_patterns: CommaSeparatedList = ["change-failure", "rollback"]
 
 
 class RateLimitSettings(BaseModel):
-    """Rate limiting configuration.
-
-    Attributes:
-        requests_per_second (int): Maximum number of requests allowed per second.
-    """
+    """Rate limiting configuration."""
 
     requests_per_second: int = 10
 
 
 class ClientSettings(BaseModel):
-    """HTTP client configuration.
-
-    Attributes:
-        timeout (int): Request timeout in seconds.
-        per_page (int): Number of items per page for paginated requests.
-        max_retries (int): Maximum number of retries for failed requests.
-    """
+    """HTTP client configuration."""
 
     timeout: int = 10
     per_page: int = 100
@@ -129,127 +108,67 @@ class ClientSettings(BaseModel):
 
 
 class SchedulerSettings(BaseModel):
-    """Task scheduler configuration.
-
-    Attributes:
-        sync_interval_minutes (int): Interval in minutes between synchronization tasks.
-    """
+    """Task scheduler configuration."""
 
     sync_interval_minutes: int = 10
 
 
 class LoggingSettings(BaseModel):
-    """Logging configuration.
-
-    Attributes:
-        level (str): The logging level (e.g., INFO, DEBUG).
-    """
+    """Logging configuration."""
 
     level: str = "INFO"
 
 
 class SonarQubeSettings(BaseModel):
-    """SonarQube integration settings.
-
-    Attributes:
-        url (str): The SonarQube server URL.
-        token (str): The authentication token.
-        sync_interval_hours (int): Interval in hours between synchronization tasks.
-        sync_issues (bool): Whether to synchronize issues.
-    """
+    """SonarQube integration settings."""
 
     url: str = ""
-    token: str = ""
+    token: SecretStr
     sync_interval_hours: int = 24
     sync_issues: bool = False
 
 
 class NexusSettings(BaseModel):
-    """Nexus integration settings.
-
-    Attributes:
-        url (str): The Nexus server URL.
-        user (str): The username for authentication.
-        password (str): The password for authentication.
-        sync_interval_hours (int): Interval in hours between synchronization tasks.
-        repositories (list[str]): List of repositories to sync.
-    """
+    """Nexus integration settings."""
 
     url: str = ""
     user: str = ""
-    password: str = ""
+    password: SecretStr
     sync_interval_hours: int = 12
-    repositories: str | list[str] = Field(default_factory=list)
-
-    @field_validator("repositories", mode="before")
-    @classmethod
-    def split_str(cls, v):
-        """Splits comma-separated strings into lists."""
-        if isinstance(v, str):
-            return [i.strip() for i in v.split(",") if i.strip()]
-        return v
+    repositories: CommaSeparatedList = Field(default_factory=list)
 
 
 class JenkinsSettings(BaseModel):
-    """Jenkins integration settings.
-
-    Attributes:
-        url (str): The Jenkins server URL.
-        user (str): The username for authentication.
-        token (str): The authentication token or API key.
-        sync_interval_hours (int): Interval in hours between synchronization tasks.
-        build_sync_limit (int): Maximum number of builds to sync per job.
-    """
+    """Jenkins integration settings."""
 
     url: str = ""
     user: str = ""
-    token: str = ""
+    token: SecretStr
     sync_interval_hours: int = 12
     build_sync_limit: int = 100
 
 
 class ZenTaoSettings(BaseModel):
-    """ZenTao integration settings.
-
-    Attributes:
-        url (str): The ZenTao server URL.
-        token (str): The authentication token.
-        sync_interval_hours (int): Interval in hours between synchronization tasks.
-    """
+    """ZenTao integration settings."""
 
     url: str = ""
-    token: str = ""
+    token: SecretStr
     account: str | None = None
-    password: str | None = None
+    password: SecretStr | None = None
     sync_interval_hours: int = 12
     build_sync_limit: int = 100
 
 
 class AISettings(BaseModel):
-    """AI service configuration.
+    """AI service configuration."""
 
-    Attributes:
-        api_key (str): The API key for the LLM service.
-        base_url (str): The base URL of the LLM API.
-        model (str): The name of the model to use.
-    """
-
-    api_key: str = ""
+    api_key: SecretStr
     base_url: str = "https://api.openai.com/v1"
     model: str = "gpt-4o"
 
 
 class SLASettings(BaseModel):
-    """SLA threshold settings (in hours).
-
-    Attributes:
-        p0 (int): SLA response threshold for P0.
-        p1 (int): SLA response threshold for P1.
-        p2 (int): SLA response threshold for P2.
-        p3 (int): SLA response threshold for P3.
-        p4 (int): SLA response threshold for P4.
-        default (int): Default SLA response threshold.
-    """
+    """SLA threshold settings (in hours)."""
 
     p0: int = 8
     p1: int = 24
@@ -262,34 +181,13 @@ class SLASettings(BaseModel):
 class AuthSettings(BaseModel):
     """认证相关配置。"""
 
-    allowed_domains: str | list[str] = Field(default_factory=list, description="允许注册的邮箱域名列表")
-    secret_key: str = "your-secret-key-keep-it-secret"
-    admin_api_token: str = "admin_secret_token_2025"
-
-    @field_validator("allowed_domains", mode="before")
-    @classmethod
-    def split_str(cls, v):
-        """Splits comma-separated strings into lists.
-
-        Args:
-            v (Union[str, List[str]]): The input value.
-
-        Returns:
-            List[str]: The list of strings.
-        """
-        if isinstance(v, str):
-            return [i.strip() for i in v.split(",") if i.strip()]
-        return v
+    allowed_domains: CommaSeparatedList = Field(default_factory=list, description="允许注册的邮箱域名列表")
+    secret_key: SecretStr
+    admin_api_token: SecretStr
 
 
 class NotifiersSettings(BaseModel):
-    """Webhook notifiers configuration.
-
-    Attributes:
-        wecom_webhook (str): WeCom Webhook URL.
-        feishu_webhook (str): Feishu Webhook URL.
-        dingtalk_webhook (str): DingTalk Webhook URL.
-    """
+    """Webhook notifiers configuration."""
 
     wecom_webhook: str = ""
     feishu_webhook: str = ""
@@ -297,153 +195,49 @@ class NotifiersSettings(BaseModel):
 
 
 class PluginSettings(BaseModel):
-    """Plugin system configuration.
+    """Plugin system configuration."""
 
-    Attributes:
-        enabled_plugins (list[str]): List of plugin names to enable.
-    """
-
-    enabled_plugins: str | list[str] = ["gitlab", "sonarqube", "jenkins", "zentao"]
-
-    @field_validator("enabled_plugins", mode="before")
-    @classmethod
-    def split_str(cls, v):
-        """Splits comma-separated strings into lists.
-
-        Args:
-            v (Union[str, List[str]]): The input value.
-
-        Returns:
-            List[str]: The list of strings.
-        """
-        if isinstance(v, str):
-            return [i.strip() for i in v.split(",") if i.strip()]
-        return v
+    enabled_plugins: CommaSeparatedList = ["gitlab", "sonarqube", "jenkins", "zentao"]
 
 
 class StorageSettings(BaseModel):
-    """Local storage configuration.
-
-    Attributes:
-        data_dir (str): The directory path for persistent data storage.
-    """
+    """Local storage configuration."""
 
     data_dir: str = "./data"
 
     @field_validator("data_dir")
     @classmethod
     def make_absolute(cls, v):
-        """Ensures the data directory path is absolute.
-
-        Args:
-            v (str): The input path.
-
-        Returns:
-            str: The absolute path.
-        """
+        """Make absolute."""
         if not os.path.isabs(v):
             return os.path.join(os.getcwd(), v)
         return v
 
 
 class Settings(BaseSettings):
-    """Global application configuration model.
+    """Global application configuration model."""
 
-    Aggregates all specific setting sections into a single configuration object.
-
-    Attributes:
-        gitlab (GitLabSettings): GitLab settings.
-        database (DatabaseSettings): Database settings.
-        rabbitmq (RabbitMQSettings): RabbitMQ settings.
-        analysis (AnalysisSettings): Analysis settings.
-        ratelimit (RateLimitSettings): Rate limiting settings.
-        client (ClientSettings): HTTP client settings.
-        scheduler (SchedulerSettings): Scheduler settings.
-        logging (LoggingSettings): Logging settings.
-        sonarqube (SonarQubeSettings): SonarQube settings.
-        jenkins (JenkinsSettings): Jenkins settings.
-        ai (AISettings): AI settings.
-        storage (StorageSettings): Storage settings.
-    """
-
-    gitlab: GitLabSettings = GitLabSettings()
-    database: DatabaseSettings = DatabaseSettings()
-    rabbitmq: RabbitMQSettings = RabbitMQSettings()
-    analysis: AnalysisSettings = AnalysisSettings()
-    ratelimit: RateLimitSettings = RateLimitSettings()
-    client: ClientSettings = ClientSettings()
-    scheduler: SchedulerSettings = SchedulerSettings()
-    logging: LoggingSettings = LoggingSettings()
-    sonarqube: SonarQubeSettings = SonarQubeSettings()
-    jenkins: JenkinsSettings = JenkinsSettings()
-    zentao: ZenTaoSettings = ZenTaoSettings()
-    nexus: NexusSettings = NexusSettings()
-    ai: AISettings = AISettings()
-    storage: StorageSettings = StorageSettings()
-    plugin: PluginSettings = PluginSettings()
-    sla: SLASettings = SLASettings()
-    auth: AuthSettings = AuthSettings()
-    notifiers: NotifiersSettings = NotifiersSettings()
+    gitlab: GitLabSettings
+    database: DatabaseSettings
+    rabbitmq: RabbitMQSettings
+    analysis: AnalysisSettings = Field(default_factory=AnalysisSettings)
+    ratelimit: RateLimitSettings = Field(default_factory=RateLimitSettings)
+    client: ClientSettings = Field(default_factory=ClientSettings)
+    scheduler: SchedulerSettings = Field(default_factory=SchedulerSettings)
+    logging: LoggingSettings = Field(default_factory=LoggingSettings)
+    sonarqube: SonarQubeSettings
+    jenkins: JenkinsSettings
+    zentao: ZenTaoSettings
+    nexus: NexusSettings
+    ai: AISettings
+    storage: StorageSettings = Field(default_factory=StorageSettings)
+    plugin: PluginSettings = Field(default_factory=PluginSettings)
+    sla: SLASettings = Field(default_factory=SLASettings)
+    auth: AuthSettings
+    notifiers: NotifiersSettings = Field(default_factory=NotifiersSettings)
     model_config = SettingsConfigDict(env_file=".env", env_nested_delimiter="__", extra="ignore")
 
 
-settings = Settings()
-
-
-class Config:
-    """向下兼容层，映射旧的全局变量名。
-
-    建议新代码直接使用：from devops_collector.config import settings
-    """
-
-    http_client: "httpx.AsyncClient"
-
-    GITLAB_URL = settings.gitlab.url
-    GITLAB_TOKEN = settings.gitlab.private_token
-    GITLAB_CLIENT_ID = settings.gitlab.client_id
-    GITLAB_CLIENT_SECRET = settings.gitlab.client_secret
-    GITLAB_REDIRECT_URI = settings.gitlab.redirect_uri
-    GITLAB_VERIFY_SSL = settings.gitlab.verify_ssl
-    AUTH_ALLOWED_DOMAINS = settings.auth.allowed_domains
-    DB_URI = settings.database.uri
-    RAW_DATA_RETENTION_DAYS = settings.database.raw_data_retention_days
-    RABBITMQ_HOST = settings.rabbitmq.host
-    RABBITMQ_QUEUE = settings.rabbitmq.queue
-    RABBITMQ_URL = settings.rabbitmq.url
-    ENABLE_DEEP_ANALYSIS = settings.analysis.enable_deep_analysis
-    IGNORED_FILE_PATTERNS = settings.analysis.ignored_file_patterns
-    PRODUCTION_ENV_MAPPING = settings.analysis.production_env_mapping
-    REQUESTS_PER_SECOND = settings.ratelimit.requests_per_second
-    CLIENT_TIMEOUT = settings.client.timeout
-    CLIENT_PER_PAGE = settings.client.per_page
-    CLIENT_MAX_RETRIES = settings.client.max_retries
-    SYNC_INTERVAL_MINUTES = settings.scheduler.sync_interval_minutes
-    LOG_LEVEL = settings.logging.level
-    SONARQUBE_URL = settings.sonarqube.url
-    SONARQUBE_TOKEN = settings.sonarqube.token
-    SONARQUBE_SYNC_INTERVAL_HOURS = settings.sonarqube.sync_interval_hours
-    SONARQUBE_SYNC_ISSUES = settings.sonarqube.sync_issues
-    JENKINS_URL = settings.jenkins.url
-    JENKINS_USER = settings.jenkins.user
-    JENKINS_TOKEN = settings.jenkins.token
-    JENKINS_SYNC_INTERVAL_HOURS = settings.jenkins.sync_interval_hours
-    JENKINS_BUILD_SYNC_LIMIT = settings.jenkins.build_sync_limit
-    AI_API_KEY = settings.ai.api_key
-    AI_BASE_URL = settings.ai.base_url
-    AI_MODEL = settings.ai.model
-    DATA_DIR = settings.storage.data_dir
-    ENABLED_PLUGINS = settings.plugin.enabled_plugins
-    SECRET_KEY = settings.auth.secret_key
-    SLA_P0 = settings.sla.p0
-    SLA_P1 = settings.sla.p1
-    SLA_P2 = settings.sla.p2
-    SLA_P3 = settings.sla.p3
-    SLA_P4 = settings.sla.p4
-    SLA_DEFAULT = settings.sla.default
-    ADMIN_API_TOKEN = settings.auth.admin_api_token
-    ZENTAO_URL = settings.zentao.url
-    ZENTAO_TOKEN = settings.zentao.token
-    NEXUS_URL = settings.nexus.url
-    NEXUS_USER = settings.nexus.user
-    NEXUS_PASSWORD = settings.nexus.password
-    NEXUS_REPOSITORIES = settings.nexus.repositories
+# 模块单例
+settings = Settings()  # type: ignore[call-arg]
+http_client: httpx.AsyncClient | None = None

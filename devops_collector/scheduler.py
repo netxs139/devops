@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from .config import Config
+from .config import settings
 from .models.base_models import Base
 from .mq import MessageQueue
 from .services.dora_service import DORAService
@@ -17,7 +17,7 @@ from .services.plugin_loader import PluginLoader
 from .services.promotion_service import PromotionService
 
 
-logging.basicConfig(level=Config.LOG_LEVEL)
+logging.basicConfig(level=settings.logging.level)
 logger = logging.getLogger("Scheduler")
 
 
@@ -36,7 +36,7 @@ def main() -> None:
     from devops_collector.plugins.sonarqube.models import SonarProject
     from devops_collector.plugins.zentao.models import ZenTaoProduct
 
-    engine = create_engine(Config.DB_URI)
+    engine = create_engine(settings.database.uri.get_secret_value())
     Session = sessionmaker(bind=engine)
     mq = MessageQueue()
     Base.metadata.create_all(engine)
@@ -60,7 +60,7 @@ def main() -> None:
                 if not should_sync:
                     if not zp.last_synced_at:
                         should_sync = True
-                    elif datetime.now(UTC) - zp.last_synced_at.replace(tzinfo=UTC) > timedelta(minutes=Config.SYNC_INTERVAL_MINUTES):
+                    elif datetime.now(UTC) - zp.last_synced_at.replace(tzinfo=UTC) > timedelta(minutes=settings.scheduler.sync_interval_minutes):
                         should_sync = True
 
                 if should_sync and (args.force_all or zp.sync_status not in ["SYNCING", "QUEUED"]):
@@ -80,7 +80,7 @@ def main() -> None:
                 if not should_sync:
                     if not proj.last_synced_at:
                         should_sync = True
-                    elif datetime.now(UTC) - proj.last_synced_at.replace(tzinfo=UTC) > timedelta(minutes=Config.SYNC_INTERVAL_MINUTES):
+                    elif datetime.now(UTC) - proj.last_synced_at.replace(tzinfo=UTC) > timedelta(minutes=settings.scheduler.sync_interval_minutes):
                         should_sync = True
 
                 if should_sync and (args.force_all or proj.sync_status not in ["SYNCING", "QUEUED"]):
@@ -100,7 +100,7 @@ def main() -> None:
                 if not should_sync:
                     if not sp.last_synced_at:
                         should_sync = True
-                    elif datetime.now(UTC) - sp.last_synced_at.replace(tzinfo=UTC) > timedelta(hours=Config.SONARQUBE_SYNC_INTERVAL_HOURS):
+                    elif datetime.now(UTC) - sp.last_synced_at.replace(tzinfo=UTC) > timedelta(hours=settings.sonarqube.sync_interval_hours):
                         should_sync = True
 
                 if should_sync and (args.force_all or sp.sync_status not in ["SYNCING", "QUEUED"]):
@@ -108,16 +108,14 @@ def main() -> None:
                         "source": "sonarqube",
                         "project_key": sp.key,
                         "job_type": "full",
-                        "sync_issues": Config.SONARQUBE_SYNC_ISSUES,
+                        "sync_issues": settings.sonarqube.sync_issues,
                     }
                     mq.publish_task(task)
                     sp.sync_status = "QUEUED"
                     session.commit()
 
             # 4. 扫描 Nexus 仓库
-            if "nexus" in Config.ENABLED_PLUGINS:
-                from .config import settings
-
+            if "nexus" in settings.plugin.enabled_plugins:
                 for repo in settings.nexus.repositories:
                     task = {
                         "source": "nexus",

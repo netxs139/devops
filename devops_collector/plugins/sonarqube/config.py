@@ -22,13 +22,13 @@ def get_config() -> dict[str, Any]:
             }
         }
     """
-    from devops_collector.config import Config
+    from devops_collector.config import settings
 
     return {
         "client": {
-            "url": Config.SONARQUBE_URL,
-            "token": Config.SONARQUBE_TOKEN,
-            "rate_limit": Config.REQUESTS_PER_SECOND,
+            "url": settings.sonarqube.url,
+            "token": settings.sonarqube.token.get_secret_value(),
+            "rate_limit": settings.ratelimit.requests_per_second,
         },
-        "worker": {"sync_issues": Config.SONARQUBE_SYNC_ISSUES},
+        "worker": {"sync_issues": settings.sonarqube.sync_issues},
     }

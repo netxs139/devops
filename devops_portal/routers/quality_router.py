@@ -34,20 +34,21 @@ async def get_province_quality(
     current_user=Depends(PermissionRequired(["rpt:quality:view"])),
 ):
     """获取各省份的质量分布数据（已实现部门级数据隔离）。"""
-    from devops_collector.config import Config
+    import devops_collector.config as config_module
 
     url = f"{settings.gitlab.url}/api/v4/projects/{project_id}/issues"
-    headers = {"PRIVATE-TOKEN": settings.gitlab.private_token}
+    headers = {"PRIVATE-TOKEN": settings.gitlab.private_token.get_secret_value()}
     params: dict[str, str | int] = {"state": "all", "per_page": 100}
     try:
         # Use globally managed AsyncClient from Config
-        if Config.http_client is None:
+        if getattr(config_module, "http_client", None) is None:
             import httpx
 
             async with httpx.AsyncClient(timeout=settings.client.timeout) as client:
                 resp = await client.get(url, params=params, headers=headers)
         else:
-            resp = await Config.http_client.get(url, params=params, headers=headers)
+            assert config_module.http_client is not None, "http_client must be initialized"
+            resp = await config_module.http_client.get(url, params=params, headers=headers)
 
         resp.raise_for_status()
         issues = resp.json()
