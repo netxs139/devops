@@ -105,7 +105,7 @@ async def get_test_summary(
     """获取测试用例执行状态的统计摘要。"""
     try:
         # 延迟导入以避免循环依赖
-        from devops_portal.routers.test_management_router import (
+        from devops_portal.routers.test_router import (
             get_test_summary as internal_summary,
         )
 

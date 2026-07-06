@@ -21,19 +21,19 @@ from devops_collector.models.base_models import (
     ProjectProductRelation,
     TraceabilityLink,
 )
-from devops_collector.models.test_management import GTMTestCase
 from devops_collector.plugins.gitlab.gitlab_client import GitLabClient
 from devops_collector.plugins.gitlab.models import GitLabProject
 from devops_collector.plugins.gitlab.parser import GitLabTestParser
 from devops_collector.plugins.zentao.models import ZenTaoIssue, ZenTaoProduct
 from devops_portal import schemas
+from test_module.models.test_models import GTMTestCase
 
 
 logger = logging.getLogger(__name__)
 
 
-class TestManagementService:
-    """GitLab 测试管理业务逻辑服务。
+class TestService:
+    """测试管理业务逻辑服务。
 
     负责处理测试用例、需求和缺陷的生命周期管理，并提供高质量的质量看板数据。
     """
@@ -55,7 +55,7 @@ class TestManagementService:
         try:
             # 获取项目信息：优先获取 MDM 主项目名称，若未绑定则显示 GitLab 项目名
             project = db.query(GitLabProject).filter(GitLabProject.id == project_id).first()
-            project_name = f"P{project_id}"
+            project_name: str | None = f"P{project_id}"
             if project:
                 project_name = project.mdm_project.project_name if project.mdm_project else project.name
 
@@ -107,7 +107,7 @@ class TestManagementService:
         elif org_id:
             # 查找该部门下的所有项目
             mdm_projects = db.query(ProjectMaster).filter(ProjectMaster.org_id == org_id).all()
-            mdm_ids = [p.project_id for p in mdm_projects]
+            mdm_ids = [p.id for p in mdm_projects]
             git_projects = db.query(GitLabProject).filter(GitLabProject.mdm_project_id.in_(mdm_ids)).all()
             project_ids = [p.id for p in git_projects]
 
@@ -157,7 +157,7 @@ class TestManagementService:
         elif org_id:
             # 通过组织 -> 项目 -> GitLab -> ZenTao
             mdm_projects = db.query(ProjectMaster).filter(ProjectMaster.org_id == org_id).all()
-            mdm_ids = [p.project_id for p in mdm_projects]
+            mdm_ids = [p.id for p in mdm_projects]
             git_projects = db.query(GitLabProject).filter(GitLabProject.mdm_project_id.in_(mdm_ids)).all()
             gp_ids = [p.id for p in git_projects]
 
@@ -185,7 +185,7 @@ class TestManagementService:
             gtm_cases = db.query(GTMTestCase).filter(GTMTestCase.project_id.in_(relevant_gitlab_project_ids)).all()
 
         # 建立用例与需求的内存映射 (基于 #ID 文本匹配)
-        req_case_map = {str(i.id): [] for i in issues}
+        req_case_map: dict[str, list[Any]] = {str(i.id): [] for i in issues}
 
         for case in gtm_cases:
             # 简单匹配: 检查 Title 或 Description 中是否包含 #ReqID
@@ -205,11 +205,11 @@ class TestManagementService:
             linked_cases = req_case_map.get(issue_id_str, [])
             api_cases = [
                 schemas.TestCase(
-                    global_issue_id=c.id,
-                    gitlab_issue_iid=c.iid,
+                    id=c.id,
+                    iid=c.iid,
                     title=c.title,
-                    result="passed" if c.execution_count > 0 else "pending",  # 简化逻辑
-                    project_name=c.project.name if c.project else "Unknown",  # 需要确保 relationship loaded
+                    result="passed" if c.execution_count > 0 else "pending",
+                    project_name="Unknown",
                 )
                 for c in linked_cases
             ]
@@ -229,12 +229,13 @@ class TestManagementService:
                 if l.target_type == "merge_request":
                     mrs.append({"id": l.target_id, "iid": l.target_id, "title": f"MR !{l.target_id}", "state": "merged"})
                 elif l.target_type == "commit":
-                    commits.append({"short_id": l.target_id[:8], "title": f"Commit {l.target_id[:8]}"})
-                elif l.target_type == "bug":  # 假设 TraceabilityMixin 也同步了 Bug 链接
+                    commits.append({"short_id": (l.target_id or "")[:8], "title": f"Commit {(l.target_id or '')[:8]}"})
+                elif l.target_type == "bug":
+                    target_id = l.target_id or ""
                     defects.append(
                         schemas.BugDetail(
-                            iid=int(l.target_id) if l.target_id.isdigit() else 0,
-                            title=f"Bug #{l.target_id}",
+                            iid=int(target_id) if target_id.isdigit() else 0,
+                            title=f"Bug #{target_id}",
                             state="opened",
                             created_at=datetime.now(),
                             author="Unknown",
@@ -244,8 +245,8 @@ class TestManagementService:
                     )
 
             req_summary = schemas.RequirementSummary(
-                iid=issue.id,
-                title=issue.title,
+                iid=issue.id or 0,
+                title=issue.title or "",
                 state=issue.status or "open",
                 review_state="approved" if issue.status == "active" else "draft",
             )

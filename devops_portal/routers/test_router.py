@@ -19,19 +19,19 @@ from sqlalchemy.orm import Session
 from devops_collector.auth.auth_database import get_auth_db
 from devops_collector.auth.auth_dependency import get_user_gitlab_client
 from devops_collector.plugins.gitlab.gitlab_client import GitLabClient
-from devops_collector.plugins.gitlab.test_management_service import TestManagementService
 from devops_portal import schemas
 from devops_portal.dependencies import check_permission, get_current_user
 from devops_portal.state import GLOBAL_QUALITY_ALERTS
+from test_module.services.test_service import TestService
 
 
-router = APIRouter(prefix="/test-management", tags=["test-management"])
+router = APIRouter(prefix="/test", tags=["test"])
 logger = logging.getLogger(__name__)
 
 
-def get_test_management_service(db: Session = Depends(get_auth_db), client: GitLabClient = Depends(get_user_gitlab_client)) -> TestManagementService:
+def get_test_service(db: Session = Depends(get_auth_db), client: GitLabClient = Depends(get_user_gitlab_client)) -> TestService:
     """获取测试管理服务实例。"""
-    return TestManagementService(db, client)
+    return TestService(db, client)
 
 
 @router.get("/projects/{project_id}/test-cases", response_model=list[schemas.TestCase])
@@ -39,7 +39,7 @@ async def list_test_cases(
     project_id: int,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_auth_db),
-    service: TestManagementService = Depends(get_test_management_service),
+    service: TestService = Depends(get_test_service),
 ):
     """获取并解析 GitLab 项目中的所有测试用例。"""
     try:
@@ -56,7 +56,7 @@ async def list_aggregated_test_cases(
     org_id: str | None = None,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_auth_db),
-    service: TestManagementService = Depends(get_test_management_service),
+    service: TestService = Depends(get_test_service),
 ):
     """跨项目聚合获取测试用例（支持按产品或部门过滤）。"""
     if not product_id and not org_id:
@@ -75,7 +75,7 @@ async def list_aggregated_requirements(
     org_id: str | None = None,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_auth_db),
-    service: TestManagementService = Depends(get_test_management_service),
+    service: TestService = Depends(get_test_service),
 ):
     """跨项目聚合获取需求及其追溯矩阵信息（支持按产品或部门过滤）。"""
     if not product_id and not org_id:
@@ -93,7 +93,7 @@ async def create_test_case(
     project_id: int,
     data: schemas.TestCaseCreate,
     current_user=Depends(check_permission(["maintainer", "admin"])),
-    service: TestManagementService = Depends(get_test_management_service),
+    service: TestService = Depends(get_test_service),
 ):
     """在线录入并创建测试用例。"""
     try:
@@ -120,7 +120,7 @@ async def import_test_cases(
     project_id: int,
     file: UploadFile = File(...),
     current_user=Depends(check_permission(["maintainer", "admin"])),
-    service: TestManagementService = Depends(get_test_management_service),
+    service: TestService = Depends(get_test_service),
 ):
     """批量从 Excel/CSV 导入测试用例。"""
     try:
@@ -168,7 +168,7 @@ async def clone_test_cases(
     project_id: int,
     source_project_id: int = Query(...),
     current_user=Depends(check_permission(["maintainer", "admin"])),
-    service: TestManagementService = Depends(get_test_management_service),
+    service: TestService = Depends(get_test_service),
 ):
     """从源项目克隆所有测试用例到当前项目。"""
     try:
@@ -184,7 +184,7 @@ async def generate_steps_from_ac(
     project_id: int,
     requirement_iid: int = Query(...),
     current_user=Depends(get_current_user),
-    service: TestManagementService = Depends(get_test_management_service),
+    service: TestService = Depends(get_test_service),
 ):
     """[AI] 根据关联需求的验收标准自动生成测试步骤。"""
     try:
@@ -200,7 +200,7 @@ async def list_requirements(
     project_id: int,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_auth_db),
-    service: TestManagementService = Depends(get_test_management_service),
+    service: TestService = Depends(get_test_service),
 ):
     """获取项目中的所有需求。"""
     try:
@@ -215,7 +215,7 @@ async def get_requirement_detail(
     project_id: int,
     iid: int,
     current_user=Depends(get_current_user),
-    service: TestManagementService = Depends(get_test_management_service),
+    service: TestService = Depends(get_test_service),
 ):
     """获取单个需求详情。"""
     try:
@@ -233,7 +233,7 @@ async def create_requirement(
     project_id: int,
     data: schemas.RequirementCreate,
     current_user=Depends(get_current_user),
-    service: TestManagementService = Depends(get_test_management_service),
+    service: TestService = Depends(get_test_service),
 ):
     """创建新的需求。"""
     try:
@@ -253,7 +253,7 @@ async def create_requirement(
 
 
 @router.get("/projects/{project_id}/bugs", response_model=list[schemas.BugDetail])
-async def get_project_bugs(project_id: int, service: TestManagementService = Depends(get_test_management_service)):
+async def get_project_bugs(project_id: int, service: TestService = Depends(get_test_service)):
     """获取项目中所有的缺陷。"""
     # 逻辑可以移入 service，这里暂留或简化
     try:
@@ -285,7 +285,7 @@ async def create_defect(
     project_id: int,
     data: schemas.BugCreate,
     current_user=Depends(get_current_user),
-    service: TestManagementService = Depends(get_test_management_service),
+    service: TestService = Depends(get_test_service),
 ):
     """QA 专业缺陷提报接口。"""
     try:
@@ -315,7 +315,7 @@ async def execute_test_case(
     result: str = Query(None),
     report: schemas.ExecutionReport | None = None,
     current_user=Depends(check_permission(["tester", "maintainer", "admin"])),
-    service: TestManagementService = Depends(get_test_management_service),
+    service: TestService = Depends(get_test_service),
 ):
     """执行测试用例并更新 GitLab 标签、状态及审计记录。"""
     final_result = result or (report.result if report else None)
@@ -335,7 +335,7 @@ async def get_test_summary(
     project_id: int,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_auth_db),
-    service: TestManagementService = Depends(get_test_management_service),
+    service: TestService = Depends(get_test_service),
 ):
     """获取测试用例执行状态的统计摘要。"""
     try:

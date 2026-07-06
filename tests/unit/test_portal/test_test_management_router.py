@@ -3,21 +3,21 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from devops_portal.main import app
-from devops_portal.routers.test_management_router import (
-    get_test_management_service,
+from devops_portal.routers.test_router import (
+    get_test_service,
 )
 from devops_portal.schemas import TestCase
 
 
 @pytest.fixture
 def mock_test_service():
-    with patch("devops_portal.routers.test_management_router.TestManagementService") as mock:
+    with patch("devops_portal.routers.test_router.TestService") as mock:
         service_instance = mock.return_value
         # Register dependency override
-        app.dependency_overrides[get_test_management_service] = lambda: service_instance
+        app.dependency_overrides[get_test_service] = lambda: service_instance
         yield service_instance
-        if get_test_management_service in app.dependency_overrides:
-            del app.dependency_overrides[get_test_management_service]
+        if get_test_service in app.dependency_overrides:
+            del app.dependency_overrides[get_test_service]
 
 
 def test_list_test_cases(authenticated_client, mock_test_service):

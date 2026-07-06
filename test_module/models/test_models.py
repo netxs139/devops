@@ -1,38 +1,36 @@
-"""Command module."""
+"""Test Module Models
+
+独立测试管理域的纯领域模型。
+所有对外部领域（敏捷缺陷、IAM身份、项目主数据）的物理外键均已被重构为软引用（逻辑外键）。
+"""
 
 from __future__ import annotations
 
-
-"""GitLab 测试管理模块数据模型。
-
-本模块定义了用于二开测试管理功能的核心模型，包括测试用例实体及其与 Issue 的关联关系。
-遵循 GitLab 社区版二开建议书中的数据库设计原则。
-"""
-
 import uuid
 from datetime import datetime
-from typing import Any
 
 from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import Mapped, foreign, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin
 
 
 class GTMTestCase(Base, TimestampMixin, TraceabilityMixin):
-    """GitLab 测试用例模型。
+    """测试用例模型。
 
     存储测试用例的结构化信息，包括标题、描述（预置条件）和详细的执行步骤。
     """
 
     __tablename__ = "gtm_test_cases"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    project_id: Mapped[int] = mapped_column(Integer, ForeignKey("gitlab_projects.id", ondelete="CASCADE"), nullable=False)
-    author_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=False)
+
+    # Soft references (跨域逻辑外键，无物理约束)
+    project_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True, comment="软外键 -> gitlab_projects.id")
+    author_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True, comment="软外键 -> mdm_identities.global_user_id")
+
     iid: Mapped[int] = mapped_column(Integer, nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     priority: Mapped[str | None] = mapped_column(String(20))
@@ -41,10 +39,12 @@ class GTMTestCase(Base, TimestampMixin, TraceabilityMixin):
     description: Mapped[str | None] = mapped_column(Text)
     test_steps: Mapped[list | dict] = mapped_column(JSON, default=[])
 
-    # author relationship removed to enforce string soft-link
-    project: Mapped[Any] = relationship("GitLabProject", back_populates="test_cases")
-    linked_issues: Mapped[list[Any]] = relationship("GitLabIssue", secondary="gtm_test_case_issue_links", back_populates="associated_test_cases")
-    associated_requirements: Mapped[list[Any]] = relationship("GTMRequirement", secondary="gtm_requirement_test_case_links", back_populates="test_cases")
+    # Internal relationships (within test_module only)
+    associated_requirements: Mapped[list[GTMRequirement]] = relationship(
+        "GTMRequirement",
+        secondary="gtm_requirement_test_case_links",
+        back_populates="test_cases",
+    )
 
     @hybrid_property
     def execution_count(self) -> int:
@@ -59,9 +59,8 @@ class GTMTestCase(Base, TimestampMixin, TraceabilityMixin):
 
     execution_records: Mapped[list[GTMTestExecutionRecord]] = relationship(
         "GTMTestExecutionRecord",
-        primaryjoin=lambda: foreign(GTMTestExecutionRecord.test_case_iid) == GTMTestCase.iid,
+        primaryjoin="foreign(GTMTestExecutionRecord.test_case_iid) == GTMTestCase.iid",
         viewonly=True,
-        overlaps="project",
     )
 
     def __repr__(self) -> str:
@@ -70,12 +69,16 @@ class GTMTestCase(Base, TimestampMixin, TraceabilityMixin):
 
 
 class GTMTestCaseIssueLink(Base, TimestampMixin):
-    """测试用例与 Issue 的关联表 (gtm_test_case_issue_links)。"""
+    """测试用例与缺陷(Issue)的关联表。"""
 
     __tablename__ = "gtm_test_case_issue_links"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    # Hard reference (internal)
     test_case_id: Mapped[int] = mapped_column(Integer, ForeignKey("gtm_test_cases.id", ondelete="CASCADE"), nullable=False)
-    issue_id: Mapped[int] = mapped_column(Integer, ForeignKey("gitlab_issues.id", ondelete="CASCADE"), nullable=False)
+
+    # Soft reference (external to agile issues)
+    issue_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True, comment="软外键 -> gitlab_issues.id")
 
     def __repr__(self) -> str:
         """返回用例与 Issue 关联的字符串表示。"""
@@ -83,21 +86,26 @@ class GTMTestCaseIssueLink(Base, TimestampMixin):
 
 
 class GTMRequirement(Base, TimestampMixin):
-    """GitLab 需求模型。"""
+    """测试需求模型。"""
 
     __tablename__ = "gtm_requirements"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    project_id: Mapped[int] = mapped_column(Integer, ForeignKey("gitlab_projects.id", ondelete="CASCADE"), nullable=False)
-    author_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=False)
+
+    # Soft references
+    project_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True, comment="软外键 -> gitlab_projects.id")
+    author_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True, comment="软外键 -> mdm_identities.global_user_id")
+
     iid: Mapped[int] = mapped_column(Integer, nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     state: Mapped[str] = mapped_column(String(20), default="opened")
 
-    # author relationship removed to enforce string soft-link
-    project: Mapped[Any] = relationship("GitLabProject", back_populates="requirements")
-    test_cases: Mapped[list[GTMTestCase]] = relationship("GTMTestCase", secondary="gtm_requirement_test_case_links", back_populates="associated_requirements")
-    linked_bugs = association_proxy("test_cases", "linked_issues")
+    # Internal relationships
+    test_cases: Mapped[list[GTMTestCase]] = relationship(
+        "GTMTestCase",
+        secondary="gtm_requirement_test_case_links",
+        back_populates="associated_requirements",
+    )
 
     def __repr__(self) -> str:
         """返回需求的字符串表示。"""
@@ -105,10 +113,12 @@ class GTMRequirement(Base, TimestampMixin):
 
 
 class GTMRequirementTestCaseLink(Base, TimestampMixin):
-    """需求与测试用例的关联表 (gtm_requirement_test_case_links)。"""
+    """需求与测试用例的关联表。"""
 
     __tablename__ = "gtm_requirement_test_case_links"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    # Hard references (internal to test_module)
     requirement_id: Mapped[int] = mapped_column(Integer, ForeignKey("gtm_requirements.id", ondelete="CASCADE"), nullable=False)
     test_case_id: Mapped[int] = mapped_column(Integer, ForeignKey("gtm_test_cases.id", ondelete="CASCADE"), nullable=False)
 
@@ -118,11 +128,14 @@ class GTMRequirementTestCaseLink(Base, TimestampMixin):
 
 
 class GTMTestExecutionRecord(Base, TimestampMixin):
-    """测试执行完整审计记录模型 (gtm_test_execution_records)。"""
+    """测试执行完整审计记录模型。"""
 
     __tablename__ = "gtm_test_execution_records"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    project_id: Mapped[int] = mapped_column(Integer, ForeignKey("gitlab_projects.id", ondelete="CASCADE"), nullable=False)
+
+    # Soft reference
+    project_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True, comment="软外键 -> gitlab_projects.id")
+
     test_case_iid: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     result: Mapped[str] = mapped_column(String(20), nullable=False)
     executed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
@@ -132,11 +145,7 @@ class GTMTestExecutionRecord(Base, TimestampMixin):
     pipeline_id: Mapped[int | None] = mapped_column(Integer)
     environment: Mapped[str | None] = mapped_column(String(50), default="Default")
     title: Mapped[str | None] = mapped_column(String(255))
-    project: Mapped[Any] = relationship("GitLabProject", back_populates="test_execution_records")
 
     def __repr__(self) -> str:
         """返回执行记录的字符串表示。"""
         return f"<GTMTestExecutionRecord(iid={self.test_case_iid}, result={self.result})>"
-
-
-# Dynamic relationships removed as User is soft-linked

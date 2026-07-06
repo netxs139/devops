@@ -201,12 +201,7 @@ class GitLabProject(Base, TimestampMixin, TraceabilityMixin):
     issues: Mapped[list["GitLabIssue"]] = relationship("GitLabIssue", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
     pipelines: Mapped[list["GitLabPipeline"]] = relationship("GitLabPipeline", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
     deployments: Mapped[list["GitLabDeployment"]] = relationship("GitLabDeployment", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
-    # Add relationships for other modules and plugins
-    test_cases: Mapped[list["GTMTestCase"]] = relationship("GTMTestCase", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
-    requirements: Mapped[list["GTMRequirement"]] = relationship("GTMRequirement", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
-    test_execution_records: Mapped[list["GTMTestExecutionRecord"]] = relationship(  # noqa: F821
-        "GTMTestExecutionRecord", back_populates="project", cascade="all, delete-orphan"
-    )
+    # test_cases/requirements/test_execution_records relationships removed -- migrated to test_module (soft references)
     sonar_projects: Mapped[list["SonarProject"]] = relationship("SonarProject", back_populates="gitlab_project")  # noqa: F821
     jira_projects: Mapped[list["JiraProject"]] = relationship("JiraProject", back_populates="gitlab_project")  # noqa: F821
     vulnerabilities: Mapped[list["GitLabVulnerability"]] = relationship("GitLabVulnerability", back_populates="project", cascade="all, delete-orphan")  # noqa: F821
@@ -701,7 +696,7 @@ class GitLabIssue(Base, TimestampMixin, TraceabilityMixin):
                     envs.add(d.environment)
         return list(envs)
 
-    associated_test_cases: Mapped[list["GTMTestCase"]] = relationship("GTMTestCase", secondary="gtm_test_case_issue_links", back_populates="linked_issues")  # noqa: F821
+    # associated_test_cases relationship removed -- migrated to test_module (soft references)
 
     @hybrid_property
     def resolution_time(self):

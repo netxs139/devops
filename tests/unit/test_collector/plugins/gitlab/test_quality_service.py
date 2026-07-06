@@ -35,8 +35,8 @@ class TestQualityService:
         mock_req = schemas.RequirementSummary(iid=1, title="R1", state="opened", review_state="approved")
 
         # We need to mock the internal test_service calls
-        # Since QualityService creates instance of TestManagementService in __init__,
-        # we might need to mock TestManagementService class or its methods on the instance.
+        # Since QualityService creates instance of TestService in __init__,
+        # we might need to mock TestService class or its methods on the instance.
         with (
             patch.object(quality_service.test_service, "list_requirements", new_callable=AsyncMock) as mock_list,
             patch.object(quality_service.test_service, "get_requirement_detail", new_callable=AsyncMock) as mock_detail,

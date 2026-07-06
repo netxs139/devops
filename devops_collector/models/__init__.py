@@ -5,7 +5,8 @@
 
 架构说明:
     - 第1层: base_models.py 定义公共基础模型
-    - 第2层: 核心功能模块 (dependency, test_management)
+    - 第2层: 核心功能模块 (dependency)
+    - 测试管理模型已迁移至独立的 test_module
 """
 
 from .audit import AuditLog
@@ -21,7 +22,6 @@ from .base_models import (
     CostCode,
     DailyDevStats,
     EntityTopology,
-    EpicMaster,
     Incident,
     JenkinsTestExecution,
     LaborRateConfig,
@@ -47,12 +47,6 @@ from .base_models import (
 )
 from .dependency import Dependency, DependencyCVE, DependencyScan, LicenseRiskRule
 from .service_desk import ServiceDeskTicket
-from .test_management import (
-    GTMRequirement,
-    GTMTestCase,
-    GTMTestCaseIssueLink,
-    GTMTestExecutionRecord,
-)
 
 
 # --- 插件模型导入 (用于 SQLAlchemy 模型注册) ---
@@ -165,7 +159,6 @@ __all__ = [
     "EntityTopology",
     "Company",
     "Vendor",
-    "EpicMaster",
     "ComplianceIssue",
     "CommitMetrics",
     "DailyDevStats",
@@ -178,10 +171,6 @@ __all__ = [
     "LicenseRiskRule",
     "Dependency",
     "DependencyCVE",
-    "GTMTestCase",
-    "GTMTestCaseIssueLink",
-    "GTMRequirement",
-    "GTMTestExecutionRecord",
     "ServiceDeskTicket",
     "AuditLog",
 ]

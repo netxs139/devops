@@ -217,11 +217,11 @@ class Product(Base, TimestampMixin, SCDMixin):
     parent: Mapped[Product | None] = relationship(
         "Product", remote_side="Product.id", foreign_keys=[parent_product_id], backref=backref("children", cascade="all")
     )
-    #     owner_team: Mapped[Organization] = relationship("Organization", foreign_keys=[owner_team_id], back_populates="products")
-    #     product_manager: Mapped[User] = relationship("User", foreign_keys=[product_manager_id], back_populates="managed_products_as_pm")
-    #     dev_lead: Mapped[User | None] = relationship("User", foreign_keys=[dev_lead_id], back_populates="managed_products_as_dev")
-    #     qa_lead: Mapped[User | None] = relationship("User", foreign_keys=[qa_lead_id], back_populates="managed_products_as_qa")
-    #     release_lead: Mapped[User | None] = relationship("User", foreign_keys=[release_lead_id], back_populates="managed_products_as_release")
+    owner_team: Mapped[Organization] = relationship("Organization", foreign_keys=[owner_team_id], back_populates="products")
+    product_manager: Mapped[User] = relationship("User", foreign_keys=[product_manager_id], back_populates="managed_products_as_pm")
+    dev_lead: Mapped[User | None] = relationship("User", foreign_keys=[dev_lead_id], back_populates="managed_products_as_dev")
+    qa_lead: Mapped[User | None] = relationship("User", foreign_keys=[qa_lead_id], back_populates="managed_products_as_qa")
+    release_lead: Mapped[User | None] = relationship("User", foreign_keys=[release_lead_id], back_populates="managed_products_as_release")
     project_relations: Mapped[list[ProjectProductRelation]] = relationship("ProjectProductRelation", back_populates="product")
 
     def __repr__(self) -> str:
@@ -551,8 +551,8 @@ class OKRObjective(Base, TimestampMixin, SCDMixin):
     status: Mapped[str | None] = mapped_column(default="ACTIVE", comment="状态 (ACTIVE/COMPLETED/ABANDONED)")
     progress: Mapped[float | None] = mapped_column(default=0.0, comment="进度 (0.0-1.0)")
 
-    #     owner: Mapped[User | None] = relationship("User", foreign_keys=[owner_id])
-    #     organization: Mapped[Organization | None] = relationship("Organization", foreign_keys=[org_id])
+    owner: Mapped[User | None] = relationship("User", foreign_keys=[owner_id])
+    organization: Mapped[Organization | None] = relationship("Organization", foreign_keys=[org_id])
     parent: Mapped[OKRObjective | None] = relationship("OKRObjective", remote_side="OKRObjective.id", backref=backref("children", cascade="all"))
     product: Mapped[Product | None] = relationship("Product", foreign_keys=[product_id], backref=backref("objectives", cascade="all"))
     key_results: Mapped[list[OKRKeyResult]] = relationship("OKRKeyResult", back_populates="objective", cascade="all, delete-orphan")
@@ -750,12 +750,12 @@ class ProjectMaster(Base, TimestampMixin, SCDMixin, OwnableMixin):
     lead_repo_id: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="主代码仓库ID")
     description: Mapped[str | None] = mapped_column(Text, comment="项目描述")
 
-    #     organization: Mapped[Organization | None] = relationship("Organization", foreign_keys=[org_id])
-    #     project_manager: Mapped[User | None] = relationship("User", foreign_keys=[pm_user_id])
-    #     product_owner: Mapped[User | None] = relationship("User", foreign_keys=[product_owner_id])
-    #     dev_lead: Mapped[User | None] = relationship("User", foreign_keys=[dev_lead_id])
-    #     qa_lead: Mapped[User | None] = relationship("User", foreign_keys=[qa_lead_id])
-    #     release_lead: Mapped[User | None] = relationship("User", foreign_keys=[release_lead_id])
+    organization: Mapped[Organization | None] = relationship("Organization", foreign_keys=[org_id])
+    project_manager: Mapped[User | None] = relationship("User", foreign_keys=[pm_user_id])
+    product_owner: Mapped[User | None] = relationship("User", foreign_keys=[product_owner_id])
+    dev_lead: Mapped[User | None] = relationship("User", foreign_keys=[dev_lead_id])
+    qa_lead: Mapped[User | None] = relationship("User", foreign_keys=[qa_lead_id])
+    release_lead: Mapped[User | None] = relationship("User", foreign_keys=[release_lead_id])
     source_system_ref: Mapped[SystemRegistry | None] = relationship("SystemRegistry", back_populates="projects")
     gitlab_repos: Mapped[list[GitLabProject]] = relationship("GitLabProject", back_populates="mdm_project")
     product_relations: Mapped[list[ProjectProductRelation]] = relationship("ProjectProductRelation", back_populates="project")
@@ -918,61 +918,6 @@ class Vendor(Base, TimestampMixin, SCDMixin):
     # 关联
     # 注意：PurchaseContract 和 ResourceCost 已有 vendor_name 等冗余字段，这里建立对象关联以便未来重构
     # contracts = relationship('PurchaseContract', backref='vendor_ref')
-
-
-class EpicMaster(Base, TimestampMixin):
-    """跨团队/长期史诗需求 (Epic) 主数据。
-
-    用于管理跨越多个迭代、涉及多个团队的战略级需求组件 (Initiatives/Epics)。
-    """
-
-    __tablename__ = "mdm_epics"
-
-    # 基础信息
-    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
-    id: Mapped[int_pk]
-    parent_id: Mapped[int | None] = mapped_column(ForeignKey("mdm_epics.id"), nullable=True, index=True, comment="父级 Epic ID (支持多层级)")
-    epic_code: Mapped[str_50] = mapped_column(unique=True, index=True, nullable=False, comment="史诗唯一编码 (如 EPIC-24Q1-001)")
-    title: Mapped[str_200] = mapped_column(nullable=False, comment="史诗标题")
-    description: Mapped[str | None] = mapped_column(comment="价值陈述与详细描述")
-    status: Mapped[str_50 | None] = mapped_column(default="ANALYSIS", comment="状态 (ANALYSIS/BACKLOG/IN_PROGRESS/DONE/CANCELLED)")
-    priority: Mapped[str | None] = mapped_column(default="P1", comment="优先级 (P0-Strategic / P1-High)")
-
-    # 战略对齐
-    okr_objective_id: Mapped[int | None] = mapped_column(ForeignKey("mdm_okr_objectives.id"), nullable=True, index=True, comment="关联战略目标ID")
-    investment_theme: Mapped[str_100 | None] = mapped_column(comment="投资主题 (如 技术债/新业务/合规/客户体验)")
-    budget_cap: Mapped[float | None] = mapped_column(comment="预算上限 (人天或金额)")
-
-    # 规划与进度
-    owner_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mdm_identities.global_user_id"), index=True, comment="史诗负责人")
-    org_id: Mapped[int | None] = mapped_column(ForeignKey("mdm_organizations.id"), index=True, comment="负责人所属组织/部门ID")
-
-    # 时间规划 (对齐 GitLab Date Inheritance)
-    start_date_is_fixed: Mapped[bool | None] = mapped_column(default=False, comment="是否固定开始时间 (False则自动继承子任务)")
-    due_date_is_fixed: Mapped[bool | None] = mapped_column(default=False, comment="是否固定结束时间")
-    planned_start_date: Mapped[date | None] = mapped_column(comment="计划开始日期")
-    planned_end_date: Mapped[date | None] = mapped_column(comment="计划完成日期")
-    actual_start_date: Mapped[date | None] = mapped_column(comment="实际开始日期")
-    actual_end_date: Mapped[date | None] = mapped_column(comment="实际完成日期")
-
-    progress: Mapped[float | None] = mapped_column(default=0.0, comment="总体进度 (0.0-1.0, 基于子任务聚合)")
-
-    # 可视化与隐私
-    color: Mapped[str | None] = mapped_column(comment="Roadmap展示颜色 (Hex Code)")
-    is_confidential: Mapped[bool | None] = mapped_column(default=False, comment="是否机密 Epic")
-    web_url: Mapped[str_255 | None] = mapped_column(comment="GitLab 原始链接")
-    external_id: Mapped[str_50 | None] = mapped_column(comment="外部系统ID (如 GitLab Epic IID)")
-
-    # 协作信息
-    involved_teams: Mapped[json_dict | None] = mapped_column(comment="涉及团队列表 (JSON List)")
-    tags: Mapped[json_dict | None] = mapped_column(comment="标签 (JSON List)")
-
-    # Relationships
-    #     owner: Mapped[User | None] = relationship("User", foreign_keys=[owner_id])
-    #     organization: Mapped[Organization | None] = relationship("Organization", foreign_keys=[org_id])
-    okr_objective: Mapped[OKRObjective | None] = relationship("OKRObjective")
-    parent: Mapped[EpicMaster | None] = relationship("EpicMaster", remote_side="EpicMaster.id", foreign_keys=[parent_id], backref="children")
-    # child_features = relationship('Feature', back_populates='epic') # 预留给未来Feature模型
 
 
 class ComplianceIssue(Base, TimestampMixin):

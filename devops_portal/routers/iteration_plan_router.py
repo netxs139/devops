@@ -7,12 +7,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from agile_module.services.iteration_core_service import IterationCoreService
+from agile_module.services.iteration_plan_service import IterationPlanService
 from devops_collector.auth.auth_database import get_auth_db
 from devops_collector.auth.auth_dependency import get_user_gitlab_client
 from devops_collector.models import User
 from devops_collector.plugins.gitlab.gitlab_client import GitLabClient
-from devops_collector.plugins.gitlab.iteration_plan_service import IterationPlanService
-from devops_collector.services.iteration_service import IterationCoreService
 
 
 def get_iteration_core_service(db: Session = Depends(get_auth_db)) -> IterationCoreService:
@@ -23,7 +23,7 @@ def get_iteration_core_service(db: Session = Depends(get_auth_db)) -> IterationC
 from devops_portal.dependencies import get_current_user
 
 
-router = APIRouter(prefix="/iteration-plan", tags=["iteration-plan"], responses={404: {"description": "Not found"}})
+router = APIRouter(prefix="/agile/iteration", tags=["agile-iteration"], responses={404: {"description": "Not found"}})
 
 
 class PlanIssueRequest(BaseModel):

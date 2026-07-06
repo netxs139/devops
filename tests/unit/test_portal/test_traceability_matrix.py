@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from devops_collector.plugins.gitlab.test_management_service import TestManagementService
+from test_module.services.test_service import TestService
 
 
 @pytest.mark.asyncio
@@ -11,7 +11,7 @@ async def test_get_aggregated_requirements_service_logic():
     mock_db = MagicMock()
     mock_client = MagicMock()
 
-    service = TestManagementService(mock_db, mock_client)
+    service = TestService(mock_db, mock_client)
 
     # --- Mock Data Setup ---
     product_id = "PRD-TEST"

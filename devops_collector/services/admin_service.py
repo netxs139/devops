@@ -115,7 +115,7 @@ class AdminService:
         )
         self.session.add(new_mapping)
         self.session.commit()
-        return new_mapping.id
+        return int(new_mapping.id)
 
     def delete_identity_mapping(self, mapping_id: int) -> bool:
         """删除指定的身份映射。"""
@@ -133,11 +133,11 @@ class AdminService:
             return None
         mapping.mapping_status = status
         self.session.commit()
-        return mapping.mapping_status
+        return str(mapping.mapping_status) if mapping.mapping_status else None
 
     def list_teams(self) -> list[Team]:
         """列出所有虚拟业务团队。"""
-        return self.session.query(Team).options(selectinload(Team.members)).all()
+        return list(self.session.query(Team).options(selectinload(Team.members)).all())
 
     def create_team(self, data: schemas.TeamCreate) -> Team:
         """创建虚拟团队。"""

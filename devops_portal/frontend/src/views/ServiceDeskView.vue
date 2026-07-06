@@ -3,7 +3,7 @@
  * @file ServiceDeskView.vue
  * @description 服务台主页面，采用 Vue 3 + Vue Query + Naive UI (绿地重构版)
  */
-import { ref, computed } from 'vue'
+import { ref, computed, h } from 'vue'
 import {
   NCard,
   NGrid,
@@ -67,7 +67,11 @@ const createColumns = (isAgent: boolean): DataTableColumns<TicketResponse> => [
         REQUIREMENT: 'info',
         CONSULTATION: 'default'
       }
-      return <NTag type={typeMap[row.ticket_type] || 'default'}>{row.ticket_type}</NTag>
+      return h(
+        NTag,
+        { type: typeMap[row.ticket_type] || 'default' },
+        { default: () => row.ticket_type }
+      )
     }
   },
   {
@@ -82,7 +86,11 @@ const createColumns = (isAgent: boolean): DataTableColumns<TicketResponse> => [
         RESOLVED: 'success',
         CLOSED: 'default'
       }
-      return <NTag type={statusMap[row.status] || 'default'}>{row.status}</NTag>
+      return h(
+        NTag,
+        { type: statusMap[row.status] || 'default' },
+        { default: () => row.status }
+      )
     }
   },
   {
@@ -97,8 +105,12 @@ const createColumns = (isAgent: boolean): DataTableColumns<TicketResponse> => [
     title: '操作',
     key: 'actions',
     width: 100,
-    render(row: TicketResponse) {
-      return <NButton size="small" onClick={() => openTriageDrawer(row)}>分诊</NButton>
+      render(row: TicketResponse) {
+      return h(
+        NButton,
+        { size: 'small', onClick: () => openTriageDrawer(row) },
+        { default: () => '分诊' }
+      )
     }
   }] : [])
 ]
@@ -138,8 +150,9 @@ const { mutate: triageMutate, isPending: triagePending } = useMutation({
     showTriageDrawer.value = false
     queryClient.invalidateQueries({ queryKey: ['agentTickets'] })
   },
-  onError: (err: any) => {
-    message.error(err.message || '分诊失败')
+  onError: (err: unknown) => {
+    const error = err as Error
+    message.error(error.message || '分诊失败')
   }
 })
 
@@ -221,7 +234,7 @@ function handleTriageSubmit() {
         </n-form>
         <template #footer>
           <n-space>
-            <n-button @click="showTriageDrawer = false" :disabled="triagePending">取消</n-button>
+            <n-button :disabled="triagePending" @click="showTriageDrawer = false">取消</n-button>
             <n-button type="primary" :loading="triagePending" @click="handleTriageSubmit">确认分诊</n-button>
           </n-space>
         </template>

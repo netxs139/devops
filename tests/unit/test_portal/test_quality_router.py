@@ -234,7 +234,7 @@ def test_get_quality_service():
 
 
 # ---------------------------------------------------------------------------
-# Test Summary (delegates to test_management_router)
+# Test Summary (delegates to test_router)
 # ---------------------------------------------------------------------------
 
 
@@ -248,7 +248,7 @@ async def test_get_test_summary_success(authenticated_client):
 
     app.dependency_overrides[get_quality_service] = lambda: mock_service
 
-    with patch("devops_portal.routers.test_management_router.get_test_summary", new_callable=AsyncMock) as mock_internal:
+    with patch("devops_portal.routers.test_router.get_test_summary", new_callable=AsyncMock) as mock_internal:
         mock_internal.return_value = {"total_cases": 10}
         response = authenticated_client.get("/quality/projects/1/test-summary")
         assert response.status_code == 200
@@ -266,7 +266,7 @@ async def test_get_test_summary_exception(authenticated_client):
 
     app.dependency_overrides[get_quality_service] = lambda: mock_service
 
-    with patch("devops_portal.routers.test_management_router.get_test_summary", new_callable=AsyncMock) as mock_internal:
+    with patch("devops_portal.routers.test_router.get_test_summary", new_callable=AsyncMock) as mock_internal:
         mock_internal.side_effect = Exception("Internal Route Error")
         response = authenticated_client.get("/quality/projects/1/test-summary")
         assert response.status_code == 500

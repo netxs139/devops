@@ -7,7 +7,7 @@ import pytest
 from devops_collector.models.base_models import Organization, Product, ProjectMaster, ProjectProductRelation
 from devops_collector.plugins.gitlab.models import GitLabProject
 from devops_collector.plugins.gitlab.parser import GitLabTestParser
-from devops_collector.plugins.gitlab.test_management_service import TestManagementService
+from test_module.services.test_service import TestService
 
 
 @pytest.fixture
@@ -19,8 +19,8 @@ def mock_client():
 
 @pytest.fixture
 def service(db_session, mock_client):
-    """Initialize TestManagementService with mocked dependencies."""
-    return TestManagementService(db_session, mock_client)
+    """Initialize TestService with mocked dependencies."""
+    return TestService(db_session, mock_client)
 
 
 @pytest.fixture
@@ -71,8 +71,8 @@ class TestGitLabTestParser:
         assert GitLabTestParser.extract_requirement_id("No id here") is None
 
 
-class TestTestManagementService:
-    """Tests for TestManagementService."""
+class TestTestService:
+    """Tests for TestService."""
 
     @pytest.mark.anyio
     async def test_get_test_cases_should_return_parsed_cases(self, service, mock_client, db_session):

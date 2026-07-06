@@ -1,6 +1,6 @@
 """测试管理模块集成测试。
 
-验证 REST API 路由与 TestManagementService 的协同工作。
+验证 REST API 路由与 TestService 的协同工作。
 """
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -64,7 +64,7 @@ def mock_auth(monkeypatch):
 
 @pytest.fixture
 def mock_service():
-    with patch("devops_portal.routers.test_management_router.TestManagementService", autospec=True) as MockService:
+    with patch("devops_portal.routers.test_router.TestService", autospec=True) as MockService:
         service_instance = MockService.return_value
         yield service_instance
 

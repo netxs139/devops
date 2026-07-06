@@ -30,7 +30,7 @@ from devops_portal.routers import (
     quality_router,
     security_router,
     service_desk_router,
-    test_management_router,
+    test_router,
     traceability_router,
     webhook_router,
 )
@@ -75,7 +75,7 @@ app.add_middleware(AuditMiddleware)
 register_identity(app, role="master", db_session_factory=AsyncSessionLocal)
 app.include_router(quality_router.router)
 app.include_router(service_desk_router.router)
-app.include_router(test_management_router.router)
+app.include_router(test_router.router)
 app.include_router(iteration_plan_router.router)
 app.include_router(admin_router.router)
 app.include_router(devex_pulse_router.router)

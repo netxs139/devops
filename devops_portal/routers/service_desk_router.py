@@ -18,11 +18,11 @@ def get_sd_core_service(db: Session = Depends(get_auth_db)) -> ServiceDeskCoreSe
 
 
 from devops_collector.plugins.gitlab.service_desk_service import ServiceDeskService
-from devops_collector.plugins.gitlab.test_management_service import (
-    TestManagementService as TestingService,
-)
 from devops_portal import schemas
 from devops_portal.dependencies import PermissionRequired, get_current_user
+from test_module.services.test_service import (
+    TestService as TestingService,
+)
 
 
 router = APIRouter(prefix="/service-desk", tags=["service-desk"])

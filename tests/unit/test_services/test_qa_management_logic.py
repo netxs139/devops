@@ -1,6 +1,6 @@
 """测试用例解析与服务逻辑单元测试。
 
-验证 GitLabTestParser 和 TestManagementService 的核心解析与业务逻辑。
+验证 GitLabTestParser 和 TestService 的核心解析与业务逻辑。
 """
 
 from unittest.mock import MagicMock
@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from devops_collector.plugins.gitlab.gitlab_client import GitLabClient
 from devops_collector.plugins.gitlab.parser import GitLabTestParser
-from devops_collector.plugins.gitlab.test_management_service import TestManagementService
+from test_module.services.test_service import TestService
 
 
 # --- GitLabTestParser 单元测试 ---
@@ -52,7 +52,7 @@ def anyio_backend():
     return "asyncio"
 
 
-# --- TestManagementService 单元测试 ---
+# --- TestService 单元测试 ---
 
 
 @pytest.fixture
@@ -67,7 +67,7 @@ def mock_client():
 
 @pytest.fixture
 def service(mock_db, mock_client):
-    return TestManagementService(mock_db, mock_client)
+    return TestService(mock_db, mock_client)
 
 
 @pytest.mark.anyio

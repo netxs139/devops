@@ -51,10 +51,11 @@ const { mutate: createTicket, isPending } = useMutation({
   },
   onSuccess: (data) => {
     message.success('工单提交成功！')
-    emit('success', data.data) // Assuming ApiResponse.data
+    emit('success', data) // TicketResponse
   },
-  onError: (err: any) => {
-    message.error(err.message || '工单提交失败，请重试')
+  onError: (err: unknown) => {
+    const error = err as Error
+    message.error(error.message || '工单提交失败，请重试')
   }
 })
 
@@ -98,7 +99,7 @@ function handleCancel() {
       </n-form-item>
 
       <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
-        <n-button @click="handleCancel" :disabled="isPending">取消</n-button>
+        <n-button :disabled="isPending" @click="handleCancel">取消</n-button>
         <n-button type="primary" :loading="isPending" @click="handleSubmit">
           提交工单
         </n-button>

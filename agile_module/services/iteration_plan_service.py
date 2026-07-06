@@ -10,6 +10,7 @@
 
 import logging
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -55,8 +56,8 @@ class IterationPlanService:
         for issue in all_issues:
             if issue.raw_data and issue.raw_data.get("milestone") is not None:
                 continue
-            labels = issue.labels or []
-            if "type::requirements" in labels or "type::bug" in labels:
+            labels: Any = issue.labels or []
+            if isinstance(labels, list) and ("type::requirements" in labels or "type::bug" in labels):
                 backlog.append(issue)
         backlog.sort(key=lambda x: (x.weight or 0, x.created_at), reverse=True)
         return backlog
@@ -71,7 +72,7 @@ class IterationPlanService:
         query = self.session.query(GitLabIssue).filter(GitLabIssue.project_id == project_id)
         issues = []
         for issue in query.all():
-            ms = issue.raw_data.get("milestone")
+            ms = (issue.raw_data or {}).get("milestone")
             if ms and ms.get("title") == milestone_title:
                 issues.append(issue)
         return issues
@@ -143,7 +144,7 @@ class IterationPlanService:
         open_issues = []
         all_issues = self.session.query(GitLabIssue).filter(GitLabIssue.project_id == project_id, GitLabIssue.state == "opened").all()
         for issue in all_issues:
-            ms = issue.raw_data.get("milestone")
+            ms = (issue.raw_data or {}).get("milestone")
             # 注意：此处要用原 title 查找 issue，因为 Issue 里的 raw_data 还没同步
             if ms and ms.get("title") == milestone_title:
                 open_issues.append(issue)
@@ -154,7 +155,7 @@ class IterationPlanService:
                 logger.info(f"自动结转启动: 移动 {len(open_issues)} 个任务到 ID={target_ms_id}")
                 for issue in open_issues:
                     try:
-                        self.client.update_issue(project_id, issue.iid, {"milestone_id": target_ms_id})
+                        self.client.update_issue(project_id, issue.iid or 0, {"milestone_id": target_ms_id})
                     except Exception as e:
                         logger.error(f"结转任务 #{issue.iid} 失败: {e}")
                         raise ValueError(f"结转失败: 无法结转任务 #{issue.iid}，发布中止。")
@@ -217,7 +218,7 @@ class IterationPlanService:
     ) -> dict:
         """【迭代规划】创建新的冲刺 (GitLabMilestone)。"""
         try:
-            gl_milestone = self.client.create_project_milestone(project_id, title, start_date, due_date, description)
+            gl_milestone = self.client.create_project_milestone(project_id, title, start_date or "", due_date or "", description or "")
             new_ms = GitLabMilestone(
                 id=gl_milestone["id"],
                 iid=gl_milestone["iid"],
@@ -242,7 +243,7 @@ class IterationPlanService:
         query = self.session.query(GitLabIssue).filter(GitLabIssue.project_id == project_id)
         issues = []
         for issue in query.all():
-            ms = issue.raw_data.get("milestone")
+            ms = (issue.raw_data or {}).get("milestone")
             if ms and ms.get("title") == milestone_title:
                 issues.append(issue)
         return issues

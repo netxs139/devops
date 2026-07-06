@@ -13,8 +13,8 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from devops_collector.plugins.gitlab.gitlab_client import GitLabClient
-from devops_collector.plugins.gitlab.test_management_service import TestManagementService
 from devops_portal import schemas
+from test_module.services.test_service import TestService
 
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ class QualityService:
         """
         self.session = session
         self.client = client
-        self.test_service = TestManagementService(session, client)
+        self.test_service = TestService(session, client)
 
     async def get_quality_gate_status(self, project_id: int, current_user: Any) -> schemas.QualityGateStatus:
         """执行质量门禁检查。"""
