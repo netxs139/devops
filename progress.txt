@@ -1,7 +1,7 @@
 # DevOps 平台建设进度跟踪 (Progress Tracker)
 
 ## 🎯 当前重点 (Current Focus)
-- **核心重点**: Phase 5: 邮件通知与 UI 适配 (Notification & Presentation)
+- **核心重点**: 🟢 空闲
 - **状态**: 🟢 空闲
 
 ## 🛠️ 任务清单 (Tasks)
@@ -11,6 +11,7 @@
 
 ## 📋 最近完成 (Recently Completed)
 
+1. [2026-07-06] **ServiceDesk 模块全链路重构与绿地 UI**: 1. 基于 UUIDv7 构建全新的工单服务后端，实现与 GitLab Issue 的双向 webhook 同步；2. 跨库挂载 `notification-kit` 实现工单关闭的异步邮件通知；3. 绿地开发前端：物理删除全部 `sd_*.js` 遗留组件，采用 Vue 3 + Naive UI + TanStack Query 重新构建 `ServiceDeskView.vue` 与 `TicketForm.vue`；4. 修复了跨库 `workspace:*` 依赖报错与 `pnpm-lock.yaml` detect-secrets 误报拦截。commit: `d472222`。
 1. [2026-06-20] **前端重构阶段六：分析仪表盘与全地图路由注册**: 完成 HomeView.vue（全域导航大厅，按业务域自动分组）、QualityView.vue（质量监控大屏，包含同步成功率/审计异常/数据新鲜度度量与最新审计异常 Alert 列表）、PlaceholderView.vue（通用占位组件）；在 router/index.ts 注册全量 24 模块路由，在 DashboardLayout.vue 实现菜单按 Domain 动态分组与 RBAC 展示隔离。frontend-lint 0 error，build success。commit: `3dcb1a6`。
 2. [2026-06-20] **前端重构阶段五：服务台域 SFC + 手动容灾工具**: 完成 ServiceDeskView.vue（双Tab工单列表+统计看板+状态流转+驳回Modal）、TicketForm.vue（三层MDM联动+Bug/需求双模表单+NUpload附件+Query参数回填）、TestCaseView.vue @report-bug 跳转串联；recovery.py 会话检查点/恢复工具（just checkpoint/recover）；修复 ESLint `no-unused-vars` Vue SFC 配置、TS `TicketStatus` 加入 'opened'、`</Card>` → `</NCard>` 模板闭合错误；lint 0 error，typecheck 0 error，vite 3482 modules，pytest 8 passed。commit: `feab822`。
 3. [2026-06-20] **前端重构阶段四：迭代看板与团队心情 Pulse**: 完成 Board.vue（HTML5 原生 Drag/Drop，4列WIP看板）、Pulse.vue（团队心情反馈，localStorage 持久化，弹跳动效）、BoardView.vue（Sprint 信息栏+进度环+响应式布局）；typecheck/lint 100% 通过，build 2278 模块编译通过。commit: `6042b9f`。
