@@ -388,6 +388,7 @@ export interface PulseEntry {
 export interface MDMProjectProduct {
   product_id: string
   product_name: string
+  relation_type?: string
 }
 
 export interface MDMProject {

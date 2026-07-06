@@ -117,7 +117,7 @@ class GitLabGroupMember(Base, TimestampMixin, TraceabilityMixin):
     joined_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     group: Mapped["GitLabGroup | None"] = relationship("GitLabGroup", back_populates="members")  # noqa: F821
-    user: Mapped["User | None"] = relationship("User", primaryjoin=and_(User.global_user_id == user_id, User.is_current.is_(True)))  # noqa: F821
+    #     user: Mapped["User | None"] = relationship("User", primaryjoin=and_(User.global_user_id == user_id, User.is_current.is_(True)))  # noqa: F821
 
     def __repr__(self) -> str:
         """Magic method."""
@@ -454,7 +454,7 @@ class GitLabMergeRequest(Base, TimestampMixin, TraceabilityMixin):
     effective_comment_count: Mapped[int | None] = mapped_column(Integer, default=0, comment="触发了代码变更的有效评论数")
     rubber_stamp: Mapped[bool] = mapped_column(Boolean, default=False, comment="是否被判定为秒批 (Rubber-stamping)")
     author_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
-    author: Mapped["User | None"] = relationship("User", primaryjoin=and_(User.global_user_id == author_id, User.is_current.is_(True)))  # noqa: F821
+    #     author: Mapped["User | None"] = relationship("User", primaryjoin=and_(User.global_user_id == author_id, User.is_current.is_(True)))  # noqa: F821
     project: Mapped["GitLabProject | None"] = relationship("GitLabProject", back_populates="merge_requests")  # noqa: F821
     transitions: Mapped[list["GitLabMergeRequestStateTransition"]] = relationship(
         "GitLabMergeRequestStateTransition", back_populates="mr", cascade="all, delete-orphan"
@@ -551,7 +551,7 @@ class GitLabCommit(Base, TimestampMixin, TraceabilityMixin):
     project: Mapped["GitLabProject | None"] = relationship("GitLabProject", back_populates="commits")  # noqa: F821
     raw_data: Mapped[json_dict | None] = mapped_column(JSON)
     gitlab_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    author: Mapped["User | None"] = relationship("User", primaryjoin=and_(User.global_user_id == gitlab_user_id, User.is_current.is_(True)))  # noqa: F821
+    #     author: Mapped["User | None"] = relationship("User", primaryjoin=and_(User.global_user_id == gitlab_user_id, User.is_current.is_(True)))  # noqa: F821
 
     # [Advanced Metrics] - Added for Option A Architecture Alignment
     eloc_score: Mapped[float | None] = mapped_column(Float, default=0.0, comment="有效代码行数得分")
@@ -668,7 +668,7 @@ class GitLabIssue(Base, TimestampMixin, TraceabilityMixin):
     milestone_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_milestones.id"), nullable=True)
     raw_data: Mapped[json_dict | None] = mapped_column(JSON)
     author_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
-    author: Mapped["User | None"] = relationship("User", primaryjoin=and_(User.global_user_id == author_id, User.is_current.is_(True)))  # noqa: F821
+    #     author: Mapped["User | None"] = relationship("User", primaryjoin=and_(User.global_user_id == author_id, User.is_current.is_(True)))  # noqa: F821
     project: Mapped["GitLabProject | None"] = relationship("GitLabProject", back_populates="issues")  # noqa: F821
     events: Mapped[list["GitLabIssueEvent"]] = relationship("GitLabIssueEvent", back_populates="issue", cascade="all, delete-orphan")  # noqa: F821
     transitions: Mapped[list["GitLabIssueStateTransition"]] = relationship("GitLabIssueStateTransition", back_populates="issue", cascade="all, delete-orphan")  # noqa: F821
@@ -868,7 +868,7 @@ class GitLabIssueEvent(Base, TimestampMixin, TraceabilityMixin):
     meta_info: Mapped[json_dict | None] = mapped_column(JSON)
     created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     issue: Mapped["GitLabIssue | None"] = relationship("GitLabIssue", back_populates="events")  # noqa: F821
-    user: Mapped["User | None"] = relationship("User", foreign_keys=[user_id])  # noqa: F821
+    #     user: Mapped["User | None"] = relationship("User", foreign_keys=[user_id])  # noqa: F821
 
     def __repr__(self) -> str:
         '''"""TODO: Add description.
@@ -1575,7 +1575,7 @@ class GitLabWikiLog(Base, TimestampMixin, TraceabilityMixin):
     user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
     created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     project: Mapped["GitLabProject | None"] = relationship("GitLabProject")  # noqa: F821
-    user: Mapped["User | None"] = relationship("User", foreign_keys=[user_id])  # noqa: F821
+    #     user: Mapped["User | None"] = relationship("User", foreign_keys=[user_id])  # noqa: F821
     raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
     def __repr__(self) -> str:

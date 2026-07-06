@@ -6,11 +6,11 @@ from datetime import datetime
 
 """TODO: Add module description."""
 
-from sqlalchemy import JSON, BigInteger, DateTime, Float, ForeignKey, Integer, String, and_
+from sqlalchemy import JSON, BigInteger, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin, User, int_pk, json_dict
+from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin, int_pk, json_dict
 
 
 class JFrogArtifact(Base, TimestampMixin, TraceabilityMixin):
@@ -72,7 +72,7 @@ class JFrogArtifact(Base, TimestampMixin, TraceabilityMixin):
     created_by_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
     created_by_name: Mapped[str | None] = mapped_column(String(100))
     product_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("mdm_products.id"))
-    created_by: Mapped["User | None"] = relationship("User", primaryjoin=and_(User.global_user_id == created_by_id, User.is_current.is_(True)))  # noqa: F821
+    #     created_by: Mapped["User | None"] = relationship("User", primaryjoin=and_(User.global_user_id == created_by_id, User.is_current.is_(True)))  # noqa: F821
     product: Mapped["Product | None"] = relationship("Product")  # noqa: F821
     raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 

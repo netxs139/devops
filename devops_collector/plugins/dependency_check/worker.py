@@ -55,7 +55,7 @@ class DependencyCheckWorker(BaseWorker):
     ):
         """初始化"""
         from devops_collector.config import settings
-        
+
         super().__init__(session, client)
         self.report_base_dir = report_dir or f"{settings.sys.data_dir}/dependency-reports"
         self.keep_reports = keep_reports

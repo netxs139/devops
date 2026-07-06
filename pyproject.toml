@@ -7,7 +7,7 @@ name = "devops-platform"
 version = "3.4.0"
 description = "DevOps Data Application Platform"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = {text = "MIT"}
 authors = [
     {name = "Netxs Team", email = "netxs2000@163.com"}
@@ -60,6 +60,9 @@ dependencies = [
     "rich>=14.3.3",
     "litellm>=1.83.0",
     "typer>=0.24.1",
+    "identity-module",
+    "asyncpg>=0.31.0",
+    "pyjwt>=2.13.0",
 ]
 
 [project.optional-dependencies]
@@ -230,3 +233,6 @@ exclude_lines = [
 index-url = "http://192.168.5.64:8081/repository/group-pypi/simple"
 extra-index-url = ["https://pypi.org/simple"]
 allow-insecure-host = ["192.168.5.64"]
+
+[tool.uv.sources]
+identity-module = { path = "../amdp/identity_module", editable = true }

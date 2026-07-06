@@ -21,7 +21,21 @@ import {
   useMessage
 } from 'naive-ui'
 import { http } from '@/utils/request'
-import type { ProductView, MDMProject, ImportSummary } from '@/types/api'
+import type { MDMProject } from '@/types/api'
+
+export interface ProductView {
+  product_id: string
+  product_name: string
+  category?: string
+  lifecycle_status?: string
+  product_description?: string
+}
+
+export interface ImportSummary {
+  total_processed: number
+  success_count: number
+  failure_count: number
+}
 
 interface BriefUser {
   user_id: string
@@ -350,7 +364,7 @@ onMounted(() => {
           <NSelect
             v-model:value="linkForm.product_id"
             placeholder="请选择产品"
-            :options="products.map(p => ({ label: `[${p.product_id}] ${p.product_name}`, value: p.product_id }))"
+            :options="products.map((p: ProductView) => ({ label: `[${p.product_id}] ${p.product_name}`, value: p.product_id }))"
             filterable
           />
         </NFormItem>

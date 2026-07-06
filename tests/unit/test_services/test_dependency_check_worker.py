@@ -25,6 +25,7 @@ class TestDependencyCheckWorker(unittest.TestCase):
         """'''
         self.config = {"dependency_check": {"cli_path": "/usr/bin/dependency-check", "timeout": 300}}
         import tempfile
+
         self.test_dir = tempfile.mkdtemp()
         self.worker = DependencyCheckWorker(MagicMock(), MagicMock(), report_dir=self.test_dir)
         self.worker.session = MagicMock()

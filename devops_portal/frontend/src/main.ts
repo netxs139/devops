@@ -5,7 +5,7 @@
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import { VueQueryPlugin } from '@tanstack/vue-query'
+
 import App from './App.vue'
 import router from './router'
 import { vPermission } from './directives/permission'
@@ -14,7 +14,7 @@ const app = createApp(App)
 
 app.use(createPinia())
 app.use(router)
-app.use(VueQueryPlugin)
+
 
 // 按钮级鉴权指令（全局注册）
 app.directive('permission', vPermission)

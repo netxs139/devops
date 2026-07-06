@@ -5,13 +5,12 @@
  */
 import { ref } from 'vue'
 import { NTabs, NTabPane, NCard } from 'naive-ui'
-import OrgUserAdmin from '@/components/OrgUserAdmin.vue'
-import IdentityMappingAdmin from '@/components/IdentityMappingAdmin.vue'
+import IamKitIntegration from '@/components/IamKitIntegration.vue'
 import ProjectMappingAdmin from '@/components/ProjectMappingAdmin.vue'
 import ProductAdmin from '@/components/ProductAdmin.vue'
 import AuditLogAdmin from '@/components/AuditLogAdmin.vue'
 
-const activeTab = ref<'org_user' | 'identity' | 'project' | 'product' | 'audit'>('org_user')
+const activeTab = ref<'iam' | 'project' | 'product' | 'audit'>('iam')
 </script>
 
 <template>
@@ -25,11 +24,8 @@ const activeTab = ref<'org_user' | 'identity' | 'project' | 'product' | 'audit'>
     <!-- 主卡片及 Tab 控制 -->
     <NCard class="admin-main-card" :bordered="false">
       <NTabs v-model:value="activeTab" type="card" class="admin-tabs">
-        <NTabPane name="org_user" tab="🏢 组织与用户">
-          <OrgUserAdmin />
-        </NTabPane>
-        <NTabPane name="identity" tab="🔗 外部身份映射">
-          <IdentityMappingAdmin />
+        <NTabPane name="iam" tab="🏢 身份与用户管理 (IAM)">
+          <IamKitIntegration />
         </NTabPane>
         <NTabPane name="project" tab="🗺️ 项目与仓库绑定">
           <ProjectMappingAdmin />

@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 
 from sqlalchemy import (
     JSON,
-    UUID,
     Boolean,
     Date,
     DateTime,
@@ -59,16 +58,14 @@ class TimestampMixin:
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), comment="创建时间")
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), onupdate=lambda: datetime.now(UTC), comment="最后更新时间", nullable=True)
-    created_by: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("mdm_identities.global_user_id", use_alter=True, name="fk_audit_created_by"),
+    created_by: Mapped[str | None] = mapped_column(
+        String(32),
         nullable=True,
         index=True,
         comment="创建者ID",
     )
-    updated_by: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("mdm_identities.global_user_id", use_alter=True, name="fk_audit_updated_by"),
+    updated_by: Mapped[str | None] = mapped_column(
+        String(32),
         nullable=True,
         index=True,
         comment="最后操作者ID",
@@ -108,133 +105,11 @@ class OwnableMixin:
         return None
 
 
-class Organization(Base, TimestampMixin, SCDMixin):
-    """组织架构表，支持 SCD Type 2 生命周期管理。"""
-
-    __tablename__ = "mdm_organizations"
-    __table_args__ = (
-        Index("idx_mdm_org_active_lookup", "org_code", postgresql_where="is_current IS TRUE", sqlite_where=text("is_current = 1")),
-        Index("uq_mdm_org_code_active", "org_code", unique=True, postgresql_where="is_current IS TRUE", sqlite_where=text("is_current = 1")),
-    )
-    id: Mapped[int_pk]
-    org_code: Mapped[str_100] = mapped_column(index=True, comment="组织唯一标识 (HR系统同步)")
-    org_name: Mapped[str_200] = mapped_column(comment="组织名称")
-    org_level: Mapped[int] = mapped_column(Integer, default=1, comment="组织层级 (1=公司, 2=部门, 3=团队)")
-    parent_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("mdm_organizations.id", use_alter=True, name="fk_org_parent_id"), nullable=True, index=True, comment="上级组织ID"
-    )
-    manager_user_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id", use_alter=True, name="fk_org_manager"), index=True, comment="部门负责人"
-    )
-    manager_raw_id: Mapped[str_100 | None] = mapped_column(nullable=True, comment="负责人原始标识")
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否启用")
-    cost_center: Mapped[str_100 | None] = mapped_column(nullable=True, comment="成本中心编码")
-    business_line: Mapped[str_50 | None] = mapped_column(nullable=True, comment="所属业务线/体系")
-
-    # Relationships
-    parent: Mapped[Organization | None] = relationship(
-        "Organization",
-        remote_side="Organization.id",
-        foreign_keys=[parent_id],
-        backref=backref("children", cascade="all"),
-    )
-    manager: Mapped[User | None] = relationship("User", foreign_keys=[manager_user_id], back_populates="managed_organizations")
-    users: Mapped[list[User]] = relationship(
-        "User",
-        primaryjoin="Organization.id == User.department_id",
-        back_populates="department",
-    )
-    products: Mapped[list[Product]] = relationship("Product", back_populates="owner_team")
-
-    def __repr__(self) -> str:
-        """返回组织架构的字符串表示。"""
-        return f"<Organization(org_code='{self.org_code}', name='{self.org_name}', version={self.sync_version})>"
-
-
-class User(Base, TimestampMixin, SCDMixin):
-    """全局用户映射表。"""
-
-    __tablename__ = "mdm_identities"
-    __table_args__ = (
-        Index("idx_mdm_user_active_lookup", "employee_id", postgresql_where="is_current IS TRUE", sqlite_where=text("is_current = 1")),
-        Index("idx_mdm_user_email_lookup", "primary_email", postgresql_where="is_current IS TRUE", sqlite_where=text("is_current = 1")),
-        Index("uq_user_employee_id_active", "employee_id", unique=True, postgresql_where="is_current IS TRUE", sqlite_where=text("is_current = 1")),
-        Index("uq_user_email_active", "primary_email", unique=True, postgresql_where="is_current IS TRUE", sqlite_where=text("is_current = 1")),
-    )
-    global_user_id: Mapped[uuid_pk]
-    employee_id: Mapped[str_50 | None] = mapped_column(index=True, comment="HR系统工号")
-    username: Mapped[str_100 | None] = mapped_column(comment="登录用户名")
-    full_name: Mapped[str_200 | None] = mapped_column(comment="用户姓名")
-    primary_email: Mapped[str_255 | None] = mapped_column(index=True, comment="主邮箱地址")
-    department_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("mdm_organizations.id", use_alter=True, name="fk_user_dept"), index=True, comment="所属部门ID"
-    )
-    position: Mapped[str_100 | None] = mapped_column(comment="职位/岗位名称")
-    hr_relationship: Mapped[str_50 | None] = mapped_column(comment="人事关系")
-    location_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("mdm_locations.id", use_alter=True, name="fk_user_location"), nullable=True, index=True, comment="常驻办公地点ID"
-    )
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否在职")
-    is_survivor: Mapped[bool] = mapped_column(Boolean, default=False, comment="是否通过合并保留的账号")
-
-    total_eloc: Mapped[float] = mapped_column(Float, default=0.0, comment="累计有效代码行数")
-    eloc_rank: Mapped[int] = mapped_column(Integer, default=0, comment="ELOC排名")
-
-    # Relationships
-    location: Mapped[Location | None] = relationship("Location", foreign_keys=[location_id])
-    department: Mapped[Organization | None] = relationship("Organization", foreign_keys=[department_id], back_populates="users")
-    managed_organizations: Mapped[list[Organization]] = relationship(
-        "Organization", primaryjoin="User.global_user_id == Organization.manager_user_id", back_populates="manager"
-    )
-    identities: Mapped[list[IdentityMapping]] = relationship(
-        "IdentityMapping", back_populates="user", primaryjoin="IdentityMapping.global_user_id == User.global_user_id"
-    )
-    roles: Mapped[list[SysRole]] = relationship(
-        "SysRole", secondary="sys_user_roles", primaryjoin="User.global_user_id == UserRole.user_id", secondaryjoin="SysRole.id == UserRole.role_id"
-    )
-    managed_products_as_pm: Mapped[list[Product]] = relationship(
-        "Product", back_populates="product_manager", primaryjoin="User.global_user_id == Product.product_manager_id"
-    )
-    managed_products_as_dev: Mapped[list[Product]] = relationship(
-        "Product", back_populates="dev_lead", primaryjoin="User.global_user_id == Product.dev_lead_id"
-    )
-    managed_products_as_qa: Mapped[list[Product]] = relationship("Product", back_populates="qa_lead", primaryjoin="User.global_user_id == Product.qa_lead_id")
-    managed_products_as_release: Mapped[list[Product]] = relationship(
-        "Product", back_populates="release_lead", primaryjoin="User.global_user_id == Product.release_lead_id"
-    )
-    team_memberships: Mapped[list[TeamMember]] = relationship("TeamMember", back_populates="user", primaryjoin="User.global_user_id == TeamMember.user_id")
-
-    @property
-    def email(self) -> str:
-        """返回用户主邮箱（用于模式匹配）。"""
-        return self.primary_email or ""
-
-    @property
-    def external_usernames(self) -> list[str]:
-        """返回用户关联的所有外部系统用户名。"""
-        return [i.external_username for i in self.identities if i.external_username]
-
-    @property
-    def role(self) -> str:
-        """返回用户的第一个主要角色代码，默认为 'user'。"""
-        if self.roles:
-            return self.roles[0].role_key
-        return "user"
-
-    if TYPE_CHECKING:
-        credential: UserCredential | None
-        token_permissions: list[str]
-        token_roles: list[str]
-
-    def __repr__(self) -> str:
-        """返回用户的字符串表示。"""
-        return f"<User(name='{self.full_name}', email='{self.primary_email}', version={self.sync_version})>"
-
-
 class CommitMetrics(Base, TimestampMixin):
     """单个提交的详细度量数据 (ELOC)。"""
 
     __tablename__ = "rpt_commit_metrics"
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     commit_sha: Mapped[str_100] = mapped_column(unique=True, index=True, comment="提交SHA哈希值")
     project_id: Mapped[int | None] = mapped_column(ForeignKey("mdm_projects.id"), nullable=True, index=True, comment="所属项目物理ID")
@@ -258,6 +133,7 @@ class DailyDevStats(Base, TimestampMixin):
     """开发人员行为的每日快照。"""
 
     __tablename__ = "rpt_daily_dev_stats"
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mdm_identities.global_user_id"), index=True, comment="用户ID")
     date: Mapped[date] = mapped_column(Date, index=True, comment="统计日期")
@@ -272,6 +148,7 @@ class DORAMetrics(Base, TimestampMixin):
     """项目或团队维度的 DORA 2.0 标准度量数据快照。"""
 
     __tablename__ = "rpt_dora_metrics"
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     entity_id: Mapped[int] = mapped_column(index=True, comment="关联的项目或团队 ID")
     entity_type: Mapped[str_50] = mapped_column(index=True, comment="实体类型 (PROJECT/TEAM)")
@@ -296,160 +173,13 @@ class SatisfactionRecord(Base, TimestampMixin):
     """开发人员体验/满意度调查记录 (SPACE 框架中的 Satisfaction)。"""
 
     __tablename__ = "rpt_satisfaction_records"
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     user_email: Mapped[str_255] = mapped_column(index=True, comment="受访用户邮箱")
     score: Mapped[int] = mapped_column(Integer, comment="满意度评分 (1-5)")
     date: Mapped[date] = mapped_column(Date, index=True, comment="调查日期")
     tags: Mapped[str_255 | None] = mapped_column(nullable=True, comment="标签")
     comment: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="开放式反馈评语")
-
-
-class SysMenu(Base, TimestampMixin):
-    """系统菜单/权限表 (sys_menu)。"""
-
-    __tablename__ = "sys_menu"
-
-    id: Mapped[int_pk]
-    menu_name: Mapped[str_50] = mapped_column(comment="菜单名称")
-    parent_id: Mapped[int | None] = mapped_column(ForeignKey("sys_menu.id", use_alter=True, name="fk_menu_parent_id"), nullable=True, comment="父菜单ID")
-    order_num: Mapped[int] = mapped_column(Integer, default=0, comment="显示顺序")
-    path: Mapped[str_200] = mapped_column(default="", comment="路由地址")
-    component: Mapped[str_255 | None] = mapped_column(comment="组件路径")
-    query: Mapped[str_255 | None] = mapped_column(comment="路由参数")
-    is_frame: Mapped[bool] = mapped_column(Boolean, default=False, comment="是否为外链")
-    is_cache: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否缓存")
-    menu_type: Mapped[str] = mapped_column(String(1), default="", comment="菜单类型 (M目录 C菜单 F按钮)")
-    visible: Mapped[bool] = mapped_column(Boolean, default=True, comment="菜单状态 (True显示 False隐藏)")
-    status: Mapped[bool] = mapped_column(Boolean, default=True, comment="菜单状态 (True正常 False停用)")
-    perms: Mapped[str_100 | None] = mapped_column(comment="权限标识")
-    icon: Mapped[str_100] = mapped_column(default="#", comment="菜单图标")
-    remark: Mapped[str | None] = mapped_column(String(500), default="", comment="备注")
-
-    # 自引用关系：父子菜单
-    children: Mapped[list[SysMenu]] = relationship("SysMenu", backref=backref("parent", remote_side="SysMenu.id", foreign_keys=[parent_id]))
-
-
-class SysRole(Base, TimestampMixin):
-    """系统角色表 (sys_role)。"""
-
-    __tablename__ = "sys_role"
-
-    id: Mapped[int_pk]
-    role_name: Mapped[str] = mapped_column(String(30), comment="角色名称")
-    role_key: Mapped[str_100] = mapped_column(unique=True, comment="角色权限字符串")
-    role_sort: Mapped[int] = mapped_column(Integer, default=0, comment="显示顺序")
-
-    # 数据范围（1：全部数据权限 2：自定数据权限 3：本部门数据权限 4：本部门及以下数据权限 5：仅本人数据权限）
-    data_scope: Mapped[int] = mapped_column(Integer, default=1, comment="数据范围")
-
-    parent_id: Mapped[int] = mapped_column(Integer, default=0, comment="父角色ID")
-    status: Mapped[bool] = mapped_column(Boolean, default=True, comment="角色状态")
-    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, comment="删除标志")
-    remark: Mapped[str | None] = mapped_column(String(500), comment="备注")
-
-    # Relationships
-    menus: Mapped[list[SysMenu]] = relationship("SysMenu", secondary="sys_role_menu", backref="roles")
-    depts: Mapped[list[Organization]] = relationship("Organization", secondary="sys_role_dept", backref="roles")
-
-
-class SysRoleMenu(Base, TimestampMixin):
-    """角色和菜单关联表 (sys_role_menu)。"""
-
-    __tablename__ = "sys_role_menu"
-    role_id: Mapped[int] = mapped_column(ForeignKey("sys_role.id"), primary_key=True)
-    menu_id: Mapped[int] = mapped_column(ForeignKey("sys_menu.id"), primary_key=True)
-
-
-class SysRoleDept(Base, TimestampMixin):
-    """角色和部门关联表 (sys_role_dept)，用于自定义数据权限。"""
-
-    __tablename__ = "sys_role_dept"
-    role_id: Mapped[int] = mapped_column(ForeignKey("sys_role.id"), primary_key=True)
-    dept_id: Mapped[int] = mapped_column(ForeignKey("mdm_organizations.id"), primary_key=True)
-
-
-class UserRole(Base, TimestampMixin):
-    """用户与角色关联表 (sys_user_role)。"""
-
-    __tablename__ = "sys_user_roles"
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("mdm_identities.global_user_id"), primary_key=True, comment="用户ID")
-    role_id: Mapped[int] = mapped_column(ForeignKey("sys_role.id"), primary_key=True, comment="角色ID")
-
-    __table_args__ = (UniqueConstraint("user_id", "role_id", name="uq_sys_user_role"),)
-
-
-class IdentityMapping(Base, TimestampMixin):
-    """外部身份映射表，连接 MDM 用户与第三方系统账号。"""
-
-    __tablename__ = "mdm_identity_mappings"
-    id: Mapped[int_pk]
-    global_user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mdm_identities.global_user_id"), index=True, comment="全局用户ID")
-    source_system: Mapped[str_50] = mapped_column(index=True, comment="来源系统")
-    external_user_id: Mapped[str_100] = mapped_column(comment="外部系统用户ID")
-    external_username: Mapped[str_100 | None] = mapped_column(comment="外部系统用户名")
-    external_email: Mapped[str_100 | None] = mapped_column(comment="外部系统邮箱")
-    mapping_status: Mapped[str] = mapped_column(String(20), default="VERIFIED", comment="映射状态")
-    confidence_score: Mapped[float] = mapped_column(Float, default=1.0, comment="置信度")
-    last_active_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), comment="最后活跃时间")
-
-    __table_args__ = (
-        UniqueConstraint("source_system", "external_user_id", name="uq_source_external_user"),
-        UniqueConstraint("source_system", "global_user_id", name="uq_source_global_user"),
-    )
-
-    user: Mapped[User] = relationship("User", back_populates="identities", primaryjoin="IdentityMapping.global_user_id == User.global_user_id")
-
-
-class Team(Base, TimestampMixin, SCDMixin):
-    """虚拟业务团队/项目组表。"""
-
-    __tablename__ = "sys_teams"
-    __table_args__ = (
-        Index("idx_mdm_team_active_lookup", "team_code", postgresql_where="is_current IS TRUE", sqlite_where=text("is_current = 1")),
-        Index("uq_mdm_team_code_active", "team_code", unique=True, postgresql_where="is_current IS TRUE", sqlite_where=text("is_current = 1")),
-    )
-    id: Mapped[int_pk]
-    name: Mapped[str_100] = mapped_column(comment="团队名称")
-    team_code: Mapped[str_50] = mapped_column(index=True, comment="团队代码")
-    description: Mapped[str | None] = mapped_column(Text, comment="团队描述")
-    parent_id: Mapped[int | None] = mapped_column(ForeignKey("sys_teams.id", use_alter=True, name="fk_team_parent_id"), nullable=True, comment="上级团队ID")
-    org_id: Mapped[int | None] = mapped_column(ForeignKey("mdm_organizations.id"), nullable=True, comment="所属组织ID")
-    leader_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mdm_identities.global_user_id"), nullable=True, comment="团队负责人")
-
-    parent: Mapped[Team | None] = relationship(
-        "Team", remote_side="Team.id", foreign_keys=[parent_id], backref=backref("children", cascade="all, delete-orphan")
-    )
-    leader: Mapped[User | None] = relationship("User", foreign_keys=[leader_id])
-    members: Mapped[list[TeamMember]] = relationship("TeamMember", back_populates="team", cascade="all, delete-orphan")
-
-    def __repr__(self) -> str:
-        """Magic method."""
-        return f"<Team(name='{self.name}', code='{self.team_code}', version={self.sync_version})>"
-
-
-class TeamMember(Base, TimestampMixin):
-    """团队成员关联表。"""
-
-    __tablename__ = "sys_team_members"
-    id: Mapped[int_pk]
-    team_id: Mapped[int] = mapped_column(ForeignKey("sys_teams.id"), nullable=False, comment="团队ID")
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("mdm_identities.global_user_id"), nullable=False, comment="成员用户ID")
-    role_code: Mapped[str_50] = mapped_column(default="MEMBER", comment="团队角色")
-    allocation_ratio: Mapped[float] = mapped_column(Float, default=1.0, comment="工作量分配比例")
-
-    __table_args__ = (UniqueConstraint("team_id", "user_id", name="uq_team_user_membership"),)
-
-    team: Mapped[Team] = relationship("Team", back_populates="members")
-    user: Mapped[User] = relationship("User", back_populates="team_memberships", foreign_keys=[user_id])
-
-    @property
-    def full_name(self) -> str:
-        """Execute command."""
-        return self.user.full_name if self.user and self.user.full_name else "Unknown"
-
-    def __repr__(self) -> str:
-        """Magic method."""
-        return f"<TeamMember(team_id={self.team_id}, user_id={self.user_id}, role={self.role_code})>"
 
 
 class Product(Base, TimestampMixin, SCDMixin):
@@ -460,6 +190,7 @@ class Product(Base, TimestampMixin, SCDMixin):
         Index("idx_mdm_product_active_lookup", "product_code", postgresql_where="is_current IS TRUE", sqlite_where=text("is_current = 1")),
         Index("uq_mdm_product_code_active", "product_code", unique=True, postgresql_where="is_current IS TRUE", sqlite_where=text("is_current = 1")),
     )
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     product_code: Mapped[str_100] = mapped_column(index=True, nullable=False, comment="产品业务唯一标识")
     product_name: Mapped[str_255] = mapped_column(nullable=False, comment="产品名称")
@@ -486,11 +217,11 @@ class Product(Base, TimestampMixin, SCDMixin):
     parent: Mapped[Product | None] = relationship(
         "Product", remote_side="Product.id", foreign_keys=[parent_product_id], backref=backref("children", cascade="all")
     )
-    owner_team: Mapped[Organization] = relationship("Organization", foreign_keys=[owner_team_id], back_populates="products")
-    product_manager: Mapped[User] = relationship("User", foreign_keys=[product_manager_id], back_populates="managed_products_as_pm")
-    dev_lead: Mapped[User | None] = relationship("User", foreign_keys=[dev_lead_id], back_populates="managed_products_as_dev")
-    qa_lead: Mapped[User | None] = relationship("User", foreign_keys=[qa_lead_id], back_populates="managed_products_as_qa")
-    release_lead: Mapped[User | None] = relationship("User", foreign_keys=[release_lead_id], back_populates="managed_products_as_release")
+    #     owner_team: Mapped[Organization] = relationship("Organization", foreign_keys=[owner_team_id], back_populates="products")
+    #     product_manager: Mapped[User] = relationship("User", foreign_keys=[product_manager_id], back_populates="managed_products_as_pm")
+    #     dev_lead: Mapped[User | None] = relationship("User", foreign_keys=[dev_lead_id], back_populates="managed_products_as_dev")
+    #     qa_lead: Mapped[User | None] = relationship("User", foreign_keys=[qa_lead_id], back_populates="managed_products_as_qa")
+    #     release_lead: Mapped[User | None] = relationship("User", foreign_keys=[release_lead_id], back_populates="managed_products_as_release")
     project_relations: Mapped[list[ProjectProductRelation]] = relationship("ProjectProductRelation", back_populates="product")
 
     def __repr__(self) -> str:
@@ -502,6 +233,7 @@ class ProjectProductRelation(Base, TimestampMixin):
     """项目与产品的关联权重表。"""
 
     __tablename__ = "mdm_rel_project_product"
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     project_id: Mapped[int] = mapped_column(ForeignKey("mdm_projects.id"), nullable=False, index=True, comment="项目ID")
     org_id: Mapped[int] = mapped_column(ForeignKey("mdm_organizations.id"), nullable=False, index=True, comment="所属组织ID")
@@ -518,6 +250,7 @@ class BusinessSystem(Base, TimestampMixin):
 
     __tablename__ = "mdm_business_systems"
 
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     code: Mapped[str_255] = mapped_column(unique=True, nullable=False, index=True, comment="系统标准代号")
     name: Mapped[str_100] = mapped_column(nullable=False, comment="系统中文名称")
@@ -532,14 +265,17 @@ class BusinessSystem(Base, TimestampMixin):
     business_owner_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mdm_identities.global_user_id"), comment="业务负责人")
 
     services: Mapped[list[Service]] = relationship("Service", back_populates="system")
-    owner: Mapped[User | None] = relationship("User", foreign_keys=[owner_id])
-    business_owner: Mapped[User | None] = relationship("User", foreign_keys=[business_owner_id])
+
+
+#     owner: Mapped[User | None] = relationship("User", foreign_keys=[owner_id])
+#     business_owner: Mapped[User | None] = relationship("User", foreign_keys=[business_owner_id])
 
 
 class Service(Base, TimestampMixin, SCDMixin):
     """服务/组件目录表。"""
 
     __tablename__ = "mdm_services"
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     name: Mapped[str_200] = mapped_column(nullable=False, comment="服务名称")
     tier: Mapped[str | None] = mapped_column(String(20), comment="服务级别")
@@ -552,7 +288,7 @@ class Service(Base, TimestampMixin, SCDMixin):
     links: Mapped[json_dict | None] = mapped_column(comment="相关链接")
 
     system: Mapped[BusinessSystem | None] = relationship("BusinessSystem", back_populates="services")
-    organization: Mapped[Organization | None] = relationship("Organization", foreign_keys=[org_id])
+    #     organization: Mapped[Organization | None] = relationship("Organization", foreign_keys=[org_id])
     costs: Mapped[list[ResourceCost]] = relationship("ResourceCost", back_populates="service")
     slos: Mapped[list[SLO]] = relationship("SLO", back_populates="service", cascade="all, delete-orphan")
     project_mappings: Mapped[list[ServiceProjectMapping]] = relationship("ServiceProjectMapping", back_populates="service", cascade="all, delete-orphan")
@@ -573,6 +309,7 @@ class ResourceCost(Base, TimestampMixin):
     """资源成本记录明细表。"""
 
     __tablename__ = "stg_mdm_resource_costs"
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     service_id: Mapped[int | None] = mapped_column(ForeignKey("mdm_services.id"), nullable=True, index=True, comment="关联服务ID")
     cost_code_id: Mapped[int | None] = mapped_column(ForeignKey("mdm_cost_codes.id"), nullable=True, index=True, comment="成本科目ID")
@@ -599,6 +336,7 @@ class MetricDefinition(Base, TimestampMixin, SCDMixin):
         Index("uq_mdm_metric_code_active", "metric_code", unique=True, postgresql_where="is_current IS TRUE", sqlite_where=text("is_current = 1")),
     )
 
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     metric_code: Mapped[str_100] = mapped_column(index=True, nullable=False, comment="指标唯一编码")
     metric_name: Mapped[str_200] = mapped_column(nullable=False, comment="指标展示名称")
@@ -617,8 +355,8 @@ class MetricDefinition(Base, TimestampMixin, SCDMixin):
     status: Mapped[str] = mapped_column(String(50), default="RELEASED", comment="生命周期状态")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否启用")
 
-    business_owner: Mapped[User | None] = relationship("User", foreign_keys=[business_owner_id])
-    technical_owner: Mapped[User | None] = relationship("User", foreign_keys=[technical_owner_id])
+    #     business_owner: Mapped[User | None] = relationship("User", foreign_keys=[business_owner_id])
+    #     technical_owner: Mapped[User | None] = relationship("User", foreign_keys=[technical_owner_id])
 
     def __repr__(self):
         """Magic method."""
@@ -640,6 +378,7 @@ class SystemRegistry(Base, TimestampMixin, SCDMixin):
     )
 
     # 基础信息
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     system_code: Mapped[str_50] = mapped_column(nullable=False, index=True, comment="系统唯一标准代号 (如 gitlab-corp)")
     system_name: Mapped[str_100] = mapped_column(nullable=False, comment="系统显示名称")
@@ -669,7 +408,7 @@ class SystemRegistry(Base, TimestampMixin, SCDMixin):
     last_sync_at: Mapped[datetime | None] = mapped_column(comment="最后一次数据同步时间")
     remarks: Mapped[str | None] = mapped_column(comment="备注说明")
 
-    technical_owner: Mapped[User | None] = relationship("User", foreign_keys=[technical_owner_id])
+    #     technical_owner: Mapped[User | None] = relationship("User", foreign_keys=[technical_owner_id])
     projects: Mapped[list[ProjectMaster]] = relationship("ProjectMaster", back_populates="source_system_ref")
 
 
@@ -682,6 +421,7 @@ class EntityTopology(Base, TimestampMixin, SCDMixin):
 
     __tablename__ = "mdm_entity_topology"
 
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
 
     # 1. 逻辑侧 (Who) - 指向业务服务
@@ -720,6 +460,7 @@ class SyncLog(Base, TimestampMixin):
     """插件数据同步日志记录表。"""
 
     __tablename__ = "sys_sync_logs"
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     project_id: Mapped[int | None] = mapped_column(ForeignKey("mdm_projects.id"), nullable=True, index=True, comment="关联项目物理ID")
     external_id: Mapped[str_100 | None] = mapped_column(index=True, comment="来源系统原始ID")
@@ -733,6 +474,7 @@ class Location(Base, TimestampMixin):
     """地理位置或机房位置参考表。"""
 
     __tablename__ = "mdm_locations"
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     location_code: Mapped[str_50 | None] = mapped_column(unique=True, index=True, comment="位置唯一业务标识 (如 LOC_BJ_01)")
     code: Mapped[str | None] = mapped_column(index=True, comment="行政区划或业务编码 (如 CN-GD, 440000)")
@@ -755,6 +497,7 @@ class Calendar(Base, TimestampMixin):
     """公共日历/节假日参考表。"""
 
     __tablename__ = "mdm_calendar"
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     date_day: Mapped[date] = mapped_column(unique=True, index=True, nullable=False, comment="日期")
     year_number: Mapped[int | None] = mapped_column(index=True, comment="年份")
@@ -775,6 +518,7 @@ class RawDataStaging(Base, TimestampMixin):
 
     __tablename__ = "stg_raw_data"
     __table_args__ = (UniqueConstraint("source", "entity_type", "external_id", name="uq_raw_data_staging"),)
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     source: Mapped[str_50 | None] = mapped_column(comment="数据来源系统 (gitlab/jira/sonar)")
     entity_type: Mapped[str_50 | None] = mapped_column(comment="实体类型 (project/issue/pipeline)")
@@ -792,6 +536,7 @@ class OKRObjective(Base, TimestampMixin, SCDMixin):
     __table_args__ = (
         Index("uq_mdm_okr_objective_active", "objective_id", unique=True, postgresql_where="is_current IS TRUE", sqlite_where=text("is_current = 1")),
     )
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     objective_id: Mapped[str_50 | None] = mapped_column(index=True, comment="目标唯一标识")
     title: Mapped[str_255] = mapped_column(nullable=False, comment="目标标题")
@@ -806,8 +551,8 @@ class OKRObjective(Base, TimestampMixin, SCDMixin):
     status: Mapped[str | None] = mapped_column(default="ACTIVE", comment="状态 (ACTIVE/COMPLETED/ABANDONED)")
     progress: Mapped[float | None] = mapped_column(default=0.0, comment="进度 (0.0-1.0)")
 
-    owner: Mapped[User | None] = relationship("User", foreign_keys=[owner_id])
-    organization: Mapped[Organization | None] = relationship("Organization", foreign_keys=[org_id])
+    #     owner: Mapped[User | None] = relationship("User", foreign_keys=[owner_id])
+    #     organization: Mapped[Organization | None] = relationship("Organization", foreign_keys=[org_id])
     parent: Mapped[OKRObjective | None] = relationship("OKRObjective", remote_side="OKRObjective.id", backref=backref("children", cascade="all"))
     product: Mapped[Product | None] = relationship("Product", foreign_keys=[product_id], backref=backref("objectives", cascade="all"))
     key_results: Mapped[list[OKRKeyResult]] = relationship("OKRKeyResult", back_populates="objective", cascade="all, delete-orphan")
@@ -817,6 +562,7 @@ class OKRKeyResult(Base, TimestampMixin):
     """OKR 关键结果 (KR) 定义表。"""
 
     __tablename__ = "mdm_okr_key_results"
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     objective_id: Mapped[int] = mapped_column(ForeignKey("mdm_okr_objectives.id"), nullable=False, index=True, comment="关联目标ID")
     title: Mapped[str_255] = mapped_column(nullable=False, comment="KR标题")
@@ -830,13 +576,16 @@ class OKRKeyResult(Base, TimestampMixin):
     linked_metrics_config: Mapped[json_dict | None] = mapped_column(comment="关联度量配置 (JSON)")
 
     objective: Mapped[OKRObjective | None] = relationship("OKRObjective", back_populates="key_results")
-    owner: Mapped[User | None] = relationship("User", foreign_keys=[owner_id])
+
+
+#     owner: Mapped[User | None] = relationship("User", foreign_keys=[owner_id])
 
 
 class TraceabilityLink(Base, TimestampMixin):
     """跨系统追溯链路表，连接需求与代码、测试与发布。"""
 
     __tablename__ = "mdm_traceability_links"
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     source_system: Mapped[str_50 | None] = mapped_column(comment="源系统 (jira/gitlab)")
     source_type: Mapped[str_50 | None] = mapped_column(comment="源实体类型 (requirement/story)")
@@ -859,6 +608,7 @@ class JenkinsTestExecution(Base, TimestampMixin):
     __tablename__ = "qa_jenkins_test_executions"
 
     # 基础标识
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     project_id: Mapped[int | None] = mapped_column(nullable=True, index=True, comment="关联 GitLab 项目 ID")
     build_id: Mapped[str_100] = mapped_column(nullable=False, index=True, comment="构建 ID (Jenkins Build Number)")
@@ -893,6 +643,7 @@ class Incident(Base, TimestampMixin, SCDMixin, OwnableMixin):
         return cls.owner_id
 
     # 基础信息
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     title: Mapped[str_200] = mapped_column(nullable=False, comment="事故标题")
     description: Mapped[str | None] = mapped_column(comment="事故详细描述")
@@ -919,7 +670,7 @@ class Incident(Base, TimestampMixin, SCDMixin, OwnableMixin):
     service_id: Mapped[int | None] = mapped_column(ForeignKey("mdm_services.id"), nullable=True, index=True, comment="故障服务ID")
 
     location: Mapped[Location | None] = relationship("Location")
-    owner: Mapped[User | None] = relationship("User", foreign_keys=[owner_id])
+    #     owner: Mapped[User | None] = relationship("User", foreign_keys=[owner_id])
     project: Mapped[ProjectMaster | None] = relationship("ProjectMaster", foreign_keys=[project_id])
     service: Mapped[Service | None] = relationship("Service", foreign_keys=[service_id])
 
@@ -936,6 +687,7 @@ class ServiceProjectMapping(Base, TimestampMixin):
     """服务与工程项目的多对多关联映射表。"""
 
     __tablename__ = "mdm_service_project_mapping"
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     service_id: Mapped[int] = mapped_column(ForeignKey("mdm_services.id"), nullable=False, index=True, comment="服务ID")
     source: Mapped[str_50 | None] = mapped_column(comment="项目来源系统 (gitlab/jira)")
@@ -947,6 +699,7 @@ class SLO(Base, TimestampMixin):
     """SLO (服务水平目标) 定义表。"""
 
     __tablename__ = "mdm_slo_definitions"
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     service_id: Mapped[int] = mapped_column(ForeignKey("mdm_services.id"), nullable=False, index=True, comment="关联服务ID")
     name: Mapped[str_100] = mapped_column(nullable=False, comment="SLO 名称")
@@ -966,6 +719,7 @@ class ProjectMaster(Base, TimestampMixin, SCDMixin, OwnableMixin):
         Index("uq_mdm_project_code_active", "project_code", unique=True, postgresql_where="is_current IS TRUE", sqlite_where=text("is_current = 1")),
         Index("uq_mdm_project_external_id_active", "external_id", unique=True, postgresql_where="is_current IS TRUE", sqlite_where=text("is_current = 1")),
     )
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     project_code: Mapped[str_100] = mapped_column(index=True, nullable=False, comment="项目业务唯一标识")
 
@@ -996,12 +750,12 @@ class ProjectMaster(Base, TimestampMixin, SCDMixin, OwnableMixin):
     lead_repo_id: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="主代码仓库ID")
     description: Mapped[str | None] = mapped_column(Text, comment="项目描述")
 
-    organization: Mapped[Organization | None] = relationship("Organization", foreign_keys=[org_id])
-    project_manager: Mapped[User | None] = relationship("User", foreign_keys=[pm_user_id])
-    product_owner: Mapped[User | None] = relationship("User", foreign_keys=[product_owner_id])
-    dev_lead: Mapped[User | None] = relationship("User", foreign_keys=[dev_lead_id])
-    qa_lead: Mapped[User | None] = relationship("User", foreign_keys=[qa_lead_id])
-    release_lead: Mapped[User | None] = relationship("User", foreign_keys=[release_lead_id])
+    #     organization: Mapped[Organization | None] = relationship("Organization", foreign_keys=[org_id])
+    #     project_manager: Mapped[User | None] = relationship("User", foreign_keys=[pm_user_id])
+    #     product_owner: Mapped[User | None] = relationship("User", foreign_keys=[product_owner_id])
+    #     dev_lead: Mapped[User | None] = relationship("User", foreign_keys=[dev_lead_id])
+    #     qa_lead: Mapped[User | None] = relationship("User", foreign_keys=[qa_lead_id])
+    #     release_lead: Mapped[User | None] = relationship("User", foreign_keys=[release_lead_id])
     source_system_ref: Mapped[SystemRegistry | None] = relationship("SystemRegistry", back_populates="projects")
     gitlab_repos: Mapped[list[GitLabProject]] = relationship("GitLabProject", back_populates="mdm_project")
     product_relations: Mapped[list[ProjectProductRelation]] = relationship("ProjectProductRelation", back_populates="project")
@@ -1015,6 +769,7 @@ class CostCode(Base, TimestampMixin):
     """成本科目 (CBS) 模型。"""
 
     __tablename__ = "mdm_cost_codes"
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     code: Mapped[str_50] = mapped_column(unique=True, nullable=False, index=True, comment="科目编码")
     name: Mapped[str_200] = mapped_column(nullable=False, comment="科目名称")
@@ -1030,6 +785,7 @@ class LaborRateConfig(Base, TimestampMixin):
     """人工标准费率配置表。"""
 
     __tablename__ = "mdm_labor_rate_config"
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     job_title_level: Mapped[str_50] = mapped_column(nullable=False, comment="职级 (P5/P6/P7/M1/M2)")
     daily_rate: Mapped[float] = mapped_column(nullable=False, comment="日费率 (元)")
@@ -1043,6 +799,7 @@ class RevenueContract(Base, TimestampMixin):
     """销售/收入合同主数据表格。"""
 
     __tablename__ = "mdm_revenue_contracts"
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     contract_no: Mapped[str_100] = mapped_column(unique=True, nullable=False, index=True, comment="合同编号")
     title: Mapped[str_255 | None] = mapped_column(comment="合同标题")
@@ -1059,6 +816,7 @@ class PurchaseContract(Base, TimestampMixin):
     """采购/支出合同主数据。"""
 
     __tablename__ = "mdm_purchase_contracts"
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     contract_no: Mapped[str_100] = mapped_column(unique=True, nullable=False, index=True, comment="合同编号")
     title: Mapped[str_255 | None] = mapped_column(comment="合同标题")
@@ -1077,6 +835,7 @@ class ContractPaymentNode(Base, TimestampMixin):
     """合同付款节点/收款计划记录表。"""
 
     __tablename__ = "mdm_contract_payment_nodes"
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     contract_id: Mapped[int] = mapped_column(ForeignKey("mdm_revenue_contracts.id"), nullable=False, index=True, comment="关联合同ID")
     node_name: Mapped[str_200] = mapped_column(nullable=False, comment="节点名称")
@@ -1087,30 +846,6 @@ class ContractPaymentNode(Base, TimestampMixin):
     is_achieved: Mapped[bool | None] = mapped_column(default=False, comment="是否已达成")
     achieved_at: Mapped[datetime | None] = mapped_column(comment="达成时间")
     contract: Mapped[RevenueContract | None] = relationship("RevenueContract", back_populates="payment_nodes")
-
-
-class UserCredential(Base, TimestampMixin):
-    """用户凭证表。"""
-
-    __tablename__ = "sys_user_credentials"
-    id: Mapped[int_pk]
-    user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mdm_identities.global_user_id"), unique=True, comment="用户ID")
-    password_hash: Mapped[str_255] = mapped_column(nullable=False, comment="密码哈希值")
-    last_login_at: Mapped[datetime | None] = mapped_column(nullable=True, comment="最后登录时间")
-    user: Mapped[User | None] = relationship("User", foreign_keys=[user_id], backref=backref("credential", uselist=False))
-
-
-class UserOAuthToken(Base, TimestampMixin):
-    """用户 OAuth 令牌存储表。"""
-
-    __tablename__ = "sys_user_oauth_tokens"
-    id: Mapped[int_pk]
-    user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mdm_identities.global_user_id"), index=True, comment="关联用户ID")
-    provider: Mapped[str_50 | None] = mapped_column(index=True, comment="OAuth 提供商 (gitlab/github/azure)")
-    access_token: Mapped[str] = mapped_column(nullable=False, comment="访问令牌 (加密存储)")
-    refresh_token: Mapped[str | None] = mapped_column(comment="刷新令牌")
-    token_type: Mapped[str_50 | None] = mapped_column(comment="令牌类型 (Bearer)")
-    expires_at: Mapped[datetime | None] = mapped_column(comment="过期时间")
 
 
 class Company(Base, TimestampMixin, SCDMixin):
@@ -1126,6 +861,7 @@ class Company(Base, TimestampMixin, SCDMixin):
     )
 
     # 基础信息
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     company_code: Mapped[str_50] = mapped_column(index=True, nullable=False, comment="公司唯一业务标识 (如 COM-BJ-01)")
     name: Mapped[str_200] = mapped_column(nullable=False, comment="公司注册全称")
@@ -1156,6 +892,7 @@ class Vendor(Base, TimestampMixin, SCDMixin):
     )
 
     # 基础信息
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     vendor_code: Mapped[str_50] = mapped_column(index=True, nullable=False, comment="供应商唯一业务编码")
     name: Mapped[str_200] = mapped_column(nullable=False, comment="供应商全称")
@@ -1192,6 +929,7 @@ class EpicMaster(Base, TimestampMixin):
     __tablename__ = "mdm_epics"
 
     # 基础信息
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     parent_id: Mapped[int | None] = mapped_column(ForeignKey("mdm_epics.id"), nullable=True, index=True, comment="父级 Epic ID (支持多层级)")
     epic_code: Mapped[str_50] = mapped_column(unique=True, index=True, nullable=False, comment="史诗唯一编码 (如 EPIC-24Q1-001)")
@@ -1230,8 +968,8 @@ class EpicMaster(Base, TimestampMixin):
     tags: Mapped[json_dict | None] = mapped_column(comment="标签 (JSON List)")
 
     # Relationships
-    owner: Mapped[User | None] = relationship("User", foreign_keys=[owner_id])
-    organization: Mapped[Organization | None] = relationship("Organization", foreign_keys=[org_id])
+    #     owner: Mapped[User | None] = relationship("User", foreign_keys=[owner_id])
+    #     organization: Mapped[Organization | None] = relationship("Organization", foreign_keys=[org_id])
     okr_objective: Mapped[OKRObjective | None] = relationship("OKRObjective")
     parent: Mapped[EpicMaster | None] = relationship("EpicMaster", remote_side="EpicMaster.id", foreign_keys=[parent_id], backref="children")
     # child_features = relationship('Feature', back_populates='epic') # 预留给未来Feature模型
@@ -1241,6 +979,7 @@ class ComplianceIssue(Base, TimestampMixin):
     """合规风险与审计问题记录表。"""
 
     __tablename__ = "mdm_compliance_issues"
+    tenant_id: Mapped[str] = mapped_column(String(32), index=True, server_default="default", comment="租户ID")
     id: Mapped[int_pk]
     issue_type: Mapped[str_50 | None] = mapped_column(comment="问题类型 (安全漏洞/许可证违规/合规缺失)")
     severity: Mapped[str | None] = mapped_column(comment="严重等级 (Critical/High/Medium/Low)")
@@ -1254,3 +993,43 @@ class RawDataMixin:
     """原始数据支持混入类。"""
 
     pass
+
+
+# --- ALIASES AND DUMMIES TO PREVENT IMPORT ERRORS DURING REFACTORING ---
+try:
+    from identity_module.models import (
+        IdentityDepartment as Organization,
+    )
+    from identity_module.models import (
+        IdentityMapping,
+    )
+    from identity_module.models import (
+        IdentityRole as SysRole,
+    )
+    from identity_module.models import (
+        IdentityUser as User,
+    )
+except ImportError:
+    Organization = type("Organization", (), {})
+    IdentityMapping = type("IdentityMapping", (), {})
+    SysRole = type("SysRole", (), {})
+    User = type("User", (), {})
+
+from typing import Any
+
+
+Team: Any = type("Team", (), {})
+TeamMember: Any = type("TeamMember", (), {})
+SysMenu: Any = type("SysMenu", (), {})
+SysRoleMenu: Any = type("SysRoleMenu", (), {})
+SysRoleDept: Any = type("SysRoleDept", (), {})
+UserRole: Any = type("UserRole", (), {})
+UserCredential: Any = type("UserCredential", (), {})
+UserOAuthToken: Any = type("UserOAuthToken", (), {})
+
+
+# Monkeypatch is_current for backward compatibility during refactoring
+if hasattr(User, "is_active"):
+    User.is_current = User.is_active
+if hasattr(Organization, "is_active"):
+    Organization.is_current = Organization.is_active

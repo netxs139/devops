@@ -13,14 +13,14 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text, and_
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, foreign, mapped_column, relationship
 from sqlalchemy.sql import func
 
-from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin, User
+from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin
 
 
 class GTMTestCase(Base, TimestampMixin, TraceabilityMixin):
@@ -41,12 +41,7 @@ class GTMTestCase(Base, TimestampMixin, TraceabilityMixin):
     description: Mapped[str | None] = mapped_column(Text)
     test_steps: Mapped[list | dict] = mapped_column(JSON, default=[])
 
-    author: Mapped[User] = relationship(
-        "User",
-        primaryjoin=and_(User.global_user_id == author_id, User.is_current.is_(True)),
-        back_populates="test_cases",
-        overlaps="requirements,test_cases",
-    )
+    # author relationship removed to enforce string soft-link
     project: Mapped[Any] = relationship("GitLabProject", back_populates="test_cases")
     linked_issues: Mapped[list[Any]] = relationship("GitLabIssue", secondary="gtm_test_case_issue_links", back_populates="associated_test_cases")
     associated_requirements: Mapped[list[Any]] = relationship("GTMRequirement", secondary="gtm_requirement_test_case_links", back_populates="test_cases")
@@ -99,12 +94,7 @@ class GTMRequirement(Base, TimestampMixin):
     description: Mapped[str | None] = mapped_column(Text)
     state: Mapped[str] = mapped_column(String(20), default="opened")
 
-    author: Mapped[User] = relationship(
-        "User",
-        primaryjoin=and_(User.global_user_id == author_id, User.is_current.is_(True)),
-        back_populates="requirements",
-        overlaps="requirements,test_cases",
-    )
+    # author relationship removed to enforce string soft-link
     project: Mapped[Any] = relationship("GitLabProject", back_populates="requirements")
     test_cases: Mapped[list[GTMTestCase]] = relationship("GTMTestCase", secondary="gtm_requirement_test_case_links", back_populates="associated_requirements")
     linked_bugs = association_proxy("test_cases", "linked_issues")
@@ -149,6 +139,4 @@ class GTMTestExecutionRecord(Base, TimestampMixin):
         return f"<GTMTestExecutionRecord(iid={self.test_case_iid}, result={self.result})>"
 
 
-# 动态挂载反向关联，规避 base_models 中的循环引用 NameError
-User.test_cases = relationship("GTMTestCase", back_populates="author", primaryjoin=lambda: User.global_user_id == GTMTestCase.author_id)
-User.requirements = relationship("GTMRequirement", back_populates="author", primaryjoin=lambda: User.global_user_id == GTMRequirement.author_id)
+# Dynamic relationships removed as User is soft-linked

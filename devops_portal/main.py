@@ -19,7 +19,6 @@ from fastapi.responses import JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 import devops_collector.config as config_module
-from devops_collector.auth import auth_router
 from devops_collector.config import settings
 from devops_collector.core.exceptions import BusinessException
 from devops_portal.dependencies import get_current_user
@@ -59,11 +58,21 @@ app.add_middleware(
 )
 
 # 审计追踪中间件 (等保三级合规要求)
+from identity_module import register_identity
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+
+# Setup Async DB for identity-module
+async_uri = settings.database.uri.get_secret_value().replace("postgresql://", "postgresql+asyncpg://")
+async_engine = create_async_engine(async_uri, pool_pre_ping=True)
+AsyncSessionLocal = async_sessionmaker(bind=async_engine, expire_on_commit=False)
+
 from devops_portal.middleware.audit import AuditMiddleware
 
 
 app.add_middleware(AuditMiddleware)
-app.include_router(auth_router.auth_router)
+# Auth routes and legacy auth are now provided by identity-module
+register_identity(app, role="master", db_session_factory=AsyncSessionLocal)
 app.include_router(quality_router.router)
 app.include_router(service_desk_router.router)
 app.include_router(test_management_router.router)

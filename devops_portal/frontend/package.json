@@ -14,6 +14,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@company/iam-kit": "workspace:*",
     "@vicons/ionicons5": "^0.12.0",
     "axios": "^1.7.9",
     "echarts": "^5.5.1",

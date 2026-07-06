@@ -15,7 +15,6 @@ from fastapi import Depends, HTTPException, Query
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from devops_collector.auth import auth_service
 from devops_collector.auth.auth_database import AuthSessionLocal, get_auth_db
 from devops_collector.models.base_models import Location, User
 from devops_collector.services import security
@@ -27,31 +26,35 @@ logger = logging.getLogger(__name__)
 optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login", auto_error=False)
 
 
+from identity_module.auth.jwt_utils import decode_access_token
+from identity_module.deps import get_db
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+
 async def get_current_user(
     token: str | None = Query(None),
     auth_header: str | None = Depends(optional_oauth2_scheme),
-    db: Session = Depends(get_auth_db),
+    db: AsyncSession = Depends(get_db),
 ) -> User:
-    """获取并校验当前已登录用户。
-
-    支持通过请求头 (Authorization) 或 URL 查询参数 (token) 进行身份检查。
-
-    Args:
-        token: URL 中的 JWT 令牌（主要用于 SSE/WebSocket 流）。
-        auth_header: 标准 OAuth2 Bearer 令牌。
-        db: 数据库会话。
-
-    Returns:
-        User: 已认证的用户对象。
-
-    Raises:
-        HTTPException: 令牌无效、过期或用户不存在。
-    """
+    """获取并校验当前已登录用户。"""
     final_token = token or auth_header
     if not final_token:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
-    return auth_service.auth_get_current_user(db, final_token)
+    payload = decode_access_token(final_token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Token 无效或已过期")
+
+    global_user_id = payload.get("sub")
+    if not global_user_id:
+        raise HTTPException(status_code=401, detail="Token 无效")
+
+    user = await db.scalar(select(User).where(User.global_user_id == global_user_id))
+    if not user or not getattr(user, "is_active", True):
+        raise HTTPException(status_code=401, detail="用户不存在或被禁用")
+
+    return user
 
 
 def RoleRequired(allowed_roles: list[str]):

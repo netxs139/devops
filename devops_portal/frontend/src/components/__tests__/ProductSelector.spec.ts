@@ -44,7 +44,7 @@ describe('ProductSelector.vue', () => {
 
     // Initial state check
     expect(segments[0].classes()).toContain('active')
-    
+
     // Click on org segment
     await segments[1].trigger('click')
 
