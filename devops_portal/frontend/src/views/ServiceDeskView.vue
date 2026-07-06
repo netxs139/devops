@@ -1,535 +1,239 @@
 <script setup lang="ts">
 /**
  * @file ServiceDeskView.vue
- * @description 服务台主页面，展示工单列表与度量，支持驳回与状态流转
+ * @description 服务台主页面，采用 Vue 3 + Vue Query + Naive UI (绿地重构版)
  */
-import { ref, onMounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, computed } from 'vue'
 import {
+  NCard,
   NGrid,
   NGridItem,
-  NCard,
   NStatistic,
   NTabs,
   NTabPane,
-  NTable,
+  NDataTable,
   NTag,
-  NSpace,
   NButton,
-  NModal,
-  NInput,
-  useMessage
+  NSpace,
+  NDrawer,
+  NDrawerContent,
+  NForm,
+  NFormItem,
+  NSelect,
+  useMessage,
+  type DataTableColumns
 } from 'naive-ui'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
+import dayjs from 'dayjs'
 import { http } from '@/utils/request'
-import type { Ticket, TicketStatus } from '@/types/api'
+import type { TicketResponse, TicketTriageUpdate } from '@/types/api'
 import TicketForm from '@/components/TicketForm.vue'
 
-const route = useRoute()
-const router = useRouter()
 const message = useMessage()
+const queryClient = useQueryClient()
 
-// 视图切换: 'list' 列表视图, 'create' 创建表单视图
-const currentView = ref<'list' | 'create'>('list')
+// 视图切换
+const activeTab = ref<'customer' | 'agent'>('customer')
 
-// Tab 切换: 'my' 我的工单, 'all' 全量反馈
-const activeTab = ref<'my' | 'all'>('my')
-
-const tickets = ref<Ticket[]>([])
-const loading = ref(false)
-
-// 驳回 Modal 控制
-const showRejectModal = ref(false)
-const rejectReason = ref('')
-const selectedTicket = ref<Ticket | null>(null)
-const rejecting = ref(false)
-
-// 状态流转加载状态
-const transitionLoading = ref<Record<number, boolean>>({})
-
-// 统计度量（基于本地缓存或后端列表计算）
-const statsTotal = ref(0)
-const statsPending = ref(0)
-const statsResolved = ref(0)
-
-// 根据当前列表实时更新统计
-function updateStats(list: Ticket[]) {
-  statsTotal.value = list.length
-  statsPending.value = list.filter(t =>
-    t.status === 'pending' || t.status === 'opened' || t.status === 'processing'
-  ).length
-  statsResolved.value = list.filter(t =>
-    t.status === 'resolved' || t.status === 'closed'
-  ).length
-}
-
-// 加载数据
-async function loadTickets() {
-  loading.value = true
-  try {
-    let data: Ticket[] = []
-    if (activeTab.value === 'my') {
-      data = await http.get<Ticket[]>('/service-desk/my-tickets')
-    } else {
-      data = await http.get<Ticket[]>('/service-desk/tickets')
-    }
-    // 强制转换为 TicketType 避免后端返回的字符串类型不匹配
-    tickets.value = data
-    updateStats(data)
-  } catch (err: unknown) {
-    message.error('加载工单列表失败: ' + (err as Error).message)
-    tickets.value = []
-  } finally {
-    loading.value = false
-  }
-}
-
-// 监听 Tab 切换重新拉取
-watch(activeTab, () => {
-  loadTickets()
+// 获取 Customer Tickets
+const { data: customerTickets, isLoading: customerLoading } = useQuery({
+  queryKey: ['customerTickets'],
+  queryFn: () => http.get<TicketResponse[]>('/api/customer/tickets')
 })
 
-// 驳回工单
-function openRejectModal(ticket: Ticket) {
-  selectedTicket.value = ticket
-  rejectReason.value = ''
-  showRejectModal.value = true
-}
+// 获取 Agent Tickets
+const { data: agentTickets, isLoading: agentLoading } = useQuery({
+  queryKey: ['agentTickets'],
+  queryFn: () => http.get<TicketResponse[]>('/api/agent/tickets')
+})
 
-async function handleRejectSubmit() {
-  if (!selectedTicket.value) return
-  if (!rejectReason.value.trim()) {
-    message.warning('请输入驳回原因')
-    return
-  }
+// 统计度量 (以 Agent 视角为例)
+const statsTotal = computed(() => agentTickets.value?.length || 0)
+const statsPending = computed(() => agentTickets.value?.filter(t => t.status !== 'RESOLVED' && t.status !== 'CLOSED').length || 0)
+const statsResolved = computed(() => agentTickets.value?.filter(t => t.status === 'RESOLVED' || t.status === 'CLOSED').length || 0)
 
-  rejecting.value = true
-  try {
-    // 1. 获取工单完整详情以解析 gitlab_project_id 与 gitlab_issue_iid
-    const detail = await http.get<Ticket>(`/service-desk/track/${selectedTicket.value.id}`)
-    const projId = detail.gitlab_project_id
-    const issueIid = detail.gitlab_issue_iid
-
-    if (!projId || !issueIid) {
-      throw new Error('当前工单缺失 GitLab 项目/Issue 映射，无法通过 API 驳回')
+// 表格列定义
+const createColumns = (isAgent: boolean): DataTableColumns<TicketResponse> => [
+  { title: '工单 ID', key: 'id', width: 280, ellipsis: true },
+  { title: '标题', key: 'title', ellipsis: true },
+  {
+    title: '类型',
+    key: 'ticket_type',
+    width: 150,
+    render(row) {
+      const typeMap: Record<string, 'default' | 'error' | 'info' | 'warning'> = {
+        INCIDENT: 'error',
+        BUG: 'error',
+        REQUIREMENT: 'info',
+        CONSULTATION: 'default'
+      }
+      return <NTag type={typeMap[row.ticket_type] || 'default'}>{row.ticket_type}</NTag>
     }
+  },
+  {
+    title: '状态',
+    key: 'status',
+    width: 120,
+    render(row) {
+      const statusMap: Record<string, 'default' | 'success' | 'warning' | 'info'> = {
+        NEW: 'default',
+        ACCEPTED: 'info',
+        IN_PROGRESS: 'warning',
+        RESOLVED: 'success',
+        CLOSED: 'default'
+      }
+      return <NTag type={statusMap[row.status] || 'default'}>{row.status}</NTag>
+    }
+  },
+  {
+    title: '创建时间',
+    key: 'created_at',
+    width: 180,
+    render(row) {
+      return dayjs(row.created_at).format('YYYY-MM-DD HH:mm:ss')
+    }
+  },
+  ...(isAgent ? [{
+    title: '操作',
+    key: 'actions',
+    width: 100,
+    render(row: TicketResponse) {
+      return <NButton size="small" onClick={() => openTriageDrawer(row)}>分诊</NButton>
+    }
+  }] : [])
+]
 
-    // 2. 调用驳回接口
-    await http.post(`/service-desk/tickets/${issueIid}/reject`, {
-      project_id: projId,
-      reason: rejectReason.value.trim()
-    })
+const customerColumns = createColumns(false)
+const agentColumns = createColumns(true)
 
-    message.success('工单驳回成功')
-    showRejectModal.value = false
-    loadTickets()
-  } catch (err: unknown) {
-    message.error('驳回失败: ' + ((err as Error).message || '未知错误'))
-  } finally {
-    rejecting.value = false
-  }
+// 创建工单处理
+function onTicketCreated() {
+  queryClient.invalidateQueries({ queryKey: ['customerTickets'] })
+  queryClient.invalidateQueries({ queryKey: ['agentTickets'] })
+  activeTab.value = 'customer'
 }
 
-// 状态流转操作
-async function handleStatusTransition(ticketId: number, nextStatus: TicketStatus) {
-  transitionLoading.value[ticketId] = true
-  try {
-    await http.patch(`/service-desk/tickets/${ticketId}/status?new_status=${nextStatus}`)
-    message.success(`工单状态已成功更新为：${nextStatus}`)
-    loadTickets()
-  } catch (err: unknown) {
-    message.error('状态更新失败: ' + ((err as Error).message || '未知错误'))
-  } finally {
-    transitionLoading.value[ticketId] = false
-  }
+// 分诊抽屉控制
+const showTriageDrawer = ref(false)
+const triageTicket = ref<TicketResponse | null>(null)
+const triageModel = ref<TicketTriageUpdate>({ ticket_type: '', product_id: '' })
+
+function openTriageDrawer(ticket: TicketResponse) {
+  triageTicket.value = ticket
+  triageModel.value = { ticket_type: ticket.ticket_type, product_id: ticket.product_id || '' }
+  showTriageDrawer.value = true
 }
 
-// 处理新建完成
-function handleSaved() {
-  currentView.value = 'list'
-  // 新建后默认切换到“我的工单”并刷新
-  activeTab.value = 'my'
-  loadTickets()
-  // 清理 URL Query 参数，防止刷新时再次弹窗
-  router.replace({ path: '/service-desk' })
-}
+const productOptions = [
+  { label: 'CloudNative 产品线 (agile-project-A)', value: 'product_a' },
+  { label: 'Data 平台产品线 (agile-project-B)', value: 'product_b' }
+]
 
-// 取消返回
-function handleCancel() {
-  currentView.value = 'list'
-  router.replace({ path: '/service-desk' })
-}
-
-onMounted(() => {
-  // 检测 Query 参数，若包含 type 则自动打开表单
-  if (route.query.type) {
-    currentView.value = 'create'
-  } else {
-    loadTickets()
+const { mutate: triageMutate, isPending: triagePending } = useMutation({
+  mutationFn: (data: { id: string, payload: TicketTriageUpdate }) => {
+    return http.patch<TicketResponse>(`/api/agent/tickets/${data.id}/triage`, data.payload)
+  },
+  onSuccess: () => {
+    message.success('分诊成功')
+    showTriageDrawer.value = false
+    queryClient.invalidateQueries({ queryKey: ['agentTickets'] })
+  },
+  onError: (err: any) => {
+    message.error(err.message || '分诊失败')
   }
 })
+
+function handleTriageSubmit() {
+  if (triageTicket.value) {
+    triageMutate({ id: triageTicket.value.id, payload: triageModel.value })
+  }
+}
 </script>
 
 <template>
-  <div class="service-desk-page">
-    <!-- 切录入表单视图 -->
-    <div v-if="currentView === 'create'">
-      <TicketForm @saved="handleSaved" @cancel="handleCancel" />
-    </div>
+  <div class="service-desk-view">
+    <n-grid :cols="3" :x-gap="16" style="margin-bottom: 24px;">
+      <n-grid-item>
+        <n-card>
+          <n-statistic label="全部工单" :value="statsTotal" />
+        </n-card>
+      </n-grid-item>
+      <n-grid-item>
+        <n-card>
+          <n-statistic label="待处理" :value="statsPending" />
+        </n-card>
+      </n-grid-item>
+      <n-grid-item>
+        <n-card>
+          <n-statistic label="已解决" :value="statsResolved" />
+        </n-card>
+      </n-grid-item>
+    </n-grid>
 
-    <!-- 列表视图 -->
-    <div v-else class="list-layout">
-      <!-- 顶部标题与新建工单按钮 -->
-      <div class="page-header">
-        <div class="header-title-group">
-          <h1 class="page-title">服务台 (Service Desk)</h1>
-          <p class="page-subtitle">提报系统缺陷与需求，闭环跟踪 GitLab Issue 研发生命周期。</p>
-        </div>
-        <NButton type="primary" size="large" @click="currentView = 'create'">
-          <template #icon>➕</template>
-          新建工单
-        </NButton>
-      </div>
+    <n-card>
+      <n-tabs v-model:value="activeTab" type="line" animated>
+        <n-tab-pane name="customer" tab="客户门户 (提报)">
+          <n-space vertical :size="24">
+            <TicketForm @success="onTicketCreated" />
 
-      <!-- 统计指标卡片 -->
-      <NGrid :cols="3" :x-gap="24" class="stats-grid">
-        <NGridItem>
-          <NCard class="stat-card" size="small">
-            <NStatistic label="累计反馈工单" :value="statsTotal">
-              <template #suffix><span class="unit">个</span></template>
-            </NStatistic>
-          </NCard>
-        </NGridItem>
-        <NGridItem>
-          <NCard class="stat-card" size="small">
-            <NStatistic label="待处理/处理中" :value="statsPending">
-              <template #suffix><span class="unit warning">个</span></template>
-            </NStatistic>
-          </NCard>
-        </NGridItem>
-        <NGridItem>
-          <NCard class="stat-card" size="small">
-            <NStatistic label="已解决/已关闭" :value="statsResolved">
-              <template #suffix><span class="unit success">个</span></template>
-            </NStatistic>
-          </NCard>
-        </NGridItem>
-      </NGrid>
+            <h3>我的工单历史</h3>
+            <n-data-table
+              :columns="customerColumns"
+              :data="customerTickets || []"
+              :loading="customerLoading"
+              :bordered="false"
+              virtual-scroll
+              :max-height="400"
+            />
+          </n-space>
+        </n-tab-pane>
 
-      <!-- 双 Tab 切换列表 -->
-      <NCard class="table-card" :bordered="false" :loading="loading">
-        <NTabs v-model:value="activeTab" type="line" animated class="custom-tabs">
-          <!-- 我的工单 Tab -->
-          <NTabPane name="my" tab="我的工单 (My Submissions)" />
-          <!-- 全量反馈 Tab -->
-          <NTabPane name="all" tab="全量反馈 (All Feedback)" />
-        </NTabs>
+        <n-tab-pane name="agent" tab="内部分诊台 (处理)">
+          <n-space vertical :size="24">
+            <h3>全量反馈池</h3>
+            <n-data-table
+              :columns="agentColumns"
+              :data="agentTickets || []"
+              :loading="agentLoading"
+              :bordered="false"
+              virtual-scroll
+              :max-height="600"
+            />
+          </n-space>
+        </n-tab-pane>
+      </n-tabs>
+    </n-card>
 
-        <div class="table-wrapper">
-          <NTable :single-line="false" size="medium" class="apple-style-table">
-            <thead>
-              <tr>
-                <th style="width: 80px;">工单 ID</th>
-                <th style="width: 100px;">类型</th>
-                <th>工单主题 (Title)</th>
-                <th v-if="activeTab === 'all'" style="width: 140px;">发起部门</th>
-                <th v-if="activeTab === 'all'" style="width: 140px;">研发受理部门</th>
-                <th style="width: 120px;">状态</th>
-                <th style="width: 160px;">创建时间</th>
-                <th style="width: 240px; text-align: center;">操作选项</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="ticket in tickets" :key="ticket.id">
-                <td class="monospace-id">#{{ ticket.id }}</td>
-                <td>
-                  <NTag
-                    :bordered="false"
-                    size="small"
-                    :type="ticket.issue_type === 'bug' ? 'error' : 'info'"
-                  >
-                    {{ ticket.issue_type === 'bug' ? '🐞 缺陷' : '💡 需求' }}
-                  </NTag>
-                </td>
-                <td class="ticket-title-col" :title="ticket.title">{{ ticket.title }}</td>
-                <td v-if="activeTab === 'all'">{{ ticket.origin_dept_name || '-' }}</td>
-                <td v-if="activeTab === 'all'">{{ ticket.target_dept_name || '-' }}</td>
-                <td>
-                  <span
-                    class="status-dot-badge"
-                    :class="'status-' + (ticket.status || 'pending')"
-                  >
-                    {{
-                      ticket.status === 'opened' || ticket.status === 'pending'
-                        ? '待处理'
-                        : ticket.status === 'processing'
-                        ? '处理中'
-                        : ticket.status === 'resolved'
-                        ? '已解决'
-                        : ticket.status === 'rejected'
-                        ? '已拒绝'
-                        : '已关闭'
-                    }}
-                  </span>
-                </td>
-                <td class="time-col">{{ ticket.created_at ? ticket.created_at.replace('T', ' ').slice(0, 19) : '-' }}</td>
-                <td style="text-align: center;">
-                  <NSpace justify="center" :size="8">
-                    <!-- 状态流转按钮 (仅在未解决/未关闭/未拒绝时可用) -->
-                    <template v-if="ticket.status !== 'resolved' && ticket.status !== 'closed' && ticket.status !== 'rejected'">
-                      <NButton
-                        v-if="ticket.status === 'opened' || ticket.status === 'pending'"
-                        size="tiny"
-                        type="info"
-                        secondary
-                        :loading="transitionLoading[ticket.id]"
-                        @click="handleStatusTransition(ticket.id, 'processing')"
-                      >
-                        处理
-                      </NButton>
-                      <NButton
-                        v-if="ticket.status === 'processing'"
-                        size="tiny"
-                        type="success"
-                        secondary
-                        :loading="transitionLoading[ticket.id]"
-                        @click="handleStatusTransition(ticket.id, 'resolved')"
-                      >
-                        解决
-                      </NButton>
-                      <NButton
-                        size="tiny"
-                        type="error"
-                        ghost
-                        @click="openRejectModal(ticket)"
-                      >
-                        驳回
-                      </NButton>
-                    </template>
-                    <NButton
-                      v-if="ticket.status === 'resolved'"
-                      size="tiny"
-                      type="default"
-                      secondary
-                      :loading="transitionLoading[ticket.id]"
-                      @click="handleStatusTransition(ticket.id, 'closed')"
-                    >
-                      关闭
-                    </NButton>
-                    <span v-if="ticket.status === 'closed' || ticket.status === 'rejected'" class="dim-action-text">
-                      已完成流转
-                    </span>
-                  </NSpace>
-                </td>
-              </tr>
-              <tr v-if="tickets.length === 0">
-                <td :colspan="activeTab === 'all' ? 8 : 6" class="empty-table-cell">
-                  <div class="empty-box">
-                    <span>🔍 暂无工单反馈记录</span>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </NTable>
-        </div>
-      </NCard>
-    </div>
-
-    <!-- 驳回模态框 -->
-    <NModal
-      v-model:show="showRejectModal"
-      preset="card"
-      title="工单驳回确认"
-      style="width: 450px;"
-      class="apple-modal"
-    >
-      <div class="modal-body">
-        <p class="modal-warning">您正在执行工单驳回，该操作将关闭对应的 GitLab Issue。请填写具体的驳回说明：</p>
-        <NInput
-          v-model:value="rejectReason"
-          type="textarea"
-          placeholder="请输入驳回原因（如：无法复现、不合理需求、属于外部系统等）..."
-          :autosize="{ minRows: 3, maxRows: 6 }"
-          class="margin-top"
-        />
-      </div>
-      <template #footer>
-        <NSpace justify="end" :size="12">
-          <NButton :disabled="rejecting" @click="showRejectModal = false">取消</NButton>
-          <NButton
-            type="error"
-            :loading="rejecting"
-            :disabled="!rejectReason.trim()"
-            @click="handleRejectSubmit"
-          >
-            确认驳回
-          </NButton>
-        </NSpace>
-      </template>
-    </NModal>
+    <n-drawer v-model:show="showTriageDrawer" :width="500" placement="right">
+      <n-drawer-content title="工单分诊" closable>
+        <n-form :model="triageModel" label-placement="top">
+          <n-form-item label="修正工单类型">
+            <n-select v-model:value="triageModel.ticket_type" :options="[
+              { label: '故障反馈 (Incident)', value: 'INCIDENT' },
+              { label: '需求建议 (Requirement)', value: 'REQUIREMENT' },
+              { label: '技术咨询 (Consultation)', value: 'CONSULTATION' },
+              { label: '缺陷报告 (Bug)', value: 'BUG' }
+            ]" />
+          </n-form-item>
+          <n-form-item label="流转产品线">
+            <n-select v-model:value="triageModel.product_id" :options="productOptions" placeholder="分配给底层敏捷产品池" />
+          </n-form-item>
+        </n-form>
+        <template #footer>
+          <n-space>
+            <n-button @click="showTriageDrawer = false" :disabled="triagePending">取消</n-button>
+            <n-button type="primary" :loading="triagePending" @click="handleTriageSubmit">确认分诊</n-button>
+          </n-space>
+        </template>
+      </n-drawer-content>
+    </n-drawer>
   </div>
 </template>
 
 <style scoped>
-.service-desk-page {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-6);
-}
-
-.page-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: 4px;
-}
-
-.page-subtitle {
-  font-size: 14px;
-  color: var(--color-text-secondary);
-}
-
-.stats-grid {
-  margin-bottom: var(--space-6);
-}
-
-.stat-card {
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-card);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.01);
-}
-
-.unit {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  margin-left: 4px;
-}
-.unit.warning { color: var(--color-warning); }
-.unit.success { color: var(--color-success); }
-
-.table-card {
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-card);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.02);
-  overflow: hidden;
+.service-desk-view {
   padding: var(--space-4);
-}
-
-.custom-tabs {
-  margin-bottom: var(--space-4);
-}
-
-.table-wrapper {
-  overflow-x: auto;
-}
-
-.apple-style-table {
-  border-collapse: separate;
-  border-spacing: 0;
-  width: 100%;
-}
-
-.apple-style-table th {
-  background: var(--color-bg-base);
-  color: var(--color-text-secondary);
-  font-weight: 600;
-  font-size: 13px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.apple-style-table td {
-  border-bottom: 1px solid var(--color-border);
-  font-size: 13px;
-  color: var(--color-text-primary);
-}
-
-.monospace-id {
-  font-family: monospace;
-  font-size: 13px;
-  color: var(--color-text-secondary);
-}
-
-.ticket-title-col {
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 320px;
-}
-
-.time-col {
-  color: var(--color-text-secondary);
-  font-size: 12px;
-}
-
-.status-dot-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 500;
-  font-size: 12px;
-}
-
-.status-dot-badge::before {
-  content: '';
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
-
-.status-opened::before,
-.status-pending::before {
-  background: var(--color-warning);
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
-}
-
-.status-processing::before {
-  background: var(--color-info);
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
-}
-
-.status-resolved::before,
-.status-closed::before {
-  background: var(--color-success);
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
-}
-
-.status-rejected::before {
-  background: var(--color-error);
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
-}
-
-.dim-action-text {
-  font-size: 12px;
-  color: var(--color-text-tertiary);
-}
-
-.empty-table-cell {
-  padding: 60px 0;
-  text-align: center;
-}
-
-.empty-box {
-  color: var(--color-text-secondary);
-  font-size: 14px;
-}
-
-.modal-warning {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  line-height: 1.5;
-}
-
-.margin-top {
-  margin-top: var(--space-4);
+  background-color: var(--color-bg-base);
+  min-height: 100vh;
 }
 </style>

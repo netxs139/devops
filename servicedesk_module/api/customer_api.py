@@ -2,9 +2,10 @@ import uuid
 
 from fastapi import APIRouter, Depends
 from identity_module.deps import get_db
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from servicedesk_module.models.sd_models import CustomerIdentity
+from servicedesk_module.models.sd_models import CustomerIdentity, Ticket
 from servicedesk_module.schemas.ticket_schemas import TicketCreateExternal, TicketResponse
 from servicedesk_module.services.ticket_service import TicketService
 
@@ -38,3 +39,11 @@ async def create_ticket(
 
     ticket = await TicketService.create_ticket(session, data, mock_reporter)
     return ticket  # type: ignore
+
+
+@router.get("/tickets", response_model=list[TicketResponse])
+async def list_tickets(session: AsyncSession = Depends(get_db)):
+    """客户获取自己的工单列表 (Mock implementation)"""
+    stmt = select(Ticket).order_by(Ticket.created_at.desc())
+    result = await session.execute(stmt)
+    return result.scalars().all()

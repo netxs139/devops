@@ -2,8 +2,10 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
 from identity_module.deps import get_db
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from servicedesk_module.models.sd_models import Ticket
 from servicedesk_module.schemas.ticket_schemas import CustomerIdentityCreate, CustomerIdentityResponse, TicketResponse, TicketTriageUpdate
 from servicedesk_module.services.ticket_service import TicketService
 
@@ -33,3 +35,11 @@ async def triage_ticket(
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
     return ticket  # type: ignore
+
+
+@router.get("/tickets", response_model=list[TicketResponse])
+async def list_all_tickets(session: AsyncSession = Depends(get_db)):
+    """内部分诊获取所有工单列表"""
+    stmt = select(Ticket).order_by(Ticket.created_at.desc())
+    result = await session.execute(stmt)
+    return result.scalars().all()

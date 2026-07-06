@@ -397,3 +397,55 @@ export interface MDMProject {
   lead_repo_id: number | null
   products: MDMProjectProduct[]
 }
+
+// =============================================================================
+// 服务台 (ServiceDesk)
+// =============================================================================
+
+export interface CustomerIdentityCreate {
+  tenant_id?: string
+  email: string
+  company_name?: string
+  contact_name?: string
+  phone?: string
+}
+
+export interface CustomerIdentityResponse {
+  id: string
+  tenant_id: string
+  email: string
+  company_name?: string
+  contact_name?: string
+  phone?: string
+  is_active: boolean
+  created_at: string
+}
+
+export interface TicketCreateExternal {
+  title: string
+  description?: string
+  ticket_type: string
+}
+
+export interface TicketTriageUpdate {
+  ticket_type?: string
+  product_id?: string
+}
+
+export interface TicketResponse {
+  id: string
+  tenant_id: string
+  reporter_id: string
+  title: string
+  description?: string
+  ticket_type: string
+  status: string
+  product_id?: string
+  department_id?: string
+  assignee_id?: string
+  agile_issue_id?: string
+  gitlab_group_id?: number
+  gitlab_project_id?: number
+  created_at: string
+  updated_at: string
+}

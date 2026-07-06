@@ -14,9 +14,12 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@company/iam-kit": "workspace:*",
+    "@company/iam-kit": "file:../../../amdp/packages/iam-kit",
+    "@tanstack/vue-query": "^5.101.2",
     "@vicons/ionicons5": "^0.12.0",
+    "@vueuse/core": "^14.3.0",
     "axios": "^1.7.9",
+    "dayjs": "^1.11.21",
     "echarts": "^5.5.1",
     "naive-ui": "^2.39.0",
     "pinia": "^2.2.6",
