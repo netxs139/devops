@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.ts,.tsx --fix",
     "lint:style": "stylelint \"src/**/*.{vue,css,scss}\" --fix",
@@ -45,6 +45,7 @@
     "stylelint-config-standard": "^36.0.1",
     "typescript": "^5.7.2",
     "vite": "^6.0.3",
+    "vite-plugin-checker": "^0.14.4",
     "vitest": "^4.1.9",
     "vue-tsc": "^2.1.10"
   }

@@ -24,12 +24,13 @@ from devops_collector.core.exceptions import BusinessException
 from devops_portal.dependencies import get_current_user
 from devops_portal.routers import (
     admin_router,
+    bi_metrics_router,
     devex_pulse_router,
-    iteration_plan_router,
     plugin_router,
     quality_router,
     security_router,
     service_desk_router,
+    sprint_router,
     test_router,
     traceability_router,
     webhook_router,
@@ -76,13 +77,14 @@ register_identity(app, role="master", db_session_factory=AsyncSessionLocal)
 app.include_router(quality_router.router)
 app.include_router(service_desk_router.router)
 app.include_router(test_router.router)
-app.include_router(iteration_plan_router.router)
+app.include_router(sprint_router.router)
 app.include_router(admin_router.router)
 app.include_router(devex_pulse_router.router)
 app.include_router(security_router.router)
 app.include_router(webhook_router.router)
 app.include_router(plugin_router.router)
 app.include_router(traceability_router.router)
+app.include_router(bi_metrics_router.router)
 
 
 @app.exception_handler(BusinessException)

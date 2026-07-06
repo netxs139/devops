@@ -449,3 +449,36 @@ export interface TicketResponse {
   created_at: string
   updated_at: string
 }
+
+// =============================================================================
+// BI Metrics 度量大屏
+// =============================================================================
+
+export interface DoraDashboardSummary {
+  product_name: string
+  last_updated_month: string
+  deployment_frequency?: number | null
+  deploy_trend_icon?: string | null
+  mttr_hours?: number | null
+  mttr_trend_icon?: string | null
+  lead_time_hours?: number | null
+  lead_time_trend_icon?: string | null
+  change_failure_rate_pct?: number | null
+  cfr_trend_icon?: string | null
+  avg_lines_per_commit?: number | null
+  alpc_trend_icon?: string | null
+  mr_commit_ratio?: number | null
+  mcr_trend_icon?: string | null
+  performance_rating?: string | null
+  health_color_hex?: string | null
+}
+
+export interface DeveloperActivityProfile {
+  developer_name: string
+  total_impact_score?: number | null
+  daily_velocity?: number | null
+  active_days_count?: number | null
+  developer_archetype?: string | null
+  total_commits?: number | null
+  total_reviews?: number | null
+}

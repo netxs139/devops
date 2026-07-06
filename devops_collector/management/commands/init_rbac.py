@@ -41,7 +41,7 @@ DEFAULT_MENUS = [
     {"id": 104, "pid": 1, "name": "项目主表", "path": "/admin/project", "type": "C", "icon": "project", "perm": "sys:project:view"},
     {"id": 2, "pid": 0, "name": "研发协同", "path": "/devops", "type": "M", "icon": "rocket", "perm": "sys:devops:view"},
     {"id": 201, "pid": 2, "name": "需求池", "path": "/devops/backlog", "type": "C", "icon": "unordered-list", "perm": "pm:backlog:view"},
-    {"id": 202, "pid": 2, "name": "迭代看板", "path": "/devops/iteration", "type": "C", "icon": "dashboard", "perm": "pm:iteration:view"},
+    {"id": 202, "pid": 2, "name": "迭代看板", "path": "/devops/sprint", "type": "C", "icon": "dashboard", "perm": "pm:sprint:view"},
     {"id": 203, "pid": 2, "name": "质量门禁", "path": "/devops/quality", "type": "C", "icon": "safety-certificate", "perm": "qa:gate:view"},
     {"id": 3, "pid": 0, "name": "测试管理", "path": "/test", "type": "M", "icon": "experiment", "perm": "sys:test:view"},
     {"id": 301, "pid": 3, "name": "测试用例", "path": "/test/cases", "type": "C", "icon": "container", "perm": "qa:test:view"},

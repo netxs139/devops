@@ -4,9 +4,9 @@ from datetime import UTC, datetime
 from sqlalchemy import (
     Boolean,
     DateTime,
+    ForeignKey,
     String,
     Text,
-    ForeignKey,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from uuid6 import uuid7
@@ -45,7 +45,7 @@ class Ticket(Base):
     tenant_id: Mapped[str] = mapped_column(String(32), index=True, default="default", comment="租户ID(隔离边界)")
     reporter_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sd_customer_identities.id"), comment="提报客户ID")
     title: Mapped[str] = mapped_column(String(255), comment="工单标题")
-    
+
     # Relationships
     reporter: Mapped["CustomerIdentity"] = relationship("CustomerIdentity", foreign_keys=[reporter_id])
     description: Mapped[str | None] = mapped_column(Text, comment="工单详情")

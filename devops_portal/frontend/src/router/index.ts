@@ -28,12 +28,14 @@ const AdminView        = () => import('@/views/AdminView.vue')
 const ForbiddenView    = () => import('@/views/ForbiddenView.vue')
 const NotFoundView     = () => import('@/views/NotFoundView.vue')
 const PlaceholderView  = () => import('@/views/PlaceholderView.vue')
+const DoraMetricsView  = () => import('@/views/DoraMetricsView.vue')
+const GitprimeView     = () => import('@/views/GitprimeView.vue')
 
 // --- Dashboard Map 定义 (Index 0 - 23) ---
 const dashboardModules = [
   { path: 'quality', name: 'Quality', title: 'Quality Monitor', domain: '底座/质量', icon: '🛡️', component: QualityView, perms: ['rpt:quality:view'] },
-  { path: 'gitprime', name: 'Gitprime', title: 'Gitprime', domain: '效能/代码', icon: '📈', component: PlaceholderView },
-  { path: 'dora-metrics', name: 'DORAMetrics', title: 'DORA Metrics', domain: '效能/标准', icon: '⏱️', component: PlaceholderView },
+  { path: 'gitprime', name: 'Gitprime', title: 'Gitprime', domain: '效能/代码', icon: '📈', component: GitprimeView },
+  { path: 'dora-metrics', name: 'DORAMetrics', title: 'DORA Metrics', domain: '效能/标准', icon: '⏱️', component: DoraMetricsView },
   { path: 'project-health', name: 'ProjectHealth', title: 'Project Health', domain: '项目/全景', icon: '🗺️', component: PlaceholderView },
   { path: 'compliance-audit', name: 'ComplianceAudit', title: 'Compliance Audit', domain: '安全/合规', icon: '🔒', component: PlaceholderView },
   { path: 'abi-analysis', name: 'ABIAnalysis', title: 'ABI Analysis', domain: '技术/二进制', icon: '📦', component: PlaceholderView },

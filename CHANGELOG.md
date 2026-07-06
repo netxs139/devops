@@ -4,6 +4,21 @@
 
 ## [Unreleased]
 
+- **v3.0 阶段三与阶段四：BI 度量中心大屏与 Vue 前端重构闭环 (2026-07-06)**:
+
+  - **Zero-Sync Direct Query**: 摒弃 Python 层统计，纯利用 Pydantic + FastAPI 提供透明数据通道，由 dbt-postgres 计算 marts 宽表。
+  - **只读模型**: 在 `devops_collector/models/marts.py` 中建立针对 DORA 及项目级指标宽表的视图级 SQLAlchemy 映射 (`viewonly=True`)。
+  - **Vue 3 独立渲染**: 彻底废弃 Streamlit Iframes，基于 Naive UI 与 ECharts 构建 `DoraMetricsView.vue` 和 `GitprimeView.vue`，实现数据和视图的双向解耦。
+  - **防穿透屏障与卸载治理 (BI 4大防线)**:
+    - **后端 TTLCache**: 在 `bi_metrics_router.py` 中应用了 `cachetools.TTLCache` 建立 15 秒微级内存屏障，保护底层 DB 免受轮询穿透。
+    - **前端 Visibility 探测**: 利用 VueUse `useDocumentVisibility` 实现页面处于后台时的自动轮询挂起，节约带宽与性能。
+    - **组件资源卸载**: 通过 `onBeforeUnmount` 强制释放 ECharts 实例并清空 `setInterval` 句柄，消除内存泄漏风险。
+    - **渐进式骨架屏**: 前置骨架渲染提升 LCP 体验。
+  - **依赖瘦身与构建优化 (Gold Triangle)**:
+    - 移除了冗余的 `streamlit`、`plotly` 等重依赖。
+    - **构建提速**: 在 Vite 生产模式下完全剥离 `vue-tsc`，开启 TS 增量编译 `incremental: true`，结合 `vite-plugin-checker` 异步校验类型错误。
+  - **架构加固**: 修复 `docker-compose.yml` 跨库模块 (`identity_module`) 卷挂载路径缺失的 Bug，消除 API 容器重启死锁；缩减 Worker 冗余副本数为 1。
+
 - **Vue 3 前端重构阶段六：分析仪表盘与全地图路由注册 (2026-06-20)**:
 
   - **HomeView.vue**: 实现全域导航大厅，读取路由元数据 `meta.domain` 对所有可用业务域模块进行自动归类与卡片化展示，支持 hoverable 交互、300ms cubic-bezier 平滑过渡及 Naive UI 动态响应式栅格布局（NGrid 4列自适应）。

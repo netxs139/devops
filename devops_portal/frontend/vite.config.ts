@@ -1,10 +1,20 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import checker from 'vite-plugin-checker'
 import { fileURLToPath, URL } from 'node:url'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue(),
+    checker({
+      vueTsc: true,
+      eslint: {
+        lintCommand: 'eslint . --ext .vue,.ts,.tsx',
+        useFlatConfig: false
+      }
+    })
+  ],
 
   resolve: {
     alias: {

@@ -1,32 +1,30 @@
 # DevOps 平台建设进度跟踪 (Progress Tracker)
 
 ## 🎯 当前重点 (Current Focus)
-- **核心重点**: 阶段二：测试模块物理拆分 (Test Module Decoupling)
-- **状态**: 🟡 进行中
+- **核心重点**: v3.0 阶段三：前端 BI 大屏重构 (DORA & Gitprime)
+- **状态**: 🟢 已完成
 
 ## 🛠️ 任务清单 (Tasks)
 
 **【v3.0 模块化架构演进 (Modular Monolith Evolution)】**
 
 1. [阶段一：敏捷模块深度解耦] 将需求、缺陷、迭代看板核心业务从 `devops_collector` 彻底剥离至独立的 `agile_module` 包，并将跨域硬外键全部重构为 `String(32)` 软引用。 🟢 已完成
-2. [阶段二：测试模块物理拆分] 新建 `test_module` 包，承接用例管理与执行计划，并完成与敏捷缺陷投递的单向解耦。 🟡 进行中
-3. [阶段三：BI 度量中心建设] 新建只读性质的 `bi_metrics_module`，基于 dbt 数据仓封装 DORA 指标与 ELOC 代码贡献聚合 API。 ⏳ 待实现
+2. [阶段二：测试模块物理拆分] 新建 `test_module` 包，承接用例管理与执行计划，并完成与敏捷缺陷投递的单向解耦。 🟢 已完成
+3. [阶段三：BI 度量中心建设] 新建只读性质的 `bi_metrics_module`，基于 dbt 数据仓封装 DORA 指标与 ELOC 代码贡献聚合 API。 🟢 已完成
 4. [阶段四：主数据网关收敛] 清理 `devops_collector` 遗留代码，纯化为专职对接外部系统的 `mdm_core_module` 事件广播中心。 ⏳ 待实现
 5. [阶段五：微前端基座拼装] 在前端 Shell 底座中彻底抽离遗留的强耦合页面，完成 `@company/agile-kit` 等远程业务联邦包的动态挂载集成。 ⏳ 待实现
 6. [阶段六：端到端质量防线] 针对拼装成型的五大模块网关，落地 Playwright E2E 测试框架，贯穿登录、核心数据同步与提单的用户旅程。 ⏳ 待实现
 
 ## 📋 最近完成 (Recently Completed)
 
-1. [2026-07-06] **v3.0 阶段一：敏捷模块深度解耦**: 将 EpicMaster 模型从 `devops_collector` 剥离至 `agile_module/models`，并将 `owner_id`/`org_id`/`okr_objective_id` 等跨库外键全部转换为软引用 (`UUID`/`Integer`)；将 `iteration_plan_service` 和 `iteration_core_service` 迁移至敏捷模块专属服务层；将网关路由 `iteration_plan_router` 挂载路径更名为 `/agile/iteration`。导入验证通过。commit: `5800ec0`。
-2. [2026-07-06] **前端重构阶段七：平台治理与路由占位全量补齐**: （经代码树审计，该阶段已在之前的 IAM 集成与阶段六中提前落地闭环）包含 `AdminView.vue` 核心四大 Tab（IAM集成、项目映射、产品矩阵、安全审计）的完整 Vue 3 化，以及 `router/index.ts` 中针对 Dashboard Map Index 1-23 的 `PlaceholderView.vue` 全量注册，打通了前端微内核占位骨架。
-2. [2026-07-06] **ServiceDesk 模块全链路重构与绿地 UI**: 1. 基于 UUIDv7 构建全新的工单服务后端，实现与 GitLab Issue 的双向 webhook 同步；2. 跨库挂载 `notification-kit` 实现工单关闭的异步邮件通知；3. 绿地开发前端：物理删除全部 `sd_*.js` 遗留组件，采用 Vue 3 + Naive UI + TanStack Query 重新构建 `ServiceDeskView.vue` 与 `TicketForm.vue`；4. 修复了跨库 `workspace:*` 依赖报错与 `pnpm-lock.yaml` detect-secrets 误报拦截。commit: `d472222`。
-1. [2026-06-20] **前端重构阶段六：分析仪表盘与全地图路由注册**: 完成 HomeView.vue（全域导航大厅，按业务域自动分组）、QualityView.vue（质量监控大屏，包含同步成功率/审计异常/数据新鲜度度量与最新审计异常 Alert 列表）、PlaceholderView.vue（通用占位组件）；在 router/index.ts 注册全量 24 模块路由，在 DashboardLayout.vue 实现菜单按 Domain 动态分组与 RBAC 展示隔离。frontend-lint 0 error，build success。commit: `3dcb1a6`。
-2. [2026-06-20] **前端重构阶段五：服务台域 SFC + 手动容灾工具**: 完成 ServiceDeskView.vue（双Tab工单列表+统计看板+状态流转+驳回Modal）、TicketForm.vue（三层MDM联动+Bug/需求双模表单+NUpload附件+Query参数回填）、TestCaseView.vue @report-bug 跳转串联；recovery.py 会话检查点/恢复工具（just checkpoint/recover）；修复 ESLint `no-unused-vars` Vue SFC 配置、TS `TicketStatus` 加入 'opened'、`</Card>` → `</NCard>` 模板闭合错误；lint 0 error，typecheck 0 error，vite 3482 modules，pytest 8 passed。commit: `feab822`。
-3. [2026-06-20] **前端重构阶段四：迭代看板与团队心情 Pulse**: 完成 Board.vue（HTML5 原生 Drag/Drop，4列WIP看板）、Pulse.vue（团队心情反馈，localStorage 持久化，弹跳动效）、BoardView.vue（Sprint 信息栏+进度环+响应式布局）；typecheck/lint 100% 通过，build 2278 模块编译通过。commit: `6042b9f`。
-4. [2026-06-20] **QA Quality Domain Vue 3 重构与类型/Lint 修复**: 完成 TestCaseView.vue（用例管理与执行控制台）、RadarView.vue（效能雷达看板下钻）SFC 迁移，并集成 ProductSelector、Radar、TestCaseDetail、TestCaseForm 等子组件，修复 TS 类型与 ESLint 规范报错，前端 build 顺利编译通过。commit: `6d42799`。
-5. [2026-06-20] **前端重构阶段二：登录与鉴权体系 Vue 3 SFC 完全迁移**: 完成 LoginView.vue（密码+GitLab OAuth）、LoginCallback.vue（OAuth token 截获）、DashboardLayout.vue（权限菜单主壳）、store/auth.ts（JWT 解析+RBAC）、router/index.ts（beforeEach 三段守卫）完整迁移；补全 api.d.ts AuthToken 类型；修复 import断行与 `\3c` HTML 实体泄漏 bug；落地 axios 合法豁免合约。commits: `d82e589`, `997c508`。
-6. [2026-06-20] **前端重构阶段一：工程脚手架与规范初始化**: 搭建 Vue 3 + Vite + TS 开发底座，通过 Flat ESLint + Stylelint 建立工程规训，完成 static/vue-assets 隔离构建制品集成，并落地 CSP 及 XSS 防御审查。
-7. [2026-06-15] **流水线原生化与安全审计重构**: 完成 `.gitlab-ci.yml` 的深度重构，解耦原生 Stage，集成 Nexus 私服，落地 Trivy 与 CycloneDX SBOM 扫描并导出标准日志与指标制品。
+1. [2026-07-06] **v3.0 阶段四：BI 前端大屏重构闭环**: 彻底下线 Streamlit 渲染引擎，构建了 `DoraMetricsView.vue` 和 `GitprimeView.vue`，实现数据和视图的双向解耦。落地了 Visibility 感知暂停、ECharts 生命周期释放及前端性能优化。实施了构建“三角优化”（Vite剥离tsc，tsc增量编译，vite-plugin-checker），修复了Docker跨库依赖卷挂载死锁及Worker冗余。全量通过 `just verify` 验证。
+
+1. [2026-07-06] **v3.0 阶段三：BI 度量中心建设 (后端层)**: 完成了 BI 数据壳的后端架构搭建。创建了直接映射 `dbt_project/models/marts/` 的只读 `marts.py` SQLAlchemy 模型，封装了对应的 Pydantic schemas。在 `bi_metrics_router.py` 内实现了带 TTL 缓存屏障的 FastAPI 路由，以防御前端高频轮询引发的数据库雪崩。移除了遗留的 Streamlit 依赖与相关容器配置，打通了集成测试验证。
+
+1. [2026-07-06] **[Ad-hoc] Iteration → Sprint 全栈重命名重构**: 全面完成后端 API、前端遗留 JS 组件、Vue 3 接口以及相关文档和数据大盘 SQL 的更名工作，解决 CI detect-secrets 误报，代码落库成功。commit: `967833b`。
+
+1. [2026-07-06] **v3.0 阶段二：测试模块物理拆分**: 建立 `test_module` 独立包，将用例管理与执行计划从 `devops_collector` 彻底解耦。重构并删除了旧版硬关联模型与路由，通过 SQLAlchemy 软引用 (`viewonly=True`) 机制修复了 `admin_service` 跨域查询导致的大面积 mypy 报错。修复遗留的 Vue SFC 类型缺陷，全量 `just verify` 验证通过。commit: `6426539`。
+2. [2026-07-06] **v3.0 阶段一：敏捷模块深度解耦**: 将 EpicMaster 模型从 `devops_collector` 剥离至 `agile_module/models`，并将 `owner_id`/`org_id`/`okr_objective_id` 等跨库外键全部转换为软引用 (`UUID`/`Integer`)；将 `iteration_plan_service` 和 `iteration_core_service` 迁移至敏捷模块专属服务层；将网关路由 `iteration_plan_router` 挂载路径更名为 `/agile/iteration`。导入验证通过。commit: `5800ec0`。
 
 ---
 

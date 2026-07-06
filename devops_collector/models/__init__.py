@@ -46,6 +46,7 @@ from .base_models import (
     Vendor,
 )
 from .dependency import Dependency, DependencyCVE, DependencyScan, LicenseRiskRule
+from .marts import DeveloperActivityProfile, DoraDashboardSummary
 from .service_desk import ServiceDeskTicket
 
 
@@ -173,6 +174,8 @@ __all__ = [
     "DependencyCVE",
     "ServiceDeskTicket",
     "AuditLog",
+    "DoraDashboardSummary",
+    "DeveloperActivityProfile",
 ]
 
 from . import events

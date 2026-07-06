@@ -79,6 +79,15 @@ ______________________________________________________________________
 1. **[Logic] 循环内 N+1 查询**: 在处理任务的循环中执行 `session.query().first()` 严禁使用。必须在循环外通过 `in_` 批量拉取数据并建立内存 Map。
 1. **[FastAPI] 隐式路由前缀陷阱**: 所有的 `APIRouter` 必须在实例化时显式声明 `prefix`（例如：`router = APIRouter(prefix="/users")`），**严禁**在 `main.py` 的 `include_router` 中才迟迟声明前缀。此红线旨在确保静态 AST 扫描能够准确定位 API 契约，并防止路由挂载混乱。
 
+## 1.7 BI 大屏与高频展现规范 (BI Dashboard & High-Frequency Rendering Norms) [MANDATORY]
+
+为确保大屏数据在极端并发下的稳定性及长时间挂机不发生内存泄漏，凡涉及 BI 域或高频定时刷新的大屏页面，必须强制遵守以下规范：
+
+1. **可见性感知轮询（智能暂停）**：必须结合 `Page Visibility API` (`document.hidden`)，在浏览器页签处于后台或最小化时自动暂停轮询，切回前台时立即触发一次同步并恢复轮询，避免无效的后端 DB 负载。
+1. **防内存泄漏（生命周期销毁）**：在 Vue 3 组件卸载阶段（`onBeforeUnmount`），必须显式调用 ECharts 的 `.dispose()` 清理实例，防止 SPA 路由切换导致的内存泄漏；并使用 `ResizeObserver` 替代全局 `window.onresize`。
+1. **微型内存屏障（高并发防雪崩）**：针对 BI 只读高频接口，必须在 FastAPI Router 层引入秒级缓存（如 `@alru_cache(ttl=60)` 等），以在极端并发（如早高峰）时有效保护底层 DB 宽表免受穿透攻击。
+1. **渐进式加载（Skeleton 骨架屏）**：严格禁止大屏界面的全屏 Blocking Loading。各指标卡片或图表区需独立使用骨架屏（如 `<n-skeleton>`），实现数据分批返回、视觉无缝加载的体验。
+
 ## 2. 核心技术栈 (Technology Stack)
 
 - **后端 (Backend)**: Python 3.12, FastAPI (Router-Service 模式), SQLAlchemy 2.0 (Typed).

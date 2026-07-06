@@ -5,6 +5,8 @@ from pydantic import BaseModel, Field
 
 
 class TicketBase(BaseModel):
+    """基础工单模型."""
+
     title: str = Field(..., max_length=255, description="工单标题")
     description: str | None = Field(None, description="工单详情")
 
@@ -56,6 +58,8 @@ class CustomerIdentityCreate(BaseModel):
 
 
 class CustomerIdentityResponse(BaseModel):
+    """客户身份响应模型."""
+
     id: uuid.UUID
     tenant_id: str
     assigned_department_id: str | None

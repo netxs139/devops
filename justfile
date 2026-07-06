@@ -330,7 +330,7 @@ clean:
     @echo "Cleaning temporary files..."
     find . -type d -name "__pycache__" -not -path "./.venv/*" -exec rm -rf {} + 2>/dev/null || true
     find . -type f \( -name "*.pyc" -o -name "*.pyo" \) -not -path "./.venv/*" -delete 2>/dev/null || true
-    rm -rf .coverage .pytest_cache .ruff_cache test-results
+    rm -rf .coverage .pytest_cache .ruff_cache test-results 2>/dev/null || true
     @echo "Done."
 
 # 自动生成/更新数据字典

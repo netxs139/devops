@@ -22,6 +22,7 @@
     },
 
     // 构建输出控制
+    "incremental": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "isolatedModules": true,

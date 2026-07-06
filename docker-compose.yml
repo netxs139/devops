@@ -17,6 +17,7 @@ services:
     volumes:
       - .:/app
       - ./persistence_data:/app/data
+      - ../amdp:/amdp
     env_file:
       - .env
     restart: unless-stopped
@@ -47,12 +48,13 @@ services:
     volumes:
       - .:/app
       - ./persistence_data:/app/data
+      - ../amdp:/amdp
     entrypoint: [ "uv", "run", "python", "-m", "devops_collector.worker" ]
     env_file:
       - .env
     restart: unless-stopped
     deploy:
-      replicas: 2
+      replicas: 1
     networks:
       - infra-net
 
@@ -64,6 +66,7 @@ services:
     volumes:
       - .:/app
       - ./persistence_data:/app/data
+      - ../amdp:/amdp
     entrypoint: [ "uv", "run", "python", "-m", "devops_collector.scheduler" ]
     env_file:
       - .env
@@ -71,33 +74,7 @@ services:
     networks:
       - infra-net
 
-  # 4. Decision Hub (Streamlit Dashboard)
-  dashboard:
-    image: devops-platform:latest
-    container_name: devops-dashboard
-    profiles: [ "core" ]
-    volumes:
-      - .:/app
-    env_file:
-      - .env
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "nc", "-z", "localhost", "8501" ]
-      interval: 10s
-      timeout: 5s
-      retries: 60
-      start_period: 300s
-    command: uv run streamlit run dashboard/Home.py
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.ddap-dashboard.rule=Host(`ddap.tjhq.com`)"
-      - "traefik.http.routers.ddap-dashboard.entrypoints=websecure"
-      - "traefik.http.routers.ddap-dashboard.tls=true"
-      - "traefik.http.routers.ddap-dashboard.priority=50"
-      - "traefik.http.services.ddap-dashboard.loadbalancer.server.port=8501"
-    networks:
-      - infra-net
-      - traefik-public
+
 
 networks:
   infra-net:

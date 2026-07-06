@@ -1,0 +1,1 @@
+import{k as t,M as o,Y as r,Z as n}from"./vue-vendor-DQpL9lg6.js";const s={style:{padding:"32px","text-align":"center",color:"#6B7280"}},l=t({__name:"ForbiddenView",setup(a){return(d,e)=>(o(),r("div",s,[...e[0]||(e[0]=[n("h2",null,"ForbiddenView",-1),n("p",null,"施工中...",-1)])]))}});export{l as default};

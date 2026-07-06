@@ -113,35 +113,6 @@ services:
       start_period: 60s
     logging: *logging
 
-  # 6. Decision Hub (Streamlit Dashboard)
-  dashboard:
-    image: devops-platform:latest
-    container_name: devops-dashboard
-    restart: always
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-    env_file:
-      - .env
-    environment:
-      - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
-    depends_on:
-      db:
-        condition: service_healthy
-    healthcheck:
-      test: [ "CMD", "nc", "-z", "localhost", "8501" ]
-      interval: 10s
-      timeout: 10s
-      retries: 30
-      start_period: 120s
-    command: streamlit run dashboard/Home.py
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=PathPrefix(`/`)"
-      - "traefik.http.routers.dashboard.entrypoints=web"
-      - "traefik.http.services.dashboard.loadbalancer.server.port=8501"
-      - "traefik.http.middlewares.dashboard-auth.basicauth.users=${DASHBOARD_BASIC_AUTH_USERS}"
-      - "traefik.http.routers.dashboard.middlewares=dashboard-auth"
-    logging: *logging
 
   # 7. Traefik API Gateway (Unified Entrypoint)
   traefik:

@@ -184,7 +184,7 @@ class GitLabProject(Base, TimestampMixin, TraceabilityMixin):
     organization_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("mdm_organizations.id"))
     organization = relationship(
         "Organization",
-        primaryjoin=and_(Organization.id == organization_id, Organization.is_current.is_(True)),
+        primaryjoin="and_(Organization.id == GitLabProject.organization_id, Organization.is_current.is_(True))",
         back_populates="gitlab_projects",
     )
     mdm_project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("mdm_projects.id"), nullable=True)
@@ -319,7 +319,7 @@ class GitLabProjectMember(Base, TimestampMixin, TraceabilityMixin):
     project: Mapped["GitLabProject | None"] = relationship("GitLabProject", back_populates="members")  # noqa: F821
     user = relationship(
         "User",
-        primaryjoin=and_(User.global_user_id == user_id, User.is_current.is_(True)),
+        primaryjoin="and_(User.global_user_id == GitLabProjectMember.user_id, User.is_current.is_(True))",
         back_populates="project_memberships",
     )
 

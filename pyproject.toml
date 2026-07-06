@@ -52,8 +52,6 @@ dependencies = [
     "email-validator>=2.1.0,<3.0.0",
     "dbt-core>=1.8.0,<2.0.0",
     "dbt-postgres>=1.8.0,<2.0.0",
-    "streamlit>=1.55.0,<2.0.0",
-    "plotly>=5.24.0,<6.0.0",
     "watchdog>=6.0.0,<7.0.0",
     "pypinyin>=0.50.0,<1.0.0",
     "cryptography>=46.0.5",
@@ -142,7 +140,7 @@ devops-gate = "scripts.gatekeeper:main"
 devops-progress = "scripts.progress_manager:main"
 
 [tool.setuptools]
-packages = ["devops_collector", "devops_portal", "servicedesk_module", "agile_module"]
+packages = ["devops_collector", "devops_portal", "servicedesk_module", "agile_module", "test_module"]
 
 [tool.setuptools.package-data]
 devops_collector = ["sql/*.sql"]
