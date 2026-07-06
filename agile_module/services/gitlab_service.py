@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, cast
 
 import httpx
 
@@ -57,7 +57,7 @@ class GitLabService:
 
                 if response.status_code == 201:
                     logger.info(f"Successfully created GitLab Issue in project {project_id}.")
-                    return response.json()
+                    return cast(dict[str, Any], response.json())
 
                 logger.error(f"GitLab API Error [{response.status_code}]: {response.text}")
                 # 使用结构化错误返回
@@ -89,7 +89,7 @@ class GitLabService:
 
                 if response.status_code == 201:
                     logger.info(f"Successfully added note to Issue {issue_iid} in project {project_id}.")
-                    return response.json()
+                    return cast(dict[str, Any], response.json())
 
                 logger.error(f"GitLab API Error [{response.status_code}]: {response.text}")
                 raise ValueError(f"Failed to add GitLab Issue Note: HTTP {response.status_code}")

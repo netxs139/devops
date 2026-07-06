@@ -14,6 +14,8 @@ from devops_collector.models.base_models import Base
 
 
 class CustomerIdentity(Base):
+    """ServiceDesk 外部客户身份模型"""
+
     __tablename__ = "sd_customer_identities"
     __table_args__ = {"comment": "ServiceDesk 外部客户身份表"}
 
@@ -33,6 +35,8 @@ class CustomerIdentity(Base):
 
 
 class Ticket(Base):
+    """ServiceDesk 工单模型"""
+
     __tablename__ = "sd_tickets"
     __table_args__ = {"comment": "ServiceDesk 外部服务台工单表"}
 
@@ -56,6 +60,8 @@ class Ticket(Base):
 
 
 class TicketComment(Base):
+    """ServiceDesk 工单评论模型"""
+
     __tablename__ = "sd_ticket_comments"
     __table_args__ = {"comment": "ServiceDesk 工单沟通记录"}
 

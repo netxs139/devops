@@ -14,6 +14,8 @@ from devops_collector.models.base_models import Base
 
 
 class AgileProductMapping(Base):
+    """Agile 模块产品线映射模型"""
+
     __tablename__ = "agile_product_mappings"
     __table_args__ = {"comment": "Agile 模块产品线与 GitLab 顶级群组及接收池的路由映射"}
 
