@@ -9,13 +9,18 @@ from sqlalchemy import engine_from_config, pool
 
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+from agile_module.models.agile_models import *  # noqa
 from devops_collector.config import settings
+from devops_collector.models import *  # noqa
 from devops_collector.models.base_models import Base
 from devops_collector.services.plugin_loader import PluginLoader
+from servicedesk_module.models.sd_models import *  # noqa
 
 
 # 动态加载所有插件模型，确保 Base.metadata 收集到完整的表结构
 PluginLoader.load_models()
+
+# PluginLoader now automatically loads plugins.
 config = context.config
 fileConfig(config.config_file_name)
 
@@ -31,7 +36,7 @@ def run_migrations_offline():
     Calls to context.execute() here emit the given string to the
     script output.
     """
-    url = settings.database.uri
+    url = settings.database.uri.get_secret_value() if hasattr(settings.database.uri, "get_secret_value") else str(settings.database.uri)
     context.configure(url=url, target_metadata=Base.metadata, literal_binds=True, dialect_opts={"paramstyle": "named"})
     with context.begin_transaction():
         context.run_migrations()
@@ -44,7 +49,9 @@ def run_migrations_online():
     and associate a connection with the context.
     """
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = settings.database.uri
+    configuration["sqlalchemy.url"] = (
+        settings.database.uri.get_secret_value() if hasattr(settings.database.uri, "get_secret_value") else str(settings.database.uri)
+    )
     connectable = engine_from_config(configuration, prefix="sqlalchemy.", poolclass=pool.NullPool)
     with connectable.connect() as connection:
         context.configure(connection=connection, target_metadata=Base.metadata)

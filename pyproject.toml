@@ -63,6 +63,7 @@ dependencies = [
     "identity-module",
     "asyncpg>=0.31.0",
     "pyjwt>=2.13.0",
+    "uuid6>=2025.0.1",
 ]
 
 [project.optional-dependencies]
@@ -140,7 +141,7 @@ devops-gate = "scripts.gatekeeper:main"
 devops-progress = "scripts.progress_manager:main"
 
 [tool.setuptools]
-packages = ["devops_collector", "devops_portal"]
+packages = ["devops_collector", "devops_portal", "servicedesk_module", "agile_module"]
 
 [tool.setuptools.package-data]
 devops_collector = ["sql/*.sql"]
