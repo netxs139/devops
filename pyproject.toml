@@ -64,6 +64,7 @@ dependencies = [
     "asyncpg>=0.31.0",
     "pyjwt>=2.13.0",
     "uuid6>=2025.0.1",
+    "notification-kit",
 ]
 
 [project.optional-dependencies]
@@ -237,3 +238,4 @@ allow-insecure-host = ["192.168.5.64"]
 
 [tool.uv.sources]
 identity-module = { path = "../amdp/identity_module", editable = true }
+notification-kit = { path = "../amdp/notification-kit" }

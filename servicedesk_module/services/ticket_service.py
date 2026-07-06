@@ -1,8 +1,14 @@
 import logging
 import uuid
 
+import asyncio
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
+
+from devops_collector.config import settings
+from notification_kit.email_sender import EmailSender
+from notification_kit.types import EmailMessage, EmailAddress
 
 from agile_module.services.agile_routing_service import AgileRoutingService
 from agile_module.services.gitlab_service import GitLabService
@@ -116,7 +122,7 @@ class TicketService:
         new_status: str
     ) -> Ticket | None:
         """从 Agile 模块的反向回调更新 SD 工单状态"""
-        stmt = select(Ticket).where(
+        stmt = select(Ticket).options(joinedload(Ticket.reporter)).where(
             Ticket.gitlab_project_id == gitlab_project_id,
             Ticket.agile_issue_id == agile_issue_id
         )
@@ -128,5 +134,30 @@ class TicketService:
             ticket.status = new_status
             await session.commit()
             await session.refresh(ticket)
+            
+            # Phase 5: Trigger Email when RESOLVED
+            if new_status == "RESOLVED" and getattr(ticket, "reporter", None) and ticket.reporter.email:
+                try:
+                    sender = EmailSender(
+                        host=settings.smtp.host,
+                        port=settings.smtp.port,
+                        username=settings.smtp.username,
+                        password=settings.smtp.password.get_secret_value(),
+                        from_address=settings.smtp.from_address,
+                        from_name=settings.smtp.from_name,
+                        use_tls=settings.smtp.use_tls,
+                    )
+                    
+                    msg = EmailMessage(
+                        to=[EmailAddress(email=ticket.reporter.email, name=ticket.reporter.company_name or "Customer")],
+                        subject=f"【ServiceDesk】您的工单已解决: {ticket.title}",
+                        body_html=f"<h3>尊敬的客户：</h3><p>您好！您提交的工单 <b>{ticket.title}</b> (ID: {ticket.id}) 已经被我们的研发团队解决。</p><p>感谢您的反馈！</p>",
+                        body_text=f"您的工单已解决: {ticket.title}"
+                    )
+                    
+                    asyncio.create_task(sender.send_async(msg))
+                    logger.info(f"Scheduled resolution email for Ticket {ticket.id} to {ticket.reporter.email}")
+                except Exception as e:
+                    logger.error(f"Failed to send email for Ticket {ticket.id}: {e}")
             
         return ticket

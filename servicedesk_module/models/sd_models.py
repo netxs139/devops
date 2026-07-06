@@ -6,8 +6,9 @@ from sqlalchemy import (
     DateTime,
     String,
     Text,
+    ForeignKey,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from uuid6 import uuid7
 
 from devops_collector.models.base_models import Base
@@ -42,8 +43,11 @@ class Ticket(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid7, comment="工单ID")
     tenant_id: Mapped[str] = mapped_column(String(32), index=True, default="default", comment="租户ID(隔离边界)")
-    reporter_id: Mapped[uuid.UUID] = mapped_column(comment="提报客户ID(关联CustomerIdentity)")
+    reporter_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sd_customer_identities.id"), comment="提报客户ID")
     title: Mapped[str] = mapped_column(String(255), comment="工单标题")
+    
+    # Relationships
+    reporter: Mapped["CustomerIdentity"] = relationship("CustomerIdentity", foreign_keys=[reporter_id])
     description: Mapped[str | None] = mapped_column(Text, comment="工单详情")
     ticket_type: Mapped[str] = mapped_column(String(50), default="CONSULTATION", comment="类型: INCIDENT/CONSULTATION/REQUIREMENT/BUG")
     status: Mapped[str] = mapped_column(String(50), default="NEW", comment="状态: NEW/ACCEPTED/IN_PROGRESS/RESOLVED/CLOSED")

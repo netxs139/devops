@@ -159,6 +159,18 @@ class ZenTaoSettings(BaseModel):
     build_sync_limit: int = 100
 
 
+class SMTPSettings(BaseModel):
+    """SMTP email notification settings."""
+
+    host: str = "smtp.example.com"
+    port: int = 587
+    username: str = "no-reply@example.com"
+    password: SecretStr = Field(default_factory=lambda: SecretStr("dummy_password"))
+    from_address: str = "no-reply@example.com"
+    from_name: str = "DevOps Platform"
+    use_tls: bool = True
+
+
 class AISettings(BaseModel):
     """AI service configuration."""
 
@@ -230,6 +242,7 @@ class Settings(BaseSettings):
     zentao: ZenTaoSettings
     nexus: NexusSettings
     ai: AISettings
+    smtp: SMTPSettings = Field(default_factory=SMTPSettings)
     storage: StorageSettings = Field(default_factory=StorageSettings)
     plugin: PluginSettings = Field(default_factory=PluginSettings)
     sla: SLASettings = Field(default_factory=SLASettings)
