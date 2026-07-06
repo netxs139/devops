@@ -3,7 +3,9 @@
 import asyncio
 import logging
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
+from identity_module.deps import get_db
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from devops_collector.auth.auth_database import AuthSessionLocal
 from devops_collector.config import settings
@@ -11,6 +13,7 @@ from devops_collector.mq import MessageQueue
 from devops_collector.plugins.gitlab.gitlab_client import GitLabClient
 from devops_portal.events import push_notification
 from devops_portal.state import PIPELINE_STATUS
+from servicedesk_module.services.ticket_service import TicketService
 
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
@@ -44,7 +47,7 @@ def get_project_stakeholders_helper(project_id: int) -> list[str]:
 
 
 @router.post("/gitlab")
-async def gitlab_webhook(request: Request):
+async def gitlab_webhook(request: Request, session: AsyncSession = Depends(get_db)):
     """处理来自 GitLab 的 Webhook 实时同步请求。"""
     try:
         payload = await request.json()
@@ -56,7 +59,27 @@ async def gitlab_webhook(request: Request):
             old_labels = [l.get("title") for l in payload.get("changes", {}).get("labels", {}).get("previous", [])]
             issue_iid = object_attr.get("iid")
             action = object_attr.get("action")
+            state = object_attr.get("state")
             p_id = payload.get("project", {}).get("id")
+
+            # 同步 ServiceDesk 模块的工单状态
+            if p_id and issue_iid and state:
+                new_status = None
+                if state == "closed":
+                    new_status = "RESOLVED"
+                elif state == "opened":
+                    new_status = "IN_PROGRESS"
+
+                if new_status:
+                    try:
+                        await TicketService.update_ticket_status_by_agile_issue(
+                            session=session,
+                            gitlab_project_id=int(p_id),
+                            agile_issue_id=str(issue_iid),
+                            new_status=new_status
+                        )
+                    except Exception as e:
+                        logger.error(f"SD webhook sync failed: {e}")
 
             if "type::test" in labels:
                 logger.info(f"Webhook Received: Test Case #{issue_iid} was {action}")

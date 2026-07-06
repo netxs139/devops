@@ -1,9 +1,9 @@
 import uuid
 
 from fastapi import APIRouter, Depends
+from identity_module.deps import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from identity_module.deps import get_db
 from servicedesk_module.models.sd_models import CustomerIdentity
 from servicedesk_module.schemas.ticket_schemas import TicketCreateExternal, TicketResponse
 from servicedesk_module.services.ticket_service import TicketService
