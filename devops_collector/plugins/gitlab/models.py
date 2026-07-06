@@ -843,7 +843,7 @@ class GitLabIssueEvent(Base, TimestampMixin, TraceabilityMixin):
         id (int): 自增主键。
         issue_id (int): 关联的 Issue ID。
         user_id (UUID): 触发该事件的用户 ID (mdm_identities.global_user_id)。
-        event_type (str): 事件类型 (state, label, milestone, iteration)。
+        event_type (str): 事件类型 (state, label, milestone, sprint)。
         action (str): 动作类型 (add, remove, closed, reopened, update)。
         external_event_id (int): GitLab 侧的原始 Event ID。
         meta_info (dict): 存储具体的变更内容（如标签名、状态值等）。

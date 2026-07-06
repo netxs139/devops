@@ -18,7 +18,7 @@ class Command(BaseCommand):
         parser.add_argument("-o", "--output", default="alignment_audit_report.md", help="输出路径 (默认: alignment_audit_report.md)")
 
     def handle(self, *args, **options):
-        """Query unlinked GitLab repos and ZenTao iterations; write Markdown audit report."""
+        """Query unlinked GitLab repos and ZenTao sprints; write Markdown audit report."""
         output_path = options["output"]
 
         self.stdout.write("正在分析跨系统资产对齐情况...\n")

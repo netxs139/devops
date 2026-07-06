@@ -14,7 +14,7 @@ ______________________________________________________________________
 1. [认证接口 (Authentication)](#1-%E8%AE%A4%E8%AF%81%E6%8E%A5%E5%8F%A3-authentication)
 1. [服务台接口 (Service Desk)](#2-%E6%9C%8D%E5%8A%A1%E5%8F%B0%E6%8E%A5%E5%8F%A3-service-desk)
 1. [测试管理接口 (Test Management)](#3-%E6%B5%8B%E8%AF%95%E7%AE%A1%E7%90%86%E6%8E%A5%E5%8F%A3-test-management)
-1. [迭代计划接口 (Iteration Plan)](#4-%E8%BF%AD%E4%BB%A3%E8%AE%A1%E5%88%92%E6%8E%A5%E5%8F%A3-iteration-plan)
+1. [迭代计划接口 (Sprint Plan)](#4-%E8%BF%AD%E4%BB%A3%E8%AE%A1%E5%88%92%E6%8E%A5%E5%8F%A3-sprint-plan)
 1. [质量分析接口 (Quality Analytics)](#5-%E8%B4%A8%E9%87%8F%E5%88%86%E6%9E%90%E6%8E%A5%E5%8F%A3-quality-analytics)
 1. [DevEx 脉搏接口 (DevEx Pulse)](#6-devex-%E8%84%89%E6%90%8F%E6%8E%A5%E5%8F%A3-devex-pulse)
 1. [管理接口 (Admin)](#7-%E7%AE%A1%E7%90%86%E6%8E%A5%E5%8F%A3-admin)
@@ -40,7 +40,7 @@ POST /auth/register
 ```json
 {
   "email": "user@example.com",
-  "password": "your_password",
+  "password": "your_password", /* pragma: allowlist secret */
   "full_name": "张三"
 }
 ```
@@ -501,28 +501,28 @@ Authorization: Bearer <token>
 
 ______________________________________________________________________
 
-## 4. 迭代计划接口 (Iteration Plan)
+## 4. 迭代计划接口 (Sprint Plan)
 
-**基础路径**: `/iteration-plan`
+**基础路径**: `/sprint-plan`
 
 ### 4.1 获取迭代列表
 
 ```http
-GET /iteration-plan/milestones?project_id={id}
+GET /sprint-plan/milestones?project_id={id}
 Authorization: Bearer <token>
 ```
 
 ### 4.2 获取迭代详情
 
 ```http
-GET /iteration-plan/milestones/{milestone_id}?project_id={id}
+GET /sprint-plan/milestones/{milestone_id}?project_id={id}
 Authorization: Bearer <token>
 ```
 
 ### 4.3 获取迭代任务
 
 ```http
-GET /iteration-plan/milestones/{milestone_id}/issues?project_id={id}
+GET /sprint-plan/milestones/{milestone_id}/issues?project_id={id}
 Authorization: Bearer <token>
 ```
 

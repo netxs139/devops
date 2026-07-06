@@ -1,12 +1,12 @@
 /**
- * @file pm_iteration_board.component.js
- * @description Project Management Iteration Board (Kanban) with MDM Project Selection
+ * @file pm_sprint_board.component.js
+ * @description Project Management Sprint Board (Kanban) with MDM Project Selection
  */
-import { PMIterationService } from '../modules/pm_iteration_service.js';
+import { PMSprintService } from '../modules/pm_sprint_service.js';
 import { UI, Auth } from '../modules/sys_core.js';
 import '../components/pm_issue_card.component.js';
 
-class PmIterationBoard extends HTMLElement {
+class PmSprintBoard extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
@@ -18,7 +18,7 @@ class PmIterationBoard extends HTMLElement {
             // GitLab Layer (derived from MDM)
             gitlabRepos: [],
             currentGitlabProjectId: null,
-            // Iteration Layer
+            // Sprint Layer
             milestones: [],
             currentMilestoneId: null,
             currentMilestoneTitle: null,
@@ -44,7 +44,7 @@ class PmIterationBoard extends HTMLElement {
 
     async loadMdmProjects() {
         try {
-            this.state.mdmProjects = await PMIterationService.getMdmProjects();
+            this.state.mdmProjects = await PMSprintService.getMdmProjects();
             this.render();
         } catch (e) {
             console.error("Failed to load MDM projects", e);
@@ -78,7 +78,7 @@ class PmIterationBoard extends HTMLElement {
 
     async loadMilestones(gitlabProjectId) {
         try {
-            this.state.milestones = await PMIterationService.getMilestones(gitlabProjectId);
+            this.state.milestones = await PMSprintService.getMilestones(gitlabProjectId);
             this.render();
         } catch (e) {
             console.error("Failed to load milestones", e);
@@ -92,8 +92,8 @@ class PmIterationBoard extends HTMLElement {
 
             UI.toggleLoading("Syncing Board...", true);
             const [backlog, sprint] = await Promise.all([
-                PMIterationService.getBacklog(currentGitlabProjectId),
-                PMIterationService.getSprint(currentGitlabProjectId, currentMilestoneTitle)
+                PMSprintService.getBacklog(currentGitlabProjectId),
+                PMSprintService.getSprint(currentGitlabProjectId, currentMilestoneTitle)
             ]);
             this.state.backlog = backlog;
             this.state.sprint = sprint;
@@ -421,7 +421,7 @@ class PmIterationBoard extends HTMLElement {
 
         UI.toggleLoading("创建里程碑中...", true);
         try {
-            await PMIterationService.createMilestone(this.state.currentGitlabProjectId, {
+            await PMSprintService.createMilestone(this.state.currentGitlabProjectId, {
                 title: title,
                 start_date: this.shadowRoot.querySelector('.js-sprint-start').value || null,
                 due_date: this.shadowRoot.querySelector('.js-sprint-due').value || null,
@@ -444,7 +444,7 @@ class PmIterationBoard extends HTMLElement {
 
         UI.toggleLoading("正在同步 GitLab 里程碑及 Tag...", true);
         try {
-            await PMIterationService.release(this.state.currentGitlabProjectId, {
+            await PMSprintService.release(this.state.currentGitlabProjectId, {
                 version: this.state.currentMilestoneTitle,
                 new_title: newTitle,
                 ref_branch: 'main'
@@ -475,7 +475,7 @@ class PmIterationBoard extends HTMLElement {
         UI.toggleLoading("正在迁移未完成任务...", true);
 
         try {
-            await PMIterationService.release(this.state.currentGitlabProjectId, {
+            await PMSprintService.release(this.state.currentGitlabProjectId, {
                 version: this.state.currentMilestoneTitle,
                 new_title: newTitle,
                 ref_branch: 'main',
@@ -505,9 +505,9 @@ class PmIterationBoard extends HTMLElement {
 
         try {
             if (targetType === 'sprint') {
-                await PMIterationService.planIssue(currentGitlabProjectId, data.iid, currentMilestoneId);
+                await PMSprintService.planIssue(currentGitlabProjectId, data.iid, currentMilestoneId);
             } else {
-                await PMIterationService.removeIssue(currentGitlabProjectId, data.iid);
+                await PMSprintService.removeIssue(currentGitlabProjectId, data.iid);
             }
             UI.showToast("操作成功", "success");
             this.loadBoardData();
@@ -518,4 +518,4 @@ class PmIterationBoard extends HTMLElement {
     }
 }
 
-customElements.define('pm-iteration-board', PmIterationBoard);
+customElements.define('pm-sprint-board', PmSprintBoard);

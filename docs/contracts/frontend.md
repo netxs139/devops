@@ -305,7 +305,7 @@ ______________________________________________________________________
 | 组件文件 | 旧版 Web Component | 核心改动 |
 | :--- | :--- | :--- |
 | `Pulse.vue` | `sys_pulse.component.js` | 心情反馈 + PulseStatus 校验 |
-| `Board.vue` | `pm_iteration_board.component.js` | NGrid + HTML5 Drag/Drop |
+| `Board.vue` | `pm_sprint_board.component.js` | NGrid + HTML5 Drag/Drop |
 | `TestCaseDetail.vue` | `qa_test_case_detail.component.js` | NDrawer 承载，完全解耦 DOM |
 | `TestCaseForm.vue` | `qa_test_case_form.component.js` | Naive UI 动态表单 + 强校验 |
 | `TicketForm.vue` | `sd_request_form.component.js` | 三层映射：产品 ID 联动表单 |

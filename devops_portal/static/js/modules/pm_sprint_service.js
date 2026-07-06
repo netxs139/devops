@@ -1,11 +1,11 @@
 /**
- * @file pm_iteration_service.js
+ * @file pm_sprint_service.js
  * @description ITeration Plan API Service Layer
  */
 
 import { Api } from './sys_core.js';
 
-export const PMIterationService = {
+export const PMSprintService = {
     /**
      * 获取 MDM 主项目列表
      */
@@ -17,35 +17,35 @@ export const PMIterationService = {
      * 获取可进行规划的 GitLab 项目列表 (旧接口，向下兼容)
      */
     async getProjects() {
-        return await Api.get('/iteration-plan/projects');
+        return await Api.get('/sprint-plan/projects');
     },
 
     /**
      * 获取项目的里程碑（迭代）
      */
     async getMilestones(projectId) {
-        return await Api.get(`/iteration-plan/projects/${projectId}/milestones`);
+        return await Api.get(`/sprint-plan/projects/${projectId}/milestones`);
     },
 
     /**
      * 获取 Backlog 数据
      */
     async getBacklog(projectId) {
-        return await Api.get(`/iteration-plan/projects/${projectId}/backlog`);
+        return await Api.get(`/sprint-plan/projects/${projectId}/backlog`);
     },
 
     /**
      * 获取 Sprint 数据
      */
     async getSprint(projectId, milestoneTitle) {
-        return await Api.get(`/iteration-plan/projects/${projectId}/sprint/${encodeURIComponent(milestoneTitle)}`);
+        return await Api.get(`/sprint-plan/projects/${projectId}/sprint/${encodeURIComponent(milestoneTitle)}`);
     },
 
     /**
      * 将任务移入迭代
      */
     async planIssue(projectId, issueIid, milestoneId) {
-        return await Api.post(`/iteration-plan/projects/${projectId}/plan`, {
+        return await Api.post(`/sprint-plan/projects/${projectId}/plan`, {
             issue_iid: parseInt(issueIid),
             milestone_id: parseInt(milestoneId)
         });
@@ -55,7 +55,7 @@ export const PMIterationService = {
      * 从迭代移除任务
      */
     async removeIssue(projectId, issueIid) {
-        return await Api.post(`/iteration-plan/projects/${projectId}/remove`, {
+        return await Api.post(`/sprint-plan/projects/${projectId}/remove`, {
             issue_iid: parseInt(issueIid)
         });
     },
@@ -64,13 +64,13 @@ export const PMIterationService = {
      * 执行发布
      */
     async release(projectId, data) {
-        return await Api.post(`/iteration-plan/projects/${projectId}/release`, data);
+        return await Api.post(`/sprint-plan/projects/${projectId}/release`, data);
     },
 
     /**
      * 创建新迭代
      */
     async createMilestone(projectId, data) {
-        return await Api.post(`/iteration-plan/projects/${projectId}/milestones`, data);
+        return await Api.post(`/sprint-plan/projects/${projectId}/milestones`, data);
     }
 };

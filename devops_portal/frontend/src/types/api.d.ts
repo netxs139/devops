@@ -363,7 +363,7 @@ export interface BoardItem {
   story_points?: number
 }
 
-export interface IterationBoard {
+export interface SprintBoard {
   milestone: string
   project_id: number
   columns: Record<BoardColumn, BoardItem[]>

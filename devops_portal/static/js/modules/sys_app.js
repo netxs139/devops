@@ -21,7 +21,7 @@ const SysAppHandler = {
                 title: "项目执行",
                 expanded: true,
                 items: [
-                    { id: "nav-iterations", label: "迭代计划", href: "#iteration_plan", view: "iteration_plan", icon: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" },
+                    { id: "nav-sprints", label: "迭代计划", href: "#sprint_plan", view: "sprint_plan", icon: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" },
                     { id: "nav-reqs", label: "需求管理", href: "#requirements", view: "requirements", icon: "M9 11l3 3L22 4; M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" },
                     { id: "nav-support", label: "工单管理", href: "#support", view: "support", icon: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z; M8 9h8; M8 13h6" }
                 ]
@@ -479,7 +479,7 @@ const SysAppHandler = {
 
         const viewItems = [
             'qa-dashboard-view', 'qa-case-form-view', 'qa-test-results', 'qa-stats-grid', 'qa-execution-view', 'qa-defect-view', 'pm-matrix-view', 'qa-radar-view',
-            'pm-requirements-view', 'pm-iteration-view', 'rpt-insights-view', 'sd-support-view',
+            'pm-requirements-view', 'pm-sprint-view', 'rpt-insights-view', 'sd-support-view',
             'qa-security-view',
             'sd-submit-view', 'sd-my-view', 'sd-portal-view', 'sys-decision-hub-view', 'sys-governance-view', 'sys-pulse-view',
             'adm-approvals-view', 'adm-products-view', 'adm-okrs-view', 'adm-projects-view', 'adm-users-view', 'adm-orgs-view'
@@ -557,12 +557,12 @@ const SysAppHandler = {
         };
 
         switch (view) {
-            case 'iteration_plan':
-                show('pm-iteration-view');
-                const iterView = document.getElementById('pm-iteration-view');
-                if (iterView && !iterView.querySelector('pm-iteration-board')) {
+            case 'sprint_plan':
+                show('pm-sprint-view');
+                const iterView = document.getElementById('pm-sprint-view');
+                if (iterView && !iterView.querySelector('pm-sprint-board')) {
                     iterView.innerHTML = '';
-                    const board = document.createElement('pm-iteration-board');
+                    const board = document.createElement('pm-sprint-board');
                     iterView.appendChild(board);
                 }
                 break;

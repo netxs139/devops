@@ -22,7 +22,7 @@ select
     -- 瓶颈归类
     case
         when avg(pickup_delay_hours) > avg(review_duration_hours) then 'WAITING_FOR_REVIEW'
-        when avg(review_duration_hours) > 24 then 'COMPLEX_REVIEW_ITERATION'
+        when avg(review_duration_hours) > 24 then 'COMPLEX_REVIEW_SPRINT'
         else 'HEALTHY_FLOW'
     end as primary_bottleneck
 from lifecycle

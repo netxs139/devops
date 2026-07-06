@@ -171,12 +171,12 @@ async function runTests() {
         });
     });
 
-    // 5. PM Iteration - PmIterationHandler Tests
-    await describe('PM Iteration - Handler', async () => {
-        const { default: PmIterationHandler } = await import('../js/modules/pm_iteration.js');
+    // 5. PM Sprint - PmSprintHandler Tests
+    await describe('PM Sprint - Handler', async () => {
+        const { default: PmSprintHandler } = await import('../js/modules/pm_sprint.js');
 
         await it('should initialize with correct elements', async () => {
-            // Mock DOM for iteration plan
+            // Mock DOM for sprint plan
             document.body.innerHTML += `
                 <select id="projectSelect"><option value="P1" selected>P1</option></select>
                 <select id="milestoneSelect"><option value="M1" selected>M1</option></select>
@@ -184,8 +184,8 @@ async function runTests() {
             `;
             // Mock dependency call in loadProjects
             mockFetch([]);
-            await PmIterationHandler.init();
-            expect(PmIterationHandler.state.currentProjectId).toBe('P1');
+            await PmSprintHandler.init();
+            expect(PmSprintHandler.state.currentProjectId).toBe('P1');
             resetFetch();
         });
     });
@@ -239,14 +239,14 @@ async function runTests() {
             resetFetch();
         });
     });
-    // 7. PM Iteration - Service & Component Tests
-    await describe('PM Iteration - Service & Component', async () => {
-        const { PMIterationService } = await import('../js/modules/pm_iteration_service.js');
+    // 7. PM Sprint - Service & Component Tests
+    await describe('PM Sprint - Service & Component', async () => {
+        const { PMSprintService } = await import('../js/modules/pm_sprint_service.js');
         await import('../js/components/pm_issue_card.component.js');
 
         await it('should fetch projects correctly', async () => {
             mockFetch([{ id: 101, path: 'group/project' }]);
-            const projects = await PMIterationService.getProjects();
+            const projects = await PMSprintService.getProjects();
             expect(projects.length).toBe(1);
             expect(projects[0].id).toBe(101);
             resetFetch();
@@ -286,7 +286,7 @@ async function runTests() {
                 };
             };
 
-            await PMIterationService.planIssue(101, 42, 202);
+            await PMSprintService.planIssue(101, 42, 202);
 
             expect(capturedUrl).toContain('/projects/101/plan');
             expect(capturedBody.issue_iid).toBe(42);

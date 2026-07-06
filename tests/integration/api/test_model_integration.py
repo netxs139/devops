@@ -209,7 +209,7 @@ def run_integration_test():
         assert test_mr.source_branch == "feature/ui"
         assert test_mr.target_branch == "develop"
         print("  - MergeRequest Materialized Attributes (is_draft, branches) verified.")
-        print("Scenario 8: Domain-Specific Black Tech (Iteration & Test Management)...")
+        print("Scenario 8: Domain-Specific Black Tech (Sprint & Test Management)...")
         test_milestone = Milestone(id=60001, title="Sprint 1", state="active", project_id=50001)
         session.add(test_milestone)
         issue_1 = Issue(id=70001, iid=10, project_id=50001, milestone_id=60001, state="closed")

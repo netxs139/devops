@@ -1,11 +1,11 @@
 import { Api, UI, Auth } from './sys_core.js';
-import { PMIterationService } from './pm_iteration_service.js';
+import { PMSprintService } from './pm_sprint_service.js';
 
 /**
- * @file pm_iteration.js
+ * @file pm_sprint.js
  * @description 迭代计划工作台 (PM Domain Handler)
  */
-const PmIterationHandler = {
+const PmSprintHandler = {
     state: {
         currentProjectId: null,
         currentMilestoneId: null,
@@ -16,7 +16,7 @@ const PmIterationHandler = {
      * 初始化
      */
     async init() {
-        console.log("PM Iteration: Orchestrating lifecycle...");
+        console.log("PM Sprint: Orchestrating lifecycle...");
         this.bindEvents();
         await this.loadProjects();
         this.checkBindStatus();
@@ -120,7 +120,7 @@ const PmIterationHandler = {
         if (!select) return;
 
         try {
-            const projects = await PMIterationService.getProjects();
+            const projects = await PMSprintService.getProjects();
             select.innerHTML = '<option value="" disabled selected>选择项目...</option>';
 
             projects.forEach(p => {
@@ -170,7 +170,7 @@ const PmIterationHandler = {
         msSelect.innerHTML = '<option value="" disabled selected>加载里程碑...</option>';
 
         try {
-            const milestones = await PMIterationService.getMilestones(projectId);
+            const milestones = await PMSprintService.getMilestones(projectId);
             msSelect.innerHTML = '<option value="" disabled selected>选择迭代...</option>';
 
             if (milestones.length === 0) {
@@ -219,8 +219,8 @@ const PmIterationHandler = {
         UI.toggleLoading("同步看板状态...", true);
         try {
             const [backlogIssues, sprintIssues] = await Promise.all([
-                PMIterationService.getBacklog(currentProjectId),
-                PMIterationService.getSprint(currentProjectId, currentMilestoneTitle)
+                PMSprintService.getBacklog(currentProjectId),
+                PMSprintService.getSprint(currentProjectId, currentMilestoneTitle)
             ]);
 
             this.renderList('.js-backlog-list', backlogIssues, '.js-backlog-count');
@@ -328,9 +328,9 @@ const PmIterationHandler = {
 
         try {
             if (isTargetSprint) {
-                await PMIterationService.planIssue(currentProjectId, iid, currentMilestoneId);
+                await PMSprintService.planIssue(currentProjectId, iid, currentMilestoneId);
             } else {
-                await PMIterationService.removeIssue(currentProjectId, iid);
+                await PMSprintService.removeIssue(currentProjectId, iid);
             }
             UI.showToast("操作成功", "success");
             this.loadData();
@@ -356,7 +356,7 @@ const PmIterationHandler = {
 
         UI.toggleLoading("正在同步 GitLab 里程碑及 Tag...", true);
         try {
-            await PMIterationService.release(this.state.currentProjectId, {
+            await PMSprintService.release(this.state.currentProjectId, {
                 version: this.state.currentMilestoneTitle,
                 new_title: newTitle,
                 ref_branch: 'main'
@@ -389,7 +389,7 @@ const PmIterationHandler = {
         UI.toggleLoading("正在迁移未完成任务...", true);
 
         try {
-            await PMIterationService.release(this.state.currentProjectId, {
+            await PMSprintService.release(this.state.currentProjectId, {
                 version: this.state.currentMilestoneTitle,
                 new_title: newTitle,
                 ref_branch: 'main',
@@ -416,7 +416,7 @@ const PmIterationHandler = {
 
         UI.toggleLoading("创建里程碑中...", true);
         try {
-            await PMIterationService.createMilestone(this.state.currentProjectId, {
+            await PMSprintService.createMilestone(this.state.currentProjectId, {
                 title: title,
                 start_date: document.querySelector('.js-new-sprint-start').value || null,
                 due_date: document.querySelector('.js-new-sprint-due').value || null,
@@ -451,7 +451,7 @@ const PmIterationHandler = {
     }
 };
 
-export default PmIterationHandler;
+export default PmSprintHandler;
 
 // 自动初始化
-document.addEventListener('DOMContentLoaded', () => PmIterationHandler.init());
+document.addEventListener('DOMContentLoaded', () => PmSprintHandler.init());
