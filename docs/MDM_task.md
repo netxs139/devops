@@ -1,0 +1,44 @@
+# DevOps 数据中台建设任务看板
+
+## 📋 任务清单 (Checklist)
+
+- `[ ]` **1. 数据库模型重构与升级 (DB Schema)**
+  - `[ ]` 升级 `base_models.py` 中的 `ProjectMaster` 主键为原生 UUID (默认使用 `uuid6.uuid7`)
+  - `[ ]` 升级 `base_models.py` 中的 `Product` 主键为原生 UUID (默认使用 `uuid6.uuid7`)
+  - `[ ]` 升级 `base_models.py` 中的 `Vendor` 主键为原生 UUID (默认使用 `uuid6.uuid7`)
+  - `[ ]` 移除 `base_models.py` 中 `RevenueContract` 的 `client_name` 冗余列
+  - `[ ]` 新增 `devops_collector/models/customer.py` 并注册 `Customer` 主数据表 (支持 USCI、行业分类、客户级别、商务负责人，主键 UUID)
+  - `[ ]` 将 `sd_models.py` 中的 `CustomerIdentity.customer_company_id` 类型修改为 `UUID` 并添加外键约束
+  - `[ ]` 清理遗留 of Jira / JFrog 采集相关的数据表定义与 imports
+  - `[ ]` 运行 Alembic 自动生成迁移版本并应用变更 `alembic upgrade head`
+- `[ ]` **2. 开发自研 PMS (Project Management System) 采集插件**
+  - `[ ]` 创建 `devops_collector/plugins/pms/` 目录结构
+  - `[ ]` 编写 `pms/client.py` 封装 HTTP REST API 访问
+  - `[ ]` 编写 `pms/worker.py` 采集项目、预算、里程碑数据并使用 Pydantic schemas 强校验入库 `mdm_projects`
+  - `[ ]` 在 `devops_collector/config.py` 和 `scheduler.py` 中注册 `pms` 插件与调度周期
+- `[ ]` **3. GitLab 社区版 CI 采集与限流防爆适配**
+  - `[ ]` 优化 `gitlab/client.py` 并发控制，使用 `Semaphore(3)` 限制最大并发，并配置 `tenacity` 柔性指数退避重试
+  - `[ ]` 增加 GitLab Pipeline / Job 采集，存储至 `stg_raw_data` 并入 ODS 表
+- `[ ]` **4. dbt 转换层重构与增量/测试优化**
+  - `[ ]` 删除 staging / intermediate 中所有 jira/jfrog 的 SQL 模型及 source 声明
+  - `[ ]` 新增 `stg_mdm_customers.sql` 和 `stg_pms.sql`
+  - `[ ]` 新建/重构 `int_unified_test_results.sql`，执行禅道老测试数据 (`zentao_test_*`) 与新自研测试模块数据 (`test_module`) 的双轨并流，并进行用例状态归一化
+  - `[ ]` 重构 `int_unified_work_items.sql`，移除 Jira，完成 GitLab Issues 与 禅道 Issues 双轨状态机归一映射
+  - `[ ]` 新建 `int_gitlab_jenkins_union_ci.sql` 合并 Jenkins 构建流水线与 GitLab CI 流水线指标
+  - `[ ]` 将 `gitlab_commits` / `gitlab_pipelines` 配置为 `incremental` 增量物化构建模型
+  - `[ ]` 在 dbt schema 配置文件中，针对主数据表和关系表新增 `not_null`, `unique`, `relationships` 等强校验测试
+- `[ ]` **5. 调度器测试熔断与企微告警实现**
+  - `[ ]` 升级 `scheduler.py`，在计算 DORA 指标和触发 Reverse ETL 前先执行 `dbt test`
+  - `[ ]` 检测到测试 Error 时触发自动熔断，阻止脏数据污染，并调用 Webcom Webhook 发送包含错误统计的告警通知
+- `[ ]` **6. 自研极简数据血缘渲染**
+  - `[ ]` 编写 `devops_collector/services/lineage_service.py` 读取并解析 `target/manifest.json`，提取模型依赖关系
+  - `[ ]` 开发 FastAPI 端点输出 Mermaid 文本供 Vue 3 前端大屏页面进行 SVG 渲染
+- `[ ]` **7. 冒烟测试与验证**
+  - `[ ]` 运行 `python manage.py verify_orm_integrity` 验证所有 SQLAlchemy 关系正常
+  - `[ ]` 运行 pytest 针对新添加 of `Customer` 模型、`pms` 插件及熔断服务进行单元/集成测试
+- `[ ]` **8. 构建优化与 CLI 统一化重构 (Build Optimization & CLI Refactoring)**
+  - `[ ]` 创建全局 `.dockerignore` 排除 `node_modules` / `.venv` 等大体积文件，加速构建与上下文发送
+  - `[ ]` 在 `devops_collector/cli.py` 中实现 `call_command` 编程式调用逻辑
+  - `[ ]` 重构 `scripts/` 下的松散脚本（如 `generate_data_dictionary.py`），将其继承自 `BaseCommand`，并收纳至统一 CLI 的子命令下
+  - `[ ]` 在 CLI 入口文件前置 `_load_dotenv()`，以确保环境变量在导包前加载
+  - `[ ]` 在 `CHANGELOG.md` 中记录版本变动与优化实践

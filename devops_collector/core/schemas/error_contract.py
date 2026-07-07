@@ -44,4 +44,4 @@ class ErrorResponse(BaseModel):
     message: str = Field(..., description="面向用户的简短描述")
     detail: dict[str, Any] | None = Field(None, description="结构化的错误详情")
     correlation_id: str | None = Field(None, description="全链路追踪 ID")
-    source: str = Field("devops-platform", description="组件名称")
+    source: str = Field("ddap", description="组件名称")

@@ -1,6 +1,18 @@
 
+{{
+    config(
+        materialized='incremental',
+        unique_key='commit_sha',
+        on_schema_change='sync_all_columns',
+        tags=['staging', 'gitlab', 'incremental']
+    )
+}}
+
 with source as (
     select * from {{ source('raw', 'gitlab_commits') }}
+    {% if is_incremental() %}
+        where committed_date > (select max(committed_at) from {{ this }})
+    {% endif %}
 ),
 
 renamed as (

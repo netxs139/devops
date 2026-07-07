@@ -1,10 +1,12 @@
 """Command module."""
 
+import uuid
 from datetime import datetime
 
 
 """Nexus 插件数据模型。"""
 
+import sqlalchemy as sa
 from sqlalchemy import JSON, BigInteger, DateTime, Float, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -27,7 +29,7 @@ class NexusComponent(Base, TimestampMixin, SCDMixin, OwnableMixin):
         group (str): 组织/分组。
         name (str): 组件名称。
         version (str): 版本号。
-        product_id (str): 关联的产品 ID。
+        product_id (uuid.UUID): 关联的产品 ID (mdm_products.id, UUID v7)。
         product (Product): 关联的产品对象。
         assets (List[NexusAsset]): 该组件包含的资产列表。
     """
@@ -39,7 +41,7 @@ class NexusComponent(Base, TimestampMixin, SCDMixin, OwnableMixin):
     group: Mapped[str | None] = mapped_column(String(255))
     name: Mapped[str | None] = mapped_column(String(255), nullable=False)
     version: Mapped[str | None] = mapped_column(String(100))
-    product_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("mdm_products.id"), nullable=True)
+    product_id: Mapped[uuid.UUID | None] = mapped_column(sa.UUID, ForeignKey("mdm_products.id"), nullable=True)
     commit_sha: Mapped[str | None] = mapped_column(String(100), index=True)  # 直接存储 Git Commit SHA，提升 DORA 关联性能
     build_pipeline_id: Mapped[str | None] = mapped_column(String(100))  # 新增：构建流水线 ID (CI Context)
     build_url: Mapped[str | None] = mapped_column(String(500))  # 新增：流水线 URL

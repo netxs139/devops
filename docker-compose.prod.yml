@@ -2,7 +2,7 @@ services:
   # 1. 后端 API 服务 (FastAPI + Test Hub)
   api:
     build: .
-    image: devops-platform:latest
+    image: ddap:latest
     container_name: devops-api
     restart: always
     volumes:
@@ -39,7 +39,7 @@ services:
 
   # 2. 数据异步采集 Worker
   worker:
-    image: devops-platform:latest
+    image: ddap:latest
     container_name: devops-worker
     restart: always
     volumes:
@@ -57,7 +57,7 @@ services:
 
   # 3. 任务调度器
   scheduler:
-    image: devops-platform:latest
+    image: ddap:latest
     container_name: devops-scheduler
     restart: always
     env_file:

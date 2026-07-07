@@ -7,11 +7,12 @@ services:
   # 1. 后端 API 服务 (FastAPI + Test Hub)
   api:
     build:
-      context: .
+      context: ..
+      dockerfile: devops/Dockerfile
       args:
         - PIP_INDEX_URL=http://192.168.5.64:8081/repository/group-pypi/simple
         - PIP_TRUSTED_HOST=192.168.5.64
-    image: devops-platform:latest
+    image: ddap:latest
     container_name: devops-api
     profiles: [ "core" ]
     volumes:
@@ -43,7 +44,7 @@ services:
 
   # 2. 数据异步采集 Worker (多实例竞争消费)
   worker:
-    image: devops-platform:latest
+    image: ddap:latest
     profiles: [ "core" ]
     volumes:
       - .:/app
@@ -60,7 +61,7 @@ services:
 
   # 3. 任务调度器
   scheduler:
-    image: devops-platform:latest
+    image: ddap:latest
     container_name: devops-scheduler
     profiles: [ "core" ]
     volumes:

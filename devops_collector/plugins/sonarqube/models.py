@@ -42,8 +42,8 @@ class SonarProject(Base, TimestampMixin, TraceabilityMixin):
     qualifier: Mapped[str | None] = mapped_column(String(10))
     gitlab_project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("gitlab_projects.id"), nullable=True)
     # MDM 拓扑关联
-    mdm_project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("mdm_projects.id"), nullable=True, comment="关联的 MDM 项目 ID")
-    mdm_product_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("mdm_products.id"), nullable=True, comment="关联的 MDM 产品 ID")
+    mdm_project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_projects.id"), nullable=True, comment="关联的 MDM 项目 ID")
+    mdm_product_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_products.id"), nullable=True, comment="关联的 MDM 产品 ID")
 
     last_analysis_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -286,8 +286,8 @@ class SonarIssue(Base, TimestampMixin, TraceabilityMixin):
     close_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     assignee: Mapped[str | None] = mapped_column(String(100))
     author: Mapped[str | None] = mapped_column(String(100))
-    assignee_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    author_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    assignee_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    author_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     raw_data: Mapped[json_dict | None] = mapped_column(JSON)
     project: Mapped["SonarProject | None"] = relationship("SonarProject", back_populates="issues")  # noqa: F821
 

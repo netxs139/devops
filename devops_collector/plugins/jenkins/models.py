@@ -54,13 +54,13 @@ class JenkinsJob(Base, TimestampMixin, TraceabilityMixin):
 
     # MDM 拓扑关联与部署属性
     mdm_project_id = Column(
-        Integer,
+        UUID(as_uuid=True),
         ForeignKey("mdm_projects.id"),
         nullable=True,
         comment="关联的 MDM 项目 ID",
     )
     mdm_product_id = Column(
-        Integer,
+        UUID(as_uuid=True),
         ForeignKey("mdm_products.id"),
         nullable=True,
         comment="关联的 MDM 产品 ID",
@@ -125,7 +125,7 @@ class JenkinsBuild(Base, TimestampMixin, TraceabilityMixin):
     executor: Mapped[str | None] = mapped_column(String(255))
     trigger_type: Mapped[str | None] = mapped_column(String(50))
     trigger_user: Mapped[str | None] = mapped_column(String(100))
-    trigger_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    trigger_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     commit_sha: Mapped[str | None] = mapped_column(String(100))
     raw_data: Mapped[json_dict | None] = mapped_column(JSON)
     gitlab_mr_iid: Mapped[int | None] = mapped_column(Integer)

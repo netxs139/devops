@@ -73,10 +73,7 @@ async def gitlab_webhook(request: Request, session: AsyncSession = Depends(get_d
                 if new_status:
                     try:
                         await TicketService.update_ticket_status_by_agile_issue(
-                            session=session,
-                            gitlab_project_id=int(p_id),
-                            agile_issue_id=str(issue_iid),
-                            new_status=new_status
+                            session=session, gitlab_project_id=int(p_id), agile_issue_id=str(issue_iid), new_status=new_status
                         )
                     except Exception as e:
                         logger.error(f"SD webhook sync failed: {e}")

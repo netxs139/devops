@@ -1,22 +1,41 @@
 # DevOps 平台建设进度跟踪 (Progress Tracker)
 
-## 🎯 当前重点 (Current Focus)
-- **核心重点**: v3.0 阶段三：前端 BI 大屏重构 (DORA & Gitprime)
-- **状态**: 🟢 已完成
+## [Current Focus]
+- **核心重点**: 任务已全部完成，等待用户下达新指令
+- **状态**: [DONE] 已完成
 
-## 🛠️ 任务清单 (Tasks)
+## [Tasks]
 
-**【v3.0 模块化架构演进 (Modular Monolith Evolution)】**
+**【DevOps 数据中台建设 (MDM & DWH) — 主任务链】**
+
+[P1 - DB Schema] T1: 数据库模型重构 — 确认 UUID v7 主键, 清理 Jira/JFrog 模型, 生成 Alembic 迁移版本 🟢 已完成
+[P1 - Plugin] T2: 新建 PMS 采集插件 (plugins/pms/: __init__.py, client.py, worker.py) + config.py + scheduler.py 注册 🟢 已完成
+[P2 - GitLab] T3: GitLab 并发控制改造 — Semaphore(3) 限流 + sources.yml 扩展 gtm_test / gitlab_jobs 源定义 🟢 已完成
+[P2 - dbt L1] T4: dbt staging 清理 — 删除 jira_*, 新建 stg_mdm_customers, stg_pms, stg_test_module_cases, stg_test_module_results 🟢 已完成
+[P2 - dbt L2] T5: dbt intermediate 重构 — 新建 int_unified_test_results (双轨合流+状态归一), 重构 int_unified_work_items (去 Jira), 新建 int_gitlab_jenkins_union_ci 🟢 已完成
+[P2 - dbt L3] T6: dbt 增量化 — stg_gitlab_commits + stg_gitlab_pipelines 配置为 incremental 物化 🟢 已完成
+[P3 - Scheduler] T7: 调度器 dbt test 熔断 + WeComBot 预警告警逻辑 🟢 已完成
+[P3 - Lineage] T8: lineage_service.py + /bi/metrics/lineage API 端点 + Mermaid 渲染 🟢 已完成
+[P4 - CLI] T9: cli.py 前置 load_dotenv, 新建 run_refresh_master_data + run_link_users_to_entities BaseCommand 🟢 已完成
+[P5 - Verify] T10: ORM 冒烟自查 + pytest 回归测试 🟢 已完成
+
+
+
 
 1. [阶段一：敏捷模块深度解耦] 将需求、缺陷、迭代看板核心业务从 `devops_collector` 彻底剥离至独立的 `agile_module` 包，并将跨域硬外键全部重构为 `String(32)` 软引用。 🟢 已完成
 2. [阶段二：测试模块物理拆分] 新建 `test_module` 包，承接用例管理与执行计划，并完成与敏捷缺陷投递的单向解耦。 🟢 已完成
 3. [阶段三：BI 度量中心建设] 新建只读性质的 `bi_metrics_module`，基于 dbt 数据仓封装 DORA 指标与 ELOC 代码贡献聚合 API。 🟢 已完成
 4. [阶段四：主数据网关收敛] 清理 `devops_collector` 遗留代码，纯化为专职对接外部系统的 `mdm_core_module` 事件广播中心。 ⏳ 待实现
-5. [阶段五：微前端基座拼装] 在前端 Shell 底座中彻底抽离遗留的强耦合页面，完成 `@company/agile-kit` 等远程业务联邦包的动态挂载集成。 ⏳ 待实现
+5. [阶段五：微前端基座拼装] 在前端 Shell 底座中彻底抽离遗留的强耦合页面，完成 `@company/agile-kit` 等远程业务联邦包 of 远程业务联邦包的动态挂载集成。 ⏳ 待实现
 6. [阶段六：端到端质量防线] 针对拼装成型的五大模块网关，落地 Playwright E2E 测试框架，贯穿登录、核心数据同步与提单的用户旅程。 ⏳ 待实现
+
+## 🎯 当前重点 (Current Focus)
+- **核心重点**: 任务已全部完成，等待用户下达新指令
+- **状态**: 🟢 已完成
 
 ## 📋 最近完成 (Recently Completed)
 
+1. [2026-07-07] **v3.0 阶段四：DevOps 数据中台建设 (MDM & DWH) 完整闭环**: 升级 base_models.py 主键 UUIDv7 及客户主数据模型；修复了跨 Base ORM 关系配置与 lambda 软外键注解解析缺陷；自研了 PMS 采集插件 client & worker，强校验入库 ODS 层及 `mdm_projects` 表；在 `scheduler.py` 调度器中前置了 `dbt test` 并实现了熔断拦截与企微告警功能；重构了 dbt 转换层，包含 GitLab 增量 commits/pipelines 模型与联合 CI 模型 `int_gitlab_jenkins_union_ci.sql`；提供自研的 `lineage_service.py` 解析 manifest.json 输出 Mermaid 语法血缘并挂载为 `/bi/metrics/lineage` 接口。105 个单元测试与 50 个 dbt 模型 100% 验证通过。
 1. [2026-07-06] **v3.0 阶段四：BI 前端大屏重构闭环**: 彻底下线 Streamlit 渲染引擎，构建了 `DoraMetricsView.vue` 和 `GitprimeView.vue`，实现数据和视图的双向解耦。落地了 Visibility 感知暂停、ECharts 生命周期释放及前端性能优化。实施了构建“三角优化”（Vite剥离tsc，tsc增量编译，vite-plugin-checker），修复了Docker跨库依赖卷挂载死锁及Worker冗余。全量通过 `just verify` 验证。
 
 1. [2026-07-06] **v3.0 阶段三：BI 度量中心建设 (后端层)**: 完成了 BI 数据壳的后端架构搭建。创建了直接映射 `dbt_project/models/marts/` 的只读 `marts.py` SQLAlchemy 模型，封装了对应的 Pydantic schemas。在 `bi_metrics_router.py` 内实现了带 TTL 缓存屏障的 FastAPI 路由，以防御前端高频轮询引发的数据库雪崩。移除了遗留的 Streamlit 依赖与相关容器配置，打通了集成测试验证。

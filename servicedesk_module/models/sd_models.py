@@ -23,7 +23,7 @@ class CustomerIdentity(Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid7, comment="客户唯一标识")
     tenant_id: Mapped[str] = mapped_column(String(32), index=True, default="default", comment="租户ID(隔离边界)")
     assigned_department_id: Mapped[str | None] = mapped_column(String(32), index=True, comment="绑定的负责内部研发部门ID")
-    customer_company_id: Mapped[str | None] = mapped_column(String(32), index=True, comment="外部客户公司ID")
+    customer_company_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mdm_customers.customer_id"), index=True, comment="外部客户公司ID")
     company_name: Mapped[str | None] = mapped_column(String(255), comment="客户/甲方公司名称")
     email: Mapped[str | None] = mapped_column(String(255), unique=True, index=True, comment="邮箱")
     phone: Mapped[str | None] = mapped_column(String(50), unique=True, index=True, comment="手机号")

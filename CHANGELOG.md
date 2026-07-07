@@ -4,6 +4,31 @@
 
 ## [Unreleased]
 
+- **v3.0 阶段五：DevOps 数据中台建设 (MDM & DWH) 完整闭环 (2026-07-07)**:
+
+  - **MDM 主数据 UUIDv7 升级**: 升级了 `base_models.py` 中 `ProjectMaster`, `Product`, `Vendor` 主表主键为原生 `uuid.UUID` (基于 `uuid7` 默认生成)，删除了冗余字段并移除了跨模块的强物理外键约束，以实现微服务级的松耦合设计。
+  - **跨 Base ORM 关系配置与软外键解析修复**:
+    - 修复了跨 Base 模型加载时的映射时序冲突，在 relationship 属性中完全使用实际类引用代替裸字符串。
+    - 在 `primaryjoin` 条件中显式使用 `foreign()` 注解（如 `foreign(GitLabProjectMember.user_id)`），以引导 SQLAlchemy mapper 引擎在无物理外键约束时正确建立关系。
+  - **PMS 采集插件开发**:
+    - 建立了 PMS 客户端 `client.py` 强限流的 API 交互逻辑。
+    - 完成了 PMS Worker 逻辑，对项目和里程碑执行 Pydantic 强校验、写入 MDM `ProjectMaster`，并留存原始 Payload 写入统一 Staging 层。
+  - **DWH 数仓重构与增量化**:
+    - 清理了已下线 Jira 和 JFrog 插件的相关 dbt 模型（`stg_jira_issues` 等）。
+    - 引入了 `stg_mdm_customers`, `stg_pms` 等 staging 基础模型。
+    - 设计开发了 `int_gitlab_jenkins_union_ci.sql` 联合 CI 转换模型。
+    - 对 GitLab 核心大表 `stg_gitlab_commits` 和 `stg_gitlab_pipelines` 配置了 `incremental` 增量物化策略，大幅缩短数仓计算开销。
+  - **质量门禁熔断与 once 循环守护**:
+    - 在 `scheduler.py` DORA 指标计算前置触发 `dbt test`，实现测试非 0 即自动熔断。
+    - 修复了 once 模式下由于 `continue` 绕过循环体尾部 break 导致的死循环 Bug，采用布尔变量保护机制实现安全熔断。
+    - 集成了 WeComBot 卡片预警通知。
+  - **自研数据血缘与 API 端点**:
+    - 开发 `lineage_service.py` 自动化读取 manifest.json 计算依赖血缘。
+    - 暴露 FastAPI `/bi/metrics/lineage` 服务端点，动态渲染并返回符合 Mermaid 格式的数据血缘语图。
+  - **单元测试合流**:
+    - 清理了废弃 of Jira 和 JFrog 插件对应的单元测试用例及测试文件，解除了测试收集时的 ModuleNotFoundError 冲突。
+    - 在容器内以 100% 成功率通过了 105 个 pytest 单元测试用例，`just docs-verify` 验证一致。
+
 - **v3.0 阶段三与阶段四：BI 度量中心大屏与 Vue 前端重构闭环 (2026-07-06)**:
 
   - **Zero-Sync Direct Query**: 摒弃 Python 层统计，纯利用 Pydantic + FastAPI 提供透明数据通道，由 dbt-postgres 计算 marts 宽表。

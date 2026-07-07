@@ -3,6 +3,7 @@
 import logging
 from datetime import UTC, date, datetime, timedelta
 from typing import Any, cast
+from uuid import UUID
 
 from sqlalchemy.orm import Session
 
@@ -21,7 +22,7 @@ class DORAService:
     """
 
     @staticmethod
-    def calculate_project_metrics(session: Session, project_id: int, days: int = 30) -> DORAMetrics | None:
+    def calculate_project_metrics(session: Session, project_id: UUID | int | str, days: int = 30) -> DORAMetrics | None:
         """计算指定项目的 DORA 指标并持久化。
 
         Args:

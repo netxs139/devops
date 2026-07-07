@@ -46,7 +46,7 @@ class ZenTaoProduct(Base, TimestampMixin, TraceabilityMixin):
     sync_status: Mapped[str | None] = mapped_column(String(20), default="PENDING")
     raw_data: Mapped[json_dict | None] = mapped_column(JSON)
     # MDM 关联字段
-    mdm_product_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("mdm_products.id"), nullable=True, comment="关联的 MDM 产品 ID")
+    mdm_product_id: Mapped[uuid.UUID | None] = mapped_column(UUID, ForeignKey("mdm_products.id"), nullable=True, comment="关联的 MDM 产品 ID")
     executions: Mapped[list["ZenTaoExecution"]] = relationship("ZenTaoExecution", back_populates="product", cascade="all, delete-orphan")  # noqa: F821
     plans: Mapped[list["ZenTaoProductPlan"]] = relationship("ZenTaoProductPlan", back_populates="product", cascade="all, delete-orphan")  # noqa: F821
     issues: Mapped[list["ZenTaoIssue"]] = relationship(
@@ -88,7 +88,7 @@ class ZenTaoProductPlan(Base, TimestampMixin, TraceabilityMixin):
     desc: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str | None] = mapped_column(String(20))
     opened_by: Mapped[str | None] = mapped_column(String(100))
-    opened_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    opened_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     opened_date: Mapped[datetime | None] = mapped_column(DateTime)
     product: Mapped["ZenTaoProduct | None"] = relationship("ZenTaoProduct", back_populates="plans")  # noqa: F821
     issues: Mapped[list["ZenTaoIssue"]] = relationship("ZenTaoIssue", back_populates="plan")  # noqa: F821
@@ -126,7 +126,7 @@ class ZenTaoExecution(Base, TimestampMixin, TraceabilityMixin):
     real_began: Mapped[datetime | None] = mapped_column(DateTime)
     real_end: Mapped[datetime | None] = mapped_column(DateTime)
     # MDM 关联字段
-    mdm_project_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("mdm_projects.id"), nullable=True, comment="关联的 MDM 项目 ID")
+    mdm_project_id: Mapped[uuid.UUID | None] = mapped_column(UUID, ForeignKey("mdm_projects.id"), nullable=True, comment="关联的 MDM 项目 ID")
     product: Mapped["ZenTaoProduct | None"] = relationship("ZenTaoProduct", back_populates="executions")  # noqa: F821
     raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
@@ -175,8 +175,8 @@ class ZenTaoIssue(Base, TimestampMixin, TraceabilityMixin):
     task_type: Mapped[str | None] = mapped_column(String(50))  # devel, test, design 等
     opened_by: Mapped[str | None] = mapped_column(String(100))
     assigned_to: Mapped[str | None] = mapped_column(String(100))
-    opened_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
-    assigned_to_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    opened_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    assigned_to_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     raw_data: Mapped[json_dict | None] = mapped_column(JSON)
     first_commit_sha: Mapped[str | None] = mapped_column(String(100))
@@ -211,7 +211,7 @@ class ZenTaoTestCase(Base, TimestampMixin, TraceabilityMixin):
     type: Mapped[str | None] = mapped_column(String(50))
     status: Mapped[str | None] = mapped_column(String(20))
     opened_by: Mapped[str | None] = mapped_column(String(100))
-    opened_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    opened_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     opened_date: Mapped[datetime | None] = mapped_column(DateTime)
     last_run_result: Mapped[str | None] = mapped_column(String(20))
     is_automated: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -270,7 +270,7 @@ class ZenTaoBuild(Base, TimestampMixin, TraceabilityMixin):
     execution_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("zentao_executions.id"), nullable=True)
     name: Mapped[str | None] = mapped_column(String(255))
     builder: Mapped[str | None] = mapped_column(String(100))
-    builder_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    builder_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     date: Mapped[datetime | None] = mapped_column(DateTime)
     product: Mapped["ZenTaoProduct | None"] = relationship("ZenTaoProduct", back_populates="builds")  # noqa: F821
     raw_data: Mapped[json_dict | None] = mapped_column(JSON)
@@ -303,7 +303,7 @@ class ZenTaoRelease(Base, TimestampMixin, TraceabilityMixin):
     date: Mapped[datetime | None] = mapped_column(DateTime)
     status: Mapped[str | None] = mapped_column(String(50))
     opened_by: Mapped[str | None] = mapped_column(String(100))
-    opened_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    opened_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     product: Mapped["ZenTaoProduct | None"] = relationship("ZenTaoProduct", back_populates="releases")  # noqa: F821
     raw_data: Mapped[json_dict | None] = mapped_column(JSON)
 
@@ -332,7 +332,7 @@ class ZenTaoAction(Base, TimestampMixin, TraceabilityMixin):
     object_type: Mapped[str | None] = mapped_column(String(50))
     object_id: Mapped[int | None] = mapped_column(Integer)
     actor: Mapped[str | None] = mapped_column(String(100))
-    actor_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"), nullable=True)
+    actor_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     action: Mapped[str | None] = mapped_column(String(100))
     date: Mapped[datetime | None] = mapped_column(DateTime, index=True)
     comment: Mapped[str | None] = mapped_column(Text)

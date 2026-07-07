@@ -1,6 +1,6 @@
 """add sys_audit_logs table
 
-Revision ID: a1b2c3d4e5f6
+Revision ID: a1b2c3d4e5f7
 Revises: 68009a76ff76
 Create Date: 2026-04-03 10:50:00.000000
 
@@ -13,7 +13,7 @@ from alembic import op
 
 
 # revision identifiers, used by Alembic.
-revision: str = "a1b2c3d4e5f6"  # pragma: allowlist secret
+revision: str = "a1b2c3d4e5f7"  # pragma: allowlist secret
 down_revision: str | None = "68009a76ff76"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

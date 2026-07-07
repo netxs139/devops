@@ -81,3 +81,12 @@ async def get_developer_activity(db: AsyncSession = Depends(get_db)):
 
     _bi_cache.set(cache_key, records)
     return records
+
+
+@router.get("/lineage")
+async def get_dbt_lineage():
+    """获取自研数据血缘图 (Mermaid 格式)."""
+    from devops_collector.services.lineage_service import LineageService
+
+    mermaid_text = LineageService.generate_mermaid_lineage()
+    return {"lineage": mermaid_text}

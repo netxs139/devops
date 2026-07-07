@@ -67,6 +67,10 @@ class Command(BaseCommand):
             self.stdout.write("public schema 已重置。\n")
 
             # 3. 重新创建所有表
+            from devops_collector.services.plugin_loader import PluginLoader
+
+            PluginLoader.load_models()
+
             Base.metadata.create_all(bind)
             self.stdout.write("数据库 Schema 已根据当前模型重建。\n")
             return True

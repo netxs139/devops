@@ -16,7 +16,7 @@ def test_app_exception_contract_conversion():
     assert contract.message == "Validation failed"
     assert contract.detail == detail
     assert contract.correlation_id == correlation_id
-    assert contract.source == "devops-platform"
+    assert contract.source == "ddap"
 
 
 def test_validation_exception_preset():

@@ -22,6 +22,9 @@ sources:
       - name: mdm_vendors
         identifier: mdm_vendors
         description: "外部供应商表"
+      - name: mdm_customers
+        identifier: mdm_customers
+        description: "客户主数据表"
 
       # 2. GitLab 原始数据 (Engineering Activity)
       - name: gitlab_projects
@@ -46,17 +49,13 @@ sources:
       - name: gitlab_dependencies
         description: "GitLab 项目依赖项"
 
-      # 3. Jira 原始数据 (Project Management)
-      - name: jira_issues
-        description: "Jira 问题详情表"
-      - name: jira_projects
-        description: "Jira 项目定义表"
-      - name: jira_boards
-        description: "Jira 看板表"
-      - name: jira_sprints
-        description: "Jira 迭代表"
-      - name: jira_issue_histories
-        description: "Jira 问题变更历史表"
+      # 3. PMS 项目管理系统 (Project Management System)
+      - name: pms_projects
+        identifier: stg_raw_data
+        description: "自研 PMS 项目同步表"
+      - name: pms_milestones
+        identifier: stg_raw_data
+        description: "PMS 里程碑表"
 
       # 4. SonarQube 原始数据 (Code Quality)
       - name: sonar_projects
@@ -113,7 +112,17 @@ sources:
       - name: nexus_assets
         description: "Nexus 3.x 制品资产详情表"
 
-      # 9. 系统管理与审计 (System & Audit)
+      # 9. GTM 测试管理模块 (Test Management)
+      - name: gtm_test_cases
+        description: "GTM 测试用例表 (test_module)"
+      - name: gtm_test_execution_records
+        description: "GTM 测试执行记录表 (test_module)"
+
+      # 10. GitLab Jobs (CI Layer Extension)
+      - name: gitlab_jobs
+        description: "GitLab CI Job 明细记录（用于联合 CI 模型）"
+
+      # 11. 系统管理与审计 (System & Audit)
       - name: sys_sync_logs
         description: "插件同步日志表"
       - name: stg_raw_data

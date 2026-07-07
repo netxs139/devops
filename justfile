@@ -257,13 +257,13 @@ security-audit: scan-secrets scan-sast scan-deps
 
 # 构建并打包镜像为 tar 文件
 package: pull-images
-    @echo "Packaging images to devops-platform.tar..."
-    docker build --build-arg INSTALL_DEV=false -t devops-platform:latest .
-    docker save -o devops-platform.tar devops-platform:latest
+    @echo "Packaging images to ddap.tar..."
+    docker build --build-arg INSTALL_DEV=false -t ddap:latest .
+    docker save -o ddap.tar ddap:latest
 
 # 服务器专用：离线加载并部署
 deploy-offline:
-    @if [ -f devops-platform.tar ]; then echo "Loading image..."; docker load -i devops-platform.tar; fi
+    @if [ -f ddap.tar ]; then echo "Loading image..."; docker load -i ddap.tar; fi
     {{COMPOSE_CMD}} up -d --wait --no-build
     {{EXEC_CMD}} python -m devops_collector.utils.schema_sync
     just init-prod-data

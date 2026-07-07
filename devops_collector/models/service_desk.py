@@ -3,7 +3,7 @@
 实现工单的持久化存储，支持跨部门标签审计与状态追溯。
 """
 
-from sqlalchemy import UUID, Column, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import UUID, Column, Index, Integer, String, Text
 
 from devops_collector.models.base_models import Base, TimestampMixin, TraceabilityMixin
 
@@ -43,7 +43,7 @@ class ServiceDeskTicket(Base, TimestampMixin, TraceabilityMixin):
     origin_dept_name = Column(String(100))
     target_dept_id = Column(Integer, index=True)
     target_dept_name = Column(String(100))
-    requester_id = Column(UUID(as_uuid=True), ForeignKey("mdm_identities.global_user_id"))
+    requester_id = Column(UUID(as_uuid=True))
     requester_email = Column(String(100), index=True)
     bug_category = Column(String(50), comment="缺陷分类 (code-error/configuration/performance等)")
     req_type = Column(String(50), comment="需求类型 (feature/config/interface等)")

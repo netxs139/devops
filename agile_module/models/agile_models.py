@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from typing import Optional
 
 from sqlalchemy import (
+    UUID,
     Boolean,
     DateTime,
     Integer,
@@ -31,7 +32,7 @@ class AgileProductMapping(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid7, comment="映射ID")
     department_id: Mapped[str] = mapped_column(String(32), index=True, comment="研发中心/部门ID")
-    product_id: Mapped[str] = mapped_column(String(32), unique=True, index=True, comment="产品线ID")
+    product_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), unique=True, index=True, comment="产品线ID")
     product_name: Mapped[str] = mapped_column(String(255), comment="产品线名称")
     gitlab_group_id: Mapped[int] = mapped_column(Integer, comment="关联的 GitLab Top-level Group ID")
     reception_project_id: Mapped[int] = mapped_column(Integer, comment="专用的工单接收池 GitLab Project ID")

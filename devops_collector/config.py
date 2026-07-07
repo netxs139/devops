@@ -159,6 +159,14 @@ class ZenTaoSettings(BaseModel):
     build_sync_limit: int = 100
 
 
+class PMSSettings(BaseModel):
+    """PMS integration settings."""
+
+    url: str = ""
+    token: SecretStr
+    sync_interval_hours: int = 12
+
+
 class SMTPSettings(BaseModel):
     """SMTP email notification settings."""
 
@@ -209,7 +217,7 @@ class NotifiersSettings(BaseModel):
 class PluginSettings(BaseModel):
     """Plugin system configuration."""
 
-    enabled_plugins: CommaSeparatedList = ["gitlab", "sonarqube", "jenkins", "zentao"]
+    enabled_plugins: CommaSeparatedList = ["gitlab", "sonarqube", "jenkins", "zentao", "pms"]
 
 
 class StorageSettings(BaseModel):
@@ -240,6 +248,7 @@ class Settings(BaseSettings):
     sonarqube: SonarQubeSettings
     jenkins: JenkinsSettings
     zentao: ZenTaoSettings
+    pms: PMSSettings
     nexus: NexusSettings
     ai: AISettings
     smtp: SMTPSettings = Field(default_factory=SMTPSettings)

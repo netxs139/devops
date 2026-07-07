@@ -6,8 +6,8 @@
 import logging
 
 from devops_collector.core.utils import parse_iso8601
-from devops_collector.models import GTMTestCase
 from devops_collector.plugins.gitlab.parser import GitLabTestParser
+from test_module.models.test_models import GTMTestCase
 
 from ..models import (
     GitLabBlockage,

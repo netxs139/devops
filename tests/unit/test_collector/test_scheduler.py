@@ -247,17 +247,20 @@ def test_promotion_service_failure_rollbacks():
 
 
 def test_dbt_success_triggers_reverse_etl_and_dora():
-    """dbt returncode=0 时，DORAService.aggregate_all_projects 和 reverse ETL 必须被触发。"""
+    """dbt test 且 dbt run 均成功时，DORAService.aggregate_all_projects 和 reverse ETL 必须被触发。"""
 
     def setup(session, mq, ps, subp, dora, engine):
         session.query.return_value.all.return_value = []
-        dbt_ok = MagicMock()
-        dbt_ok.returncode = 0
-        dbt_ok.stdout = "Success"
+        dbt_test_ok = MagicMock()
+        dbt_test_ok.returncode = 0
+        dbt_test_ok.stdout = "Test Success"
+        dbt_run_ok = MagicMock()
+        dbt_run_ok.returncode = 0
+        dbt_run_ok.stdout = "Run Success"
         bot_ok = MagicMock()
         bot_ok.returncode = 0
         bot_ok.stdout = "Risk bot OK"
-        subp.run.side_effect = [dbt_ok, bot_ok]
+        subp.run.side_effect = [dbt_test_ok, dbt_run_ok, bot_ok]
 
     with (
         patch("devops_collector.core.reverse_etl.sync_aligned_entities_to_mdm"),
@@ -286,6 +289,25 @@ def test_dbt_failure_skips_reverse_etl():
 
     ctx = _run_main(["--once"], setup_session_fn=setup)
     ctx["dora"].aggregate_all_projects.assert_not_called()
+
+
+def test_dbt_test_failure_sends_wecom_alert():
+    """dbt test 失败时，应该调用 WeComBot 并发送卡片告警。"""
+    from devops_collector.config import settings
+
+    settings.notifiers.wecom_webhook = "https://mock.webhook"
+
+    def setup(session, mq, ps, subp, dora, engine):
+        session.query.return_value.all.return_value = []
+        dbt_fail = MagicMock()
+        dbt_fail.returncode = 1
+        dbt_fail.stdout = "Expectation test failed"
+        subp.run.return_value = dbt_fail
+
+    with patch("devops_collector.services.notifiers.WeComBot.send_risk_card") as mock_wecom:
+        _run_main(["--once"], setup_session_fn=setup)
+        mock_wecom.assert_called_once()
+        assert mock_wecom.call_args[1]["title"] == "[CRITICAL] DevOps 数仓质量门禁熔断报警"
 
 
 # ---------------------------------------------------------------------------

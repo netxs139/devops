@@ -1,7 +1,6 @@
 from devops_collector.models.dependency import DependencyScan
 from devops_collector.plugins.gitlab.models import GitLabProject
 from devops_collector.plugins.jenkins.models import JenkinsBuild, JenkinsJob
-from devops_collector.plugins.jfrog.models import JFrogArtifact
 from devops_collector.plugins.nexus.models import NexusComponent
 
 
@@ -57,16 +56,8 @@ def test_gitlab_webhook(client):
     assert response.json() == {"status": "accepted"}
 
 
-def test_list_jfrog_artifacts(authenticated_client, db_session):
-    artifact = JFrogArtifact(repo="libs-release-local", path="com/example/test", name="test-artifact", version="1.0.0", package_type="maven")
-    db_session.add(artifact)
-    db_session.commit()
-
-    response = authenticated_client.get("/plugins/artifacts/jfrog")
-    assert response.status_code == 200
-    data = response.json()
-    assert len(data) == 1
-    assert data[0]["name"] == "test-artifact"
+# ---------------------------------------------------------------------------
+# Nexus tests
 
 
 def test_list_nexus_components(authenticated_client, db_session):

@@ -1,6 +1,8 @@
 """GitLab API 客户端"""
 
+import threading
 from collections.abc import Generator
+from typing import Any
 
 from devops_collector.services.base_client import BaseClient
 
@@ -10,6 +12,13 @@ class GitLabClient(BaseClient):
 
     封装了 GitLab API v4 的常用接口调用，处理分页、认证及基础的错误重试。
     """
+
+    _semaphore = threading.Semaphore(3)
+
+    def _get(self, endpoint: str, params: dict | None = None) -> Any:
+        """重写 _get 以控制并发数。"""
+        with self._semaphore:
+            return super()._get(endpoint, params)
 
     def __init__(self, url: str, token: str, rate_limit: int = 10, verify_ssl: bool = True):
         """初始化 GitLab 客户端。

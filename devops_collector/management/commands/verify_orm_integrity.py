@@ -23,9 +23,11 @@ class Command(BaseCommand):
             # Trigger relationship discovery and Mapper initialization
             # Import all plugin models to trigger registration
             try:
-                pass
-            except Exception:
-                pass
+                from devops_collector.services.plugin_loader import PluginLoader
+
+                PluginLoader.load_models()
+            except Exception as ex:
+                logger.warning(f"PluginLoader load_models warning: {ex}")
 
             configure_mappers()
             self.stdout.write(">>> configure_mappers() 成功，模型映射关系正常。\n")

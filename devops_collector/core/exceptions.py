@@ -21,7 +21,7 @@ class AppException(Exception):
 
     def to_contract(self, correlation_id: str | None = None) -> ErrorResponse:
         """将异常转换为符合契约的响应对象"""
-        return ErrorResponse(code=self.code, message=self.message, detail=self.detail, correlation_id=correlation_id, source="devops-platform")
+        return ErrorResponse(code=self.code, message=self.message, detail=self.detail, correlation_id=correlation_id, source="ddap")
 
 
 class BusinessException(AppException):

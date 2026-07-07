@@ -41,6 +41,7 @@ def main() -> None:
     mq = MessageQueue()
     Base.metadata.create_all(engine)
     logger.info("Scheduler started.")
+    last_pms_sync_time = None
 
     if args.force_all:
         logger.info("Force All mode activated. Resetting existing sync statuses...")
@@ -124,6 +125,23 @@ def main() -> None:
                     }
                     mq.publish_task(task)
 
+            # 5. 扫描 PMS 项目
+            if "pms" in settings.plugin.enabled_plugins:
+                should_sync = args.force_all
+                if not should_sync:
+                    if last_pms_sync_time is None:
+                        should_sync = True
+                    elif datetime.now(UTC) - last_pms_sync_time > timedelta(hours=settings.pms.sync_interval_hours):
+                        should_sync = True
+
+                if should_sync:
+                    task = {
+                        "source": "pms",
+                        "job_type": "full",
+                    }
+                    mq.publish_task(task)
+                    last_pms_sync_time = datetime.now(UTC)
+
             # 3. 数据转正
             try:
                 logger.info("Triggering data promotion...")
@@ -142,39 +160,75 @@ def main() -> None:
             # 4. 执行 dbt 转换与反向 ETL
             if not args.skip_dbt:
                 try:
-                    logger.info("Triggering dbt run...")
-                    result = subprocess.run(
-                        ["dbt", "run", "--project-dir", "dbt_project", "--profiles-dir", "dbt_project"],
+                    # 4.1 执行 dbt test 作为质量门禁，失败则熔断并告警
+                    logger.info("Running dbt tests (Quality Gate)...")
+                    test_result = subprocess.run(
+                        ["dbt", "test", "--project-dir", "dbt_project", "--profiles-dir", "dbt_project"],
                         capture_output=True,
                         text=True,
                         check=False,
                     )
-                    if result.returncode == 0:
-                        logger.info("dbt run success")
-                        from .core.reverse_etl import (
-                            sync_aligned_entities_to_mdm,
-                            sync_shadow_it_findings,
-                            sync_talent_tags_to_mdm,
+
+                    dbt_passed = True
+                    if test_result.returncode != 0:
+                        dbt_passed = False
+                        # 熔断告警
+                        logger.error(
+                            f"[CIRCUIT BREAKER] dbt tests failed with exit code {test_result.returncode}. Circuit active, blocking downstream run/ETL!"
                         )
 
-                        sync_talent_tags_to_mdm(session)
-                        sync_aligned_entities_to_mdm(session)
-                        sync_shadow_it_findings(session)
+                        # 发送企微告警
+                        from devops_collector.services.notifiers import WeComBot
 
-                        logger.info("Recalculating DORA 2.0 metrics...")
-                        DORAService.aggregate_all_projects(session)
+                        if settings.notifiers.wecom_webhook:
+                            bot = WeComBot(settings.notifiers.wecom_webhook)
+                            bot.send_risk_card(
+                                title="[CRITICAL] DevOps 数仓质量门禁熔断报警",
+                                details=[
+                                    {"告警原因": "dbt test 执行失败，检测到数据质量异常（例如：主数据孤儿数据、未归因数据超标等）"},
+                                    {"错误详情": f"Exit Code: {test_result.returncode}"},
+                                    {
+                                        "部分日志": "\n".join([line for line in test_result.stdout.splitlines() if "ERROR" in line or "FAIL" in line][:10])
+                                        or "请检查控制台输出"
+                                    },
+                                ],
+                                level="HIGH",
+                            )
 
-                        logger.info("Triggering automatic risk bot check...")
-                        bot_res = subprocess.run(
-                            ["python", "scripts/wecom_risk_bot.py"],
+                    if dbt_passed:
+                        logger.info("dbt tests passed. Triggering dbt run...")
+                        result = subprocess.run(
+                            ["dbt", "run", "--project-dir", "dbt_project", "--profiles-dir", "dbt_project"],
                             capture_output=True,
                             text=True,
                             check=False,
                         )
-                        if bot_res.returncode != 0:
-                            logger.error(f"Risk bot failed: {bot_res.stderr}")
-                        else:
-                            logger.info(f"Risk bot finished: {bot_res.stdout.strip()}")
+                        if result.returncode == 0:
+                            logger.info("dbt run success")
+                            from .core.reverse_etl import (
+                                sync_aligned_entities_to_mdm,
+                                sync_shadow_it_findings,
+                                sync_talent_tags_to_mdm,
+                            )
+
+                            sync_talent_tags_to_mdm(session)
+                            sync_aligned_entities_to_mdm(session)
+                            sync_shadow_it_findings(session)
+
+                            logger.info("Recalculating DORA 2.0 metrics...")
+                            DORAService.aggregate_all_projects(session)
+
+                            logger.info("Triggering automatic risk bot check...")
+                            bot_res = subprocess.run(
+                                ["python", "scripts/wecom_risk_bot.py"],
+                                capture_output=True,
+                                text=True,
+                                check=False,
+                            )
+                            if bot_res.returncode != 0:
+                                logger.error(f"Risk bot failed: {bot_res.stderr}")
+                            else:
+                                logger.info(f"Risk bot finished: {bot_res.stdout.strip()}")
                 except Exception as e:
                     logger.error(f"Failed to run dbt or reverse ETL: {e}")
 

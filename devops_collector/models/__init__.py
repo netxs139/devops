@@ -45,6 +45,7 @@ from .base_models import (
     TraceabilityLink,
     Vendor,
 )
+from .customer import Customer
 from .dependency import Dependency, DependencyCVE, DependencyScan, LicenseRiskRule
 from .marts import DeveloperActivityProfile, DoraDashboardSummary
 from .service_desk import ServiceDeskTicket
@@ -99,17 +100,6 @@ try:
 except ImportError:
     pass
 
-# Jira
-try:
-    from devops_collector.plugins.jira.models import (
-        JiraBoard,
-        JiraIssue,
-        JiraProject,
-        JiraSprint,
-    )
-except ImportError:
-    pass
-
 # Nexus
 try:
     from devops_collector.plugins.nexus.models import NexusAsset, NexusComponent
@@ -119,17 +109,6 @@ except ImportError:
 # Jenkins
 try:
     from devops_collector.plugins.jenkins.models import JenkinsBuild, JenkinsJob
-except ImportError:
-    pass
-
-# JFrog
-try:
-    from devops_collector.plugins.jfrog.models import (
-        JFrogArtifact,
-        JFrogDependency,
-        JFrogScan,
-        JFrogVulnerabilityDetail,
-    )
 except ImportError:
     pass
 
@@ -159,6 +138,7 @@ __all__ = [
     "SystemRegistry",
     "EntityTopology",
     "Company",
+    "Customer",
     "Vendor",
     "ComplianceIssue",
     "CommitMetrics",
